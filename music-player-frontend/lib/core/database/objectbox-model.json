@@ -1,0 +1,362 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:5434110965985548662",
+      "lastPropertyId": "3:407877923627896617",
+      "name": "Album",
+      "properties": [
+        {
+          "id": "1:7032580492777901318",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5544579394423112026",
+          "name": "duration",
+          "type": 6
+        },
+        {
+          "id": "3:407877923627896617",
+          "name": "name",
+          "type": 9
+        }
+      ],
+      "relations": [
+        {
+          "id": "1:7460723377333623315",
+          "name": "songs",
+          "targetId": "6:5328859898643810358"
+        }
+      ]
+    },
+    {
+      "id": "2:5636332516459031152",
+      "lastPropertyId": "3:7650922049008629566",
+      "name": "AppSettings",
+      "properties": [
+        {
+          "id": "1:8182695408861448713",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4814418086711149227",
+          "name": "userId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "1:3299821873480654513",
+          "relationTarget": "User"
+        },
+        {
+          "id": "3:7650922049008629566",
+          "name": "missingSongs",
+          "type": 30
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:286855446892723846",
+      "lastPropertyId": "3:5416451551965956234",
+      "name": "Artist",
+      "properties": [
+        {
+          "id": "1:4328875806142310070",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5323548150098807575",
+          "name": "duration",
+          "type": 6
+        },
+        {
+          "id": "3:5416451551965956234",
+          "name": "name",
+          "type": 9
+        }
+      ],
+      "relations": [
+        {
+          "id": "2:1922746581072921885",
+          "name": "songs",
+          "targetId": "6:5328859898643810358"
+        }
+      ]
+    },
+    {
+      "id": "4:125102733176896809",
+      "lastPropertyId": "11:8760273509754657128",
+      "name": "AudioSettings",
+      "properties": [
+        {
+          "id": "1:5477265908356053087",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8600891691394737110",
+          "name": "userId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "2:5495534843995516530",
+          "relationTarget": "User"
+        },
+        {
+          "id": "3:1712099644485876943",
+          "name": "index",
+          "type": 6
+        },
+        {
+          "id": "4:4469033242742600143",
+          "name": "slider",
+          "type": 6
+        },
+        {
+          "id": "5:8073265993596439316",
+          "name": "repeat",
+          "type": 1
+        },
+        {
+          "id": "6:1400504775426850532",
+          "name": "shuffle",
+          "type": 1
+        },
+        {
+          "id": "7:2306020798377727376",
+          "name": "balance",
+          "type": 8
+        },
+        {
+          "id": "8:544190301642256248",
+          "name": "speed",
+          "type": 8
+        },
+        {
+          "id": "9:5535822755287570937",
+          "name": "volume",
+          "type": 8
+        },
+        {
+          "id": "10:4849993503317089340",
+          "name": "queue",
+          "type": 30
+        },
+        {
+          "id": "11:8760273509754657128",
+          "name": "shuffledQueue",
+          "type": 30
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "5:8253375800311252238",
+      "lastPropertyId": "9:1802919749950013416",
+      "name": "Playlist",
+      "properties": [
+        {
+          "id": "1:8434415855449134709",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3455489451381713443",
+          "name": "indestructible",
+          "type": 1
+        },
+        {
+          "id": "3:2943805729086177467",
+          "name": "duration",
+          "type": 6
+        },
+        {
+          "id": "4:2645844746166457040",
+          "name": "nextAdded",
+          "type": 9
+        },
+        {
+          "id": "5:4543366596315292496",
+          "name": "pathsInOrder",
+          "type": 30
+        },
+        {
+          "id": "6:5782041773266088141",
+          "name": "artistCount",
+          "type": 30
+        },
+        {
+          "id": "7:3786128439205850546",
+          "name": "coverArt",
+          "type": 23
+        },
+        {
+          "id": "8:2530901746877373657",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "9:1802919749950013416",
+          "name": "name",
+          "type": 9
+        }
+      ],
+      "relations": [
+        {
+          "id": "3:1387782578054686999",
+          "name": "songs",
+          "targetId": "6:5328859898643810358"
+        }
+      ]
+    },
+    {
+      "id": "6:5328859898643810358",
+      "lastPropertyId": "16:4145861533755825969",
+      "name": "Song",
+      "properties": [
+        {
+          "id": "1:8349890911918800237",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5064592112988109331",
+          "name": "path",
+          "type": 9,
+          "flags": 2080,
+          "indexId": "3:5875477887538721059"
+        },
+        {
+          "id": "3:398563368122461455",
+          "name": "lyricsPath",
+          "type": 9
+        },
+        {
+          "id": "4:1158660851052252113",
+          "name": "genre",
+          "type": 9
+        },
+        {
+          "id": "5:7149598354745784686",
+          "name": "trackArtist",
+          "type": 9
+        },
+        {
+          "id": "6:1569902295142124546",
+          "name": "album",
+          "type": 9
+        },
+        {
+          "id": "7:1008458843636792636",
+          "name": "albumArtist",
+          "type": 9
+        },
+        {
+          "id": "8:2092422769119360865",
+          "name": "duration",
+          "type": 6
+        },
+        {
+          "id": "9:4990231509912090547",
+          "name": "trackNumber",
+          "type": 6
+        },
+        {
+          "id": "10:1705812540767964011",
+          "name": "discNumber",
+          "type": 6
+        },
+        {
+          "id": "11:4172274590478861863",
+          "name": "year",
+          "type": 6
+        },
+        {
+          "id": "12:8421888090370908218",
+          "name": "lastPlayed",
+          "type": 10
+        },
+        {
+          "id": "13:9200305186945584370",
+          "name": "playCount",
+          "type": 6
+        },
+        {
+          "id": "14:1951961947720040855",
+          "name": "liked",
+          "type": 1
+        },
+        {
+          "id": "15:5072589520708592835",
+          "name": "fullyLoaded",
+          "type": 1
+        },
+        {
+          "id": "16:4145861533755825969",
+          "name": "name",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "7:5686730227622637123",
+      "lastPropertyId": "6:4547713415112261797",
+      "name": "User",
+      "properties": [
+        {
+          "id": "1:4168045132000032814",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4471228529824775381",
+          "name": "mongoID",
+          "type": 9
+        },
+        {
+          "id": "3:3735463316115781249",
+          "name": "email",
+          "type": 9
+        },
+        {
+          "id": "4:1890088438278972916",
+          "name": "password",
+          "type": 9
+        },
+        {
+          "id": "5:7438866839967098830",
+          "name": "deviceList",
+          "type": 30
+        },
+        {
+          "id": "6:4547713415112261797",
+          "name": "primaryDevice",
+          "type": 9
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "7:5686730227622637123",
+  "lastIndexId": "3:5875477887538721059",
+  "lastRelationId": "3:1387782578054686999",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}
