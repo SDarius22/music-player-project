@@ -1,0 +1,316 @@
+# ================================
+# Multi-Module Music Player Project
+# ================================
+
+# =====================
+# ROOT PROJECT FILES
+# =====================
+# IntelliJ IDEA project files (keep some, ignore others)
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/shelf/
+.idea/aws.xml
+.idea/contentModel.xml
+.idea/dataSources/
+.idea/dataSources.ids
+.idea/dataSources.local.xml
+.idea/sqlDataSources.xml
+.idea/dynamic.xml
+.idea/uiDesigner.xml
+.idea/dbnavigator.xml
+.idea/gradle.xml
+.idea/libraries/
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/modules.xml
+.idea/*.iml
+.idea/modules/
+.idea/caches/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# ================================
+# SPRING BOOT BACKEND MODULE
+# ================================
+
+# Maven
+music-player-backend/target/
+music-player-backend/.mvn/wrapper/maven-wrapper.jar
+music-player-backend/.mvn/wrapper/maven-wrapper.properties
+music-player-backend/mvnw
+music-player-backend/mvnw.cmd
+
+# Gradle (if using Gradle instead)
+music-player-backend/.gradle/
+music-player-backend/build/
+music-player-backend/gradle/wrapper/gradle-wrapper.jar
+music-player-backend/gradlew
+music-player-backend/gradlew.bat
+
+# Spring Boot
+music-player-backend/HELP.md
+music-player-backend/.spring-boot-devtools.properties
+
+# Java
+music-player-backend/**/*.class
+music-player-backend/**/*.jar
+music-player-backend/**/*.war
+music-player-backend/**/*.nar
+music-player-backend/**/*.ear
+music-player-backend/**/*.zip
+music-player-backend/**/*.tar.gz
+music-player-backend/**/*.rar
+music-player-backend/hs_err_pid*
+music-player-backend/replay_pid*
+
+# IDE files for backend
+music-player-backend/.idea/
+music-player-backend/**/*.iml
+music-player-backend/.vscode/
+music-player-backend/.settings/
+music-player-backend/.project
+music-player-backend/.classpath
+music-player-backend/.factorypath
+
+# Application specific
+music-player-backend/logs/
+music-player-backend/application-local.properties
+music-player-backend/application-dev.properties
+music-player-backend/application-prod.properties
+
+# Database files
+music-player-backend/**/*.db
+music-player-backend/**/*.sqlite
+music-player-backend/**/*.h2.db
+
+# Test results
+music-player-backend/test-results/
+music-player-backend/coverage/
+
+# ================================
+# FLUTTER FRONTEND MODULE
+# ================================
+
+# Miscellaneous
+music-player-frontend/*.class
+music-player-frontend/*.log
+music-player-frontend/*.pyc
+music-player-frontend/*.swp
+music-player-frontend/.DS_Store
+music-player-frontend/.atom/
+music-player-frontend/.buildlog/
+music-player-frontend/.history
+music-player-frontend/.svn/
+
+# IntelliJ related
+music-player-frontend/*.iml
+music-player-frontend/*.ipr
+music-player-frontend/*.iws
+music-player-frontend/.idea/
+
+# Visual Studio Code related
+music-player-frontend/.classpath
+music-player-frontend/.project
+music-player-frontend/.settings/
+music-player-frontend/.vscode/
+
+# Flutter/Dart/Pub related
+music-player-frontend/**/doc/api/
+music-player-frontend/.dart_tool/
+music-player-frontend/.flutter-plugins
+music-player-frontend/.flutter-plugins-dependencies
+music-player-frontend/**/generated_plugin_registrant.dart
+music-player-frontend/.packages
+music-player-frontend/.pub-cache/
+music-player-frontend/.pub/
+music-player-frontend/build/
+music-player-frontend/flutter_*.png
+music-player-frontend/linked_*.ds
+music-player-frontend/unlinked.ds
+music-player-frontend/unlinked_spec.ds
+
+# Android related
+music-player-frontend/**/android/**/gradle-wrapper.jar
+music-player-frontend/.gradle/
+music-player-frontend/**/android/captures/
+music-player-frontend/**/android/gradlew
+music-player-frontend/**/android/gradlew.bat
+music-player-frontend/**/android/local.properties
+music-player-frontend/**/android/**/GeneratedPluginRegistrant.java
+music-player-frontend/**/android/key.properties
+music-player-frontend/*.jks
+music-player-frontend/*.keystore
+
+# iOS/XCode related
+music-player-frontend/**/ios/**/*.mode1v3
+music-player-frontend/**/ios/**/*.mode2v3
+music-player-frontend/**/ios/**/*.moved-aside
+music-player-frontend/**/ios/**/*.pbxuser
+music-player-frontend/**/ios/**/*.perspectivev3
+music-player-frontend/**/ios/**/*sync/
+music-player-frontend/**/ios/**/.sconsign.dblite
+music-player-frontend/**/ios/**/.tags*
+music-player-frontend/**/ios/**/.vagrant/
+music-player-frontend/**/ios/**/DerivedData/
+music-player-frontend/**/ios/**/Icon?
+music-player-frontend/**/ios/**/Pods/
+music-player-frontend/**/ios/**/.symlinks/
+music-player-frontend/**/ios/**/profile
+music-player-frontend/**/ios/**/xcuserdata
+music-player-frontend/**/ios/.generated/
+music-player-frontend/**/ios/Flutter/.last_build_id
+music-player-frontend/**/ios/Flutter/App.framework
+music-player-frontend/**/ios/Flutter/Flutter.framework
+music-player-frontend/**/ios/Flutter/Flutter.podspec
+music-player-frontend/**/ios/Flutter/Generated.xcconfig
+music-player-frontend/**/ios/Flutter/ephemeral
+music-player-frontend/**/ios/Flutter/app.flx
+music-player-frontend/**/ios/Flutter/app.zip
+music-player-frontend/**/ios/Flutter/flutter_assets/
+music-player-frontend/**/ios/Flutter/flutter_export_environment.sh
+music-player-frontend/**/ios/ServiceDefinitions.json
+music-player-frontend/**/ios/Runner/GeneratedPluginRegistrant.*
+
+# Exceptions to above rules
+!music-player-frontend/**/ios/**/default.mode1v3
+!music-player-frontend/**/ios/**/default.mode2v3
+!music-player-frontend/**/ios/**/default.pbxuser
+!music-player-frontend/**/ios/**/default.perspectivev3
+
+# macOS
+music-player-frontend/**/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Windows
+music-player-frontend/**/windows/**/generated_plugin_registrant.cc
+music-player-frontend/**/windows/**/generated_plugin_registrant.h
+music-player-frontend/**/windows/flutter/generated_plugin_registrant.cc
+music-player-frontend/**/windows/flutter/generated_plugin_registrant.h
+
+# Web related
+music-player-frontend/lib/generated_plugin_registrant.dart
+
+# Coverage
+music-player-frontend/coverage/
+
+# Symbols
+music-player-frontend/app.*.symbols
+
+# Obfuscation related
+music-player-frontend/app.*.map.json
+
+# Environment files
+music-player-frontend/.env*
+
+# Firebase configuration files / Google Services
+music-player-frontend/ios/Runner/GoogleService-Info.plist
+music-player-frontend/android/app/google-services.json
+
+# Generated files
+music-player-frontend/*.g.dart
+music-player-frontend/*.freezed.dart
+music-player-frontend/*.gr.dart
+
+# ObjectBox (since you mentioned using it)
+music-player-frontend/*.odb
+music-player-frontend/objectbox-model.json
+
+# Build outputs
+music-player-frontend/*.apk
+music-player-frontend/*.aab
+music-player-frontend/*.ipa
+
+# Test related
+music-player-frontend/test/fixtures/
+music-player-frontend/test_driver/
+
+# Documentation
+music-player-frontend/doc/
+
+# ================================
+# PROJECT SPECIFIC (MUSIC PLAYER)
+# ================================
+
+# Audio files (don't commit large music files)
+**/*.mp3
+**/*.wav
+**/*.flac
+**/*.aac
+**/*.ogg
+**/*.m4a
+# Exception: keep sample/test audio files if small
+!**/assets/audio/samples/**
+!**/test/fixtures/audio/**
+
+# Album artwork cache
+**/album_art_cache/
+**/thumbnails/
+**/cover_art/
+
+# Music library database files
+**/music_library.db
+**/music_cache.db
+**/playlists.db
+
+# Audio processing temporary files
+**/temp_audio/
+**/audio_processing/
+
+# User data
+**/user_playlists/
+**/user_preferences/
+**/listening_history/
+
+# API keys and secrets
+**/secrets/
+**/config/api_keys.*
+music-player-backend/src/main/resources/application-secrets.properties
+music-player-frontend/lib/config/secrets.dart
+
+# Certificates and keys
+**/*.pem
+**/*.key
+**/*.crt
+**/*.p12
+
+# ================================
+# DOCUMENTATION & ASSETS
+# ================================
+
+# Keep important documentation
+!README.md
+!LICENSE
+!CHANGELOG.md
+!docs/
+
+# Keep small asset files
+!**/assets/icons/**
+!**/assets/images/**
+# But ignore large generated assets
+**/assets/**/*.generated.*
