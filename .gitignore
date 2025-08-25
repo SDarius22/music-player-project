@@ -133,6 +133,7 @@ music-player-frontend/.packages
 music-player-frontend/.pub-cache/
 music-player-frontend/.pub/
 music-player-frontend/build/
+music-player-frontend/**/flutter/ephemeral/
 music-player-frontend/flutter_*.png
 music-player-frontend/linked_*.ds
 music-player-frontend/unlinked.ds
