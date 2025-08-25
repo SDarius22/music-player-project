@@ -7,13 +7,8 @@ class SettingsService {
 
   SettingsService(this.settingsRepo);
 
-  AudioSettings? getAudioSettings() {
-    AudioSettings? settings = settingsRepo.getAudioSettings();
-    if (settings == null) {
-      settingsRepo.initAudioSettings();
-      settings = settingsRepo.getAudioSettings();
-    }
-    return settings;
+  AudioSettings getAudioSettings() {
+    return settingsRepo.getAudioSettings();
   }
 
   Future<void> updateAudioSettings(AudioSettings settings) async {
@@ -24,13 +19,8 @@ class SettingsService {
      settingsRepo.resetAudioSettings();
   }
 
-  AppSettings? getAppSettings() {
-    AppSettings? settings =  settingsRepo.getAppSettings();
-    if (settings == null) {
-       settingsRepo.initAppSettings();
-      settings =  settingsRepo.getAppSettings();
-    }
-    return settings;
+  AppSettings getAppSettings() {
+    return settingsRepo.getAppSettings();
   }
 
   Future<void> updateAppSettings(AppSettings settings) async {

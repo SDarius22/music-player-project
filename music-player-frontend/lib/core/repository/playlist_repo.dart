@@ -10,17 +10,17 @@ class PlaylistRepository {
   }
 
   Stream watchAllPlaylists()  {
-    final query = playlistBox.query();
+    final query = playlistBox._query();
     return query.watch();
   }
 
   Playlist? getPlaylist(String name)  {
-    return playlistBox.query(Playlist_.name.equals(name)).build().findUnique();
+    return playlistBox._query(Playlist_.name.equals(name)).build().findUnique();
   }
 
   List<Playlist> getIndestructiblePlaylists()  {
     return playlistBox
-        .query(Playlist_.indestructible.equals(true))
+        ._query(Playlist_.indestructible.equals(true))
         .order(Playlist_.name)
         .build()
         .find();
@@ -28,28 +28,28 @@ class PlaylistRepository {
 
   List<Playlist> getNormalPlaylists()  {
     return playlistBox
-        .query(Playlist_.indestructible.equals(false))
+        ._query(Playlist_.indestructible.equals(false))
         .order(Playlist_.name)
         .build()
         .find();
   }
 
   List<Playlist> getAllPlaylists()  {
-    return playlistBox.query().order(Playlist_.indestructible, flags: Order.descending).order(Playlist_.name).build().find();
+    return playlistBox._query().order(Playlist_.indestructible, flags: Order.descending).order(Playlist_.name).build().find();
   }
 
   List<Playlist> getPlaylists(String query, String sortField, bool flag)  {
     Query<Playlist> builderQuery;
     if (flag == false) {
       builderQuery = playlistBox
-          .query(Playlist_.name.contains(query, caseSensitive: false))
+          ._query(Playlist_.name.contains(query, caseSensitive: false))
           .order(Playlist_.indestructible, flags: Order.descending)
           .order(
         sortField == 'Name' ? Playlist_.name : Playlist_.createdAt,
       ).build();
     } else {
       builderQuery = playlistBox
-          .query(Playlist_.name.contains(query, caseSensitive: false))
+          ._query(Playlist_.name.contains(query, caseSensitive: false))
           .order(Playlist_.indestructible, flags: Order.descending)
           .order(
         sortField == 'Name' ? Playlist_.name : Playlist_.createdAt,

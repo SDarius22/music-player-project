@@ -18,18 +18,20 @@ dependencies:
   # objectbox
   objectbox: ^4.1.0
   objectbox_flutter_libs: any
-  collection: ^1.19.1
 
   # audio
-  just_audio: ^0.9.42
-  audio_service: ^0.18.16
-  on_audio_query_forked: ^2.9.1
-  audiotags: ^1.4.0
+  just_audio: ^0.9.42 # default audio player
+  audioplayers: ^6.0.0 # audio player for windows and linux
+  audio_service: ^0.18.16 # default audio service
+  audio_service_mpris: ^0.2.0 # for linux
+  on_audio_query_forked: ^2.9.1 # query audio files and their metadata on mobile
+  audio_metadata_reader: ^1.4.2 # read audio metadata on desktop
 
-  # utils
-  file_picker: ^8.0.0+1
+  # File Management
+  file_picker: ^10.1.2
   file_saver: ^0.2.12
   path_provider: ^2.1.2
+  watcher: ^1.1.1
   permission_handler: ^11.2.0
 
   # ui
@@ -41,6 +43,15 @@ dependencies:
   after_layout: ^1.1.0
   duration: ^4.0.3
   mesh_gradient: ^1.3.8
+
+  # desktop
+  desktop_drop: ^0.5.0
+  tray_manager: ^0.5.0
+  flutter_single_instance: ^1.2.3
+
+  # utils
+  collection: ^1.19.1
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:

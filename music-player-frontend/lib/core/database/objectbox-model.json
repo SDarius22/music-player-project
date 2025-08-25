@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:5434110965985548662",
-      "lastPropertyId": "3:407877923627896617",
+      "lastPropertyId": "4:1840321970361704243",
       "name": "Album",
       "properties": [
         {
@@ -23,6 +23,11 @@
           "id": "3:407877923627896617",
           "name": "name",
           "type": 9
+        },
+        {
+          "id": "4:1840321970361704243",
+          "name": "coverArt",
+          "type": 23
         }
       ],
       "relations": [
@@ -219,7 +224,7 @@
     },
     {
       "id": "6:5328859898643810358",
-      "lastPropertyId": "16:4145861533755825969",
+      "lastPropertyId": "18:7424054812745538720",
       "name": "Song",
       "properties": [
         {
@@ -238,26 +243,6 @@
         {
           "id": "3:398563368122461455",
           "name": "lyricsPath",
-          "type": 9
-        },
-        {
-          "id": "4:1158660851052252113",
-          "name": "genre",
-          "type": 9
-        },
-        {
-          "id": "5:7149598354745784686",
-          "name": "trackArtist",
-          "type": 9
-        },
-        {
-          "id": "6:1569902295142124546",
-          "name": "album",
-          "type": 9
-        },
-        {
-          "id": "7:1008458843636792636",
-          "name": "albumArtist",
           "type": 9
         },
         {
@@ -304,6 +289,22 @@
           "id": "16:4145861533755825969",
           "name": "name",
           "type": 9
+        },
+        {
+          "id": "17:2204895483700977006",
+          "name": "artistId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "4:774830058903062476",
+          "relationTarget": "Artist"
+        },
+        {
+          "id": "18:7424054812745538720",
+          "name": "albumId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "5:6060959533894279167",
+          "relationTarget": "Album"
         }
       ],
       "relations": []
@@ -349,14 +350,19 @@
     }
   ],
   "lastEntityId": "7:5686730227622637123",
-  "lastIndexId": "3:5875477887538721059",
+  "lastIndexId": "5:6060959533894279167",
   "lastRelationId": "3:1387782578054686999",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
   "retiredEntityUids": [],
   "retiredIndexUids": [],
-  "retiredPropertyUids": [],
+  "retiredPropertyUids": [
+    1158660851052252113,
+    7149598354745784686,
+    1569902295142124546,
+    1008458843636792636
+  ],
   "retiredRelationUids": [],
   "version": 1
 }

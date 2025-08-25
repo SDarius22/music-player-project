@@ -6,12 +6,21 @@ class SettingsRepo {
   get audioSettingsBox => ObjectBox.store.box<AudioSettings>();
   get appSettingsBox => ObjectBox.store.box<AppSettings>();
 
+  SettingsRepo() {
+    initAudioSettings();
+    initAppSettings();
+  }
+
   void addAudioSettings(AudioSettings settings)  {
      audioSettingsBox.put(settings);
   }
 
-  AudioSettings? getAudioSettings() {
-    return audioSettingsBox.query().build().findFirst();
+  AudioSettings getAudioSettings() {
+    return audioSettingsBox._query().build().findFirst();
+  }
+
+  int getAudioSettingsCount() {
+    return audioSettingsBox.count();
   }
 
   void updateAudioSettings(AudioSettings settings)  {
@@ -28,7 +37,7 @@ class SettingsRepo {
   }
 
   void initAudioSettings()  {
-    if ( getAudioSettings() == null) {
+    if (getAudioSettingsCount() == 0) {
        addAudioSettings(AudioSettings());
     }
   }
@@ -37,8 +46,12 @@ class SettingsRepo {
      appSettingsBox.put(settings);
   }
 
-  AppSettings? getAppSettings()  {
-    return appSettingsBox.query().build().findFirst();
+  AppSettings getAppSettings()  {
+    return appSettingsBox._query().build().findFirst();
+  }
+
+  int getAppSettingsCount()  {
+    return appSettingsBox.count();
   }
 
   void updateAppSettings(AppSettings settings)  {
@@ -55,7 +68,7 @@ class SettingsRepo {
   }
 
   void initAppSettings()  {
-    if ( getAppSettings() == null) {
+    if ( getAppSettingsCount() == 0) {
        addAppSettings(AppSettings());
     }
   }

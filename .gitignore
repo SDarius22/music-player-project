@@ -309,8 +309,7 @@ music-player-frontend/lib/config/secrets.dart
 !CHANGELOG.md
 !docs/
 
-# Keep small asset files
-!**/assets/icons/**
-!**/assets/images/**
+# Keep small asset
+!**/assets/**
 # But ignore large generated assets
 **/assets/**/*.generated.*

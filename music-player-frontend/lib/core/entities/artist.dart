@@ -17,6 +17,7 @@ class Artist extends AbstractEntity with AbstractCollection {
   @override
   set name(String value) => _name = value;
 
+  @Backlink('artist')
   final _songs = ToMany<Song>();
 
   @override

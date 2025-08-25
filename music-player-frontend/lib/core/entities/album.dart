@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -16,10 +18,14 @@ class Album extends AbstractEntity with AbstractCollection {
   @override
   set name(String value) => _name = value;
 
+  @Backlink('album')
   final _songs = ToMany<Song>();
 
   @override
   ToMany<Song> get songs => _songs;
 
   int duration = 0;
+
+  @Property(type: PropertyType.byteVector)
+  Uint8List? coverArt;
 }

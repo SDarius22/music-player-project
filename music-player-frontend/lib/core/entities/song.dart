@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:music_player_frontend/core/entities/abstract/abstract_entity.dart';
+import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
@@ -11,20 +15,18 @@ class Song extends AbstractEntity {
 
   String lyricsPath = "";
 
-  // Real field for ObjectBox
   String _name = "Unknown song";
 
-  // Override the abstract getter
   @override
   String get name => _name;
 
   @override
   set name(String value) => _name = value;
 
-  String genre = "Unknown genre";
-  String trackArtist = "Unknown artist";
-  String album = "Unknown album";
-  String albumArtist = "Unknown album artist";
+
+  final artist = ToOne<Artist>();
+  final album = ToOne<Album>();
+
   int duration = 0; // in seconds
   int trackNumber = 0;
   int discNumber = 0;
@@ -36,8 +38,12 @@ class Song extends AbstractEntity {
   int playCount = 0;
   bool liked = false;
   bool fullyLoaded = false;
+
   @Transient()
   bool existsExternally = false;
+
+  @Transient()
+  Uint8List? image;
 
   @override
   bool operator ==(Object other) =>
@@ -50,13 +56,15 @@ class Song extends AbstractEntity {
     path = json['path'] ?? "";
     lyricsPath = json['lyricsPath'] ?? "";
     name = json['title'] ?? "Unknown Song";
-    genre = json['genre'] ?? "Unknown genre";
-    trackArtist = json['trackArtist'] ?? "Unknown artist";
-    album = json['album'] ?? "Unknown album";
-    albumArtist = json['albumArtist'] ?? "Unknown album artist";
     duration = json['duration'] ?? 0;
     trackNumber = json['trackNumber'] ?? 0;
     discNumber = json['discNumber'] ?? 0;
     year = json['year'] ?? 0;
+    try {
+      image = json['image'];
+    }
+    catch (e) {
+      image = null;
+    }
   }
 }

@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
-import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
@@ -18,50 +16,75 @@ class SongService {
 
   SongService(this.songRepo, this.settingsService, this.albumService, this.artistService);
 
+  Stream watchSongs() => songRepo.watchAllSongs();
 
-  Future<Song?> getSong(String songPath) async {
+
+  Future<void> addSong(String songPath) async {
+    if (songPath.isEmpty) {
+      throw ArgumentError("Song path cannot be empty");
+    }
+
+    // Check if the song already exists
+    final existingSong =  songRepo.getSong(songPath);
+    if (existingSong != null) {
+      throw Exception("Song with path '$songPath' already exists");
+    }
+
+    Song newSong = Song();
+    var metadata = await FileService.retrieveSong(songPath);
+    newSong.fromJson(metadata);
+
+    try {
+       songRepo.addSong(newSong);
+    } catch (e) {
+      throw Exception("Error adding song: $e");
+    }
+  }
+
+  Song? getSong(String songPath) {
     if (songPath.isEmpty) {
       throw ArgumentError("Song path cannot be empty");
     }
 
     try {
-      return await songRepo.getSong(songPath);
+      return songRepo.getSong(songPath);
     } catch (e) {
       debugPrint("Error fetching song: $e");
       return null;
     }
   }
 
-  Future<Song?> getSongContaining(String query) async {
+  Song? getSongContaining(String query) {
     if (query.isEmpty) {
       throw ArgumentError("Query cannot be empty");
     }
 
     try {
-      return await songRepo.getSongContaining(query);
+      return songRepo.getSongContaining(query);
     } catch (e) {
       debugPrint("Error fetching song containing '$query': $e");
       return null;
     }
   }
 
-  Future<List<Song>> getSongs(String query, bool flag) async {
+  List<Song> getSongs(String query, String sortField, bool flag) {
     try {
-      return await songRepo.getSongs(query, flag);
+      return songRepo.getSongs(query, sortField, flag);
     } catch (e) {
       debugPrint("Error fetching songs: $e");
       return [];
     }
   }
 
-  Future<List<Song>> getAllSongs() async {
+  List<Song> getAllSongs() {
     try {
-      return await songRepo.getAllSongs();
+      return songRepo.getAllSongs();
     } catch (e) {
       debugPrint("Error fetching all songs: $e");
       return [];
     }
   }
+
 
   void updateSong(Song song) {
     if (song.path.isEmpty) {
@@ -113,4 +136,100 @@ class SongService {
       return [];
     }
   }
+
+  List<Song> getSongsFromPaths(List<String> paths) {
+    if (paths.isEmpty) {
+      return [];
+    }
+
+    try {
+      return songRepo.getSongsFromPaths(paths);
+    } catch (e) {
+      debugPrint("Error fetching songs from paths: $e");
+      return [];
+    }
+  }
+
+  // Future<void> retrieveAllSongs() async {
+  //   var appSettings = settingsService.getAppSettings() ?? AppSettings();
+  //   List<String> songPlaces = appSettings.songPlaces;
+  //   final audioFiles = await FileService.getAudioFiles(songPlaces);
+  //
+  //   for (final file in audioFiles) {
+  //     final song = songRepo.getSong(file.path);
+  //     if (song == null) {
+  //       debugPrint("Adding new song: ${file.path}");
+  //       final song = Song();
+  //       song.path = file.path;
+  //       song.name = file.path.split('/').last;
+  //       song.existsExternally = true;
+  //       songRepo.addSong(song);
+  //
+  //       // try {
+  //       //   debugPrint("Retrieving metadata for ${file.path}");
+  //       //   final metadata = await retrieveMetadata(file.path);
+  //       //   debugPrint("Retrieved metadata for ${file.path}.");
+  //       //   song.fromJson(metadata);
+  //       //   //debugPrint("Retrieved metadata for ${file.path}: ${song.id}");
+  //       //   song.fullyLoaded = true;
+  //       //   songRepo.updateSong(song);
+  //       //   albumService.addSongToAlbum(song, song.album);
+  //       //   artistService.addSongToArtist(song, song.trackArtist);
+  //       // } catch (e) {
+  //       //   debugPrint("Error retrieving metadata for ${file.path}: $e");
+  //       // }
+  //
+  //       Isolate.run(() => FileService.retrieveSong(file.path)).then((metadata) {
+  //         song.fromJson(metadata);
+  //         //debugPrint("Retrieved metadata for ${file.path}: ${song.id}");
+  //         song.fullyLoaded = true;
+  //         songRepo.updateSong(song);
+  //         albumService.addSongToAlbum(song, song.album);
+  //         artistService.addSongToArtist(song, song.trackArtist);
+  //       })
+  //           .catchError((error) {
+  //         debugPrint("Error retrieving metadata for ${file.path}: $error");
+  //       });
+  //     }
+  //     else if (song.fullyLoaded == false) {
+  //       // try {
+  //       //   debugPrint("Retrieving metadata for ${file.path}");
+  //       //   final metadata = await retrieveMetadata(file.path);
+  //       //   debugPrint("Retrieved metadata for ${file.path}.");
+  //       //   song.fromJson(metadata);
+  //       //   //debugPrint("Retrieved metadata for ${file.path}: ${song.id}");
+  //       //   song.fullyLoaded = true;
+  //       //   songRepo.updateSong(song);
+  //       //   albumService.addSongToAlbum(song, song.album);
+  //       //   artistService.addSongToArtist(song, song.trackArtist);
+  //       // } catch (e) {
+  //       //   debugPrint("Error retrieving metadata for ${file.path}: $e");
+  //       // }
+  //       song.existsExternally = true;
+  //       songRepo.updateSong(song);
+  //       Isolate.run(() => FileService.retrieveSong(file.path)).then((metadata) {
+  //         song.fromJson(metadata);
+  //         //debugPrint("Retrieved metadata for ${file.path}: ${song.id}");
+  //         song.fullyLoaded = true;
+  //         songRepo.updateSong(song);
+  //         albumService.addSongToAlbum(song, song.album);
+  //         artistService.addSongToArtist(song, song.trackArtist);
+  //       }).catchError((error) {
+  //         debugPrint("Error retrieving metadata for ${file.path}: $error");
+  //       });
+  //     }
+  //   }
+  //
+  //   List<Song> nonExistingSongs = songRepo.getNonExistingSongs();
+  //   for (final song in nonExistingSongs) {
+  //     //debugPrint("Checking if song ${song.name} exists externally.");
+  //     if (FileService.fileExists(song.path) == false) {
+  //       debugPrint("Song ${song.name} does not exist anymore, deleting it.");
+  //       songRepo.deleteSong(song);
+  //     } else {
+  //       song.existsExternally = true;
+  //       songRepo.updateSong(song);
+  //     }
+  //   }
+  // }
 }

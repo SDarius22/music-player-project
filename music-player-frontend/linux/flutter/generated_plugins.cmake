@@ -3,9 +3,13 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  audiotags
+  audioplayers_linux
+  desktop_drop
   file_saver
   objectbox_flutter_libs
+  screen_retriever_linux
+  tray_manager
+  window_manager
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

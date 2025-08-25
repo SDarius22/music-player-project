@@ -7,9 +7,9 @@ class ObjectBox {
 
   static Future initialize() async {
     final docsDir = await getApplicationDocumentsDirectory();
-    String dbPath = '${docsDir.path}/musicplayer';
+    String dbPath = '${docsDir.path}/MusicPlayer';
     if (kDebugMode) {
-      dbPath = '${docsDir.path}/musicplayer-test';
+      dbPath = '${docsDir.path}/MusicPlayer-Debug';
     }
     if (Store.isOpen(dbPath)) {
       store = Store.attach(getObjectBoxModel(),dbPath);
