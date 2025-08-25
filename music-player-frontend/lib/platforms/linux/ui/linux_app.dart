@@ -1,5 +1,19 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_audio_player.dart';
+import 'package:music_player_frontend/core/providers/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/albums_provider.dart';
+import 'package:music_player_frontend/core/providers/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/artist_provider.dart';
+import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
+import 'package:music_player_frontend/core/providers/playlist_provider.dart';
+import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/core/services/album_service.dart';
+import 'package:music_player_frontend/core/services/artist_service.dart';
+import 'package:music_player_frontend/core/services/playlist_service.dart';
+import 'package:music_player_frontend/core/services/settings_service.dart';
+import 'package:music_player_frontend/core/services/song_service.dart';
+import 'package:music_player_frontend/platforms/linux/entities/concrete_audio_player.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -10,48 +24,36 @@ class LinuxApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<AlbumRepository>(
-          create: (_) => AlbumRepository(),
+        Provider<AbstractAudioPlayer>(
+          create: (context) => ConcreteAudioPlayer(),
         ),
-        Provider<ArtistRepository>(
-          create: (_) => ArtistRepository(),
-        ),
-        Provider<PlaylistRepository>(
-          create: (_) => PlaylistRepository(),
-        ),
-        Provider<SettingsRepo>(
-          create: (_) => SettingsRepo(),
-        ),
-        Provider<SongsRepository>(
-          create: (_) => SongsRepository(),
+
+        Provider<SettingsService>(
+          create: (context) => SettingsService(),
         ),
         Provider<AlbumService>(
-          create: (context) => AlbumService(context.read<AlbumRepository>()),
+          create: (context) => AlbumService(),
         ),
         Provider<ArtistService>(
-          create: (context) => ArtistService(context.read<ArtistRepository>()),
+          create: (context) => ArtistService(),
         ),
-        Provider<SettingsService>(
-          create: (context) => SettingsService(context.read<SettingsRepo>()),
+
+        Provider<PlaylistService>(
+          create: (context) => PlaylistService(),
         ),
         Provider<SongService>(
           create: (context) => SongService(
-              context.read<SongsRepository>(),
-              context.read<SettingsService>(),
-              context.read<AlbumService>(),
-              context.read<ArtistService>()
+            context.read<PlaylistService>(),
           ),
         ),
-        Provider<PlaylistService>(
-          create: (context) => PlaylistService(context.read<PlaylistRepository>(), context.read<SongService>()),
-        ),
+
         ChangeNotifierProvider<AlbumProvider> (
           create: (context) => AlbumProvider(context.read<AlbumService>()),
         ),
         ChangeNotifierProvider<ArtistProvider> (
           create: (context) => ArtistProvider(context.read<ArtistService>()),
         ),
-        ChangeNotifierProvider<AudioProvider>(
+        ChangeNotifierProvider<AbstractAudioProvider>(
             create: (context) => AudioProvider()// ..init(context.read<SettingsService>()),
         ),
         ChangeNotifierProvider<PlaylistProvider> (
@@ -61,9 +63,9 @@ class LinuxApp extends StatelessWidget {
           create: (context) => SongProvider(context.read<SongService>()),
         ),
         ChangeNotifierProvider<LyricsProvider>(
-          create: (context) => LyricsProvider(),
+          create: (context) => LyricsProvider(context.read<AbstractAudioProvider>()),
         ),
-        ChangeNotifierProvider<AppStateProvider>(
+        ChangeNotifierProvider<AbstractAppStateProvider>(
           create: (context) => AppStateProvider(context.read<AudioProvider>(), context.read<SettingsService>()),
         ),
 

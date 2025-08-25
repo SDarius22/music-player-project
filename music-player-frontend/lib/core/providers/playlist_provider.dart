@@ -44,7 +44,7 @@ class PlaylistProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void addPlaylist(String name, List<String> songs, String whereToAdd, Uint8List? coverArt) {
+  void addPlaylist(String name, List<Song> songs, String whereToAdd, Uint8List? coverArt) {
     _playlistService.addPlaylist(name, songs, whereToAdd, coverArt);
     notifyListeners();
   }
@@ -54,8 +54,8 @@ class PlaylistProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Playlist? getPlaylist(String name) {
-    return _playlistService.getPlaylist(name);
+  Playlist? getPlaylist(int playlistId) {
+    return _playlistService.getPlaylist(playlistId);
   }
 
   List<Playlist> getIndestructiblePlaylists() {
@@ -77,7 +77,7 @@ class PlaylistProvider with ChangeNotifier {
   }
 
   void deleteSongFromPlaylist(Playlist playlist, Song song) {
-    _playlistService.deleteFromPlaylist(playlist, song.path);
+    _playlistService.deleteFromPlaylist(playlist, song);
     notifyListeners();
   }
 }

@@ -58,8 +58,8 @@ class ArtistProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Artist? getArtist(String name) {
-    return _artistService.getArtist(name);
+  Artist? getArtist(int artistId) {
+    return _artistService.getArtist(artistId);
   }
 
   List<Artist> getArtists() {

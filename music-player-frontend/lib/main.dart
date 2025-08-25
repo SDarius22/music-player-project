@@ -11,9 +11,9 @@ Future<void> main() async {
       break;
     case 'linux':
       debugPrint('Running on Linux');
-      if(await FlutterSingleInstance().isFirstInstance()){
-        runApp(const LinuxApp());
-      }
+      // if(await FlutterSingleInstance().isFirstInstance()){
+      //   runApp(const LinuxApp());
+      // }
       break;
     case 'macos':
       debugPrint('Running on macOS');

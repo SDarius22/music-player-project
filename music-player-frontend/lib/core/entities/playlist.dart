@@ -7,7 +7,7 @@ import 'package:objectbox/objectbox.dart';
 
 @Entity()
 class Playlist extends AbstractEntity with AbstractCollection {
-  @Id()
+  @Id(assignable: true)
   int id = 0;
 
   @Unique()
@@ -21,12 +21,10 @@ class Playlist extends AbstractEntity with AbstractCollection {
   set name(String value) => _name = value;
 
   bool indestructible = false;
-
-  int duration = 0; // in seconds
+  bool visible = true;
 
   String nextAdded = "last";
   List<String> pathsInOrder = [];
-  List<String> artistCount = []; // Strings of form "Artist - Count"
 
   @Property(type: PropertyType.byteVector)
   Uint8List? coverArt;

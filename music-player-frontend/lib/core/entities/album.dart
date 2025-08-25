@@ -24,8 +24,6 @@ class Album extends AbstractEntity with AbstractCollection {
   @override
   ToMany<Song> get songs => _songs;
 
-  int duration = 0;
-
   @Property(type: PropertyType.byteVector)
   Uint8List? coverArt;
 }

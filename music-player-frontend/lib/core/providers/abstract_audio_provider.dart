@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_audio_player.dart';
-import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/services/app_audio_service.dart';
+import 'package:music_player_frontend/core/services/abstract_audio_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
@@ -9,18 +8,21 @@ import 'package:music_player_frontend/core/services/song_service.dart';
 abstract class AbstractAudioProvider with ChangeNotifier{
   late AppAudioService audioService;
 
-  Song? get currentSong => audioService.currentSong;
-  List<String> get currentQueue => audioService.audioSettings.currentQueue;
-  int get currentIndexInNormal => audioService.audioSettings.currentIndexInNonShuffled;
+  ValueNotifier<bool> playingNotifier = ValueNotifier<bool>(false);
+  ValueNotifier<bool> repeatNotifier = ValueNotifier<bool>(false);
+  ValueNotifier<bool> shuffleNotifier = ValueNotifier<bool>(false);
+  ValueNotifier<int> sliderNotifier = ValueNotifier<int>(0);
+  ValueNotifier<double> balanceNotifier = ValueNotifier<double>(0.0);
+  ValueNotifier<double> volumeNotifier = ValueNotifier<double>(0.5);
+  ValueNotifier<double> playbackSpeedNotifier = ValueNotifier<double>(1.0);
 
-  Future<AppAudioService> init(SettingsService settingsService, SongService songService, AbstractAudioPlayer audioPlayer);
+  Future<void> init(SettingsService settingsService, SongService songService, AbstractAudioPlayer audioPlayer);
   Future<void> play();
   Future<void> pause();
   Future<void> skipToNext();
   Future<void> skipToPrevious();
   Future<void> stop();
   Future<void> seek(Duration position);
-  Future<void> repeat();
 
   void setPlaybackSpeed(double speed);
   void setVolume(double volume);

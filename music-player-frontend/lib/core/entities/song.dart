@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:music_player_frontend/core/entities/abstract/abstract_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
+import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
@@ -26,6 +27,9 @@ class Song extends AbstractEntity {
 
   final artist = ToOne<Artist>();
   final album = ToOne<Album>();
+
+  @Backlink()
+  final playlists = ToMany<Playlist>();
 
   int duration = 0; // in seconds
   int trackNumber = 0;

@@ -1,44 +1,36 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:music_player_frontend/core/database/objectBox.dart';
+import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/repository/song_repo.dart';
+
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/file_service.dart';
+import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
+import 'package:music_player_frontend/utils/constants.dart';
 
 class SongService {
-  final SongsRepository songRepo;
-  final SettingsService settingsService;
-  final AlbumService albumService;
-  final ArtistService artistService;
+  Box<Song> get _songBox => ObjectBox.store.box<Song>();
 
-  SongService(this.songRepo, this.settingsService, this.albumService, this.artistService);
+  final PlaylistService _playlistService;
 
-  Stream watchSongs() => songRepo.watchAllSongs();
+  SongService(this._playlistService);
+
+  Stream watchSongs() => _songBox.query().watch(triggerImmediately: true);
 
 
-  Future<void> addSong(String songPath) async {
+  Future<Song> addSong(String songPath) async {
     if (songPath.isEmpty) {
       throw ArgumentError("Song path cannot be empty");
     }
-
-    // Check if the song already exists
-    final existingSong =  songRepo.getSong(songPath);
-    if (existingSong != null) {
-      throw Exception("Song with path '$songPath' already exists");
-    }
-
     Song newSong = Song();
     var metadata = await FileService.retrieveSong(songPath);
     newSong.fromJson(metadata);
-
-    try {
-       songRepo.addSong(newSong);
-    } catch (e) {
-      throw Exception("Error adding song: $e");
-    }
+    newSong.id = _songBox.put(newSong);
+    return newSong;
   }
 
   Song? getSong(String songPath) {
@@ -47,9 +39,9 @@ class SongService {
     }
 
     try {
-      return songRepo.getSong(songPath);
+      return _songBox.query(Song_.path.equals(songPath)).build().findUnique();
     } catch (e) {
-      debugPrint("Error fetching song: $e");
+      debugPrint("Error fetching song with path '$songPath': $e");
       return null;
     }
   }
@@ -60,7 +52,7 @@ class SongService {
     }
 
     try {
-      return songRepo.getSongContaining(query);
+      return _songBox.query(Song_.path.contains(query, caseSensitive: false)).build().findFirst();
     } catch (e) {
       debugPrint("Error fetching song containing '$query': $e");
       return null;
@@ -68,86 +60,60 @@ class SongService {
   }
 
   List<Song> getSongs(String query, String sortField, bool flag) {
-    try {
-      return songRepo.getSongs(query, sortField, flag);
-    } catch (e) {
-      debugPrint("Error fetching songs: $e");
-      return [];
+    Query<Song> builderQuery;
+    if (flag == false) {
+      builderQuery = _songBox
+          .query(Song_.name.contains(query, caseSensitive: false))
+          .order(
+        sortField == 'Name' ? Song_.name : Song_.duration,
+      ).build();
     }
+    else {
+      builderQuery = _songBox
+          .query(Song_.name.contains(query, caseSensitive: false))
+          .order(
+        sortField == 'Name' ? Song_.name : Song_.duration,
+        flags: Order.descending,
+      ).build();
+    }
+    return builderQuery.find();
   }
 
   List<Song> getAllSongs() {
-    try {
-      return songRepo.getAllSongs();
-    } catch (e) {
-      debugPrint("Error fetching all songs: $e");
-      return [];
-    }
+    return _songBox.getAll();
   }
 
-
   void updateSong(Song song) {
-    if (song.path.isEmpty) {
-      throw ArgumentError("Song path cannot be empty");
-    }
+    _songBox.put(song);
+    _playlistService.updateFavorites(_songBox.query(Song_.liked.equals(true)).build().find());
 
-    try {
-       songRepo.updateSong(song);
-    } catch (e) {
-      debugPrint("Error updating song: $e");
-    }
+
+    var query = _songBox.query().order(Song_.lastPlayed, flags: Order.descending).build();
+    query.limit = 50;
+    _playlistService.updateRecentlyPlayed(query.find());
+
+    query = _songBox.query(Song_.playCount.greaterThan(0)).order(Song_.playCount, flags: Order.descending).build();
+    query.limit = 50;
+    _playlistService.updateMostPlayed(query.find());
   }
 
   void deleteSong(Song song) {
-    if (song.path.isEmpty) {
-      throw ArgumentError("Song path cannot be empty");
-    }
-
-    try {
-       songRepo.deleteSong(song);
-    } catch (e) {
-      debugPrint("Error deleting song: $e");
-    }
+    _songBox.remove(song.id);
   }
 
-  List<Song> getFavoriteSongs() {
-    try {
-      return songRepo.getFavoriteSongs();
-    } catch (e) {
-      debugPrint("Error fetching favorite songs: $e");
-      return [];
-    }
-  }
 
-  List<Song> getSongsWithPlayCount() {
-    try {
-      return  songRepo.getSongsWithPlayCount();
-    } catch (e) {
-      debugPrint("Error fetching songs with play count: $e");
-      return [];
-    }
-  }
-
-  List<Song> getSongsWithLastPlayed() {
-    try {
-      return  songRepo.getSongsWithLastPlayed();
-    } catch (e) {
-      debugPrint("Error fetching songs with last played: $e");
-      return [];
-    }
-  }
-
-  List<Song> getSongsFromPaths(List<String> paths) {
+  List<Song> getSongsFromPaths(List<String> paths)  {
     if (paths.isEmpty) {
       return [];
     }
-
-    try {
-      return songRepo.getSongsFromPaths(paths);
-    } catch (e) {
-      debugPrint("Error fetching songs from paths: $e");
-      return [];
+    List<Song> songs = [];
+    for (String path in paths) {
+      final song = getSong(path);
+      if (song != null) {
+        songs.add(song);
+      }
     }
+    return songs;
   }
 
   // Future<void> retrieveAllSongs() async {

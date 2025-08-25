@@ -58,8 +58,8 @@ class AlbumProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Album? getAlbum(String name)  {
-    return _albumService.getAlbum(name);
+  Album? getAlbum(int albumId)  {
+    return _albumService.getAlbum(albumId);
   }
 
   List<Album> getAlbums()  {

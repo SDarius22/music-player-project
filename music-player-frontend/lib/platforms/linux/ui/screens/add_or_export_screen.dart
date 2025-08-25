@@ -1,10 +1,13 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/playlist.dart';
-import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/playlist_provider.dart';
-import 'package:music_player_frontend/core/services/file_service.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
+import 'package:musicplayer/components/custom_tiling/grid_component.dart';
+import 'package:musicplayer/providers/app_state_provider.dart';
+import 'package:musicplayer/providers/audio_provider.dart';
+import 'package:musicplayer/providers/playlist_provider.dart';
+import 'package:musicplayer/services/file_service.dart';
+import 'package:musicplayer/utils/fluenticons/fluenticons.dart';
+import 'package:musicplayer/entities/playlist.dart';
+import 'package:musicplayer/entities/song.dart';
 import 'package:provider/provider.dart';
 
 class AddOrExportScreen extends StatefulWidget {

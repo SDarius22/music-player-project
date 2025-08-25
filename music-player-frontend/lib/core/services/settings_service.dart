@@ -1,33 +1,44 @@
+import 'package:music_player_frontend/core/database/objectBox.dart';
+import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
-import 'package:music_player_frontend/core/repository/settings_repo.dart';
 
 class SettingsService {
-  final SettingsRepo settingsRepo;
+  Box<AppSettings> get _appSettingsBox => ObjectBox.store.box<AppSettings>();
+  Box<AudioSettings> get _audioSettingsBox => ObjectBox.store.box<AudioSettings>();
 
-  SettingsService(this.settingsRepo);
+  SettingsService() {
+    if (_appSettingsBox.count() == 0) {
+      _appSettingsBox.put(AppSettings());
+    }
+    if (_audioSettingsBox.count() == 0) {
+      _audioSettingsBox.put(AudioSettings());
+    }
+  }
 
   AudioSettings getAudioSettings() {
-    return settingsRepo.getAudioSettings();
+    return _audioSettingsBox.getAll().first;
   }
 
-  Future<void> updateAudioSettings(AudioSettings settings) async {
-     settingsRepo.updateAudioSettings(settings);
+  void updateAudioSettings(AudioSettings settings) {
+    _audioSettingsBox.put(settings);
   }
 
-  Future<void> resetAudioSettings() async {
-     settingsRepo.resetAudioSettings();
+  void resetAudioSettings() {
+    _audioSettingsBox.removeAll();
+    _audioSettingsBox.put(AudioSettings());
   }
 
   AppSettings getAppSettings() {
-    return settingsRepo.getAppSettings();
+    return _appSettingsBox.getAll().first;
   }
 
-  Future<void> updateAppSettings(AppSettings settings) async {
-     settingsRepo.updateAppSettings(settings);
+  void updateAppSettings(AppSettings settings) {
+     _appSettingsBox.put(settings);
   }
 
-  Future<void> resetAppSettings() async {
-     settingsRepo.resetAppSettings();
+  void resetAppSettings() async {
+    _appSettingsBox.removeAll();
+    _appSettingsBox.put(AppSettings());
   }
 }
