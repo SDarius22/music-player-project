@@ -1,25 +1,23 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as imageLib;
+import 'package:image/image.dart' as image_lib;
 
 class DominantColors {
   final Uint8List bytes;
-  //final String photoUrl;
+
   int dominantColorsCount = 2; // We want to extract two dominant colors
 
-  DominantColors(
-      {required this.bytes, required this.dominantColorsCount});
+  DominantColors({required this.bytes, required this.dominantColorsCount});
 
 
 
   // Calculate Euclidean distance between two colors
   double distance(Color a, Color b) {
-    return sqrt(pow(a.red - b.red, 2) +
-        pow(a.green - b.green, 2) +
-        pow(a.blue - b.blue, 2));
+    return sqrt(pow(a.r - b.r, 2) +
+        pow(a.g - b.g, 2) +
+        pow(a.b - b.b, 2));
   }
 
   // Initialize centroids using K-means++
@@ -78,7 +76,7 @@ class DominantColors {
   List<Color> _getPixelsColorsFromHalfImage() {
     List<Color> colors = [];
 
-    imageLib.Image? image = imageLib.decodeImage(bytes.buffer.asUint8List());
+    image_lib.Image? image = image_lib.decodeImage(bytes.buffer.asUint8List());
 
     if (image != null) {
       int sampling =
@@ -133,17 +131,17 @@ class DominantColors {
   }
 
   Color _averageColor(List<Color> colors) {
-    int r = 0, g = 0, b = 0;
+    double r = 0, g = 0, b = 0;
     for (var color in colors) {
-      r += color.red;
-      g += color.green;
-      b += color.blue;
+      r += color.r;
+      g += color.g;
+      b += color.b;
     }
     int length = colors.length;
-    r = r ~/ length;
-    g = g ~/ length;
-    b = b ~/ length;
-    return Color.fromRGBO(r, g, b, 1);
+    r = r / length;
+    g = g / length;
+    b = b / length;
+    return Color.from(alpha: 1.0, red: r, green: g, blue: b);
   }
 
   Future<Uint8List> fetchImage(String photoUrl) async {

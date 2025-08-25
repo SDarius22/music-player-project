@@ -1,15 +1,9 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/providers/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/worker_service.dart';
 import 'package:music_player_frontend/utils/constants.dart';
-import 'package:music_player_frontend/utils/miniplayer/miniplayer.dart';
-import 'package:tray_manager/tray_manager.dart';
 
 abstract class AbstractAppStateProvider with ChangeNotifier {
   late final AbstractAudioProvider _audioProvider;
@@ -19,10 +13,6 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   bool isDarkMode = true;
   bool isDrawerOpen = false;
   List<String> appActions = [];
-
-  MiniPlayerController miniPlayerController = MiniPlayerController();
-  AnimatedMeshGradientController animatedMeshGradientController = AnimatedMeshGradientController();
-  ScrollController itemScrollController = ScrollController();
 
   ValueNotifier<bool> isPanelOpen = ValueNotifier(false);
 

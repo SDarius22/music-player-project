@@ -25,6 +25,8 @@ class AudioSettings{
 
   get currentQueue => shuffle ? shuffledQueue : queue;
 
+  get currentIndexInNonShuffled => currentQueue.isNotEmpty ? queue.indexOf(currentQueue[index]) : -1;
+
   get currentSong => currentQueue.isNotEmpty ? currentQueue[index] : null;
 
   get nextSong => currentQueue.isNotEmpty ? currentQueue[(index + 1) % currentQueue.length] : null;

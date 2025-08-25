@@ -11,6 +11,7 @@ abstract class AbstractAudioProvider with ChangeNotifier{
 
   Song? get currentSong => audioService.currentSong;
   List<String> get currentQueue => audioService.audioSettings.currentQueue;
+  int get currentIndexInNormal => audioService.audioSettings.currentIndexInNonShuffled;
 
   Future<AppAudioService> init(SettingsService settingsService, SongService songService, AbstractAudioPlayer audioPlayer);
   Future<void> play();
