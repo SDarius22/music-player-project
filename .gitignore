@@ -5,29 +5,11 @@
 # =====================
 # ROOT PROJECT FILES
 # =====================
-# IntelliJ IDEA project files (keep some, ignore others)
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/usage.statistics.xml
-.idea/dictionaries/
-.idea/shelf/
-.idea/aws.xml
-.idea/contentModel.xml
-.idea/dataSources/
-.idea/dataSources.ids
-.idea/dataSources.local.xml
-.idea/sqlDataSources.xml
-.idea/dynamic.xml
-.idea/uiDesigner.xml
-.idea/dbnavigator.xml
-.idea/gradle.xml
-.idea/libraries/
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/modules.xml
-.idea/*.iml
-.idea/modules/
-.idea/caches/
+# IntelliJ IDEA project files
+*.iml
+*.ipr
+*.iws
+.idea/
 
 # OS generated files
 .DS_Store
