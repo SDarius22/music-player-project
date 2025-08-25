@@ -47,12 +47,7 @@ class AudioProvider extends AbstractAudioProvider {
     audioPlayer.onPlayerStateChanged.listen((state) {
       playingNotifier.value = state == PlayerState.playing;
       if (state == PlayerState.completed) {
-        if (super.audioService.audioSettings.repeat) {
-          debugPrint("Repeat is enabled, repeating song");
-          repeat();
-        } else {
-          skipToNext();
-        }
+        skipToNext();
       }
     });
     notifyListeners();
@@ -93,6 +88,7 @@ class AudioProvider extends AbstractAudioProvider {
     await super.audioService.seek(position);
   }
 
+  @override
   void setPlaybackSpeed(double speed) {
     playbackSpeedNotifier.value = speed;
     if (Platform.isLinux){
@@ -104,6 +100,7 @@ class AudioProvider extends AbstractAudioProvider {
     // }
   }
 
+  @override
   void setVolume(double volume) {
     volumeNotifier.value = volume;
     if (Platform.isLinux){
@@ -115,6 +112,7 @@ class AudioProvider extends AbstractAudioProvider {
     // }
   }
 
+  @override
   void setBalance(double balance) {
     balanceNotifier.value = balance;
     if (Platform.isLinux){
@@ -126,6 +124,7 @@ class AudioProvider extends AbstractAudioProvider {
     // }
   }
 
+  @override
   void setRepeat(bool repeat) {
     repeatNotifier.value = repeat;
     if (Platform.isLinux){
@@ -137,6 +136,7 @@ class AudioProvider extends AbstractAudioProvider {
     // }
   }
 
+  @override
   void setShuffle(bool shuffle) {
     shuffleNotifier.value = shuffle;
     if (Platform.isLinux){
@@ -148,6 +148,7 @@ class AudioProvider extends AbstractAudioProvider {
     // }
   }
 
+  @override
   void setQueue(List<String> songs) {
     if (Platform.isLinux){
       super.audioService.setQueue(songs);
@@ -160,6 +161,7 @@ class AudioProvider extends AbstractAudioProvider {
     notifyListeners();
   }
 
+  @override
   Future<Duration> getDuration() async {
     if (Platform.isLinux){
       return await super.audioService.getDuration() ?? Duration.zero;
@@ -171,6 +173,7 @@ class AudioProvider extends AbstractAudioProvider {
     return Duration.zero;
   }
 
+  @override
   void addToQueue(String songPath) {
     if (Platform.isLinux){
       super.audioService.addToQueue(songPath);
@@ -183,6 +186,7 @@ class AudioProvider extends AbstractAudioProvider {
     notifyListeners();
   }
 
+  @override
   void addMultipleToQueue(List<String> songPaths) {
     if (Platform.isLinux){
       super.audioService.addMultipleToQueue(songPaths);
@@ -195,6 +199,7 @@ class AudioProvider extends AbstractAudioProvider {
     notifyListeners();
   }
 
+  @override
   void addNextToQueue(String songPath) {
     if (Platform.isLinux){
       super.audioService.addToQueueAtIndex(
@@ -210,6 +215,7 @@ class AudioProvider extends AbstractAudioProvider {
     notifyListeners();
   }
 
+  @override
   void addMultipleNextToQueue(List<String> songPaths) {
     if (Platform.isLinux){
       super.audioService.addMultipleToQueueAtIndex(
@@ -225,6 +231,7 @@ class AudioProvider extends AbstractAudioProvider {
     notifyListeners();
   }
 
+  @override
   void removeFromQueue(String songPath) {
     if (Platform.isLinux){
       super.audioService.removeFromQueue(songPath);
@@ -237,6 +244,7 @@ class AudioProvider extends AbstractAudioProvider {
     notifyListeners();
   }
 
+  @override
   Future<void> setCurrentIndex(String path) async {
     if (Platform.isLinux){
       await super.audioService.setCurrentIndex(path);
@@ -247,15 +255,4 @@ class AudioProvider extends AbstractAudioProvider {
     // }
     notifyListeners();
   }
-
-    // try{
-    //   File lastFile = File(_filePath);
-    //   if (lastFile.existsSync()) {
-    //     lastFile.deleteSync();
-    //   }
-    //   _filePath = path;
-    // }
-    // catch(e){
-    //   debugPrint(e.toString());
-    // }
 }

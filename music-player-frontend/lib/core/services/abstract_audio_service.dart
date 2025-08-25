@@ -29,6 +29,11 @@ class AppAudioService {
   }
 
   Future<void> skipToNext() async {
+    if (audioSettings.repeat) {
+      await seek(Duration.zero);
+      play();
+      return;
+    }
     await playNext();
   }
 
