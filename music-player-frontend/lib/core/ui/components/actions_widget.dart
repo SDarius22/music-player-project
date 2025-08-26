@@ -4,25 +4,18 @@ class ActionsWidget extends StatefulWidget {
   const ActionsWidget({super.key});
 
   @override
-  State<ActionsWidget> createState() => _ActionsWidgetState();
+  State<ActionsWidget> createState() => ActionsWidgetState();
 }
 
-class _ActionsWidgetState extends State<ActionsWidget> {
+class ActionsWidgetState extends State<ActionsWidget> {
   ValueNotifier<bool> expanded = ValueNotifier(false);
 
-  Widget _buildActions(bool expanded) {
+  Widget buildContent(BuildContext context) {
     throw UnimplementedError();
   }
 
   @override
   Widget build(BuildContext context) {
-
-    return ValueListenableBuilder(
-      valueListenable: expanded,
-      builder: (context, value, child) {
-        return _buildActions(value);
-      },
-    );
-
+    return buildContent(context);
   }
 }

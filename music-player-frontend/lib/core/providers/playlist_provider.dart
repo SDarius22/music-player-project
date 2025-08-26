@@ -19,7 +19,9 @@ class PlaylistProvider with ChangeNotifier {
 
     playlistsStream.listen((_) {
       debugPrint("Playlists stream updated");
-      playlistsFuture = Future(() => _playlistService.getPlaylists(_query, _sortField, _isAscending));
+      playlistsFuture = Future(
+        () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
+      );
       notifyListeners();
     });
   }
@@ -28,23 +30,38 @@ class PlaylistProvider with ChangeNotifier {
 
   void setFlag(bool value) {
     _isAscending = value;
-    playlistsFuture = Future(() => _playlistService.getPlaylists(_query, _sortField, _isAscending));
+    playlistsFuture = Future(
+      () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
+    );
     notifyListeners();
+  }
+
+  String getSortField() {
+    return _sortField;
   }
 
   void setSortField(String field) {
     _sortField = field;
-    playlistsFuture = Future(() => _playlistService.getPlaylists(_query, _sortField, _isAscending));
+    playlistsFuture = Future(
+      () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
+    );
     notifyListeners();
   }
 
   void setQuery(String newQuery) {
     _query = newQuery;
-    playlistsFuture = Future(() => _playlistService.getPlaylists(_query, _sortField, _isAscending));
+    playlistsFuture = Future(
+      () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
+    );
     notifyListeners();
   }
 
-  void addPlaylist(String name, List<Song> songs, String whereToAdd, Uint8List? coverArt) {
+  void addPlaylist(
+    String name,
+    List<Song> songs,
+    String whereToAdd,
+    Uint8List? coverArt,
+  ) {
     _playlistService.addPlaylist(name, songs, whereToAdd, coverArt);
     notifyListeners();
   }
@@ -69,7 +86,6 @@ class PlaylistProvider with ChangeNotifier {
   List<Playlist> getPlaylists() {
     return _playlistService.getPlaylists(_query, _sortField, _isAscending);
   }
-
 
   void addSongsToPlaylist(Playlist playlist, List<Song> songs) {
     _playlistService.addToPlaylist(playlist, songs);

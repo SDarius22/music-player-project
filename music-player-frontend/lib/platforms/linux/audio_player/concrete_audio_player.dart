@@ -1,6 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_audio_player.dart';
-import 'package:music_player_frontend/core/entities/abstract/player_state.dart' as player_state;
+import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
+import 'package:music_player_frontend/core/audio_player/player_state.dart' as player_state;
 
 class ConcreteAudioPlayer extends AbstractAudioPlayer {
   final AudioPlayer audioPlayer = AudioPlayer();

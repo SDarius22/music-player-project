@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 
-abstract class AbstractAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
+abstract class AbstractAppBarWidget extends StatelessWidget
+    implements PreferredSizeWidget {
   final List<Widget> actions;
 
-  const AbstractAppBarWidget({
-    super.key,
-    this.actions = const [],
-  });
+  const AbstractAppBarWidget({super.key, this.actions = const []});
 
-  Widget _buildAppBar();
+  Widget buildAppBar(BuildContext context);
 
   @override
   Widget build(BuildContext context) {
-    return _buildAppBar();
+    return buildAppBar(context);
   }
 
   @override

@@ -1,69 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
-import 'package:music_player_frontend/core/providers/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/animated_background.dart';
 import 'package:music_player_frontend/utils/miniplayer/miniplayer.dart';
 import 'package:provider/provider.dart';
 
-class SongPlayerWidget extends StatefulWidget{
+class SongPlayerWidget extends StatefulWidget {
   const SongPlayerWidget({super.key});
 
   @override
-  State<SongPlayerWidget> createState() => _SongPlayerWidgetState();
+  State<SongPlayerWidget> createState() => SongPlayerWidgetState();
 }
 
-
-class _SongPlayerWidgetState extends State<SongPlayerWidget> with TickerProviderStateMixin {
+class SongPlayerWidgetState extends State<SongPlayerWidget>
+    with TickerProviderStateMixin {
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   final MiniPlayerController _miniPlayerController = MiniPlayerController();
   final ScrollController _itemScrollController = ScrollController();
-  final AnimatedMeshGradientController _gradientController = AnimatedMeshGradientController();
+  final AnimatedMeshGradientController _gradientController =
+      AnimatedMeshGradientController();
 
-  double _getMinHeight() {
+  double getMinHeight(BuildContext context) {
     throw UnimplementedError();
   }
 
-  double _getMaxHeight() {
+  double getMaxHeight(BuildContext context) {
     throw UnimplementedError();
   }
 
-  double _getMinWidth() {
+  double getMinWidth(BuildContext context) {
     throw UnimplementedError();
   }
 
-  double _getMaxWidth() {
-    throw UnimplementedError();
-  }
-  
-  double _getItemExtent() {
+  double getMaxWidth(BuildContext context) {
     throw UnimplementedError();
   }
 
-  Widget _buildMinimizedPlayerContent(double percentage) {
+  double getItemExtent(BuildContext context) {
     throw UnimplementedError();
   }
 
-  Widget _buildMaximizedPlayerContent(double percentage) {
+  Widget buildMinimizedPlayerContent(BuildContext context, double percentage) {
     throw UnimplementedError();
   }
 
-  Widget _buildPlayPauseButton({bool expanded = false}) {
+  Widget buildMaximizedPlayerContent(BuildContext context, double percentage) {
     throw UnimplementedError();
   }
 
-  Widget _buildNextButton({bool expanded = false}) {
+  Widget buildPlayPauseButton(BuildContext context, {bool expanded = false}) {
     throw UnimplementedError();
   }
 
-  Widget _buildPreviousButton({bool expanded = false}) {
+  Widget buildNextButton(BuildContext context, {bool expanded = false}) {
     throw UnimplementedError();
   }
 
-  Widget _buildShuffleButton({bool expanded = false}) {
+  Widget buildPreviousButton(BuildContext context, {bool expanded = false}) {
     throw UnimplementedError();
   }
 
-  Widget _buildRepeatButton({bool expanded = false}) {
+  Widget buildShuffleButton(BuildContext context, {bool expanded = false}) {
+    throw UnimplementedError();
+  }
+
+  Widget buildRepeatButton(BuildContext context, {bool expanded = false}) {
     throw UnimplementedError();
   }
 
@@ -71,18 +72,22 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget> with TickerProvider
   Widget build(BuildContext context) {
     return Consumer<AbstractAudioProvider>(
       builder: (_, audioProvider, __) {
-        debugPrint("Building SongPlayerWidget, current song: ${audioProvider.currentSong?.name}");
-        if (audioProvider.currentQueue.isEmpty || audioProvider.currentSong == null) {
+        debugPrint(
+          "Building SongPlayerWidget, current song: ${audioProvider.audioService.currentSong?.name}",
+        );
+        if (audioProvider.audioService.audioSettings.currentQueue.isEmpty ||
+            audioProvider.audioService.currentSong == null) {
           debugPrint("Queue is empty, not showing player");
           return const SizedBox.shrink();
         }
-        final ValueNotifier<double> playerExpandProgress = ValueNotifier<double>(_getMaxHeight());
+        final ValueNotifier<double> playerExpandProgress =
+            ValueNotifier<double>(getMaxHeight(context));
         return MiniPlayer(
           valueNotifier: playerExpandProgress,
-          minHeight: _getMinHeight(),
-          maxHeight: _getMaxHeight(),
-          minWidth: _getMinWidth(),
-          maxWidth: _getMaxWidth(),
+          minHeight: getMinHeight(context),
+          maxHeight: getMaxHeight(context),
+          minWidth: getMinWidth(context),
+          maxWidth: getMaxWidth(context),
           controller: _miniPlayerController,
           elevation: 4,
           curve: Curves.easeOut,
@@ -96,12 +101,19 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget> with TickerProvider
             }
 
             if (_itemScrollController.hasClients) {
-              int currentSongIndex = audioProvider.currentIndexInNormal;
+              int currentSongIndex =
+                  audioProvider
+                      .audioService
+                      .audioSettings
+                      .currentIndexInNonShuffled;
               Future.delayed(const Duration(milliseconds: 500), () {
                 try {
-                  _itemScrollController.animateTo(_getItemExtent() * currentSongIndex, duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
-                }
-                catch (e) {
+                  _itemScrollController.animateTo(
+                    getItemExtent(context) * currentSongIndex,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                  );
+                } catch (e) {
                   debugPrint("Error animating to current song index: $e");
                 }
               });
@@ -114,45 +126,25 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget> with TickerProvider
     );
   }
 
-  Widget _buildMinimizedPlayer(double percentage){
-
+  Widget _buildMinimizedPlayer(double percentage) {
     return AnimatedBackground(
       key: const Key("minimizedPlayer"),
-      height: _getMinHeight(),
-      width: _getMinWidth(),
+      height: getMinHeight(context),
+      width: getMinWidth(context),
       alignment: Alignment.centerLeft,
       controller: _gradientController,
-      child: _buildMinimizedPlayerContent(percentage),
+      child: buildMinimizedPlayerContent(context, percentage),
     );
   }
 
-  Widget _buildMaximizedPlayer(double percentage){
-
+  Widget _buildMaximizedPlayer(double percentage) {
     return AnimatedBackground(
       key: const Key("maximizedPlayer"),
-      height: _getMaxHeight(),
-      width: _getMaxWidth(),
+      height: getMaxHeight(context),
+      width: getMaxWidth(context),
       alignment: Alignment.center,
       controller: _gradientController,
-      child: _buildMaximizedPlayerContent(percentage),
+      child: buildMaximizedPlayerContent(context, percentage),
     );
-  }
-
-  Widget _buildPlayerButtons({bool expanded = false}){
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-
-        _buildShuffleButton(expanded: expanded),
-        _buildPreviousButton(expanded: expanded),
-        _buildPlayPauseButton(expanded: expanded),
-        _buildNextButton(expanded: expanded),
-        _buildRepeatButton(expanded: expanded),
-
-      ],
-    );
-
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/providers/abstract_audio_provider.dart';
-import 'package:music_player_frontend/core/services/file_service.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/utils/lyric_reader/lyrics_model_builder.dart';
 import 'package:music_player_frontend/utils/lyric_reader/lyrics_reader_model.dart';
 
@@ -34,7 +34,7 @@ class LyricsProvider with ChangeNotifier {
   }
 
   Future<String?> _getLyricsForCurrentSong() async {
-    return await FileService.getLyrics(_audioProvider.currentSong?.path);
+    return await FileService.getLyrics(_audioProvider.audioService.currentSong?.path);
   }
 
 }

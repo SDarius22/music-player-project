@@ -1,12 +1,15 @@
 import 'dart:typed_data';
 
-import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_persistent_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
-class Album extends AbstractEntity with AbstractCollection {
+class Album extends PersistentEntity<Album>
+    with AbstractCollection
+    implements NamedEntity {
   @Id()
   int id = 0;
 
@@ -26,4 +29,13 @@ class Album extends AbstractEntity with AbstractCollection {
 
   @Property(type: PropertyType.byteVector)
   Uint8List? coverArt;
+
+  void save() {
+    super.persist(this);
+  }
+
+  @override
+  String toString() {
+    return name;
+  }
 }

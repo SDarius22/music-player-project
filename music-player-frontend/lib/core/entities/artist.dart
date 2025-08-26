@@ -1,10 +1,13 @@
-import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_persistent_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
-class Artist extends AbstractEntity with AbstractCollection {
+class Artist extends PersistentEntity<Artist>
+    with AbstractCollection
+    implements NamedEntity {
   @Id()
   int id = 0;
 
@@ -22,4 +25,13 @@ class Artist extends AbstractEntity with AbstractCollection {
 
   @override
   ToMany<Song> get songs => _songs;
+
+  void save() {
+    super.persist(this);
+  }
+
+  @override
+  String toString() {
+    return name;
+  }
 }

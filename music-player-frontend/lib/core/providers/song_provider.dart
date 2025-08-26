@@ -10,18 +10,19 @@ class SongProvider with ChangeNotifier {
   String _query = '';
   String _sortField = 'Name'; // Name or Duration
 
-  bool _finishedLoading  = true;
+  bool _finishedLoading = true;
 
   late Future songsFuture;
 
   SongProvider(this._songService) {
     songsFuture = Future(() => _songService.getAllSongs());
 
-
     songsStream.throttleTime(const Duration(seconds: 10)).listen((_) {
       if (!_finishedLoading) {
         debugPrint("Songs stream updated");
-        songsFuture = Future(() => _songService.getSongs(_query, _sortField, _isAscending));
+        songsFuture = Future(
+          () => _songService.getSongs(_query, _sortField, _isAscending),
+        );
         notifyListeners();
       }
     });
@@ -31,19 +32,29 @@ class SongProvider with ChangeNotifier {
 
   void setFlag(bool value) {
     _isAscending = value;
-    songsFuture = Future(() => _songService.getSongs(_query, _sortField, _isAscending));
+    songsFuture = Future(
+      () => _songService.getSongs(_query, _sortField, _isAscending),
+    );
     notifyListeners();
+  }
+
+  String getSortField() {
+    return _sortField;
   }
 
   void setSortField(String field) {
     _sortField = field;
-    songsFuture = Future(() => _songService.getSongs(_query, _sortField, _isAscending));
+    songsFuture = Future(
+      () => _songService.getSongs(_query, _sortField, _isAscending),
+    );
     notifyListeners();
   }
 
   void setQuery(String newQuery) {
     _query = newQuery;
-    songsFuture = Future(() => _songService.getSongs(_query, _sortField, _isAscending));
+    songsFuture = Future(
+      () => _songService.getSongs(_query, _sortField, _isAscending),
+    );
     notifyListeners();
   }
 

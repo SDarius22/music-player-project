@@ -1,47 +1,36 @@
-import 'package:music_player_frontend/core/database/objectBox.dart';
-import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/repository/album_repo.dart';
 
 class AlbumService {
-  Box<Album> get _albumBox => ObjectBox.store.box<Album>();
+  final AlbumRepository _albumRepository;
 
-  Stream watchAlbums() => _albumBox.query().watch(triggerImmediately: true);
+  AlbumService(this._albumRepository);
+
+  Stream watchAlbums() => _albumRepository.watchAlbums();
 
   Album addAlbum(String name) {
     Album album = Album();
     album.name = name;
-    album.id = _albumBox.put(album);
-    return album;
+    return _albumRepository.saveAlbum(album);
   }
 
   Album? getAlbum(int albumId) {
-    return _albumBox.get(albumId);
+    return _albumRepository.getAlbum(albumId);
   }
 
   List<Album> getAlbums(String query, String sortField, bool flag) {
-    Query<Album> builderQuery;
-    if (flag == false) {
-      builderQuery = _albumBox
-          .query(Album_.name.contains(query, caseSensitive: false))
-          .order(Album_.name).build();
-    } else {
-      builderQuery = _albumBox
-          .query(Album_.name.contains(query, caseSensitive: false))
-          .order(Album_.name, flags: Order.descending)
-          .build();
-    }
-    return builderQuery.find();
+    return _albumRepository.getAlbums(query, sortField, flag);
   }
 
   List<Album> getAllAlbums() {
-    return _albumBox.getAll();
+    return _albumRepository.getAllAlbums();
   }
 
   void deleteAlbum(Album album) {
-    _albumBox.remove(album.id);
+    _albumRepository.deleteAlbum(album);
   }
 
   void updateAlbum(Album album) {
-    _albumBox.put(album);
+    _albumRepository.saveAlbum(album);
   }
 }

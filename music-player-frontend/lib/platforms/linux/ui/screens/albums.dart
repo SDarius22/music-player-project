@@ -1,18 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:musicplayer/components/custom_tiling/grid_component.dart';
-import 'package:musicplayer/entities/album.dart';
-import 'package:musicplayer/providers/albums_provider.dart';
-import 'package:musicplayer/providers/app_state_provider.dart';
-import 'package:musicplayer/providers/audio_provider.dart';
-import 'package:musicplayer/screens/add_or_export_screen.dart';
-import 'package:musicplayer/screens/album_screen.dart';
-import 'package:musicplayer/utils/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/providers/albums_provider.dart';
+import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
+import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
-
-class Albums extends StatefulWidget{
+class Albums extends StatefulWidget {
   static Route<dynamic> route() {
     return PageRouteBuilder(
       settings: const RouteSettings(name: '/albums'),
@@ -21,14 +19,14 @@ class Albums extends StatefulWidget{
       },
     );
   }
+
   const Albums({super.key});
 
   @override
   State<Albums> createState() => _AlbumsState();
 }
 
-
-class _AlbumsState extends State<Albums>{
+class _AlbumsState extends State<Albums> {
   ValueNotifier<List<Album>> selected = ValueNotifier<List<Album>>([]);
   FocusNode searchNode = FocusNode();
   Timer? _debounce;
@@ -50,10 +48,10 @@ class _AlbumsState extends State<Albums>{
     return Scaffold(
       body: Container(
         padding: EdgeInsets.only(
-            top: height * 0.02,
-            left: width * 0.01,
-            right: width * 0.01,
-            bottom: height * 0.02
+          top: height * 0.02,
+          left: width * 0.01,
+          right: width * 0.01,
+          bottom: height * 0.02,
         ),
         child: Consumer<AlbumProvider>(
           builder: (_, albumProvider, __) {
@@ -75,10 +73,14 @@ class _AlbumsState extends State<Albums>{
                           controller: _controller,
                           focusNode: searchNode,
                           onChanged: (value) {
-                            if (_debounce?.isActive ?? false) _debounce?.cancel();
-                            _debounce = Timer(const Duration(milliseconds: 500), () {
-                              albumProvider.setQuery(value);
-                            });
+                            if (_debounce?.isActive ?? false)
+                              _debounce?.cancel();
+                            _debounce = Timer(
+                              const Duration(milliseconds: 500),
+                              () {
+                                albumProvider.setQuery(value);
+                              },
+                            );
                           },
                           cursorColor: Colors.white,
                           style: TextStyle(
@@ -88,9 +90,7 @@ class _AlbumsState extends State<Albums>{
                           decoration: InputDecoration(
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(width * 0.02),
-                              borderSide: const BorderSide(
-                                color: Colors.white,
-                              ),
+                              borderSide: const BorderSide(color: Colors.white),
                             ),
                             contentPadding: EdgeInsets.only(
                               left: width * 0.01,
@@ -102,22 +102,29 @@ class _AlbumsState extends State<Albums>{
                               fontSize: smallSize,
                             ),
                             labelText: 'Search',
-                            suffixIcon: _controller.text.isNotEmpty
-                                ? IconButton(
-                              icon: Icon(Icons.clear, color: Colors.white, size: height * 0.03),
-                              onPressed: () {
-                                _controller.clear();
-                                albumProvider.setQuery("");
-                                searchNode.unfocus();
-                              },
-                            )
-                                : Icon(FluentIcons.search, color: Colors.white, size: height * 0.03),
+                            suffixIcon:
+                                _controller.text.isNotEmpty
+                                    ? IconButton(
+                                      icon: Icon(
+                                        Icons.clear,
+                                        color: Colors.white,
+                                        size: height * 0.03,
+                                      ),
+                                      onPressed: () {
+                                        _controller.clear();
+                                        albumProvider.setQuery("");
+                                        searchNode.unfocus();
+                                      },
+                                    )
+                                    : Icon(
+                                      FluentIcons.search,
+                                      color: Colors.white,
+                                      size: height * 0.03,
+                                    ),
                           ),
                         ),
                       ),
-                      SizedBox(
-                        width: width * 0.01,
-                      ),
+                      SizedBox(width: width * 0.01),
                       Container(
                         padding: EdgeInsets.only(
                           left: width * 0.01,
@@ -135,15 +142,27 @@ class _AlbumsState extends State<Albums>{
                                 albumProvider.setSortField(value);
                               },
                               tooltip: "Sort by",
-                              itemBuilder: (context) => [
-                                PopupMenuItem(value: "Name", child: Text("Name")),
-                                PopupMenuItem(value: "Duration", child: Text("Duration")),
-                                PopupMenuItem(value: "Number of Songs", child: Text("Number of Songs")),
-                              ],
+                              itemBuilder:
+                                  (context) => [
+                                    PopupMenuItem(
+                                      value: "Name",
+                                      child: Text("Name"),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Duration",
+                                      child: Text("Duration"),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Number of Songs",
+                                      child: Text("Number of Songs"),
+                                    ),
+                                  ],
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                ),
                                 child: Text(
-                                  albumProvider.sortField,
+                                  albumProvider.getSortField(),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: smallSize,
@@ -151,192 +170,245 @@ class _AlbumsState extends State<Albums>{
                                 ),
                               ),
                             ),
-                            Container(
-                              width: 1, // Divider thickness
-                              height: double.maxFinite, // Divider height
-                              margin: EdgeInsets.only(
-                                right: width * 0.01,
-                                left: width * 0.01,
-                              ),
-                              color: Colors.grey,
-                            ),
-                            IconButton(
-                              icon: Icon(albumProvider.isAscending ? FluentIcons.sortAscending : FluentIcons.sortDescending),
-                              onPressed: () {
-                                albumProvider.setFlag(!albumProvider.isAscending);
-                                debugPrint("Sort order set to ${albumProvider.isAscending}");
-                              },
-                            ),
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
                 Expanded(
                   child: FutureBuilder(
-                      future: albumProvider.albumsFuture,
-                      builder: (context, snapshot){
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          debugPrint(snapshot.error.toString());
-                          debugPrintStack();
-                          return Center(
-                            child: Text(
-                              "Error loading albums",
-                              style: TextStyle(color: Colors.white, fontSize: smallSize),
+                    future: albumProvider.albumsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        debugPrint(snapshot.error.toString());
+                        debugPrintStack();
+                        return Center(
+                          child: Text(
+                            "Error loading albums",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: smallSize,
                             ),
-                          );
-                        }
-                        debugPrint("Albums loaded: ${snapshot.data?.length ?? 0}");
-                        return CustomScrollView(
-                          slivers: [
-                            SliverPadding(
-                              padding: EdgeInsets.only(
-                                left: width * 0.01,
-                                right: width * 0.01,
-                              ),
-                              sliver: ValueListenableBuilder(
-                                valueListenable: selected,
-                                builder: (context, value, child) {
-                                  return GridComponent(
-                                    items: snapshot.data ?? [],
-                                    isSelected: (entity) {
-                                      return selected.value.contains(entity);
-                                    },
-                                    onTap: (entity) async {
-                                      if (entity is Album) {
-                                        if (selected.value.isNotEmpty) {
-                                          if (selected.value.contains(entity)) {
-                                            selected.value = List<Album>.from(selected.value)..remove(entity);
-                                          } else {
-                                            selected.value = List<Album>.from(selected.value)..add(entity);
-                                          }
-                                          return;
-                                        }
-                                        var appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
-                                        appStateProvider.navigatorKey.currentState!.push(AlbumScreen.route(album: entity));
-                                      } else {
-                                        debugPrint("Entity is not an Album");
-                                      }
-                                    },
-                                    onLongPress: (entity) {
-                                      debugPrint("long pressed ${entity.name}");
-                                      if (entity is Album) {
-                                        if (selected.value.contains(entity)) {
-                                          selected.value = List<Album>.from(selected.value)..remove(entity);
-                                        } else {
-                                          selected.value = List<Album>.from(selected.value)..add(entity);
-                                        }
-                                      }
-                                    },
-                                    buildLeftAction: (entity) {
-                                      if (selected.value.contains(entity)) {
-                                        return SizedBox.shrink();
-                                      }
-                                      return IconButton(
-                                        icon: Icon(FluentIcons.play, color: Colors.white, size: height * 0.025),
-                                        onPressed: () async {
-                                          debugPrint("Playing album ${entity.name}");
-                                          if (entity is! Album) {
-                                            debugPrint("Entity is not an Album");
-                                            return;
-                                          }
-                                          Album album = entity;
-                                          album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
-                                          List<String> songPaths = album.songs.map((e) => e.path).toList();
-                                          var audioProvider = Provider.of<AudioProvider>(context, listen: false);
-                                          audioProvider.setQueue(songPaths);
-                                          await audioProvider.setCurrentIndex(album.songs.first.path);
-                                        },
-                                      );
-                                    },
-                                    buildMainAction: (entity) {
-                                      if (selected.value.contains(entity)) {
-                                        return Icon(
-                                          FluentIcons.checkCircleOn,
-                                          color: Colors.white,
-                                        );
-                                      }
-                                      if (selected.value.isNotEmpty) {
-                                        return Icon(
-                                          FluentIcons.checkCircleOff,
-                                          color: Colors.white,
-                                        );
-                                      }
-                                      return Icon(
-                                        FluentIcons.open,
-                                        color: Colors.white,
-                                        size: height * 0.03,
-                                      );
-                                    },
-                                    buildRightAction: (entity) {
-                                      if (selected.value.contains(entity)) {
-                                        return SizedBox.shrink();
-                                      }
-                                      return PopupMenuButton<String>(
-                                        icon: Icon(
-                                          FluentIcons.moreVertical,
-                                          color: Colors.white,
-                                          size: height * 0.03,
-                                        ),
-                                        onSelected: (String value) async {
-                                          switch(value){
-                                            case 'add':
-                                              Album album = entity as Album;
-                                              album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
-                                              var appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
-                                              appStateProvider.navigatorKey.currentState!.push(
-                                                  AddOrExportScreen.route(songs: album.songs)
-                                              );
-                                              break;
-                                            case 'playNext':
-                                              Album album = entity as Album;
-                                              album.songs.sort((a, b) => b.trackNumber.compareTo(a.trackNumber));
-                                              var audioProvider = Provider.of<AudioProvider>(context, listen: false);
-                                              audioProvider.addMultipleNextToQueue(
-                                                album.songs.map((e) => e.path).toList(),
-                                              );
-                                              break;
-                                            case 'select':
-                                              Album album = entity as Album;
-                                              if (selected.value.contains(album)) {
-                                                selected.value = List<Album>.from(selected.value)..remove(album);
-                                              } else {
-                                                selected.value = List<Album>.from(selected.value)..add(album);
-                                              }
-                                              break;
-                                          }
-                                        },
-                                        itemBuilder: (context){
-                                          return [
-                                            const PopupMenuItem<String>(
-                                              value: 'add',
-                                              child: Text("Add to Playlist"),
-                                            ),
-                                            const PopupMenuItem<String>(
-                                              value: 'playNext',
-                                              child: Text("Play Next"),
-                                            ),
-                                            const PopupMenuItem<String>(
-                                              value: 'select',
-                                              child: Text("Select"),
-                                            ),
-                                          ];
-                                        },
-                                      );
-                                    }
-                                  );
-                                }
-                              ),
-                            ),
-                          ],
+                          ),
                         );
                       }
+                      debugPrint(
+                        "Albums loaded: ${snapshot.data?.length ?? 0}",
+                      );
+                      return CustomScrollView(
+                        slivers: [
+                          SliverPadding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.01,
+                              right: width * 0.01,
+                            ),
+                            sliver: ValueListenableBuilder(
+                              valueListenable: selected,
+                              builder: (context, value, child) {
+                                return GridComponent(
+                                  items: snapshot.data ?? [],
+                                  isSelected: (entity) {
+                                    return selected.value.contains(entity);
+                                  },
+                                  onTap: (entity) async {
+                                    if (entity is Album) {
+                                      if (selected.value.isNotEmpty) {
+                                        if (selected.value.contains(entity)) {
+                                          selected.value = List<Album>.from(
+                                            selected.value,
+                                          )..remove(entity);
+                                        } else {
+                                          selected.value = List<Album>.from(
+                                            selected.value,
+                                          )..add(entity);
+                                        }
+                                        return;
+                                      }
+                                      var appStateProvider =
+                                          Provider.of<AppStateProvider>(
+                                            context,
+                                            listen: false,
+                                          );
+                                      appStateProvider
+                                          .navigatorKey
+                                          .currentState!
+                                          .push(
+                                            AlbumScreen.route(album: entity),
+                                          );
+                                    } else {
+                                      debugPrint("Entity is not an Album");
+                                    }
+                                  },
+                                  onLongPress: (entity) {
+                                    debugPrint("long pressed ${entity.name}");
+                                    if (entity is Album) {
+                                      if (selected.value.contains(entity)) {
+                                        selected.value = List<Album>.from(
+                                          selected.value,
+                                        )..remove(entity);
+                                      } else {
+                                        selected.value = List<Album>.from(
+                                          selected.value,
+                                        )..add(entity);
+                                      }
+                                    }
+                                  },
+                                  buildLeftAction: (entity) {
+                                    if (selected.value.contains(entity)) {
+                                      return SizedBox.shrink();
+                                    }
+                                    return IconButton(
+                                      icon: Icon(
+                                        FluentIcons.play,
+                                        color: Colors.white,
+                                        size: height * 0.025,
+                                      ),
+                                      onPressed: () async {
+                                        debugPrint(
+                                          "Playing album ${entity.name}",
+                                        );
+                                        if (entity is! Album) {
+                                          debugPrint("Entity is not an Album");
+                                          return;
+                                        }
+                                        Album album = entity;
+                                        album.songs.sort(
+                                          (a, b) => a.trackNumber.compareTo(
+                                            b.trackNumber,
+                                          ),
+                                        );
+                                        List<String> songPaths =
+                                            album.songs
+                                                .map((e) => e.path)
+                                                .toList();
+                                        var audioProvider =
+                                            Provider.of<AudioProvider>(
+                                              context,
+                                              listen: false,
+                                            );
+                                        audioProvider.setQueue(songPaths);
+                                        await audioProvider.setCurrentSong(
+                                          album.songs.first.path,
+                                        );
+                                      },
+                                    );
+                                  },
+                                  buildMainAction: (entity) {
+                                    if (selected.value.contains(entity)) {
+                                      return Icon(
+                                        FluentIcons.checkCircleOn,
+                                        color: Colors.white,
+                                      );
+                                    }
+                                    if (selected.value.isNotEmpty) {
+                                      return Icon(
+                                        FluentIcons.checkCircleOff,
+                                        color: Colors.white,
+                                      );
+                                    }
+                                    return Icon(
+                                      FluentIcons.open,
+                                      color: Colors.white,
+                                      size: height * 0.03,
+                                    );
+                                  },
+                                  buildRightAction: (entity) {
+                                    if (selected.value.contains(entity)) {
+                                      return SizedBox.shrink();
+                                    }
+                                    return PopupMenuButton<String>(
+                                      icon: Icon(
+                                        FluentIcons.moreVertical,
+                                        color: Colors.white,
+                                        size: height * 0.03,
+                                      ),
+                                      onSelected: (String value) async {
+                                        switch (value) {
+                                          case 'add':
+                                            Album album = entity as Album;
+                                            album.songs.sort(
+                                              (a, b) => a.trackNumber.compareTo(
+                                                b.trackNumber,
+                                              ),
+                                            );
+                                            var appStateProvider =
+                                                Provider.of<AppStateProvider>(
+                                                  context,
+                                                  listen: false,
+                                                );
+                                            appStateProvider
+                                                .navigatorKey
+                                                .currentState!
+                                                .push(
+                                                  AddOrExportScreen.route(
+                                                    songs: album.songs,
+                                                  ),
+                                                );
+                                            break;
+                                          case 'playNext':
+                                            Album album = entity as Album;
+                                            album.songs.sort(
+                                              (a, b) => b.trackNumber.compareTo(
+                                                a.trackNumber,
+                                              ),
+                                            );
+                                            var audioProvider =
+                                                Provider.of<AudioProvider>(
+                                                  context,
+                                                  listen: false,
+                                                );
+                                            audioProvider
+                                                .addMultipleNextToQueue(
+                                                  album.songs
+                                                      .map((e) => e.path)
+                                                      .toList(),
+                                                );
+                                            break;
+                                          case 'select':
+                                            Album album = entity as Album;
+                                            if (selected.value.contains(
+                                              album,
+                                            )) {
+                                              selected.value = List<Album>.from(
+                                                selected.value,
+                                              )..remove(album);
+                                            } else {
+                                              selected.value = List<Album>.from(
+                                                selected.value,
+                                              )..add(album);
+                                            }
+                                            break;
+                                        }
+                                      },
+                                      itemBuilder: (context) {
+                                        return [
+                                          const PopupMenuItem<String>(
+                                            value: 'add',
+                                            child: Text("Add to Playlist"),
+                                          ),
+                                          const PopupMenuItem<String>(
+                                            value: 'playNext',
+                                            child: Text("Play Next"),
+                                          ),
+                                          const PopupMenuItem<String>(
+                                            value: 'select',
+                                            child: Text("Select"),
+                                          ),
+                                        ];
+                                      },
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -344,7 +416,8 @@ class _AlbumsState extends State<Albums>{
           },
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.miniCenterFloat,
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.miniCenterFloat,
       floatingActionButton: ValueListenableBuilder(
         valueListenable: selected,
         builder: (context, value, child) {
@@ -369,7 +442,11 @@ class _AlbumsState extends State<Albums>{
                 children: [
                   Expanded(
                     child: TextButton.icon(
-                      icon: Icon(FluentIcons.add, color: Colors.white, size: MediaQuery.of(context).size.height * 0.02,),
+                      icon: Icon(
+                        FluentIcons.add,
+                        color: Colors.white,
+                        size: MediaQuery.of(context).size.height * 0.02,
+                      ),
                       label: Text(
                         "Add",
                         style: TextStyle(
@@ -383,25 +460,32 @@ class _AlbumsState extends State<Albums>{
                         if (selected.value.isEmpty) {
                           return;
                         }
-                        var appState = Provider.of<AppStateProvider>(context, listen: false);
-                        var songs = selected.value.expand((album) {
-                          album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
-                          return album.songs;
-                        }).toList();
-                        appState.navigatorKey.currentState?.push(
-                          AddOrExportScreen.route(songs: songs),
-                        ).then((value) {
-                          selected.value = [];
-                        });
+                        var appState = Provider.of<AppStateProvider>(
+                          context,
+                          listen: false,
+                        );
+                        var songs =
+                            selected.value.expand((album) {
+                              album.songs.sort(
+                                (a, b) =>
+                                    a.trackNumber.compareTo(b.trackNumber),
+                              );
+                              return album.songs;
+                            }).toList();
+                        appState.navigatorKey.currentState
+                            ?.push(AddOrExportScreen.route(songs: songs))
+                            .then((value) {
+                              selected.value = [];
+                            });
                       },
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.blue,
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              bottomLeft: Radius.circular(30),
-                            )
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            bottomLeft: Radius.circular(30),
+                          ),
                         ),
                       ),
                     ),
@@ -428,10 +512,10 @@ class _AlbumsState extends State<Albums>{
                       backgroundColor: Colors.red,
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(30),
-                            bottomRight: Radius.circular(30),
-                          )
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
                       ),
                     ),
                   ),
@@ -442,7 +526,5 @@ class _AlbumsState extends State<Albums>{
         },
       ),
     );
-
   }
-
 }

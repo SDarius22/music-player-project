@@ -1,5 +1,5 @@
 import 'package:audio_service/audio_service.dart';
-import 'package:music_player_frontend/core/services/abstract_audio_service.dart';
+import 'package:music_player_frontend/core/services/abstract/abstract_audio_service.dart';
 
 class SystemAudioHandler extends BaseAudioHandler {
   final AppAudioService audioService;

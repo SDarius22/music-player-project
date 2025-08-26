@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/services/file_service.dart';
+import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
 enum ImageWidgetType {
   asset,

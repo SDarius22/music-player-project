@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_entity.dart';
-
+import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
 
 abstract class AbstractCustomListTile extends StatelessWidget {
-  final AbstractEntity entity;
+  final NamedEntity entity;
   final Widget? leadingAction;
   final Widget? trailingAction;
   final GestureTapCallback onTap;
@@ -20,11 +19,10 @@ abstract class AbstractCustomListTile extends StatelessWidget {
     this.trailingAction = const SizedBox.shrink(),
   });
 
-
-  Widget _buildListTileContent(BuildContext context);
+  Widget buildListTileContent(BuildContext context);
 
   @override
   Widget build(BuildContext context) {
-    return _buildListTileContent(context);
+    return buildListTileContent(context);
   }
 }

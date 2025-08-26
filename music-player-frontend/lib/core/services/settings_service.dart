@@ -1,44 +1,42 @@
-import 'package:music_player_frontend/core/database/objectBox.dart';
-import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
+import 'package:music_player_frontend/core/repository/settings_repo.dart';
 
 class SettingsService {
-  Box<AppSettings> get _appSettingsBox => ObjectBox.store.box<AppSettings>();
-  Box<AudioSettings> get _audioSettingsBox => ObjectBox.store.box<AudioSettings>();
+  final SettingsRepository _settingsRepository;
 
-  SettingsService() {
-    if (_appSettingsBox.count() == 0) {
-      _appSettingsBox.put(AppSettings());
+  SettingsService(this._settingsRepository) {
+    if (_settingsRepository.getAppSettings() == null) {
+      _settingsRepository.saveAppSettings(AppSettings());
     }
-    if (_audioSettingsBox.count() == 0) {
-      _audioSettingsBox.put(AudioSettings());
+    if (_settingsRepository.getAudioSettings() == null) {
+      _settingsRepository.saveAudioSettings(AudioSettings());
     }
   }
 
   AudioSettings getAudioSettings() {
-    return _audioSettingsBox.getAll().first;
+    return _settingsRepository.getAudioSettings() ?? AudioSettings();
   }
 
   void updateAudioSettings(AudioSettings settings) {
-    _audioSettingsBox.put(settings);
+    _settingsRepository.saveAudioSettings(settings);
   }
 
   void resetAudioSettings() {
-    _audioSettingsBox.removeAll();
-    _audioSettingsBox.put(AudioSettings());
+    _settingsRepository.deleteAllAudioSettings();
+    _settingsRepository.saveAudioSettings(AudioSettings());
   }
 
   AppSettings getAppSettings() {
-    return _appSettingsBox.getAll().first;
+    return _settingsRepository.getAppSettings() ?? AppSettings();
   }
 
   void updateAppSettings(AppSettings settings) {
-     _appSettingsBox.put(settings);
+    _settingsRepository.saveAppSettings(settings);
   }
 
   void resetAppSettings() async {
-    _appSettingsBox.removeAll();
-    _appSettingsBox.put(AppSettings());
+    _settingsRepository.deleteAllAppSettings();
+    _settingsRepository.saveAppSettings(AppSettings());
   }
 }

@@ -1,54 +1,36 @@
-import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/database/objectBox.dart';
-import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
+import 'package:music_player_frontend/core/repository/artist_repo.dart';
 
 class ArtistService {
-  Box<Artist> get _artistBox => ObjectBox.store.box<Artist>();
+  final ArtistRepository _artistRepository;
 
-  Stream watchArtists() => _artistBox.query().watch(triggerImmediately: true);
+  ArtistService(this._artistRepository);
+
+  Stream watchArtists() => _artistRepository.watchArtists();
 
   Artist addArtist(String name) {
     Artist artist = Artist();
     artist.name = name;
-    artist.id = _artistBox.put(artist);
-    return artist;
+    return _artistRepository.saveArtist(artist);
   }
 
   Artist? getArtist(int artistId) {
-    return _artistBox.get(artistId);
+    return _artistRepository.getArtist(artistId);
   }
 
   List<Artist> getArtists(String query, String sortField, bool flag) {
-    Query<Artist> builderQuery;
-    try {
-      if (flag == false) {
-        builderQuery = _artistBox
-            .query(Artist_.name.contains(query, caseSensitive: false))
-            .order(Artist_.name)
-            .build();
-      } else {
-        builderQuery = _artistBox
-            .query(Artist_.name.contains(query, caseSensitive: false))
-            .order(Artist_.name, flags: Order.descending)
-            .build();
-      }
-      return builderQuery.find();
-    } catch (e) {
-      debugPrint("Error fetching artists: $e");
-      return [];
-    }
+    return _artistRepository.getArtists(query, sortField, flag);
   }
 
   List<Artist> getAllArtists() {
-    return _artistBox.getAll();
+    return _artistRepository.getAllArtists();
   }
 
   void updateArtist(Artist artist) {
-    _artistBox.put(artist);
+    _artistRepository.saveArtist(artist);
   }
 
   void deleteArtist(Artist artist) {
-    _artistBox.remove(artist.id);
+    _artistRepository.deleteArtist(artist);
   }
 }

@@ -17,7 +17,9 @@ class ArtistProvider with ChangeNotifier {
 
     artistsStream.debounceTime(const Duration(seconds: 10)).listen((_) {
       debugPrint("Artists stream updated");
-      artistsFuture = Future(() => _artistService.getArtists(_query, _sortField, _isAscending));
+      artistsFuture = Future(
+        () => _artistService.getArtists(_query, _sortField, _isAscending),
+      );
       notifyListeners();
     });
   }
@@ -26,22 +28,31 @@ class ArtistProvider with ChangeNotifier {
 
   void setFlag(bool value) {
     _isAscending = value;
-    artistsFuture = Future(() => _artistService.getArtists(_query, _sortField, _isAscending));
+    artistsFuture = Future(
+      () => _artistService.getArtists(_query, _sortField, _isAscending),
+    );
     notifyListeners();
+  }
+
+  String getSortField() {
+    return _sortField;
   }
 
   void setSortField(String field) {
     _sortField = field;
-    artistsFuture = Future(() => _artistService.getArtists(_query, _sortField, _isAscending));
+    artistsFuture = Future(
+      () => _artistService.getArtists(_query, _sortField, _isAscending),
+    );
     notifyListeners();
   }
 
   void setQuery(String newQuery) {
     _query = newQuery;
-    artistsFuture = Future(() => _artistService.getArtists(_query, _sortField, _isAscending));
+    artistsFuture = Future(
+      () => _artistService.getArtists(_query, _sortField, _isAscending),
+    );
     notifyListeners();
   }
-
 
   void addArtist(String name) {
     _artistService.addArtist(name);

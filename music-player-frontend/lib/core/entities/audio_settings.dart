@@ -1,8 +1,9 @@
+import 'package:music_player_frontend/core/entities/abstract/abstract_persistent_entity.dart';
 import 'package:music_player_frontend/core/entities/user.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
-class AudioSettings{
+class AudioSettings extends PersistentEntity<AudioSettings> {
   @Id()
   int id = 0;
   ToOne<User> user = ToOne<User>();
@@ -25,11 +26,23 @@ class AudioSettings{
 
   get currentQueue => shuffle ? shuffledQueue : queue;
 
-  get currentIndexInNonShuffled => currentQueue.isNotEmpty ? queue.indexOf(currentQueue[index]) : -1;
+  get currentIndexInNonShuffled =>
+      currentQueue.isNotEmpty ? queue.indexOf(currentQueue[index]) : -1;
 
   get currentSong => currentQueue.isNotEmpty ? currentQueue[index] : null;
 
-  get nextSong => currentQueue.isNotEmpty ? currentQueue[(index + 1) % currentQueue.length] : null;
+  get nextSong =>
+      currentQueue.isNotEmpty
+          ? currentQueue[(index + 1) % currentQueue.length]
+          : null;
 
-  get previousSong => currentQueue.isNotEmpty ? currentQueue[(index - 1 + currentQueue.length) % currentQueue.length] : null;
+  get previousSong =>
+      currentQueue.isNotEmpty
+          ? currentQueue[(index - 1 + currentQueue.length) %
+              currentQueue.length]
+          : null;
+
+  void save() {
+    super.persist(this);
+  }
 }

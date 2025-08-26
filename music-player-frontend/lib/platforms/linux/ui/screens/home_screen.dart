@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:musicplayer/components/app_top_bar.dart';
-import 'package:musicplayer/components/drawer_widget.dart';
-import 'package:musicplayer/components/song_player_widget.dart';
-import 'package:musicplayer/components/volume_widget.dart';
-import 'package:musicplayer/providers/app_state_provider.dart';
-import 'package:musicplayer/screens/tracks.dart';
+import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/tracks.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -22,11 +18,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppBarWidget(
-        actions: [
-          VolumeWidget(),
-        ],
-      ),
+      appBar: const AppBarWidget(actions: [VolumeWidget()]),
       body: Stack(
         children: [
           Row(
@@ -58,6 +50,7 @@ class HomeScreen extends StatelessWidget {
             alignment: Alignment.bottomCenter,
             child: const SongPlayerWidget(),
           ),
+
           // ValueListenableBuilder(
           //   valueListenable: _dragging,
           //   builder: (context, value, child) {
@@ -140,7 +133,6 @@ class HomeScreen extends StatelessWidget {
           //     );
           //   },
           // ),
-
         ],
       ),
     );

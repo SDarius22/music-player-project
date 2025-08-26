@@ -1,13 +1,14 @@
 import 'dart:typed_data';
 
-import 'package:music_player_frontend/core/entities/abstract/abstract_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_persistent_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
-class Song extends AbstractEntity {
+class Song extends PersistentEntity<Song> implements NamedEntity {
   @Id()
   int id = 0;
 
@@ -23,7 +24,6 @@ class Song extends AbstractEntity {
 
   @override
   set name(String value) => _name = value;
-
 
   final artist = ToOne<Artist>();
   final album = ToOne<Album>();
@@ -49,6 +49,10 @@ class Song extends AbstractEntity {
   @Transient()
   Uint8List? image;
 
+  void save() {
+    super.persist(this);
+  }
+
   @override
   bool operator ==(Object other) =>
       other is Song && other.runtimeType == runtimeType && other.path == path;
@@ -66,8 +70,7 @@ class Song extends AbstractEntity {
     year = json['year'] ?? 0;
     try {
       image = json['image'];
-    }
-    catch (e) {
+    } catch (e) {
       image = null;
     }
   }
