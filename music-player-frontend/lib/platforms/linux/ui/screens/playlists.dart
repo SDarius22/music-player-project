@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/playlist_screen.dart';
@@ -16,7 +18,7 @@ class Playlists extends StatefulWidget {
     return PageRouteBuilder(
       settings: const RouteSettings(name: '/playlists'),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Playlists();
+        return const Playlists();
       },
     );
   }
@@ -232,12 +234,12 @@ class _PlaylistsState extends State<Playlists> {
                                         }
                                         return;
                                       }
-                                      var appStateProvider =
-                                          Provider.of<AppStateProvider>(
+                                      var abstractAppStateProvider =
+                                          Provider.of<AbstractAppStateProvider>(
                                             context,
                                             listen: false,
                                           );
-                                      appStateProvider
+                                      abstractAppStateProvider
                                           .navigatorKey
                                           .currentState!
                                           .push(
@@ -296,7 +298,11 @@ class _PlaylistsState extends State<Playlists> {
                                           playlist.pathsInOrder,
                                         );
                                         await audioProvider.setCurrentSong(
-                                          playlist.pathsInOrder.first,
+                                          playlist.songs.firstWhere(
+                                            (song) =>
+                                                song.path ==
+                                                playlist.pathsInOrder.first,
+                                          ),
                                         );
                                       },
                                     );
@@ -358,12 +364,11 @@ class _PlaylistsState extends State<Playlists> {
                                                             .length,
                                                   );
                                             });
-                                            var appStateProvider =
-                                                Provider.of<AppStateProvider>(
-                                                  context,
-                                                  listen: false,
-                                                );
-                                            appStateProvider
+                                            var abstractAppStateProvider =
+                                                Provider.of<
+                                                  AbstractAppStateProvider
+                                                >(context, listen: false);
+                                            abstractAppStateProvider
                                                 .navigatorKey
                                                 .currentState!
                                                 .push(
@@ -431,11 +436,9 @@ class _PlaylistsState extends State<Playlists> {
                                         debugPrint(
                                           "Create new playlist tapped",
                                         );
-                                        var appState =
-                                            Provider.of<AppStateProvider>(
-                                              context,
-                                              listen: false,
-                                            );
+                                        var appState = Provider.of<
+                                          AbstractAppStateProvider
+                                        >(context, listen: false);
                                         appState.navigatorKey.currentState
                                             ?.push(
                                               CreateOrImportScreen.route(),
@@ -513,7 +516,7 @@ class _PlaylistsState extends State<Playlists> {
                         if (selected.value.isEmpty) {
                           return;
                         }
-                        var appState = Provider.of<AppStateProvider>(
+                        var appState = Provider.of<AbstractAppStateProvider>(
                           context,
                           listen: false,
                         );

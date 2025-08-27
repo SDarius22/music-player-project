@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 class QueueTab extends AbstractQueueTab {
   final ScrollController itemScrollController;
 
-  const QueueTab(this.itemScrollController, {super.key});
+  const QueueTab({super.key, required this.itemScrollController});
 
   @override
   Widget buildQueueContent(BuildContext context) {

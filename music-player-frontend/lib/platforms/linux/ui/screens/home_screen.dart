@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/volume_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/tracks.dart';
 import 'package:provider/provider.dart';
 
@@ -8,7 +12,7 @@ class HomeScreen extends StatelessWidget {
     return PageRouteBuilder(
       settings: const RouteSettings(name: '/home'),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return HomeScreen();
+        return const HomeScreen();
       },
     );
   }
@@ -24,15 +28,15 @@ class HomeScreen extends StatelessWidget {
           Row(
             children: [
               const DrawerWidget(),
-              Consumer<AppStateProvider>(
-                builder: (context, appStateProvider, child) {
+              Consumer<AbstractAppStateProvider>(
+                builder: (context, abstractAppStateProvider, child) {
                   return Theme(
-                    data: appStateProvider.themeData,
+                    data: abstractAppStateProvider.themeData,
                     child: Expanded(
                       child: HeroControllerScope(
                         controller: MaterialApp.createMaterialHeroController(),
                         child: Navigator(
-                          key: appStateProvider.navigatorKey,
+                          key: abstractAppStateProvider.navigatorKey,
                           // observers: [SecondNavigatorObserver()],
                           onGenerateRoute: (settings) {
                             return Tracks.route();

@@ -12,9 +12,9 @@ import 'package:provider/provider.dart';
 class DetailsTab extends AbstractDetailsTab {
   final MiniPlayerController miniPlayerController;
 
-  const DetailsTab(
-    this.miniPlayerController, {
+  const DetailsTab({
     super.key,
+    required this.miniPlayerController,
     required super.opacity,
   });
 

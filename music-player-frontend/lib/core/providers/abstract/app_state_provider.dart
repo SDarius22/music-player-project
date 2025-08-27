@@ -8,6 +8,7 @@ import 'package:music_player_frontend/utils/constants.dart';
 abstract class AbstractAppStateProvider with ChangeNotifier {
   late final AbstractAudioProvider audioProvider;
   late AppSettings appSettings;
+  final navigatorKey = GlobalKey<NavigatorState>();
 
   bool isDarkMode = true;
   bool isDrawerOpen = false;

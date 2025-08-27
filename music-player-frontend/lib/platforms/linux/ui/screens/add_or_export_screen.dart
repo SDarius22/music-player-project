@@ -2,10 +2,11 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
@@ -95,14 +96,15 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                     }
                     debugPrint("Add to new playlist");
                     if (widget.export) {
-                      var appStateProvider = Provider.of<AppStateProvider>(
-                        context,
-                        listen: false,
-                      );
+                      var abstractAppStateProvider =
+                          Provider.of<AbstractAppStateProvider>(
+                            context,
+                            listen: false,
+                          );
                       for (int i = 0; i < selected.value.length; i++) {
                         Playlist playlist = selected.value[i];
                         var fileName =
-                            "${appStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
+                            "${abstractAppStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
                         FileService.exportPlaylist(
                           fileName,
                           playlist.pathsInOrder,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/ui/components/actions_widget.dart';
-import 'package:music_player_frontend/core/ui/components/drawer_widget.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/actions_widget.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
 import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/albums.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artists.dart';

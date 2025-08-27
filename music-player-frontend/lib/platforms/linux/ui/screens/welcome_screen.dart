@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
@@ -17,12 +18,15 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  late AppStateProvider appStateProvider;
+  late AbstractAppStateProvider abstractAppStateProvider;
 
   @override
   void initState() {
     super.initState();
-    appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+    abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
+      context,
+      listen: false,
+    );
   }
 
   @override
@@ -33,7 +37,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     var normalSize = height * 0.02;
     // var smallSize = height * 0.015;
     return Scaffold(
-      appBar: AppBarWidget(),
+      appBar: const AppBarWidget(),
       body: Container(
         width: width,
         height: height,
@@ -56,7 +60,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               ),
             ),
             SizedBox(height: height * 0.025),
-            if (appStateProvider.appSettings.songPlaces.isEmpty)
+            if (abstractAppStateProvider.appSettings.songPlaces.isEmpty)
               Text(
                 "Add music to your library by choosing a folder below:",
                 style: TextStyle(
@@ -65,9 +69,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   color: Colors.white,
                 ),
               ),
-            if (appStateProvider.appSettings.songPlaces.isEmpty)
+            if (abstractAppStateProvider.appSettings.songPlaces.isEmpty)
               SizedBox(height: height * 0.025),
-            if (appStateProvider.appSettings.songPlaces.isEmpty)
+            if (abstractAppStateProvider.appSettings.songPlaces.isEmpty)
               AnimatedContainer(
                 duration: const Duration(milliseconds: 500),
                 width: width * 0.1,
@@ -86,9 +90,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         await FilePicker.platform.getDirectoryPath() ?? "";
                     if (chosen != "") {
                       //debugPrint(chosen);
-                      appStateProvider.appSettings.songPlaces = [chosen];
-                      appStateProvider.appSettings.mainSongPlace = chosen;
-                      appStateProvider
+                      abstractAppStateProvider.appSettings.songPlaces = [
+                        chosen,
+                      ];
+                      abstractAppStateProvider.appSettings.mainSongPlace =
+                          chosen;
+                      abstractAppStateProvider
                           .appSettings
                           .songPlaceIncludeSubfolders = [1];
                       setState(() {});
@@ -148,189 +155,200 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                     ),
                   ],
-                  rows: List<
-                    DataRow
-                  >.generate(appStateProvider.appSettings.songPlaces.length + 1, (
-                    index,
-                  ) {
-                    return index <
-                            appStateProvider.appSettings.songPlaces.length
-                        ? DataRow(
-                          cells: [
-                            DataCell(
-                              Text(
-                                appStateProvider.appSettings.songPlaces[index],
-                                style: TextStyle(
-                                  fontSize: normalSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              IconButton(
-                                icon: Icon(
-                                  appStateProvider.appSettings.mainSongPlace ==
-                                          appStateProvider
-                                              .appSettings
-                                              .songPlaces[index]
-                                      ? FluentIcons.checkCircleOn
-                                      : FluentIcons.checkCircleOff,
-                                  color: Colors.white,
-                                  size: height * 0.03,
-                                ),
-                                onPressed:
-                                    appStateProvider
-                                                .appSettings
-                                                .songPlaces
-                                                .length <=
-                                            1
-                                        ? null
-                                        : () {
-                                          setState(() {
-                                            appStateProvider
-                                                    .appSettings
-                                                    .mainSongPlace =
-                                                appStateProvider
-                                                    .appSettings
-                                                    .songPlaces[index];
-                                          });
-                                        },
-                              ),
-                            ),
-                            DataCell(
-                              IconButton(
-                                icon: Icon(
-                                  appStateProvider
-                                              .appSettings
-                                              .songPlaceIncludeSubfolders[index] ==
-                                          1
-                                      ? FluentIcons.checkCircleOn
-                                      : FluentIcons.checkCircleOff,
-                                  color: Colors.white,
-                                  size: height * 0.03,
-                                ),
-                                onPressed: () {
-                                  if (appStateProvider
-                                          .appSettings
-                                          .songPlaceIncludeSubfolders[index] ==
-                                      1) {
-                                    debugPrint("Setting to 0");
-                                    final updatedList = List<int>.from(
-                                      appStateProvider
-                                          .appSettings
-                                          .songPlaceIncludeSubfolders,
-                                    );
-                                    updatedList[index] = 0;
-                                    appStateProvider
-                                            .appSettings
-                                            .songPlaceIncludeSubfolders =
-                                        updatedList;
-                                  } else {
-                                    debugPrint("Setting to 1");
-                                    final updatedList = List<int>.from(
-                                      appStateProvider
-                                          .appSettings
-                                          .songPlaceIncludeSubfolders,
-                                    );
-                                    updatedList[index] = 1;
-                                    appStateProvider
-                                            .appSettings
-                                            .songPlaceIncludeSubfolders =
-                                        updatedList;
-                                  }
-                                  setState(() {});
-                                },
-                              ),
-                            ),
-                            DataCell(
-                              IconButton(
-                                icon: Icon(
-                                  FluentIcons.trash,
-                                  color: Colors.red,
-                                  size: height * 0.03,
-                                ),
-                                onPressed: () {
-                                  String current =
-                                      appStateProvider
-                                          .appSettings
-                                          .songPlaces[index];
-                                  appStateProvider
+                  rows: List<DataRow>.generate(
+                    abstractAppStateProvider.appSettings.songPlaces.length + 1,
+                    (index) {
+                      return index <
+                              abstractAppStateProvider
+                                  .appSettings
+                                  .songPlaces
+                                  .length
+                          ? DataRow(
+                            cells: [
+                              DataCell(
+                                Text(
+                                  abstractAppStateProvider
                                       .appSettings
-                                      .songPlaces = List<String>.from(
-                                    appStateProvider.appSettings.songPlaces,
-                                  )..removeAt(index);
-                                  appStateProvider
-                                          .appSettings
-                                          .songPlaceIncludeSubfolders =
-                                      List<int>.from(
-                                        appStateProvider
+                                      .songPlaces[index],
+                                  style: TextStyle(
+                                    fontSize: normalSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                IconButton(
+                                  icon: Icon(
+                                    abstractAppStateProvider
+                                                .appSettings
+                                                .mainSongPlace ==
+                                            abstractAppStateProvider
+                                                .appSettings
+                                                .songPlaces[index]
+                                        ? FluentIcons.checkCircleOn
+                                        : FluentIcons.checkCircleOff,
+                                    color: Colors.white,
+                                    size: height * 0.03,
+                                  ),
+                                  onPressed:
+                                      abstractAppStateProvider
+                                                  .appSettings
+                                                  .songPlaces
+                                                  .length <=
+                                              1
+                                          ? null
+                                          : () {
+                                            setState(() {
+                                              abstractAppStateProvider
+                                                      .appSettings
+                                                      .mainSongPlace =
+                                                  abstractAppStateProvider
+                                                      .appSettings
+                                                      .songPlaces[index];
+                                            });
+                                          },
+                                ),
+                              ),
+                              DataCell(
+                                IconButton(
+                                  icon: Icon(
+                                    abstractAppStateProvider
+                                                .appSettings
+                                                .songPlaceIncludeSubfolders[index] ==
+                                            1
+                                        ? FluentIcons.checkCircleOn
+                                        : FluentIcons.checkCircleOff,
+                                    color: Colors.white,
+                                    size: height * 0.03,
+                                  ),
+                                  onPressed: () {
+                                    if (abstractAppStateProvider
+                                            .appSettings
+                                            .songPlaceIncludeSubfolders[index] ==
+                                        1) {
+                                      debugPrint("Setting to 0");
+                                      final updatedList = List<int>.from(
+                                        abstractAppStateProvider
                                             .appSettings
                                             .songPlaceIncludeSubfolders,
-                                      )..removeAt(index);
-                                  if (appStateProvider
-                                          .appSettings
-                                          .mainSongPlace ==
-                                      current) {
-                                    try {
-                                      appStateProvider
-                                          .appSettings
-                                          .mainSongPlace = appStateProvider
+                                      );
+                                      updatedList[index] = 0;
+                                      abstractAppStateProvider
                                               .appSettings
-                                              .songPlaces[0];
-                                    } catch (e) {
-                                      appStateProvider
-                                          .appSettings
-                                          .mainSongPlace = "";
+                                              .songPlaceIncludeSubfolders =
+                                          updatedList;
+                                    } else {
+                                      debugPrint("Setting to 1");
+                                      final updatedList = List<int>.from(
+                                        abstractAppStateProvider
+                                            .appSettings
+                                            .songPlaceIncludeSubfolders,
+                                      );
+                                      updatedList[index] = 1;
+                                      abstractAppStateProvider
+                                              .appSettings
+                                              .songPlaceIncludeSubfolders =
+                                          updatedList;
                                     }
-                                  }
-                                  setState(() {});
-                                },
+                                    setState(() {});
+                                  },
+                                ),
                               ),
-                            ),
-                          ],
-                        )
-                        : DataRow(
-                          cells: [
-                            const DataCell(Text("")),
-                            const DataCell(Text("")),
-                            const DataCell(Text("")),
-                            DataCell(
-                              IconButton(
-                                onPressed: () async {
-                                  String chosen =
-                                      await FilePicker.platform
-                                          .getDirectoryPath() ??
-                                      "";
-                                  if (chosen != "") {
-                                    //debugPrint(chosen);
-                                    appStateProvider
+                              DataCell(
+                                IconButton(
+                                  icon: Icon(
+                                    FluentIcons.trash,
+                                    color: Colors.red,
+                                    size: height * 0.03,
+                                  ),
+                                  onPressed: () {
+                                    String current =
+                                        abstractAppStateProvider
+                                            .appSettings
+                                            .songPlaces[index];
+                                    abstractAppStateProvider
                                         .appSettings
                                         .songPlaces = List<String>.from(
-                                      appStateProvider.appSettings.songPlaces,
-                                    )..add(chosen);
-                                    appStateProvider
+                                      abstractAppStateProvider
+                                          .appSettings
+                                          .songPlaces,
+                                    )..removeAt(index);
+                                    abstractAppStateProvider
                                             .appSettings
                                             .songPlaceIncludeSubfolders =
                                         List<int>.from(
-                                          appStateProvider
+                                          abstractAppStateProvider
                                               .appSettings
                                               .songPlaceIncludeSubfolders,
-                                        )..add(1);
+                                        )..removeAt(index);
+                                    if (abstractAppStateProvider
+                                            .appSettings
+                                            .mainSongPlace ==
+                                        current) {
+                                      try {
+                                        abstractAppStateProvider
+                                                .appSettings
+                                                .mainSongPlace =
+                                            abstractAppStateProvider
+                                                .appSettings
+                                                .songPlaces[0];
+                                      } catch (e) {
+                                        abstractAppStateProvider
+                                            .appSettings
+                                            .mainSongPlace = "";
+                                      }
+                                    }
                                     setState(() {});
-                                  }
-                                },
-                                tooltip: "Add Another Folder",
-                                icon: Icon(
-                                  FluentIcons.folderAdd,
-                                  color: Colors.white,
-                                  size: height * 0.03,
+                                  },
                                 ),
                               ),
-                            ),
-                          ],
-                        );
-                  }),
+                            ],
+                          )
+                          : DataRow(
+                            cells: [
+                              const DataCell(Text("")),
+                              const DataCell(Text("")),
+                              const DataCell(Text("")),
+                              DataCell(
+                                IconButton(
+                                  onPressed: () async {
+                                    String chosen =
+                                        await FilePicker.platform
+                                            .getDirectoryPath() ??
+                                        "";
+                                    if (chosen != "") {
+                                      //debugPrint(chosen);
+                                      abstractAppStateProvider
+                                          .appSettings
+                                          .songPlaces = List<String>.from(
+                                        abstractAppStateProvider
+                                            .appSettings
+                                            .songPlaces,
+                                      )..add(chosen);
+                                      abstractAppStateProvider
+                                              .appSettings
+                                              .songPlaceIncludeSubfolders =
+                                          List<int>.from(
+                                            abstractAppStateProvider
+                                                .appSettings
+                                                .songPlaceIncludeSubfolders,
+                                          )..add(1);
+                                      setState(() {});
+                                    }
+                                  },
+                                  tooltip: "Add Another Folder",
+                                  icon: Icon(
+                                    FluentIcons.folderAdd,
+                                    color: Colors.white,
+                                    size: height * 0.03,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                    },
+                  ),
                 ),
               ),
             SizedBox(height: height * 0.1),
@@ -348,15 +366,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
                 onPressed:
-                    appStateProvider.appSettings.songPlaces.isEmpty
+                    abstractAppStateProvider.appSettings.songPlaces.isEmpty
                         ? null
                         : () async {
                           debugPrint("Pressed");
-                          appStateProvider.appSettings.firstTime = false;
+                          abstractAppStateProvider.appSettings.firstTime =
+                              false;
                           debugPrint(
-                            appStateProvider.appSettings.firstTime.toString(),
+                            abstractAppStateProvider.appSettings.firstTime
+                                .toString(),
                           );
-                          appStateProvider.updateAppSettings();
+                          abstractAppStateProvider.updateAppSettings();
                           Navigator.push(context, LoadingScreen.route());
                         },
                 child: Icon(

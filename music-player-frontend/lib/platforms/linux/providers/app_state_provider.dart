@@ -2,22 +2,19 @@ import 'dart:io';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:tray_manager/tray_manager.dart';
 
 class AppStateProvider extends AbstractAppStateProvider with TrayListener {
-  final navigatorKey = GlobalKey<NavigatorState>();
-
   AppStateProvider(
     AbstractAudioProvider audioProvider,
     SettingsService settingsService,
   ) {
     trayManager.addListener(this);
-    initTray();
     super.init(audioProvider, settingsService);
+    initTray();
   }
 
   Future<void> initTray() async {

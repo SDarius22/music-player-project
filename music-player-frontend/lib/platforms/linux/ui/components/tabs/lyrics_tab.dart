@@ -2,9 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
-import 'package:music_player_frontend/core/ui/components/font_scaler.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/font_scaler.dart';
 import 'package:music_player_frontend/utils/lyric_reader/lyric_ui/lyric_ui.dart';
 import 'package:music_player_frontend/utils/lyric_reader/lyric_ui/ui_netease.dart';
 import 'package:music_player_frontend/utils/lyric_reader/lyrics_reader_widget.dart';
@@ -21,7 +21,7 @@ class LyricsTab extends AbstractLyricsTab {
     UINetease lyricUI = UINetease(
       defaultTextStyle: TextStyle(
         color: Colors.white,
-        fontSize: FontScaler.scale(context, 22),
+        fontSize: LinuxFontScaler().scale(context, 22),
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.75),
@@ -32,7 +32,7 @@ class LyricsTab extends AbstractLyricsTab {
       ),
       defaultExtTextStyle: TextStyle(
         color: oneLine ? Colors.transparent : Colors.grey,
-        fontSize: FontScaler.scale(context, 20),
+        fontSize: LinuxFontScaler().scale(context, 20),
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: oneLine ? 0.0 : 0.75),
@@ -43,7 +43,7 @@ class LyricsTab extends AbstractLyricsTab {
       ),
       otherMainTextStyle: TextStyle(
         color: oneLine ? Colors.transparent : Colors.grey,
-        fontSize: FontScaler.scale(context, 20),
+        fontSize: LinuxFontScaler().scale(context, 20),
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: oneLine ? 0.0 : 0.5),

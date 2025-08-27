@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
-import 'package:music_player_frontend/core/ui/components/image_widget.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
@@ -269,7 +270,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                                       );
                                   audioProvider.setQueue(songPaths);
                                   await audioProvider.setCurrentSong(
-                                    widget.playlist.songs.first.path,
+                                    widget.playlist.songs.first,
                                   );
                                 },
                                 icon: Icon(
@@ -282,12 +283,14 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                               IconButton(
                                 onPressed: () {
                                   debugPrint("Add ${widget.playlist.name}");
-                                  var appStateProvider =
-                                      Provider.of<AppStateProvider>(
+                                  var abstractAppStateProvider =
+                                      Provider.of<AbstractAppStateProvider>(
                                         context,
                                         listen: false,
                                       );
-                                  appStateProvider.navigatorKey.currentState
+                                  abstractAppStateProvider
+                                      .navigatorKey
+                                      .currentState
                                       ?.push(
                                         AddOrExportScreen.route(
                                           songs: widget.playlist.songs,
@@ -372,7 +375,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                                               audioProvider.setQueue(songPaths);
                                               await audioProvider
                                                   .setCurrentSong(
-                                                    (entity as Song).path,
+                                                    (entity as Song),
                                                   );
                                             },
                                             onLongPress: (entity) {

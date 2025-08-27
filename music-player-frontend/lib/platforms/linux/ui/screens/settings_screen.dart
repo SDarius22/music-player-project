@@ -2,7 +2,11 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
@@ -44,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           bottom: height * 0.02,
         ),
         alignment: Alignment.center,
-        child: Consumer<AppStateProvider>(
+        child: Consumer<AbstractAppStateProvider>(
           builder: (_, appState, __) {
             return Container(
               width: width * 0.85,
@@ -297,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ElevatedButton(
                         onPressed: () async {
                           ///TODO - Find out why the fuck this isnt working
-                          appState.resetAudioSettings();
+                          //appState.resetAudioSettings();
                           appState.updateAppSettings();
                           Navigator.of(
                             context,
@@ -642,7 +646,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           setState(() {
                             appState.appSettings.systemTray = value;
                           });
-                          appState.initTray();
+                          (appState as AppStateProvider).initTray();
                         },
                         trackColor: WidgetStateProperty.all(
                           appState.lightColor,
@@ -741,7 +745,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             appState.isDarkMode = value;
                             appState.setTheme();
                           });
-                          appState.initTray();
+                          (appState as AppStateProvider).initTray();
                         },
                         trackColor: WidgetStateProperty.all(
                           appState.lightColor,

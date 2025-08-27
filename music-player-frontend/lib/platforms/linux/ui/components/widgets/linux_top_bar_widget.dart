@@ -1,7 +1,7 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/ui/components/app_top_bar.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/top_bar_widget.dart';
 import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
@@ -12,7 +12,7 @@ class AppBarWidget extends AbstractAppBarWidget {
   Widget buildAppBar(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
 
-    return Consumer<AppStateProvider>(
+    return Consumer<AbstractAppStateProvider>(
       builder: (_, appStateProvider, __) {
         return PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),

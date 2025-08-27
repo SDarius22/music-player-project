@@ -6,10 +6,11 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/image_widget.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/utils/multivaluelistenablebuilder/mvlb.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,7 @@ class CreateOrImportScreen extends StatefulWidget {
   final String playlistName;
   final List<String> playlistPaths;
   final bool import;
- 
+
   static Route<void> route({
     String playlistName = "",
     List<String> playlistPaths = const [],
@@ -222,11 +223,9 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                           IconButton(
                                             onPressed: () async {
                                               debugPrint("Change cover art");
-                                              var appStates =
-                                                  Provider.of<AppStateProvider>(
-                                                    context,
-                                                    listen: false,
-                                                  );
+                                              var appStates = Provider.of<
+                                                AbstractAppStateProvider
+                                              >(context, listen: false);
                                               FilePickerResult? result =
                                                   await FilePicker.platform
                                                       .pickFiles(
@@ -284,11 +283,9 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                     hoveredChild: IconButton(
                                       onPressed: () async {
                                         debugPrint("Change cover art");
-                                        var appStates =
-                                            Provider.of<AppStateProvider>(
-                                              context,
-                                              listen: false,
-                                            );
+                                        var appStates = Provider.of<
+                                          AbstractAppStateProvider
+                                        >(context, listen: false);
                                         FilePickerResult? result =
                                             await FilePicker.platform.pickFiles(
                                               initialDirectory:

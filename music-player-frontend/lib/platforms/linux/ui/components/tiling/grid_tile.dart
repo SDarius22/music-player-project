@@ -7,10 +7,10 @@ import 'package:music_player_frontend/core/entities/abstract/mixin_collection.da
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart';
-import 'package:music_player_frontend/core/ui/components/font_scaler.dart';
-import 'package:music_player_frontend/core/ui/components/image_widget.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/font_scaler.dart';
 import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
@@ -148,7 +148,10 @@ class CustomGridTile extends AbstractCustomGridTile {
                                                     (entity as Song).path
                                                 ? Colors.blue
                                                 : Colors.white,
-                                        fontSize: FontScaler.scale(context, 20),
+                                        fontSize: LinuxFontScaler().scale(
+                                          context,
+                                          20,
+                                        ),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     );

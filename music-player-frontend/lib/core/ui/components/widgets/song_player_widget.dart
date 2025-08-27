@@ -15,9 +15,9 @@ class SongPlayerWidget extends StatefulWidget {
 class SongPlayerWidgetState extends State<SongPlayerWidget>
     with TickerProviderStateMixin {
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
-  final MiniPlayerController _miniPlayerController = MiniPlayerController();
-  final ScrollController _itemScrollController = ScrollController();
-  final AnimatedMeshGradientController _gradientController =
+  final MiniPlayerController miniPlayerController = MiniPlayerController();
+  final ScrollController itemScrollController = ScrollController();
+  final AnimatedMeshGradientController gradientController =
       AnimatedMeshGradientController();
 
   double getMinHeight(BuildContext context) {
@@ -88,7 +88,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
           maxHeight: getMaxHeight(context),
           minWidth: getMinWidth(context),
           maxWidth: getMaxWidth(context),
-          controller: _miniPlayerController,
+          controller: miniPlayerController,
           elevation: 4,
           curve: Curves.easeOut,
           tapToCollapse: false,
@@ -100,7 +100,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
               return _buildMinimizedPlayer(percentage);
             }
 
-            if (_itemScrollController.hasClients) {
+            if (itemScrollController.hasClients) {
               int currentSongIndex =
                   audioProvider
                       .audioService
@@ -108,7 +108,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
                       .currentIndexInNonShuffled;
               Future.delayed(const Duration(milliseconds: 500), () {
                 try {
-                  _itemScrollController.animateTo(
+                  itemScrollController.animateTo(
                     getItemExtent(context) * currentSongIndex,
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
@@ -132,7 +132,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
       height: getMinHeight(context),
       width: getMinWidth(context),
       alignment: Alignment.centerLeft,
-      controller: _gradientController,
+      controller: gradientController,
       child: buildMinimizedPlayerContent(context, percentage),
     );
   }
@@ -143,7 +143,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
       height: getMaxHeight(context),
       width: getMaxWidth(context),
       alignment: Alignment.center,
-      controller: _gradientController,
+      controller: gradientController,
       child: buildMaximizedPlayerContent(context, percentage),
     );
   }

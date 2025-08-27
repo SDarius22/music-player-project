@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/track_screen.dart';
@@ -222,7 +223,7 @@ class _TracksState extends State<Tracks> {
                                                 .toList();
                                         audioProvider.setQueue(songPaths);
                                         await audioProvider.setCurrentSong(
-                                          song.path,
+                                          song,
                                         );
                                       } else {
                                         if (audioProvider
@@ -241,9 +242,7 @@ class _TracksState extends State<Tracks> {
                                               .map((e) => e.path)
                                               .toList();
                                       audioProvider.setQueue(songPaths);
-                                      await audioProvider.setCurrentSong(
-                                        song.path,
-                                      );
+                                      await audioProvider.setCurrentSong(song);
                                     }
                                   },
                                   onLongPress: (entity) {
@@ -334,11 +333,9 @@ class _TracksState extends State<Tracks> {
                                       onSelected: (String value) {
                                         switch (value) {
                                           case 'add':
-                                            var appState =
-                                                Provider.of<AppStateProvider>(
-                                                  context,
-                                                  listen: false,
-                                                );
+                                            var appState = Provider.of<
+                                              AbstractAppStateProvider
+                                            >(context, listen: false);
                                             appState.navigatorKey.currentState
                                                 ?.push(
                                                   AddOrExportScreen.route(
@@ -375,11 +372,9 @@ class _TracksState extends State<Tracks> {
                                             debugPrint(
                                               "Details ${entity.name}",
                                             );
-                                            var appState =
-                                                Provider.of<AppStateProvider>(
-                                                  context,
-                                                  listen: false,
-                                                );
+                                            var appState = Provider.of<
+                                              AbstractAppStateProvider
+                                            >(context, listen: false);
                                             appState.navigatorKey.currentState
                                                 ?.push(
                                                   TrackScreen.route(
@@ -462,7 +457,7 @@ class _TracksState extends State<Tracks> {
                         if (selected.value.isEmpty) {
                           return;
                         }
-                        var appState = Provider.of<AppStateProvider>(
+                        var appState = Provider.of<AbstractAppStateProvider>(
                           context,
                           listen: false,
                         );

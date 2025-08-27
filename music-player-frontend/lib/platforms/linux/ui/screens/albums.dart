@@ -2,9 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
@@ -228,12 +229,12 @@ class _AlbumsState extends State<Albums> {
                                         }
                                         return;
                                       }
-                                      var appStateProvider =
-                                          Provider.of<AppStateProvider>(
+                                      var abstractAppStateProvider =
+                                          Provider.of<AbstractAppStateProvider>(
                                             context,
                                             listen: false,
                                           );
-                                      appStateProvider
+                                      abstractAppStateProvider
                                           .navigatorKey
                                           .currentState!
                                           .push(
@@ -292,7 +293,7 @@ class _AlbumsState extends State<Albums> {
                                             );
                                         audioProvider.setQueue(songPaths);
                                         await audioProvider.setCurrentSong(
-                                          album.songs.first.path,
+                                          album.songs.first,
                                         );
                                       },
                                     );
@@ -335,12 +336,11 @@ class _AlbumsState extends State<Albums> {
                                                 b.trackNumber,
                                               ),
                                             );
-                                            var appStateProvider =
-                                                Provider.of<AppStateProvider>(
-                                                  context,
-                                                  listen: false,
-                                                );
-                                            appStateProvider
+                                            var abstractAppStateProvider =
+                                                Provider.of<
+                                                  AbstractAppStateProvider
+                                                >(context, listen: false);
+                                            abstractAppStateProvider
                                                 .navigatorKey
                                                 .currentState!
                                                 .push(
@@ -460,7 +460,7 @@ class _AlbumsState extends State<Albums> {
                         if (selected.value.isEmpty) {
                           return;
                         }
-                        var appState = Provider.of<AppStateProvider>(
+                        var appState = Provider.of<AbstractAppStateProvider>(
                           context,
                           listen: false,
                         );
