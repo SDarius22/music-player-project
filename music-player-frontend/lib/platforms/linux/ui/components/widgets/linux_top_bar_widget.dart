@@ -2,7 +2,7 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/top_bar_widget.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class AppBarWidget extends AbstractAppBarWidget {

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/utils/text_scroll/text_scroll.dart';
+import 'package:music_player_frontend/local_libs/text_scroll/text_scroll.dart';
 
 class CustomTextScroll extends StatelessWidget {
   final String text;
   final TextStyle style;
 
-  const CustomTextScroll(
-      {super.key,
-      required this.text,
-      this.style = const TextStyle(
-          color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)});
+  const CustomTextScroll({
+    super.key,
+    required this.text,
+    this.style = const TextStyle(
+      color: Colors.white,
+      fontSize: 16,
+      fontWeight: FontWeight.bold,
+    ),
+  });
 
   @override
   Widget build(BuildContext context) {

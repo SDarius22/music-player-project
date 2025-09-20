@@ -1,4 +1,4 @@
-import 'package:music_player_frontend/utils/miniplayer/miniplayer.dart';
+import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 
 extension SelectedColorExtension on PanelState {
   int get heightCode {

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 
 abstract class AbstractGridComponent extends StatelessWidget {

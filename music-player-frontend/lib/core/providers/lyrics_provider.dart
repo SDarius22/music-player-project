@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
-import 'package:music_player_frontend/utils/lyric_reader/lyrics_model_builder.dart';
-import 'package:music_player_frontend/utils/lyric_reader/lyrics_reader_model.dart';
+import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_model_builder.dart';
+import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_model.dart';
 
 class LyricsProvider with ChangeNotifier {
   late final AbstractAudioProvider _audioProvider;
@@ -23,7 +23,8 @@ class LyricsProvider with ChangeNotifier {
 
   Future<void> buildLyricsModel() async {
     String? lyrics = await _getLyricsForCurrentSong();
-    lyricsModelBuilder = LyricsModelBuilder.create().bindLyricToMain(lyrics ?? '').getModel();
+    lyricsModelBuilder =
+        LyricsModelBuilder.create().bindLyricToMain(lyrics ?? '').getModel();
     debugPrint('LyricsModelBuilder: ${lyricsModelBuilder.lyrics.length} lines');
     if (lyricsModelBuilder.lyrics.isEmpty) {
       unsyncedLyrics = lyrics ?? '';
@@ -34,7 +35,8 @@ class LyricsProvider with ChangeNotifier {
   }
 
   Future<String?> _getLyricsForCurrentSong() async {
-    return await FileService.getLyrics(_audioProvider.audioService.currentSong?.path);
+    return await FileService.getLyrics(
+      _audioProvider.audioService.currentSong?.path,
+    );
   }
-
 }

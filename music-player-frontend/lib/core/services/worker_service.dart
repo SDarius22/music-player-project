@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/utils/dominant_color/dominant_color.dart';
+import 'package:music_player_frontend/local_libs/dominant_color/dominant_color.dart';
 
 class WorkerService {
   static Future<List<Color>> getColorIsolate(Uint8List image) async {
@@ -14,12 +14,17 @@ class WorkerService {
       return [Colors.white, Colors.black];
     }
     List<Color> result = [];
-    DominantColors extractor = DominantColors(bytes: image, dominantColorsCount: 2);
+    DominantColors extractor = DominantColors(
+      bytes: image,
+      dominantColorsCount: 2,
+    );
     var colors = extractor.extractDominantColors();
-    if (colors.first.computeLuminance() > 0.15 && colors.last.computeLuminance() > 0.15) {
+    if (colors.first.computeLuminance() > 0.15 &&
+        colors.last.computeLuminance() > 0.15) {
       result.add(colors.first);
       result.add(Colors.black);
-    } else if (colors.first.computeLuminance() < 0.15 && colors.last.computeLuminance() < 0.15) {
+    } else if (colors.first.computeLuminance() < 0.15 &&
+        colors.last.computeLuminance() < 0.15) {
       result.add(Colors.blue);
       result.add(colors.first);
     } else {

@@ -7,8 +7,8 @@ import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart
 import 'package:music_player_frontend/core/ui/components/tiling/list_tile.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/utils/hover_widget/hover_container.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
 import 'package:provider/provider.dart';
 
 class CustomListTile extends AbstractCustomListTile {

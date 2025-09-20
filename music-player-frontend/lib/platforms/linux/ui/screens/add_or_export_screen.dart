@@ -7,7 +7,7 @@ import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class AddOrExportScreen extends StatefulWidget {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/animated_background.dart';
-import 'package:music_player_frontend/utils/miniplayer/miniplayer.dart';
+import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:provider/provider.dart';
 
 class SongPlayerWidget extends StatefulWidget {

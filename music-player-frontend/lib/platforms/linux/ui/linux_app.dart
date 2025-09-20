@@ -93,6 +93,15 @@ class LinuxApp extends StatelessWidget {
         builder: BotToastInit(),
         debugShowCheckedModeBanner: false,
         checkerboardOffscreenLayers: true,
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          primaryColor: Colors.blueGrey,
+          scaffoldBackgroundColor: Colors.black,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+          ),
+        ),
         home: const LoadingScreen(),
       ),
     );

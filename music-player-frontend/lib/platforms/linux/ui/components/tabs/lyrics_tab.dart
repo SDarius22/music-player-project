@@ -5,10 +5,10 @@ import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/font_scaler.dart';
-import 'package:music_player_frontend/utils/lyric_reader/lyric_ui/lyric_ui.dart';
-import 'package:music_player_frontend/utils/lyric_reader/lyric_ui/ui_netease.dart';
-import 'package:music_player_frontend/utils/lyric_reader/lyrics_reader_widget.dart';
-import 'package:music_player_frontend/utils/multivaluelistenablebuilder/mvlb.dart';
+import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/lyric_ui.dart';
+import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/ui_netease.dart';
+import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_widget.dart';
+import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
 import 'package:provider/provider.dart';
 
 class LyricsTab extends AbstractLyricsTab {

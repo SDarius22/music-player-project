@@ -5,28 +5,29 @@ import 'dart:typed_data';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/utils/constants.dart';
+import 'package:music_player_frontend/local_libs/constants.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:watcher/watcher.dart';
 
+//TODO: make this class abstract and implement platform-specific subclasses if needed
 class FileService {
   static const supportedAudioExtensions = [
-    'aac',     // AAC (ADTS)
-    'ape',     // Monkey's Audio
-    'aiff',    // AIFF
-    'aif',     // Sometimes used as alternate for AIFF
-    'flac',    // FLAC
-    'mp3',     // MP3
-    'mp4',     // MP4 (audio, like M4A)
-    'm4a',     // M4A is common for audio-only MP4
-    'mpc',     // Musepack
-    'opus',    // Opus
-    'ogg',     // Ogg Vorbis
-    'oga',     // Audio-specific extension for Ogg (optional)
-    'spx',     // Speex
-    'wav',     // WAV
-    'wv',      // WavPack
+    'aac', // AAC (ADTS)
+    'ape', // Monkey's Audio
+    'aiff', // AIFF
+    'aif', // Sometimes used as alternate for AIFF
+    'flac', // FLAC
+    'mp3', // MP3
+    'mp4', // MP4 (audio, like M4A)
+    'm4a', // M4A is common for audio-only MP4
+    'mpc', // Musepack
+    'opus', // Opus
+    'ogg', // Ogg Vorbis
+    'oga', // Audio-specific extension for Ogg (optional)
+    'spx', // Speex
+    'wav', // WAV
+    'wv', // WavPack
   ];
 
   static bool _isSupportedAudioFile(String filePath) {
@@ -34,33 +35,43 @@ class FileService {
     return supportedAudioExtensions.contains(extension);
   }
 
-  static Future<Map<String, dynamic>> retrieveSong(String path, {bool withImage = false}) async {
+  static Future<Map<String, dynamic>> retrieveSong(
+    String path, {
+    bool withImage = false,
+  }) async {
     Map<String, dynamic>? metadataVariable = {};
     metadataVariable['path'] = path;
 
     AudioMetadata metadataVar;
-    try{
+    try {
       metadataVar = readMetadata(File(path), getImage: withImage);
-    }
-    catch(e){
+    } catch (e) {
       debugPrint(e.toString());
       metadataVariable['title'] = path.replaceAll("\\", "/").split("/").last;
       return metadataVariable;
     }
-    metadataVariable['title'] = metadataVar.title ?? path.replaceAll("\\", "/").split("/").last;
+    metadataVariable['title'] =
+        metadataVar.title ?? path.replaceAll("\\", "/").split("/").last;
     metadataVariable['album'] = metadataVar.album ?? "Unknown Album";
     metadataVariable['duration'] = metadataVar.duration ?? 0;
     metadataVariable['trackNumber'] = metadataVar.trackNumber ?? 0;
     metadataVariable['trackArtist'] = metadataVar.artist ?? "Unknown Artist";
     metadataVariable['discNumber'] = metadataVar.discNumber ?? 0;
     metadataVariable['year'] = metadataVar.year ?? 0;
-    metadataVariable['image'] = metadataVar.pictures.isNotEmpty ? metadataVar.pictures[0].bytes : logoImage;
+    metadataVariable['image'] =
+        metadataVar.pictures.isNotEmpty
+            ? metadataVar.pictures[0].bytes
+            : logoImage;
     metadataVariable['lyricsPath'] = _getLyricsPath(path);
     return metadataVariable;
   }
 
   static String _getLyricsPath(String songPath) {
-    var lyrPath = songPath.replaceRange(songPath.lastIndexOf("."), songPath.length, ".lrc");
+    var lyrPath = songPath.replaceRange(
+      songPath.lastIndexOf("."),
+      songPath.length,
+      ".lrc",
+    );
     if (File(lyrPath).existsSync()) {
       return lyrPath;
     }
@@ -104,9 +115,10 @@ class FileService {
     }
     try {
       var metadataVar = readMetadata(File(path), getImage: true);
-      return metadataVar.pictures.isNotEmpty ? metadataVar.pictures[0].bytes : logoImage;
-    }
-    catch (e) {
+      return metadataVar.pictures.isNotEmpty
+          ? metadataVar.pictures[0].bytes
+          : logoImage;
+    } catch (e) {
       debugPrint(e.toString());
     }
     return logoImage;
@@ -128,7 +140,8 @@ class FileService {
       return null;
     }
     try {
-      String lyricsPath = '${songPath.split('.').sublist(0, songPath.split('.').length - 1).join('.')}.lrc';
+      String lyricsPath =
+          '${songPath.split('.').sublist(0, songPath.split('.').length - 1).join('.')}.lrc';
       if (File(lyricsPath).existsSync()) {
         String lyricsContent = await File(lyricsPath).readAsString();
         if (lyricsContent.isNotEmpty) {

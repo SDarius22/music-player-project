@@ -10,9 +10,9 @@ import 'package:music_player_frontend/platforms/linux/providers/audio_provider.d
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/queue_tab.dart';
-import 'package:music_player_frontend/utils/audio_video_progress_bar/audio_video_progress_bar.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/utils/miniplayer/miniplayer.dart';
+import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 
 class LinuxSongPlayerWidget extends SongPlayerWidget {
   const LinuxSongPlayerWidget({super.key});

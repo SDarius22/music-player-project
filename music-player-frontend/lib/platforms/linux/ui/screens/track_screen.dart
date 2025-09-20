@@ -2,7 +2,7 @@ import 'package:duration/duration.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 
 class TrackScreen extends StatefulWidget {
   static Route<void> route({required Song song}) {

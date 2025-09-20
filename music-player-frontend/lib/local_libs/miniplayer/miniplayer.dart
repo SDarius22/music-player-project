@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/utils/miniplayer/src/miniplayer_will_pop_scope.dart';
-import 'package:music_player_frontend/utils/miniplayer/src/utils.dart';
-import 'package:music_player_frontend/utils/multivaluelistenablebuilder/mvlb.dart';
+import 'package:music_player_frontend/local_libs/miniplayer/src/miniplayer_will_pop_scope.dart';
+import 'package:music_player_frontend/local_libs/miniplayer/src/utils.dart';
+import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
 
 ///Type definition for the builder function
 typedef MiniplayerBuilder = Widget Function(double height, double percentage);

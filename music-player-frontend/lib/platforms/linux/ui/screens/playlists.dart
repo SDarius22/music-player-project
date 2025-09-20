@@ -10,7 +10,7 @@ import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/playlist_screen.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Playlists extends StatefulWidget {

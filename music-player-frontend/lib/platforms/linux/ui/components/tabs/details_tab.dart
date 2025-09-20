@@ -3,10 +3,10 @@ import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artist_screen.dart';
-import 'package:music_player_frontend/utils/constants.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/utils/miniplayer/miniplayer.dart';
-import 'package:music_player_frontend/utils/text_scroll/text_scroll.dart';
+import 'package:music_player_frontend/local_libs/constants.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
+import 'package:music_player_frontend/local_libs/text_scroll/text_scroll.dart';
 import 'package:provider/provider.dart';
 
 class DetailsTab extends AbstractDetailsTab {

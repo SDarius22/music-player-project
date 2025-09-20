@@ -3,7 +3,7 @@ import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/worker_service.dart';
-import 'package:music_player_frontend/utils/constants.dart';
+import 'package:music_player_frontend/local_libs/constants.dart';
 
 abstract class AbstractAppStateProvider with ChangeNotifier {
   late final AbstractAudioProvider audioProvider;

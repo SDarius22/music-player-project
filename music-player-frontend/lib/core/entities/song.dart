@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_persistent_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';

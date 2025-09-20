@@ -8,7 +8,7 @@ import 'package:music_player_frontend/platforms/linux/providers/audio_provider.d
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artist_screen.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Artists extends StatefulWidget {

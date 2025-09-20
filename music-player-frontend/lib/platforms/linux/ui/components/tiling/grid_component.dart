@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_tile.dart';

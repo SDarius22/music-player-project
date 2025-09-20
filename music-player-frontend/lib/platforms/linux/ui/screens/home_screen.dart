@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/volume_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_drawer_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_song_player_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_volume_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/tracks.dart';
 import 'package:provider/provider.dart';
 
@@ -22,12 +22,12 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppBarWidget(actions: [VolumeWidget()]),
+      appBar: const AppBarWidget(actions: [LinuxVolumeWidget()]),
       body: Stack(
         children: [
           Row(
             children: [
-              const DrawerWidget(),
+              const LinuxDrawerWidget(),
               Consumer<AbstractAppStateProvider>(
                 builder: (context, abstractAppStateProvider, child) {
                   return Theme(
@@ -52,7 +52,7 @@ class HomeScreen extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 500),
             alignment: Alignment.bottomCenter,
-            child: const SongPlayerWidget(),
+            child: const LinuxSongPlayerWidget(),
           ),
 
           // ValueListenableBuilder(

@@ -1,4 +1,4 @@
-import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_persistent_entity.dart';
 import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
 import 'package:music_player_frontend/core/entities/song.dart';

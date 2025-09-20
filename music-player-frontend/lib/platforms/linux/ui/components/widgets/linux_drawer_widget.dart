@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/actions_widget.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_actions_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/albums.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artists.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/playlists.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/settings_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/tracks.dart';
-import 'package:music_player_frontend/utils/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/utils/hover_widget/hover_container.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
 import 'package:provider/provider.dart';
 
 class LinuxDrawerWidget extends DrawerWidget {
@@ -21,7 +21,7 @@ class LinuxDrawerWidget extends DrawerWidget {
 class _LinuxDrawerWidgetState extends DrawerWidgetState {
   bool _finishedAnimation = false;
   int _selected = 4;
-  late AppStateProvider _appStateProvider;
+  late AbstractAppStateProvider _appStateProvider;
   late List<Map<String, dynamic>> menuItems = [
     {
       "text": "Menu",
@@ -157,12 +157,15 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
 
   @override
   Widget buildDrawer(BuildContext context) {
-    _appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+    _appStateProvider = Provider.of<AbstractAppStateProvider>(
+      context,
+      listen: false,
+    );
 
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
     var normalSize = height * 0.02;
-    return Consumer<AppStateProvider>(
+    return Consumer<AbstractAppStateProvider>(
       builder: (context, appState, child) {
         return AnimatedContainer(
           width: appState.isDrawerOpen ? width * 0.12 : width * 0.035,
@@ -248,7 +251,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                   },
                 ),
               ),
-              const ActionsWidget(),
+              const LinuxActionsWidget(),
             ],
           ),
         );

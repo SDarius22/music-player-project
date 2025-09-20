@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract__named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
 
 abstract class AbstractCustomListTile extends StatelessWidget {
   final NamedEntity entity;

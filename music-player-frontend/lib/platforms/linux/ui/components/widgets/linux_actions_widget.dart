@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/actions_widget.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
 import 'package:provider/provider.dart';
 
 class LinuxActionsWidget extends ActionsWidget {
@@ -18,7 +18,7 @@ class _LinuxActionsWidgetState extends ActionsWidgetState {
     //var boldSize = height * 0.025;
     var normalSize = height * 0.02;
 
-    return Consumer<AppStateProvider>(
+    return Consumer<AbstractAppStateProvider>(
       builder: (context, am, child) {
         return ValueListenableBuilder(
           valueListenable: expanded,
