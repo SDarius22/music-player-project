@@ -2,29 +2,73 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/database/objectBox.dart';
-import 'package:music_player_frontend/core/database/objectbox.g.dart';
+import 'package:music_player_frontend/core/entities/app_settings.dart';
+import 'package:music_player_frontend/core/entities/played_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/repository/played_song_repo.dart';
+import 'package:music_player_frontend/core/repository/song_repo.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
-import 'package:music_player_frontend/core/services/playlist_service.dart';
+import 'package:music_player_frontend/core/services/settings_service.dart';
 
 class SongService {
-  Box<Song> get _songBox => ObjectBox.store.box<Song>();
+  final SongRepository _songRepository;
+  final PlayedSongRepository _playedSongRepository;
+  final FileService _fileService;
+  final SettingsService _settingsService;
 
-  final PlaylistService _playlistService;
+  SongService(
+    this._songRepository,
+    this._playedSongRepository,
+    this._fileService,
+    this._settingsService,
+  );
 
-  SongService(this._playlistService);
+  Stream watchSongs() => _songRepository.watchSongs();
 
-  Stream watchSongs() => _songBox.query().watch(triggerImmediately: true);
+  Stream watchPlayedSongs() => _playedSongRepository.watchPlayedSongs();
 
   Future<Song> addSong(String songPath) async {
     if (songPath.isEmpty) {
       throw ArgumentError("Song path cannot be empty");
     }
     Song newSong = Song();
-    var metadata = await FileService.retrieveSong(songPath);
+    var metadata = await _fileService.retrieveSong(songPath);
     newSong.fromJson(metadata);
-    newSong.id = _songBox.put(newSong);
-    return newSong;
+    return _songRepository.saveSong(newSong);
+  }
+
+  bool isInitialScanComplete() {
+    try {
+      final settingsBox = ObjectBox.store.box<AppSettings>();
+      final settings = settingsBox.get(1);
+      return settings?.initialScanComplete ?? false;
+    } catch (e) {
+      debugPrint("Error checking initial scan status: $e");
+      return false;
+    }
+  }
+
+  void markInitialScanComplete() {
+    try {
+      final settingsBox = ObjectBox.store.box<AppSettings>();
+      var settings = settingsBox.get(1);
+      if (settings == null) {
+        settings =
+            AppSettings()
+              ..id = 1
+              ..initialScanComplete = true;
+      } else {
+        settings.initialScanComplete = true;
+      }
+      settingsBox.put(settings);
+      debugPrint("Initial scan marked as complete");
+    } catch (e) {
+      debugPrint("Error marking initial scan complete: $e");
+    }
+  }
+
+  Song addSongEntity(Song song) {
+    return _songRepository.saveSong(song);
   }
 
   Song? getSong(String songPath) {
@@ -33,9 +77,9 @@ class SongService {
     }
 
     try {
-      return _songBox.query(Song_.path.equals(songPath)).build().findUnique();
+      return _songRepository.getSongByPath(songPath);
     } catch (e) {
-      debugPrint("Error fetching song with path '$songPath': $e");
+      // debugPrint("Error fetching song with path '$songPath': $e");
       return null;
     }
   }
@@ -46,10 +90,7 @@ class SongService {
     }
 
     try {
-      return _songBox
-          .query(Song_.path.contains(query, caseSensitive: false))
-          .build()
-          .findFirst();
+      return _songRepository.getSongContaining(query);
     } catch (e) {
       debugPrint("Error fetching song containing '$query': $e");
       return null;
@@ -57,55 +98,26 @@ class SongService {
   }
 
   List<Song> getSongs(String query, String sortField, bool flag) {
-    Query<Song> builderQuery;
-    if (flag == false) {
-      builderQuery =
-          _songBox
-              .query(Song_.name.contains(query, caseSensitive: false))
-              .order(sortField == 'Name' ? Song_.name : Song_.duration)
-              .build();
-    } else {
-      builderQuery =
-          _songBox
-              .query(Song_.name.contains(query, caseSensitive: false))
-              .order(
-                sortField == 'Name' ? Song_.name : Song_.duration,
-                flags: Order.descending,
-              )
-              .build();
-    }
-    return builderQuery.find();
+    return _songRepository.getSongs(query, sortField, flag);
   }
 
   List<Song> getAllSongs() {
-    return _songBox.getAll();
+    return _songRepository.getAllSongs();
   }
 
   void updateSong(Song song) {
-    _songBox.put(song);
-    _playlistService.updateFavorites(
-      _songBox.query(Song_.liked.equals(true)).build().find(),
-    );
+    _songRepository.updateSong(song);
+  }
 
-    var query =
-        _songBox
-            .query()
-            .order(Song_.lastPlayed, flags: Order.descending)
-            .build();
-    query.limit = 50;
-    _playlistService.updateRecentlyPlayed(query.find());
-
-    query =
-        _songBox
-            .query(Song_.playCount.greaterThan(0))
-            .order(Song_.playCount, flags: Order.descending)
-            .build();
-    query.limit = 50;
-    _playlistService.updateMostPlayed(query.find());
+  void updateSongPlayed(Song song) {
+    PlayedSong playedSong = PlayedSong();
+    playedSong.song.target = song;
+    playedSong.playedAt = DateTime.now();
+    _playedSongRepository.savePlayedSong(playedSong);
   }
 
   void deleteSong(Song song) {
-    _songBox.remove(song.id);
+    _songRepository.deleteSong(song);
   }
 
   List<Song> getSongsFromPaths(List<String> paths) {
@@ -120,5 +132,21 @@ class SongService {
       }
     }
     return songs;
+  }
+
+  List<Song> getMostPlayedSongs(int limit) {
+    return _playedSongRepository
+        .getMostPlayedSongs(limit)
+        .map((ps) => ps.song.target)
+        .whereType<Song>()
+        .toList();
+  }
+
+  List<Song> getRecentlyPlayedSongs(int limit) {
+    return _playedSongRepository
+        .getRecentPlayedSongs(limit)
+        .map((ps) => ps.song.target)
+        .whereType<Song>()
+        .toList();
   }
 }

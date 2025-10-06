@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/repository/album_repo.dart';
 
@@ -8,14 +10,39 @@ class AlbumService {
 
   Stream watchAlbums() => _albumRepository.watchAlbums();
 
-  Album addAlbum(String name) {
-    Album album = Album();
-    album.name = name;
-    return _albumRepository.saveAlbum(album);
+  Album getAlbum(int albumId) {
+    try {
+      return _albumRepository.getAlbum(albumId)!;
+    } catch (e) {
+      throw Exception("Album with ID $albumId not found.");
+    }
   }
 
-  Album? getAlbum(int albumId) {
-    return _albumRepository.getAlbum(albumId);
+  Album getOrCreateAlbum(String albumName, int artistId, {Uint8List? image}) {
+    Album? existingAlbum = _albumRepository.getAlbumByNameAndArtist(
+      albumName,
+      artistId,
+    );
+    if (existingAlbum != null) {
+      existingAlbum.imageBytes ??= image;
+      _albumRepository.saveAlbum(existingAlbum);
+      return existingAlbum;
+    }
+    Album newAlbum = Album();
+    newAlbum.name = albumName;
+    newAlbum.imageBytes = image;
+    newAlbum.artist.targetId = artistId;
+    return _albumRepository.saveAlbum(newAlbum);
+  }
+
+  Album getAlbumByNameAndArtist(String albumName, int artistId) {
+    try {
+      return _albumRepository.getAlbumByNameAndArtist(albumName, artistId)!;
+    } catch (e) {
+      throw Exception(
+        "Album with name $albumName and artist ID $artistId not found.",
+      );
+    }
   }
 
   List<Album> getAlbums(String query, String sortField, bool flag) {
@@ -26,11 +53,7 @@ class AlbumService {
     return _albumRepository.getAllAlbums();
   }
 
-  void deleteAlbum(Album album) {
-    _albumRepository.deleteAlbum(album);
-  }
-
   void updateAlbum(Album album) {
-    _albumRepository.saveAlbum(album);
+    _albumRepository.updateAlbum(album);
   }
 }

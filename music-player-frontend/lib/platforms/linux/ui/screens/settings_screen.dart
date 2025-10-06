@@ -2,13 +2,14 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -38,6 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     var normalSize = height * 0.02;
     var smallSize = height * 0.015;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         width: width,
         height: height,
@@ -386,7 +388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 enabledThumbRadius: height * 0.0075,
                               ),
                               showValueIndicator: ShowValueIndicator.always,
-                              activeTrackColor: appState.lightColor,
+                              activeTrackColor: MusicPlayerTheme.primaryPurple,
                               inactiveTrackColor: Colors.white,
                               valueIndicatorColor: Colors.white,
                               valueIndicatorTextStyle: TextStyle(
@@ -460,7 +462,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 enabledThumbRadius: height * 0.0075,
                               ),
                               showValueIndicator: ShowValueIndicator.always,
-                              activeTrackColor: appState.lightColor,
+                              activeTrackColor: MusicPlayerTheme.primaryPurple,
                               inactiveTrackColor: Colors.white,
                               valueIndicatorColor: Colors.white,
                               valueIndicatorTextStyle: TextStyle(
@@ -649,7 +651,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           (appState as AppStateProvider).initTray();
                         },
                         trackColor: WidgetStateProperty.all(
-                          appState.lightColor,
+                          MusicPlayerTheme.primaryPurple,
                         ),
                         thumbColor: WidgetStateProperty.all(Colors.white),
                         thumbIcon: WidgetStateProperty.all(
@@ -698,7 +700,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           });
                         },
                         trackColor: WidgetStateProperty.all(
-                          appState.lightColor,
+                          MusicPlayerTheme.primaryPurple,
                         ),
                         thumbColor: WidgetStateProperty.all(Colors.white),
                         thumbIcon: WidgetStateProperty.all(
@@ -743,12 +745,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: (value) {
                           setState(() {
                             appState.isDarkMode = value;
-                            appState.setTheme();
+                            // appState.setTheme();
                           });
                           (appState as AppStateProvider).initTray();
                         },
                         trackColor: WidgetStateProperty.all(
-                          appState.lightColor,
+                          MusicPlayerTheme.primaryPurple,
                         ),
                         thumbColor: WidgetStateProperty.all(Colors.white),
                         thumbIcon: WidgetStateProperty.all(

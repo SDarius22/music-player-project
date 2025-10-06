@@ -5,14 +5,15 @@ import 'dart:typed_data';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:provider/provider.dart';
 
 class CreateOrImportScreen extends StatefulWidget {
@@ -96,6 +97,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     var normalSize = height * 0.02;
     var smallSize = height * 0.015;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         width: width,
         height: height,
@@ -158,7 +160,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                         playlistName,
                         selected.value,
                         playlistAdd,
-                        coverArt.value,
+                        coverArt.value ?? Constants.logoBytes,
                       );
                       BotToast.showText(
                         text:

@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
-import 'package:music_player_frontend/core/audio_player/player_state.dart' as player_state;
+import 'package:music_player_frontend/core/audio_player/player_state.dart'
+    as player_state;
 
 class ConcreteAudioPlayer extends AbstractAudioPlayer {
   final AudioPlayer audioPlayer = AudioPlayer();
@@ -27,12 +28,12 @@ class ConcreteAudioPlayer extends AbstractAudioPlayer {
 
   @override
   Future<void> play() async {
-    await audioPlayer.resume();
+    await audioPlayer.play(audioPlayer.source ?? AssetSource(''));
   }
 
   @override
   Future<void> seek(Duration position) async {
-    await audioPlayer.seek(position);
+    audioPlayer.seek(position);
   }
 
   @override
@@ -61,22 +62,22 @@ class ConcreteAudioPlayer extends AbstractAudioPlayer {
   }
 
   @override
-  Stream<player_state.PlayerState> get onPlayerStateChanged => audioPlayer.onPlayerStateChanged.map((state) {
-    switch (state) {
-      case PlayerState.playing:
-        return player_state.PlayerState.playing;
-      case PlayerState.paused:
-        return player_state.PlayerState.paused;
-      case PlayerState.stopped:
-        return player_state.PlayerState.stopped;
-      case PlayerState.completed:
-        return player_state.PlayerState.completed;
-      default:
-        return player_state.PlayerState.stopped;
-    }
-  });
+  Stream<player_state.PlayerState> get onPlayerStateChanged =>
+      audioPlayer.onPlayerStateChanged.map((state) {
+        switch (state) {
+          case PlayerState.playing:
+            return player_state.PlayerState.playing;
+          case PlayerState.paused:
+            return player_state.PlayerState.paused;
+          case PlayerState.stopped:
+            return player_state.PlayerState.stopped;
+          case PlayerState.completed:
+            return player_state.PlayerState.completed;
+          default:
+            return player_state.PlayerState.stopped;
+        }
+      });
 
   @override
   Stream<Duration> get onPositionChanged => audioPlayer.onPositionChanged;
-
 }

@@ -1,18 +1,19 @@
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/tabs/details_tab.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/tabs/lyrics_tab.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/tabs/queue_tab.dart';
 import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tabs/details_tab.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tabs/lyrics_tab.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/tabs/queue_tab.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
+import 'package:provider/provider.dart';
 
 class LinuxSongPlayerWidget extends SongPlayerWidget {
   const LinuxSongPlayerWidget({super.key});
@@ -22,8 +23,15 @@ class LinuxSongPlayerWidget extends SongPlayerWidget {
 }
 
 class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
-  late AppStateProvider appStateProvider;
-  late AudioProvider audioProvider;
+  late AbstractAppStateProvider appStateProvider;
+  late AbstractAudioProvider audioProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    appStateProvider = context.read<AbstractAppStateProvider>();
+    audioProvider = context.read<AbstractAudioProvider>();
+  }
 
   @override
   double getMinHeight(BuildContext context) {
@@ -37,7 +45,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
 
   @override
   double getMinWidth(BuildContext context) {
-    return MediaQuery.of(context).size.width * 0.9;
+    return MediaQuery.of(context).size.width;
   }
 
   @override
@@ -63,8 +71,8 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       imageLeftMargin = 0;
     }
 
-    double minRadius = width * 0.0075;
-    double maxRadius = width * 0.01;
+    double minRadius = 15;
+    double maxRadius = 15;
     double borderRadius = lerpDouble(maxRadius, minRadius, percentage) ?? 0.0;
 
     double normalized = (1.0 - (percentage / 0.25).clamp(0.0, 1.0));
@@ -75,19 +83,16 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
         Container(
           alignment: Alignment.center,
           margin: EdgeInsets.only(left: imageLeftMargin),
+          padding: const EdgeInsets.all(1.5),
           child: AspectRatio(
             aspectRatio: 1.0,
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.rectangle,
-                color: Colors.black,
                 borderRadius: BorderRadius.circular(borderRadius),
                 image: DecorationImage(
                   fit: BoxFit.cover,
-                  image:
-                      Image.memory(
-                        audioProvider.currentSong.image ?? Uint8List(0),
-                      ).image,
+                  image: Image.memory(audioProvider.currentSong.coverArt).image,
                 ),
               ),
             ),
@@ -97,7 +102,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
         Opacity(
           opacity: progressBarOpacity,
           child: SizedBox(
-            width: width * 0.3,
+            width: width * 0.25,
             height: height * 0.15,
             child: _buildPlayerButtons(audioProvider),
           ),
@@ -121,14 +126,20 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
 
         Opacity(
           opacity: progressBarOpacity,
-          child: IconButton(
-            onPressed:
-                () =>
-                    miniPlayerController.animateToHeight(state: PanelState.max),
-            icon: Icon(
-              FluentIcons.maximize,
-              color: Colors.white,
-              size: width * 0.01,
+          child: SizedBox(
+            width: width * 0.05,
+            height: height * 0.15,
+            child: IconButton(
+              onPressed:
+                  () => Provider.of<AbstractAppStateProvider>(
+                    context,
+                    listen: false,
+                  ).miniPlayerController.animateToHeight(state: PanelState.max),
+              icon: Icon(
+                FluentIcons.maximize,
+                color: Colors.white,
+                size: height * 0.02,
+              ),
             ),
           ),
         ),
@@ -177,7 +188,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       if (itemScrollController.hasClients) {
         debugPrint("Jumping to current song index in queue");
         int currentSongIndex =
-            audioProvider.audioService.audioSettings.currentIndexInNonShuffled;
+            audioProvider.currentAudioSettings.currentIndexInNonShuffled;
         if (currentSongIndex > 15) {
           itemScrollController.jumpTo(height * 0.1 * (currentSongIndex - 10));
         }
@@ -198,37 +209,42 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Queue
-              if (showSidePanels)
-                Opacity(
-                  opacity: sidePanelsOpacity,
-                  child: SizedBox(
-                    width: width * 0.3,
-                    height: width * 0.31,
-                    child: QueueTab(itemScrollController: itemScrollController),
-                  ),
-                ),
-
-              // Album Art
-              Container(
-                alignment: Alignment.center,
-                constraints: BoxConstraints(maxWidth: width * 0.325),
-                margin: EdgeInsets.only(right: imageRightMargin),
-                // width: width * 0.325,
-                child: DetailsTab(
-                  opacity: detailsOpacity,
-                  miniPlayerController: miniPlayerController,
-                ),
-              ),
-
               // Lyrics
               if (showSidePanels)
                 Opacity(
                   opacity: sidePanelsOpacity,
-                  child: SizedBox(
+                  child: Container(
                     width: width * 0.3,
-                    height: width * 0.31,
+                    height: width * 0.32,
+                    margin: EdgeInsets.only(left: width * 0.01),
                     child: const LyricsTab(),
+                  ),
+                ),
+
+              const Spacer(),
+
+              // Album Art
+              Container(
+                alignment: Alignment.center,
+                constraints: BoxConstraints(maxWidth: width * 0.35),
+                margin: EdgeInsets.only(right: imageRightMargin),
+                // width: width * 0.325,
+                child: DetailsTab(
+                  opacity: detailsOpacity,
+                  miniPlayerController: appStateProvider.miniPlayerController,
+                ),
+              ),
+
+              const Spacer(),
+              // Queue
+              if (showSidePanels)
+                Opacity(
+                  opacity: sidePanelsOpacity,
+                  child: Container(
+                    width: width * 0.3,
+                    height: width * 0.32,
+                    margin: EdgeInsets.only(right: width * 0.01),
+                    child: QueueTab(itemScrollController: itemScrollController),
                   ),
                 ),
             ],
@@ -265,8 +281,9 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                                     snapshot.hasData
                                         ? snapshot.data as Duration
                                         : Duration.zero,
-                                progressBarColor: appStateProvider.darkColor,
-                                baseBarColor: appStateProvider.darkColor
+
+                                progressBarColor: MusicPlayerTheme.darkPurple,
+                                baseBarColor: MusicPlayerTheme.darkPurple
                                     .withValues(alpha: 0.25),
                                 thumbColor: Colors.white,
                                 barHeight: 4.0,
@@ -295,7 +312,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                           );
                         },
                       )
-                      : Center(
+                      : const Center(
                         child: LinearProgressIndicator(
                           color: Colors.white,
                           backgroundColor: Colors.white24,
@@ -317,9 +334,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                 IconButton(
                   onPressed: () async {
                     debugPrint("Liked");
-                    audioProvider.currentSong.liked =
-                        !audioProvider.currentSong.liked;
-                    audioProvider.currentSong.save();
+                    audioProvider.likeCurrentSong();
                     likedNotifier.value = !likedNotifier.value;
                     String message =
                         audioProvider.currentSong.liked
@@ -358,12 +373,17 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
 
                 IconButton(
                   onPressed: () async {
-                    miniPlayerController.animateToHeight(state: PanelState.min);
+                    Provider.of<AbstractAppStateProvider>(
+                      context,
+                      listen: false,
+                    ).miniPlayerController.animateToHeight(
+                      state: PanelState.min,
+                    );
                   },
                   icon: Icon(
                     FluentIcons.minimize,
                     color: Colors.white,
-                    size: width * 0.01,
+                    size: height * 0.025,
                     shadows: [
                       Shadow(
                         color: Colors.black.withValues(alpha: 0.5),
@@ -390,17 +410,23 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
         return IconButton(
           onPressed: () async {
             if (audioProvider.playingNotifier.value) {
+              Provider.of<AbstractAppStateProvider>(
+                context,
+                listen: false,
+              ).gradientController.stop();
               await audioProvider.pause();
-              gradientController.stop();
             } else {
+              Provider.of<AbstractAppStateProvider>(
+                context,
+                listen: false,
+              ).gradientController.start();
               await audioProvider.play();
-              gradientController.start();
             }
           },
           icon: Icon(
             value ? FluentIcons.pause : FluentIcons.play,
             color: Colors.white,
-            size: height * 0.025,
+            size: height * 0.03,
             shadows: [
               Shadow(
                 color: Colors.black.withValues(alpha: 0.5),
@@ -425,7 +451,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       icon: Icon(
         FluentIcons.next,
         color: Colors.white,
-        size: height * 0.025,
+        size: height * 0.03,
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.5),
@@ -445,7 +471,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       icon: Icon(
         FluentIcons.previous,
         color: Colors.white,
-        size: height * 0.025,
+        size: height * 0.03,
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.5),
@@ -469,7 +495,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
           },
           icon: Icon(
             shuffle == false ? FluentIcons.shuffleOff : FluentIcons.shuffleOn,
-            size: height * 0.025,
+            size: height * 0.03,
             color: Colors.white,
             shadows: [
               Shadow(
@@ -511,7 +537,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     );
   }
 
-  Widget _buildPlayerButtons(AudioProvider audioProvider) {
+  Widget _buildPlayerButtons(AbstractAudioProvider audioProvider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.center,

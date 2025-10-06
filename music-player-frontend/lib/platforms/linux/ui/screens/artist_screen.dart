@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class ArtistScreen extends StatefulWidget {
@@ -35,6 +35,7 @@ class _ArtistScreenState extends State<ArtistScreen> {
     var boldSize = height * 0.025;
     // var normalSize = height * 0.02;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         padding: EdgeInsets.only(
           top: height * 0.02,
@@ -120,16 +121,12 @@ class _ArtistScreenState extends State<ArtistScreen> {
                               IconButton(
                                 onPressed: () async {
                                   debugPrint("Play ${widget.artist.name}");
-                                  List<String> songPaths =
-                                      widget.artist.songs
-                                          .map((e) => e.path)
-                                          .toList();
                                   var audioProvider =
                                       Provider.of<AudioProvider>(
                                         context,
                                         listen: false,
                                       );
-                                  audioProvider.setQueue(songPaths);
+                                  audioProvider.setQueue(widget.artist.songs);
                                   await audioProvider.setCurrentSong(
                                     widget.artist.songs.first,
                                   );
@@ -189,15 +186,11 @@ class _ArtistScreenState extends State<ArtistScreen> {
                               },
                               onTap: (entity) async {
                                 debugPrint("Tapped on ${entity.name}");
-                                List<String> songPaths =
-                                    widget.artist.songs
-                                        .map((e) => e.path)
-                                        .toList();
                                 var audioProvider = Provider.of<AudioProvider>(
                                   context,
                                   listen: false,
                                 );
-                                audioProvider.setQueue(songPaths);
+                                audioProvider.setQueue(widget.artist.songs);
                                 await audioProvider.setCurrentSong(
                                   (entity as Song),
                                 );

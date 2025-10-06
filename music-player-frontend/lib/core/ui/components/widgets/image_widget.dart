@@ -1,15 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
-enum ImageWidgetType {
-  asset,
-  song,
-  network,
-  bytes,
-}
+import 'package:flutter/material.dart';
+
+enum ImageWidgetType { asset, song, network, bytes }
 
 class ImageWidget extends StatefulWidget {
   final String path;
@@ -17,7 +12,13 @@ class ImageWidget extends StatefulWidget {
   final Widget? child;
   final ImageWidgetType type;
 
-  const ImageWidget({super.key,required this.path, required this.type, this.hoveredChild, this.child});
+  const ImageWidget({
+    super.key,
+    required this.path,
+    required this.type,
+    this.hoveredChild,
+    this.child,
+  });
 
   @override
   State<ImageWidget> createState() => _ImageWidgetState();
@@ -26,7 +27,8 @@ class ImageWidget extends StatefulWidget {
 class _ImageWidgetState extends State<ImageWidget> {
   ValueNotifier<bool> isHovered = ValueNotifier(false);
   late Future imageFuture;
-  final ImageProvider image = Image.asset('assets/logo.png', fit: BoxFit.cover,).image;
+  final ImageProvider image =
+      Image.asset('assets/logo.png', fit: BoxFit.cover).image;
 
   @override
   void initState() {
@@ -55,12 +57,6 @@ class _ImageWidgetState extends State<ImageWidget> {
         return Image.memory(image).image;
       });
     }
-    if (widget.type == ImageWidgetType.song) {
-      return Future(() async {
-        final image = await FileService.getImage(widget.path);
-        return Image.memory(image).image;
-      });
-    }
     if (widget.type == ImageWidgetType.network) {
       return Future(() async {
         return Image.network(widget.path).image;
@@ -72,7 +68,7 @@ class _ImageWidgetState extends State<ImageWidget> {
       });
     }
     return Future(() async {
-      return Image.asset('assets/logo.png', fit: BoxFit.cover,).image;
+      return Image.asset('assets/logo.png', fit: BoxFit.cover).image;
     });
   }
 
@@ -89,39 +85,40 @@ class _ImageWidgetState extends State<ImageWidget> {
         child: Container(
           decoration: BoxDecoration(
             color: Colors.black,
-            image: DecorationImage(
-              fit: BoxFit.cover,
-              image: image,
-            ),
+            image: DecorationImage(fit: BoxFit.cover, image: image),
           ),
-          child: widget.hoveredChild != null?
-          ValueListenableBuilder(
-              valueListenable: isHovered,
-              builder: (context, value, child) {
-                return Stack(
-                  children: [
-                    Opacity(
-                      opacity: value ? 0.0 : 1.0,
-                      child: widget.child,
-                    ),
-                    Opacity(
-                      opacity: value ? 1.0 : 0.0,
-                      child: ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            alignment: Alignment.center,
-                            child: widget.hoveredChild,
+          child:
+              widget.hoveredChild != null
+                  ? ValueListenableBuilder(
+                    valueListenable: isHovered,
+                    builder: (context, value, child) {
+                      return Stack(
+                        children: [
+                          Opacity(
+                            opacity: value ? 0.0 : 1.0,
+                            child: widget.child,
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
-          ) :
-          widget.child,
+                          Opacity(
+                            opacity: value ? 1.0 : 0.0,
+                            child: ClipRect(
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 10,
+                                  sigmaY: 10,
+                                ),
+                                child: Container(
+                                  color: Colors.black.withValues(alpha: 0.4),
+                                  alignment: Alignment.center,
+                                  child: widget.hoveredChild,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  )
+                  : widget.child,
         ),
       ),
     );

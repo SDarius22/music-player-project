@@ -1,19 +1,26 @@
 import 'dart:typed_data';
 
-import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_persistent_entity.dart';
+import 'package:collection/collection.dart';
+import 'package:music_player_frontend/core/constants.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
-class Album extends PersistentEntity<Album>
-    with AbstractCollection
-    implements NamedEntity {
+class Album with AbstractCollection implements BaseEntity {
   @Id()
   int id = 0;
 
   String _name = "Unknown album";
+
+  @Property(type: PropertyType.byteVector)
+  Uint8List? imageBytes;
+
+  @Backlink('album')
+  final _songs = ToMany<Song>();
+  final artist = ToOne<Artist>();
 
   @override
   String get name => _name;
@@ -21,17 +28,26 @@ class Album extends PersistentEntity<Album>
   @override
   set name(String value) => _name = value;
 
-  @Backlink('album')
-  final _songs = ToMany<Song>();
-
   @override
   ToMany<Song> get songs => _songs;
 
-  @Property(type: PropertyType.byteVector)
-  Uint8List? coverArt;
+  @override
+  Uint8List get coverArt => imageBytes ?? Constants.logoBytes;
 
-  void save() {
-    super.persist(this);
+  get duration {
+    int total = 0;
+    for (var song in _songs) {
+      total += song.duration;
+    }
+    return total;
+  }
+
+  get year {
+    if (_songs.isEmpty) return 'Unknown Year';
+    List<int> years =
+        _songs.map((song) => song.year).where((year) => year > 0).toList();
+    if (years.isEmpty) return 'Unknown Year';
+    return "${years.average.round()}";
   }
 
   @override

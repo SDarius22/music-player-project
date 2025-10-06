@@ -8,14 +8,30 @@ class ArtistService {
 
   Stream watchArtists() => _artistRepository.watchArtists();
 
-  Artist addArtist(String name) {
-    Artist artist = Artist();
-    artist.name = name;
-    return _artistRepository.saveArtist(artist);
+  Artist getArtist(int artistId) {
+    try {
+      return _artistRepository.getArtist(artistId)!;
+    } catch (e) {
+      throw Exception("Artist with ID $artistId not found.");
+    }
   }
 
-  Artist? getArtist(int artistId) {
-    return _artistRepository.getArtist(artistId);
+  Artist getOrCreateArtist(String artistName) {
+    Artist? existingArtist = _artistRepository.getArtistByName(artistName);
+    if (existingArtist != null) {
+      return existingArtist;
+    }
+    Artist newArtist = Artist();
+    newArtist.name = artistName;
+    return _artistRepository.saveArtist(newArtist);
+  }
+
+  Artist getArtistByName(String artistName) {
+    try {
+      return _artistRepository.getArtistByName(artistName)!;
+    } catch (e) {
+      throw Exception("Artist with name $artistName not found.");
+    }
   }
 
   List<Artist> getArtists(String query, String sortField, bool flag) {
@@ -27,10 +43,6 @@ class ArtistService {
   }
 
   void updateArtist(Artist artist) {
-    _artistRepository.saveArtist(artist);
-  }
-
-  void deleteArtist(Artist artist) {
-    _artistRepository.deleteArtist(artist);
+    _artistRepository.updateArtist(artist);
   }
 }

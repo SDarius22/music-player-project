@@ -4,39 +4,36 @@ import 'package:music_player_frontend/core/repository/settings_repo.dart';
 
 class SettingsService {
   final SettingsRepository _settingsRepository;
+  AudioSettings currentAudioSettings = AudioSettings();
+  AppSettings currentAppSettings = AppSettings();
 
   SettingsService(this._settingsRepository) {
-    if (_settingsRepository.getAppSettings() == null) {
-      _settingsRepository.saveAppSettings(AppSettings());
-    }
-    if (_settingsRepository.getAudioSettings() == null) {
-      _settingsRepository.saveAudioSettings(AudioSettings());
-    }
+    _settingsRepository.getAppSettings() == null
+        ? _settingsRepository.saveAppSettings(currentAppSettings)
+        : currentAppSettings = _settingsRepository.getAppSettings()!;
+
+    _settingsRepository.getAudioSettings() == null
+        ? _settingsRepository.saveAudioSettings(currentAudioSettings)
+        : currentAudioSettings = _settingsRepository.getAudioSettings()!;
   }
 
-  AudioSettings getAudioSettings() {
-    return _settingsRepository.getAudioSettings() ?? AudioSettings();
-  }
-
-  void updateAudioSettings(AudioSettings settings) {
-    _settingsRepository.saveAudioSettings(settings);
+  void updateAudioSettings() {
+    _settingsRepository.saveAudioSettings(currentAudioSettings);
   }
 
   void resetAudioSettings() {
+    currentAudioSettings = AudioSettings();
     _settingsRepository.deleteAllAudioSettings();
-    _settingsRepository.saveAudioSettings(AudioSettings());
+    _settingsRepository.saveAudioSettings(currentAudioSettings);
   }
 
-  AppSettings getAppSettings() {
-    return _settingsRepository.getAppSettings() ?? AppSettings();
-  }
-
-  void updateAppSettings(AppSettings settings) {
-    _settingsRepository.saveAppSettings(settings);
+  void updateAppSettings() {
+    _settingsRepository.saveAppSettings(currentAppSettings);
   }
 
   void resetAppSettings() async {
+    currentAppSettings = AppSettings();
     _settingsRepository.deleteAllAppSettings();
-    _settingsRepository.saveAppSettings(AppSettings());
+    _settingsRepository.saveAppSettings(currentAppSettings);
   }
 }

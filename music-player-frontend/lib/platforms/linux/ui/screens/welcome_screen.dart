@@ -1,7 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
 import 'package:provider/provider.dart';
@@ -37,10 +38,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     var normalSize = height * 0.02;
     // var smallSize = height * 0.015;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: const AppBarWidget(),
       body: Container(
         width: width,
         height: height,
+        decoration: const BoxDecoration(
+          gradient: MusicPlayerTheme.primaryGradient,
+        ),
         padding: EdgeInsets.only(
           top: height * 0.02,
           left: width * 0.01,

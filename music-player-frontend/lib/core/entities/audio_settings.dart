@@ -1,12 +1,12 @@
-import 'package:music_player_frontend/core/entities/abstract/abstract_persistent_entity.dart';
-import 'package:music_player_frontend/core/entities/user.dart';
+import 'package:collection/collection.dart';
+import 'package:music_player_frontend/core/entities/queue_song.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
-class AudioSettings extends PersistentEntity<AudioSettings> {
+class AudioSettings {
   @Id()
   int id = 0;
-  ToOne<User> user = ToOne<User>();
 
   int index = 0;
   int slider = 0; // this is the time in milliseconds
@@ -21,28 +21,46 @@ class AudioSettings extends PersistentEntity<AudioSettings> {
   double speed = 1;
   double volume = 0.5;
 
-  List<String> queue = [];
-  List<String> shuffledQueue = [];
+  final songs = ToMany<QueueSong>();
 
-  get currentQueue => shuffle ? shuffledQueue : queue;
+  List<QueueSong> get queueSongs => songs.sortedBy((e) => e.position).toList();
 
-  get currentIndexInNonShuffled =>
+  List<Song> get queue =>
+      songs
+          .sortedBy((e) => e.position)
+          .map((e) => e.song.target)
+          .whereType<Song>()
+          .toList();
+
+  List<Song> get shuffledQueue {
+    List<Song> shuffled = List.from(queue);
+    shuffled.shuffle();
+    return shuffled;
+  }
+
+  List<Song> get currentQueue => shuffle ? shuffledQueue : queue;
+
+  int get currentIndexInNonShuffled =>
       currentQueue.isNotEmpty ? queue.indexOf(currentQueue[index]) : -1;
 
-  get currentSong => currentQueue.isNotEmpty ? currentQueue[index] : null;
+  Song get currentSong =>
+      currentQueue.isNotEmpty ? currentQueue[index] : Song();
 
-  get nextSong =>
+  Song get nextSong =>
       currentQueue.isNotEmpty
           ? currentQueue[(index + 1) % currentQueue.length]
-          : null;
+          : Song();
 
-  get previousSong =>
+  set currentSong(Song song) {
+    int newIndex = currentQueue.indexOf(song);
+    if (newIndex != -1) {
+      index = newIndex;
+    }
+  }
+
+  Song get previousSong =>
       currentQueue.isNotEmpty
           ? currentQueue[(index - 1 + currentQueue.length) %
               currentQueue.length]
-          : null;
-
-  void save() {
-    super.persist(this);
-  }
+          : Song();
 }

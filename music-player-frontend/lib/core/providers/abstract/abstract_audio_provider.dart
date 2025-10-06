@@ -1,12 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
+import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/services/abstract/abstract_audio_service.dart';
+import 'package:music_player_frontend/core/repository/queue_song_repo.dart';
+import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 abstract class AbstractAudioProvider with ChangeNotifier {
   late AppAudioService audioService;
+
+  Song get currentSong;
+
+  List<Song> get currentQueue;
+
+  AudioSettings get currentAudioSettings;
 
   ValueNotifier<bool> playingNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> repeatNotifier = ValueNotifier<bool>(false);
@@ -17,6 +25,7 @@ abstract class AbstractAudioProvider with ChangeNotifier {
   ValueNotifier<double> playbackSpeedNotifier = ValueNotifier<double>(1.0);
 
   Future<void> init(
+    QueueSongRepository queueSongRepository,
     SettingsService settingsService,
     SongService songService,
     AbstractAudioPlayer audioPlayer,
@@ -44,19 +53,21 @@ abstract class AbstractAudioProvider with ChangeNotifier {
 
   void setShuffle(bool shuffle);
 
-  void setQueue(List<String> songs);
+  void setQueue(List<Song> songs);
 
   Future<Duration> getDuration();
 
-  void addToQueue(String songPath);
+  void addToQueue(Song song);
 
-  void addMultipleToQueue(List<String> songPaths);
+  void addMultipleToQueue(List<Song> songs);
 
-  void addNextToQueue(String songPath);
+  void addNextToQueue(Song song);
 
-  void addMultipleNextToQueue(List<String> songPaths);
+  void addMultipleNextToQueue(List<Song> songs);
 
-  void removeFromQueue(String songPath);
+  void removeFromQueue(Song song);
 
   Future<void> setCurrentSong(Song song);
+
+  void likeCurrentSong();
 }

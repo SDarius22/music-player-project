@@ -54,22 +54,7 @@ class ArtistProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void addArtist(String name) {
-    _artistService.addArtist(name);
-    notifyListeners();
-  }
-
-  void deleteArtist(Artist artist) {
-    _artistService.deleteArtist(artist);
-    notifyListeners();
-  }
-
-  void updateArtist(Artist artist) {
-    _artistService.updateArtist(artist);
-    notifyListeners();
-  }
-
-  Artist? getArtist(int artistId) {
+  Artist getArtist(int artistId) {
     return _artistService.getArtist(artistId);
   }
 

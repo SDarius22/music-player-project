@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
-import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class AnimatedBackground extends StatefulWidget {
@@ -16,36 +17,47 @@ class AnimatedBackground extends StatefulWidget {
   final Clip clipBehavior;
   final AnimatedMeshGradientController controller;
 
-
-  AnimatedBackground({super.key, double? width,
+  AnimatedBackground({
+    super.key,
+    double? width,
     double? height,
-    BoxConstraints? constraints, this.child, this.alignment, this.padding, this.normalColor, this.foregroundDecoration, this.margin, this.transform, this.transformAlignment, this.clipBehavior = Clip.none, required this.controller})
-      : assert(margin == null || margin.isNonNegative),
-        assert(padding == null || padding.isNonNegative),
-        assert(constraints == null || constraints.debugAssertIsValid()),
-        constraints =
-        (width != null || height != null)
-            ? constraints?.tighten(width: width, height: height)
-            ?? BoxConstraints.tightFor(width: width, height: height)
-            : constraints;
+    BoxConstraints? constraints,
+    this.child,
+    this.alignment,
+    this.padding,
+    this.normalColor,
+    this.foregroundDecoration,
+    this.margin,
+    this.transform,
+    this.transformAlignment,
+    this.clipBehavior = Clip.none,
+    required this.controller,
+  }) : assert(margin == null || margin.isNonNegative),
+       assert(padding == null || padding.isNonNegative),
+       assert(constraints == null || constraints.debugAssertIsValid()),
+       constraints =
+           (width != null || height != null)
+               ? constraints?.tighten(width: width, height: height) ??
+                   BoxConstraints.tightFor(width: width, height: height)
+               : constraints;
 
   @override
   State<AnimatedBackground> createState() => _AnimatedBackgroundState();
 }
 
-class _AnimatedBackgroundState extends State<AnimatedBackground> with SingleTickerProviderStateMixin {
-
+class _AnimatedBackgroundState extends State<AnimatedBackground>
+    with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Consumer<AbstractAppStateProvider>(
       builder: (context, appState, child) {
         return AnimatedMeshGradient(
           controller: widget.controller,
-          colors: [
-            appState.lightColor,
+          colors: const [
+            MusicPlayerTheme.primaryPurple,
             Colors.black,
-            const Color(0xFF0E0E0E),
-            appState.darkColor,
+            Color(0xFF0E0E0E),
+            MusicPlayerTheme.darkPurple,
           ],
           options: AnimatedMeshGradientOptions(
             speed: 5,

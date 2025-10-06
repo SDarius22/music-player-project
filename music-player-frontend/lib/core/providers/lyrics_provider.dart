@@ -5,13 +5,13 @@ import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_model_build
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_model.dart';
 
 class LyricsProvider with ChangeNotifier {
-  late final AbstractAudioProvider _audioProvider;
-  late LyricsReaderModel lyricsModelBuilder;
-  late String unsyncedLyrics;
-
+  final AbstractAudioProvider _audioProvider;
+  final FileService _fileService;
+  LyricsReaderModel lyricsModelBuilder = LyricsReaderModel();
+  String unsyncedLyrics = '';
   bool hasBeenInitialized = false;
 
-  LyricsProvider(this._audioProvider) {
+  LyricsProvider(this._audioProvider, this._fileService) {
     if (!hasBeenInitialized) {
       hasBeenInitialized = true;
     }
@@ -35,8 +35,6 @@ class LyricsProvider with ChangeNotifier {
   }
 
   Future<String?> _getLyricsForCurrentSong() async {
-    return await FileService.getLyrics(
-      _audioProvider.audioService.currentSong?.path,
-    );
+    return await _fileService.getLyrics(_audioProvider.currentSong.path);
   }
 }

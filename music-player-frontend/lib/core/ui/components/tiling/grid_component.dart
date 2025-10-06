@@ -1,16 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 
 abstract class AbstractGridComponent extends StatelessWidget {
   final List items;
-  final Function(NamedEntity) onTap;
-  final Function(NamedEntity) onLongPress;
-  final bool Function(NamedEntity) isSelected;
-  final Widget Function(NamedEntity)? buildLeftAction;
-  final Widget Function(NamedEntity)? buildMainAction;
-  final Widget Function(NamedEntity)? buildRightAction;
+  final Function(BaseEntity) onTap;
+  final Function(BaseEntity) onLongPress;
+  final bool Function(BaseEntity) isSelected;
+  final Widget Function(BaseEntity)? buildLeftAction;
+  final Widget Function(BaseEntity)? buildMainAction;
+  final Widget Function(BaseEntity)? buildRightAction;
   final Widget Function()? buildExtraTile;
 
   const AbstractGridComponent({
@@ -27,7 +27,7 @@ abstract class AbstractGridComponent extends StatelessWidget {
 
   SliverGridDelegate getGridDelegate(BuildContext context);
 
-  AbstractCustomGridTile getCustomGridTile(NamedEntity entity);
+  AbstractCustomGridTile getCustomGridTile(BaseEntity entity);
 
   @override
   Widget build(BuildContext context) {

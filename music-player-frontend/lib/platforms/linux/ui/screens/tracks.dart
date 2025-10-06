@@ -3,14 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/track_screen.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Tracks extends StatefulWidget {
@@ -18,7 +19,7 @@ class Tracks extends StatefulWidget {
     return PageRouteBuilder(
       settings: const RouteSettings(name: '/songs'),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Tracks();
+        return const Tracks();
       },
     );
   }
@@ -34,10 +35,13 @@ class _TracksState extends State<Tracks> {
   FocusNode searchNode = FocusNode();
   Timer? _debounce;
   final TextEditingController _controller = TextEditingController();
+  bool _isSearching = false;
 
   @override
   void dispose() {
     _debounce?.cancel();
+    _controller.dispose();
+    searchNode.dispose();
     super.dispose();
   }
 
@@ -47,115 +51,150 @@ class _TracksState extends State<Tracks> {
     var height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: Container(
-        padding: EdgeInsets.only(
-          top: height * 0.02,
-          left: width * 0.01,
-          right: width * 0.01,
-          bottom: height * 0.02,
+      backgroundColor: Colors.transparent,
+      body: GlassContainer(
+        height: height,
+        width: width,
+        gradient: LinearGradient(
+          colors: [
+            Colors.black.withOpacity(0.40),
+            Colors.black.withOpacity(0.10),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderGradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.60),
+            Colors.indigoAccent.withOpacity(0.6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(15.0),
+        blur: 15.0,
+        borderWidth: 1.5,
+        elevation: 3.0,
+        isFrostedGlass: true,
+        shadowColor: Colors.black.withOpacity(0.20),
+        frostedOpacity: 0.12,
+        padding: EdgeInsets.only(bottom: height * 0.01),
         child: Consumer<SongProvider>(
           builder: (context, songProvider, child) {
             return Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
-                  height: height * 0.05,
+                  height: height * 0.065,
                   width: width,
-                  margin: EdgeInsets.only(
-                    left: width * 0.01,
-                    right: width * 0.01,
-                    bottom: height * 0.01,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: width * 0.015),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _controller,
-                          focusNode: searchNode,
-                          onChanged: (value) {
-                            if (_debounce?.isActive ?? false)
-                              _debounce?.cancel();
-                            _debounce = Timer(
-                              const Duration(milliseconds: 500),
-                              () {
-                                songProvider.setQuery(value);
-                              },
-                            );
-                          },
-                          cursorColor: Colors.white,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * 0.02),
-                              borderSide: const BorderSide(color: Colors.white),
-                            ),
-                            contentPadding: EdgeInsets.only(
-                              left: width * 0.01,
-                              right: width * 0.01,
-                            ),
-                            floatingLabelBehavior: FloatingLabelBehavior.never,
-                            labelText: 'Search',
-                            suffixIcon:
-                                _controller.text.isNotEmpty
-                                    ? IconButton(
+                      Text(
+                        "Tracks",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: height * 0.025,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      // Play All Button
+                      IconButton(
+                        tooltip: "Play All",
+                        onPressed: () async {},
+                        padding: EdgeInsets.all(height * 0.005),
+                        icon: Icon(
+                          FluentIcons.play,
+                          color: Colors.white,
+                          size: height * 0.025,
+                        ),
+                      ),
+                      //Shuffle Button
+                      IconButton(
+                        tooltip: "Shuffle",
+                        onPressed: () async {},
+                        padding: EdgeInsets.all(height * 0.005),
+                        icon: Icon(
+                          FluentIcons.shuffleOn,
+                          color: Colors.white,
+                          size: height * 0.025,
+                        ),
+                      ),
+
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: _isSearching ? width * 0.3 : width * 0.02,
+                        height: height * 0.04,
+                        child:
+                            _isSearching
+                                ? TextFormField(
+                                  focusNode: searchNode,
+                                  controller: _controller,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: height * 0.02,
+                                  ),
+                                  cursorColor: Colors.white,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.transparent,
+                                    hintText: "Search",
+                                    hintStyle: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: height * 0.02,
+                                    ),
+                                    border: InputBorder.none,
+                                    prefixIcon: Icon(
+                                      FluentIcons.search,
+                                      color: Colors.white,
+                                      size: height * 0.025,
+                                    ),
+                                    suffixIcon: IconButton(
                                       icon: Icon(
                                         Icons.clear,
                                         color: Colors.white,
-                                        size: height * 0.03,
+                                        size: height * 0.025,
                                       ),
                                       onPressed: () {
                                         _controller.clear();
-                                        songProvider.setQuery('');
+                                        songProvider.setQuery("");
+                                        setState(() {
+                                          _isSearching = false;
+                                        });
                                         searchNode.unfocus();
                                       },
-                                    )
-                                    : Icon(
-                                      FluentIcons.search,
-                                      color: Colors.white,
-                                      size: height * 0.03,
                                     ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: width * 0.01),
-                      Container(
-                        padding: EdgeInsets.only(
-                          left: width * 0.01,
-                          right: width * 0.01,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            PopupMenuButton<String>(
-                              onSelected: (value) {
-                                songProvider.setSortField(value);
-                              },
-                              tooltip: "Sort by",
-                              itemBuilder:
-                                  (context) => [
-                                    PopupMenuItem(
-                                      value: "Name",
-                                      child: Text("Name"),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      vertical: height * 0.005,
                                     ),
-                                    PopupMenuItem(
-                                      value: "Duration",
-                                      child: Text("Duration"),
-                                    ),
-                                  ],
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8.0,
+                                  ),
+                                  onChanged: (value) {
+                                    if (_debounce?.isActive ?? false) {
+                                      _debounce?.cancel();
+                                    }
+                                    _debounce = Timer(
+                                      const Duration(milliseconds: 500),
+                                      () {
+                                        songProvider.setQuery(value);
+                                      },
+                                    );
+                                  },
+                                )
+                                : IconButton(
+                                  icon: Icon(
+                                    FluentIcons.search,
+                                    color: Colors.white,
+                                    size: height * 0.025,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isSearching = true;
+                                    });
+                                    searchNode.requestFocus();
+                                  },
                                 ),
-                                child: Text(songProvider.getSortField()),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),
@@ -165,12 +204,12 @@ class _TracksState extends State<Tracks> {
                     future: songProvider.songsFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
+                        return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError) {
                         debugPrint(snapshot.error.toString());
                         debugPrintStack();
-                        return Center(child: Text("Error loading songs"));
+                        return const Center(child: Text("Error loading songs"));
                       }
                       debugPrint("Songs loaded: ${snapshot.data?.length ?? 0}");
                       return CustomScrollView(
@@ -179,6 +218,7 @@ class _TracksState extends State<Tracks> {
                             padding: EdgeInsets.only(
                               left: width * 0.01,
                               right: width * 0.01,
+                              bottom: height * 0.1,
                             ),
                             sliver: ValueListenableBuilder(
                               valueListenable: selected,
@@ -207,41 +247,37 @@ class _TracksState extends State<Tracks> {
                                     }
 
                                     var audioProvider =
-                                        Provider.of<AudioProvider>(
+                                        Provider.of<AbstractAudioProvider>(
                                           context,
                                           listen: false,
                                         );
                                     try {
-                                      if (audioProvider
-                                              .audioService
-                                              .currentSong
-                                              ?.path !=
+                                      if (audioProvider.currentSong.path !=
                                           song.path) {
-                                        List<String> songPaths =
-                                            (snapshot.data as List<Song>)
-                                                .map((e) => e.path)
-                                                .toList();
-                                        audioProvider.setQueue(songPaths);
+                                        List<Song> songs =
+                                            snapshot.data as List<Song>;
+                                        audioProvider.setQueue(songs);
                                         await audioProvider.setCurrentSong(
                                           song,
                                         );
+                                        await audioProvider.play();
                                       } else {
                                         if (audioProvider
                                                 .playingNotifier
                                                 .value ==
                                             true) {
+                                          debugPrint("Pausing song");
                                           await audioProvider.pause();
                                         } else {
+                                          debugPrint("Playing song");
                                           await audioProvider.play();
                                         }
                                       }
                                     } catch (e) {
                                       debugPrint(e.toString());
-                                      List<String> songPaths =
-                                          (snapshot.data as List<Song>)
-                                              .map((e) => e.path)
-                                              .toList();
-                                      audioProvider.setQueue(songPaths);
+                                      List<Song> songs =
+                                          snapshot.data as List<Song>;
+                                      audioProvider.setQueue(songs);
                                       await audioProvider.setCurrentSong(song);
                                     }
                                   },
@@ -294,7 +330,7 @@ class _TracksState extends State<Tracks> {
                                         color: Colors.white,
                                       );
                                     }
-                                    return Consumer<AudioProvider>(
+                                    return Consumer<AbstractAudioProvider>(
                                       builder: (_, audioProvider, __) {
                                         Song song = entity as Song;
                                         return ValueListenableBuilder(
@@ -302,10 +338,7 @@ class _TracksState extends State<Tracks> {
                                               audioProvider.playingNotifier,
                                           builder: (context, isPlaying, child) {
                                             return Icon(
-                                              audioProvider
-                                                              .audioService
-                                                              .currentSong
-                                                              ?.path ==
+                                              audioProvider.currentSong.path ==
                                                           song.path &&
                                                       audioProvider
                                                               .playingNotifier
@@ -344,13 +377,11 @@ class _TracksState extends State<Tracks> {
                                                 );
                                             break;
                                           case 'playNext':
-                                            var audioProvider =
-                                                Provider.of<AudioProvider>(
-                                                  context,
-                                                  listen: false,
-                                                );
+                                            var audioProvider = Provider.of<
+                                              AbstractAudioProvider
+                                            >(context, listen: false);
                                             audioProvider.addNextToQueue(
-                                              (entity as Song).path,
+                                              (entity as Song),
                                             );
                                             break;
                                           case 'select':

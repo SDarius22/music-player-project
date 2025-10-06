@@ -3,10 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_tile.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
 import 'package:provider/provider.dart';
@@ -96,7 +96,7 @@ class CustomListTile extends AbstractCustomListTile {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     entity is Song
-                        ? Consumer<AudioProvider>(
+                        ? Consumer<AbstractAudioProvider>(
                           builder: (_, audioProvider, __) {
                             return CustomTextScroll(
                               text: entity.name,
@@ -135,7 +135,7 @@ class CustomListTile extends AbstractCustomListTile {
                           ),
                         ),
                     if (entity is Song)
-                      Consumer<AudioProvider>(
+                      Consumer<AbstractAudioProvider>(
                         builder: (_, audioProvider, __) {
                           return CustomTextScroll(
                             text: (entity as Song).artist.target.toString(),
@@ -163,7 +163,7 @@ class CustomListTile extends AbstractCustomListTile {
               ),
               const Spacer(),
               if (entity is Song)
-                Consumer<AudioProvider>(
+                Consumer<AbstractAudioProvider>(
                   builder: (_, audioProvider, __) {
                     return Text(
                       "${(entity as Song).duration ~/ 60}:${((entity as Song).duration % 60).toString().padLeft(2, '0')}",

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 
 abstract class AbstractCustomGridTile extends StatelessWidget {
   final Widget leftAction;
@@ -8,7 +8,7 @@ abstract class AbstractCustomGridTile extends StatelessWidget {
   final GestureTapCallback onTap;
   final GestureTapCallback onLongPress;
   final bool isSelected;
-  final NamedEntity entity;
+  final BaseEntity entity;
 
   const AbstractCustomGridTile({
     super.key,

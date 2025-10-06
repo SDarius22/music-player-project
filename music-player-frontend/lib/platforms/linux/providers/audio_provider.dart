@@ -1,28 +1,44 @@
 import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/audio_player/player_state.dart';
+import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
-import 'package:music_player_frontend/core/services/abstract/abstract_audio_service.dart';
+import 'package:music_player_frontend/core/repository/queue_song_repo.dart';
+import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/platforms/linux/audio_player/system_audio_handler.dart';
 
 class AudioProvider extends AbstractAudioProvider {
   bool hasBeenInitialized = false;
-  late Future queueFuture;
 
-  Song get currentSong => super.audioService.currentSong ?? Song();
+  @override
+  Song get currentSong =>
+      super.audioService.settingsService.currentAudioSettings.currentSong;
+
+  @override
+  List<Song> get currentQueue =>
+      super.audioService.settingsService.currentAudioSettings.currentQueue;
+
+  @override
+  AudioSettings get currentAudioSettings =>
+      super.audioService.settingsService.currentAudioSettings;
 
   @override
   Future<void> init(
+    QueueSongRepository queueSongRepository,
     SettingsService settingsService,
     SongService songService,
     AbstractAudioPlayer audioPlayer,
   ) async {
     if (!hasBeenInitialized) {
-      var audioService = AppAudioService(songService, audioPlayer);
-      audioService.init(settingsService.getAudioSettings());
+      var audioService = AppAudioService(
+        queueSongRepository,
+        audioPlayer,
+        songService,
+        settingsService,
+      );
       var audioHandler = await platform_service.AudioService.init(
         builder: () => SystemAudioHandler(audioService),
         config: const platform_service.AudioServiceConfig(
@@ -36,12 +52,11 @@ class AudioProvider extends AbstractAudioProvider {
     }
     await super.audioService.updateCurrentSong();
     await super.audioService.initSettings();
-    queueFuture = Future(() => super.audioService.getQueue());
-    repeatNotifier.value = super.audioService.audioSettings.repeat;
-    shuffleNotifier.value = super.audioService.audioSettings.shuffle;
-    sliderNotifier.value = super.audioService.audioSettings.slider;
-    balanceNotifier.value = super.audioService.audioSettings.balance;
-    volumeNotifier.value = super.audioService.audioSettings.volume;
+    repeatNotifier.value = currentAudioSettings.repeat;
+    shuffleNotifier.value = currentAudioSettings.shuffle;
+    sliderNotifier.value = currentAudioSettings.slider;
+    balanceNotifier.value = currentAudioSettings.balance;
+    volumeNotifier.value = currentAudioSettings.volume;
 
     super.audioService.audioPlayer.onPositionChanged.listen((Duration event) {
       sliderNotifier.value = event.inMilliseconds;
@@ -121,9 +136,8 @@ class AudioProvider extends AbstractAudioProvider {
   }
 
   @override
-  void setQueue(List<String> songs) {
+  void setQueue(List<Song> songs) {
     super.audioService.setQueue(songs);
-    queueFuture = Future(() => super.audioService.getQueue());
     notifyListeners();
   }
 
@@ -133,49 +147,32 @@ class AudioProvider extends AbstractAudioProvider {
   }
 
   @override
-  void addToQueue(String songPath) {
-    super.audioService.addToQueue(songPath);
-    queueFuture = Future(() => super.audioService.getQueue());
+  void addToQueue(Song song) {
+    super.audioService.addToQueue(song);
     notifyListeners();
   }
 
   @override
-  void addMultipleToQueue(List<String> songPaths) {
-    super.audioService.addMultipleToQueue(songPaths);
-    queueFuture = Future(() => super.audioService.getQueue());
+  void addMultipleToQueue(List<Song> songs) {
+    super.audioService.addMultipleToQueue(songs);
     notifyListeners();
   }
 
   @override
-  void addNextToQueue(String songPath) {
-    super.audioService.addToQueueAtIndex(
-      songPath,
-      super.audioService.audioSettings.currentQueue.indexOf(
-            audioService.currentSong?.path,
-          ) +
-          1,
-    );
-    queueFuture = Future(() => super.audioService.getQueue());
+  void addNextToQueue(Song song) {
+    super.audioService.addNextToQueue(song);
     notifyListeners();
   }
 
   @override
-  void addMultipleNextToQueue(List<String> songPaths) {
-    super.audioService.addMultipleToQueueAtIndex(
-      songPaths,
-      super.audioService.audioSettings.currentQueue.indexOf(
-            audioService.currentSong?.path,
-          ) +
-          1,
-    );
-    queueFuture = Future(() => super.audioService.getQueue());
+  void addMultipleNextToQueue(List<Song> songs) {
+    super.audioService.addMultipleNextToQueue(songs);
     notifyListeners();
   }
 
   @override
-  void removeFromQueue(String songPath) {
-    super.audioService.removeFromQueue(songPath);
-    queueFuture = Future(() => super.audioService.getQueue());
+  void removeFromQueue(Song song) {
+    super.audioService.removeFromQueue(song);
     notifyListeners();
   }
 
@@ -183,5 +180,10 @@ class AudioProvider extends AbstractAudioProvider {
   Future<void> setCurrentSong(Song song) async {
     await super.audioService.setCurrentSong(song);
     notifyListeners();
+  }
+
+  @override
+  void likeCurrentSong() {
+    super.audioService.likeCurrentSong();
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_tile.dart';
 
@@ -17,7 +17,7 @@ class ListComponent extends AbstractListComponent {
   });
 
   @override
-  Widget getCustomListTile(NamedEntity entity) {
+  Widget getCustomListTile(BaseEntity entity) {
     return CustomListTile(
       onTap: () {
         onTap(entity);

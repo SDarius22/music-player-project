@@ -31,6 +31,7 @@ class _TrackScreenState extends State<TrackScreen> {
     var normalSize = height * 0.02;
     //var smallSize = height * 0.015;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         width: width,
         height: height,
@@ -253,20 +254,20 @@ class _TrackScreenState extends State<TrackScreen> {
                                   fontSize: normalSize,
                                 ),
                               ),
-                              Text(
-                                "Play Count: ${widget.song.playCount}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: normalSize,
-                                ),
-                              ),
-                              Text(
-                                "Last Played: ${widget.song.lastPlayed != null ? widget.song.lastPlayed!.toLocal().toString() : "Never"}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: normalSize,
-                                ),
-                              ),
+                              // Text(
+                              //   "Play Count: ${widget.song.playCount}",
+                              //   style: TextStyle(
+                              //     color: Colors.white,
+                              //     fontSize: normalSize,
+                              //   ),
+                              // ),
+                              // Text(
+                              //   "Last Played: ${widget.song.lastPlayed != null ? widget.song.lastPlayed!.toLocal().toString() : "Never"}",
+                              //   style: TextStyle(
+                              //     color: Colors.white,
+                              //     fontSize: normalSize,
+                              //   ),
+                              // ),
                               Text(
                                 "Lyrics: ${widget.song.lyricsPath.isNotEmpty ? widget.song.lyricsPath : "No lyrics available"}",
                                 style: TextStyle(

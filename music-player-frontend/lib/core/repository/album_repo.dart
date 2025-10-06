@@ -5,28 +5,38 @@ import 'package:music_player_frontend/core/entities/album.dart';
 class AlbumRepository {
   Box<Album> get _albumBox => ObjectBox.store.box<Album>();
 
+  Stream watchAlbums() => _albumBox.query().watch(triggerImmediately: true);
+
   Album saveAlbum(Album album) {
     album.id = _albumBox.put(album);
     return album;
   }
 
-  Stream watchAlbums() => _albumBox.query().watch(triggerImmediately: true);
-
   Album? getAlbum(int albumId) {
     return _albumBox.get(albumId);
+  }
+
+  Album? getAlbumByNameAndArtist(String albumName, int artistId) {
+    return _albumBox
+        .query(Album_.name.equals(albumName) & Album_.artist.equals(artistId))
+        .build()
+        .findUnique();
   }
 
   List<Album> getAlbums(String query, String sortField, bool flag) {
     Query<Album> builderQuery;
     if (flag == false) {
-      builderQuery = _albumBox
-          .query(Album_.name.contains(query, caseSensitive: false))
-          .order(Album_.name).build();
+      builderQuery =
+          _albumBox
+              .query(Album_.name.contains(query, caseSensitive: false))
+              .order(Album_.name)
+              .build();
     } else {
-      builderQuery = _albumBox
-          .query(Album_.name.contains(query, caseSensitive: false))
-          .order(Album_.name, flags: Order.descending)
-          .build();
+      builderQuery =
+          _albumBox
+              .query(Album_.name.contains(query, caseSensitive: false))
+              .order(Album_.name, flags: Order.descending)
+              .build();
     }
     return builderQuery.find();
   }
@@ -35,7 +45,7 @@ class AlbumRepository {
     return _albumBox.getAll();
   }
 
-  void deleteAlbum(Album album) {
-    _albumBox.remove(album.id);
+  void updateAlbum(Album album) {
+    _albumBox.put(album);
   }
 }

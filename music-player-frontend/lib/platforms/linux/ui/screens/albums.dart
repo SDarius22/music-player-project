@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
-import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Albums extends StatefulWidget {
@@ -47,6 +47,7 @@ class _AlbumsState extends State<Albums> {
     var normalSize = height * 0.02;
     var smallSize = height * 0.015;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         padding: EdgeInsets.only(
           top: height * 0.02,
@@ -282,16 +283,12 @@ class _AlbumsState extends State<Albums> {
                                             b.trackNumber,
                                           ),
                                         );
-                                        List<String> songPaths =
-                                            album.songs
-                                                .map((e) => e.path)
-                                                .toList();
                                         var audioProvider =
                                             Provider.of<AudioProvider>(
                                               context,
                                               listen: false,
                                             );
-                                        audioProvider.setQueue(songPaths);
+                                        audioProvider.setQueue(album.songs);
                                         await audioProvider.setCurrentSong(
                                           album.songs.first,
                                         );
@@ -363,9 +360,7 @@ class _AlbumsState extends State<Albums> {
                                                 );
                                             audioProvider
                                                 .addMultipleNextToQueue(
-                                                  album.songs
-                                                      .map((e) => e.path)
-                                                      .toList(),
+                                                  album.songs,
                                                 );
                                             break;
                                           case 'select':

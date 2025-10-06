@@ -61,6 +61,9 @@ class MiniPlayer extends StatefulWidget {
   ///Sets the border radius when minimized
   final BorderRadius? borderRadius;
 
+  ///Sets the border radius when maximized
+  final BorderRadius? maxBorderRadius;
+
   const MiniPlayer({
     super.key,
     required this.minHeight,
@@ -80,6 +83,7 @@ class MiniPlayer extends StatefulWidget {
     this.backgroundBoxShadow = Colors.black45,
     this.margin = EdgeInsets.zero,
     this.borderRadius,
+    this.maxBorderRadius,
   });
 
   @override
@@ -201,18 +205,11 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
               ((values[0] - widget.minHeight)) /
               (widget.maxHeight - widget.minHeight);
 
-          BorderRadius currentBorderRadius = BorderRadius.zero;
-          if (widget.borderRadius != null) {
-            double borderLerpValue =
-                percentage > 0.5 ? 1.0 : (percentage / 0.1).clamp(0.0, 1.0);
-            currentBorderRadius =
-                BorderRadius.lerp(
-                  widget.borderRadius!,
-                  BorderRadius.zero,
-                  borderLerpValue,
-                ) ??
-                BorderRadius.zero;
-          }
+          final currentBorderRadius = BorderRadius.lerp(
+            widget.borderRadius,
+            widget.maxBorderRadius,
+            percentage,
+          );
 
           return Stack(
             alignment: Alignment.bottomCenter,
@@ -235,8 +232,17 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                   margin: EdgeInsets.lerp(
                     widget.margin,
                     EdgeInsets.zero,
-                    // Use a threshold - margin disappears gradually in first 10% of expansion
                     percentage > 0.1 ? 1.0 : percentage / 0.1,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: currentBorderRadius,
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: widget.backgroundBoxShadow,
+                        blurRadius: widget.elevation,
+                        offset: const Offset(0.0, 4),
+                      ),
+                    ],
                   ),
                   child: SizedBox(
                     width: values[1],
@@ -265,21 +271,16 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                           );
                         },
                         child: ClipRRect(
-                          borderRadius: currentBorderRadius,
+                          borderRadius:
+                              currentBorderRadius ?? BorderRadius.zero,
                           child: Material(
+                            type: MaterialType.transparency,
                             child: Container(
                               constraints: const BoxConstraints.expand(),
                               decoration: BoxDecoration(
-                                boxShadow: <BoxShadow>[
-                                  BoxShadow(
-                                    color: widget.backgroundBoxShadow,
-                                    blurRadius: widget.elevation,
-                                    offset: const Offset(0.0, 4),
-                                  ),
-                                ],
                                 color:
                                     widget.backgroundColor ??
-                                    Theme.of(context).scaffoldBackgroundColor,
+                                    Colors.transparent,
                               ),
                               child: widget.builder(values[0], percentage),
                             ),
@@ -306,7 +307,6 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                         }
                       },
                       onPanEnd: (details) async {
-                        ///Calculates drag speed
                         double speed =
                             (_dragHeight - _startHeight * _dragHeight <
                                     _startHeight
@@ -315,7 +315,6 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                             updateCount *
                             100;
 
-                        ///Define the percentage distance depending on the speed with which the widget should snap
                         double snapPercentage = 0.005;
                         if (speed <= 4) {
                           snapPercentage = 0.2;
@@ -325,7 +324,6 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                           snapPercentage = 0.01;
                         }
 
-                        ///Determine to which SnapPosition the widget should snap
                         PanelState snap = PanelState.min;
 
                         final _percentageMax = percentageFromValueInRange(
@@ -334,19 +332,14 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                           value: _dragHeight,
                         );
 
-                        ///Started from expanded state
                         if (_startHeight > widget.minHeight) {
                           if (_percentageMax > 1 - snapPercentage) {
                             snap = PanelState.max;
                           }
-                        }
-                        ///Started from minified state
-                        else {
+                        } else {
                           if (_percentageMax > snapPercentage) {
                             snap = PanelState.max;
-                          }
-                          ///DismissedPercentage > 0.2 -> dismiss
-                          else if (onDismissed != null &&
+                          } else if (onDismissed != null &&
                               percentageFromValueInRange(
                                     min: widget.minHeight,
                                     max: 0,
@@ -357,7 +350,6 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                           }
                         }
 
-                        ///Snap to position
                         _snapToPosition(snap);
                       },
                       onPanUpdate: (details) {

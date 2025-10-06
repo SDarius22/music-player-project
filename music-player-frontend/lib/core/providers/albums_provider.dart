@@ -54,22 +54,7 @@ class AlbumProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void addAlbum(String name) {
-    _albumService.addAlbum(name);
-    notifyListeners();
-  }
-
-  void deleteAlbum(Album album) {
-    _albumService.deleteAlbum(album);
-    notifyListeners();
-  }
-
-  void updateAlbum(Album album) {
-    _albumService.updateAlbum(album);
-    notifyListeners();
-  }
-
-  Album? getAlbum(int albumId) {
+  Album getAlbum(int albumId) {
     return _albumService.getAlbum(albumId);
   }
 

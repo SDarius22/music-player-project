@@ -1,20 +1,22 @@
 import 'package:audio_service/audio_service.dart';
-import 'package:music_player_frontend/core/services/abstract/abstract_audio_service.dart';
+import 'package:music_player_frontend/core/services/app_audio_service.dart';
 
 class SystemAudioHandler extends BaseAudioHandler {
   final AppAudioService audioService;
 
   SystemAudioHandler(this.audioService) {
-    playbackState.add(playbackState.value.copyWith(
-      controls: [
-        MediaControl.skipToPrevious,
-        MediaControl.play,
-        MediaControl.pause,
-        MediaControl.skipToNext,
-      ],
-      systemActions: {MediaAction.seek},
-      playing: false,
-    ));
+    playbackState.add(
+      playbackState.value.copyWith(
+        controls: [
+          MediaControl.skipToPrevious,
+          MediaControl.play,
+          MediaControl.pause,
+          MediaControl.skipToNext,
+        ],
+        systemActions: {MediaAction.seek},
+        playing: false,
+      ),
+    );
   }
 
   @override
@@ -46,6 +48,4 @@ class SystemAudioHandler extends BaseAudioHandler {
   Future<void> seek(Duration position) async {
     await audioService.seek(position);
   }
-
-
 }

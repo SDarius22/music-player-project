@@ -2,16 +2,15 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_named_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/font_scaler.dart';
 import 'package:provider/provider.dart';
 
 class CustomGridTile extends AbstractCustomGridTile {
@@ -26,7 +25,7 @@ class CustomGridTile extends AbstractCustomGridTile {
     super.rightAction = const SizedBox.shrink(),
   });
 
-  String _pathForImageWidget(NamedEntity entity) {
+  String _pathForImageWidget(BaseEntity entity) {
     if (entity is Song) {
       return (entity).path;
     }
@@ -37,12 +36,9 @@ class CustomGridTile extends AbstractCustomGridTile {
       if (entity.name == 'Create New Playlist' && entity.indestructible) {
         return 'assets/create_playlist.png';
       }
-      if (entity.coverArt != null && entity.coverArt!.isNotEmpty) {
-        return base64Encode(entity.coverArt!);
+      if (entity.coverArt.isNotEmpty) {
+        return base64Encode(entity.coverArt);
       }
-      return (entity).pathsInOrder.isNotEmpty
-          ? (entity).pathsInOrder.first
-          : '';
     }
     if (entity is AbstractCollection) {
       return (entity as AbstractCollection).songs.isNotEmpty
@@ -52,7 +48,7 @@ class CustomGridTile extends AbstractCustomGridTile {
     return '';
   }
 
-  ImageWidgetType _getImageWidgetType(NamedEntity entity) {
+  ImageWidgetType _getImageWidgetType(BaseEntity entity) {
     if (entity is Playlist) {
       if (entity.name == 'Current Queue' && entity.indestructible) {
         return ImageWidgetType.asset;
@@ -60,7 +56,7 @@ class CustomGridTile extends AbstractCustomGridTile {
       if (entity.name == 'Create New Playlist' && entity.indestructible) {
         return ImageWidgetType.asset;
       }
-      if (entity.coverArt != null && entity.coverArt!.isNotEmpty) {
+      if (entity.coverArt.isNotEmpty) {
         return ImageWidgetType.bytes;
       }
     }
@@ -136,7 +132,7 @@ class CustomGridTile extends AbstractCustomGridTile {
                         ),
                         child:
                             entity is Song
-                                ? Consumer<AudioProvider>(
+                                ? Consumer<AbstractAudioProvider>(
                                   builder: (_, audioProvider, __) {
                                     return CustomTextScroll(
                                       text: entity.name,
@@ -148,11 +144,6 @@ class CustomGridTile extends AbstractCustomGridTile {
                                                     (entity as Song).path
                                                 ? Colors.blue
                                                 : Colors.white,
-                                        fontSize: LinuxFontScaler().scale(
-                                          context,
-                                          20,
-                                        ),
-                                        fontWeight: FontWeight.bold,
                                       ),
                                     );
                                   },

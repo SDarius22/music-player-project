@@ -2,12 +2,11 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
-import 'package:music_player_frontend/core/services/abstract/file_service.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class AddOrExportScreen extends StatefulWidget {
@@ -48,6 +47,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
     var normalSize = height * 0.02;
     var smallSize = height * 0.015;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         width: width,
         height: height,
@@ -105,10 +105,10 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                         Playlist playlist = selected.value[i];
                         var fileName =
                             "${abstractAppStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
-                        FileService.exportPlaylist(
-                          fileName,
-                          playlist.pathsInOrder,
-                        );
+                        // FileService.exportPlaylist(
+                        //   fileName,
+                        //   playlist.pathsInOrder,
+                        // );
                       }
                     }
                     for (int i = 0; i < selected.value.length; i++) {
@@ -119,9 +119,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                           context,
                           listen: false,
                         );
-                        audioProvider.addMultipleToQueue(
-                          widget.songs.map((song) => song.path).toList(),
-                        );
+                        audioProvider.addMultipleToQueue(widget.songs);
                       } else {
                         var playlistProvider = Provider.of<PlaylistProvider>(
                           context,
@@ -176,8 +174,8 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                         context,
                         listen: false,
                       );
-                      queue.pathsInOrder =
-                          audioProvider.audioService.audioSettings.queue;
+                      // queue.pathsInOrder =
+                      //     audioProvider.currentAudioSettings.queue
                       queue.indestructible = true;
                       items.insert(0, queue);
                       return CustomScrollView(

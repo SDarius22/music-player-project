@@ -16,18 +16,27 @@ class ArtistRepository {
     return _artistBox.get(artistId);
   }
 
+  Artist? getArtistByName(String artistName) {
+    return _artistBox
+        .query(Artist_.name.equals(artistName))
+        .build()
+        .findUnique();
+  }
+
   List<Artist> getArtists(String query, String sortField, bool flag) {
     Query<Artist> builderQuery;
     if (flag == false) {
-      builderQuery = _artistBox
-          .query(Artist_.name.contains(query, caseSensitive: false))
-          .order(Artist_.name)
-          .build();
+      builderQuery =
+          _artistBox
+              .query(Artist_.name.contains(query, caseSensitive: false))
+              .order(Artist_.name)
+              .build();
     } else {
-      builderQuery = _artistBox
-          .query(Artist_.name.contains(query, caseSensitive: false))
-          .order(Artist_.name, flags: Order.descending)
-          .build();
+      builderQuery =
+          _artistBox
+              .query(Artist_.name.contains(query, caseSensitive: false))
+              .order(Artist_.name, flags: Order.descending)
+              .build();
     }
     return builderQuery.find();
   }
@@ -36,7 +45,7 @@ class ArtistRepository {
     return _artistBox.getAll();
   }
 
-  void deleteArtist(Artist artist) {
-    _artistBox.remove(artist.id);
+  void updateArtist(Artist artist) {
+    _artistBox.put(artist);
   }
 }

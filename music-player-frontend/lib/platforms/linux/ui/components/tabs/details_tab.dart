@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
-import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
-import 'package:music_player_frontend/platforms/linux/ui/screens/artist_screen.dart';
-import 'package:music_player_frontend/local_libs/constants.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/local_libs/text_scroll/text_scroll.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/linux_font_scaler.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/artist_screen.dart';
 import 'package:provider/provider.dart';
 
 class DetailsTab extends AbstractDetailsTab {
@@ -23,11 +24,7 @@ class DetailsTab extends AbstractDetailsTab {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
 
-    var boldSize = height * 0.025;
-    var normalSize = height * 0.02;
-    var smallSize = height * 0.015;
-
-    return Consumer<AudioProvider>(
+    return Consumer<AbstractAudioProvider>(
       builder: (_, audioProvider, __) {
         return Container(
           decoration: BoxDecoration(
@@ -36,10 +33,7 @@ class DetailsTab extends AbstractDetailsTab {
             borderRadius: BorderRadius.circular(width * 0.0125),
             image: DecorationImage(
               fit: BoxFit.cover,
-              image:
-                  Image.memory(
-                    audioProvider.audioService.currentSong?.image ?? logoImage,
-                  ).image,
+              image: Image.memory(audioProvider.currentSong.coverArt).image,
             ),
           ),
           child: Container(
@@ -57,7 +51,7 @@ class DetailsTab extends AbstractDetailsTab {
                   Colors.black.withValues(alpha: 0.75 * opacity),
                   Colors.black.withValues(alpha: 1.0 * opacity),
                 ],
-                stops: const [0.0, 0.5, 1.0],
+                stops: const [0.0, 0.6, 1.0],
               ),
             ),
             child: Opacity(
@@ -70,11 +64,10 @@ class DetailsTab extends AbstractDetailsTab {
                     audioProvider.currentSong.name,
                     mode: TextScrollMode.bouncing,
                     velocity: const Velocity(pixelsPerSecond: Offset(20, 0)),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: boldSize,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style:
+                        MusicPlayerTheme.getTheme(
+                          context,
+                        ).textTheme.headlineSmall,
                     pauseOnBounce: const Duration(seconds: 2),
                     delayBefore: const Duration(seconds: 2),
                     pauseBetween: const Duration(seconds: 2),
@@ -104,20 +97,19 @@ class DetailsTab extends AbstractDetailsTab {
                           icon: Icon(
                             FluentIcons.open,
                             color: Colors.white,
-                            size: smallSize,
+                            size: LinuxFontScaler.scale(context, 20),
                           ),
                           iconAlignment: IconAlignment.end,
                           label: TextScroll(
-                            audioProvider.currentSong.artist.toString(),
+                            audioProvider.currentSong.artist.target.toString(),
                             mode: TextScrollMode.bouncing,
                             velocity: const Velocity(
                               pixelsPerSecond: Offset(20, 0),
                             ),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: normalSize,
-                              fontWeight: FontWeight.normal,
-                            ),
+                            style:
+                                MusicPlayerTheme.getTheme(
+                                  context,
+                                ).textTheme.bodyMedium,
                             pauseOnBounce: const Duration(seconds: 2),
                             delayBefore: const Duration(seconds: 2),
                             pauseBetween: const Duration(seconds: 2),
@@ -127,7 +119,7 @@ class DetailsTab extends AbstractDetailsTab {
                       Icon(
                         FluentIcons.divider,
                         color: Colors.white,
-                        size: normalSize,
+                        size: LinuxFontScaler.scale(context, 16),
                       ),
                       Expanded(
                         // width: width * 0.13,
@@ -147,19 +139,18 @@ class DetailsTab extends AbstractDetailsTab {
                           icon: Icon(
                             FluentIcons.open,
                             color: Colors.white,
-                            size: smallSize,
+                            size: LinuxFontScaler.scale(context, 20),
                           ),
                           label: TextScroll(
-                            audioProvider.currentSong.album.toString(),
+                            audioProvider.currentSong.album.target.toString(),
                             mode: TextScrollMode.bouncing,
                             velocity: const Velocity(
                               pixelsPerSecond: Offset(20, 0),
                             ),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: normalSize,
-                              fontWeight: FontWeight.normal,
-                            ),
+                            style:
+                                MusicPlayerTheme.getTheme(
+                                  context,
+                                ).textTheme.bodyMedium,
                             pauseOnBounce: const Duration(seconds: 2),
                             delayBefore: const Duration(seconds: 2),
                             pauseBetween: const Duration(seconds: 2),

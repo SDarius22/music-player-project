@@ -1,23 +1,27 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/services/music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:rxdart/rxdart.dart';
 
 class SongProvider with ChangeNotifier {
   final SongService _songService;
+  final MusicScannerService _scannerService;
 
   bool _isAscending = false;
   String _query = '';
   String _sortField = 'Name'; // Name or Duration
 
   bool _finishedLoading = true;
+  bool _isEnrichingMetadata = false;
+  bool _isInitialized = false;
 
   late Future songsFuture;
 
-  SongProvider(this._songService) {
+  SongProvider(this._songService, this._scannerService) {
     songsFuture = Future(() => _songService.getAllSongs());
 
-    songsStream.throttleTime(const Duration(seconds: 10)).listen((_) {
+    songsStream.delay(const Duration(seconds: 2)).listen((_) {
       if (!_finishedLoading) {
         debugPrint("Songs stream updated");
         songsFuture = Future(
@@ -29,6 +33,55 @@ class SongProvider with ChangeNotifier {
   }
 
   Stream get songsStream => _songService.watchSongs();
+
+  Future<void> initialize(List<String> musicDirectories) async {
+    if (_isInitialized) return;
+
+    debugPrint("Initializing SongProvider...");
+
+    // Check if this is the first scan
+    if (!_songService.isInitialScanComplete()) {
+      debugPrint("Performing initial quick scan...");
+
+      // Perform quick scan - adds songs with basic info (just filenames)
+      await _scannerService.performQuickScan(musicDirectories);
+
+      // Mark scan as complete
+      _songService.markInitialScanComplete();
+
+      // Start enriching metadata in background
+      _enrichMetadataInBackground();
+    } else {
+      debugPrint("Initial scan already complete, loading from database");
+    }
+
+    // Load songs from database
+    _refreshSongs();
+    _isInitialized = true;
+  }
+
+  // Enrich metadata in background
+  void _enrichMetadataInBackground() async {
+    _isEnrichingMetadata = true;
+    notifyListeners();
+
+    debugPrint("Starting metadata enrichment...");
+    await _scannerService.enrichMetadata();
+
+    _isEnrichingMetadata = false;
+    debugPrint("Metadata enrichment complete!");
+
+    // Refresh songs to show updated metadata
+    _refreshSongs();
+  }
+
+  // Refresh songs from database with current filters
+  void _refreshSongs() {
+    songsFuture = Future(
+      () => _songService.getSongs(_query, _sortField, _isAscending),
+    );
+    notifyListeners();
+  }
 
   void setFlag(bool value) {
     _isAscending = value;
@@ -51,6 +104,7 @@ class SongProvider with ChangeNotifier {
   }
 
   void setQuery(String newQuery) {
+    if (newQuery == _query) return;
     _query = newQuery;
     songsFuture = Future(
       () => _songService.getSongs(_query, _sortField, _isAscending),
@@ -92,15 +146,4 @@ class SongProvider with ChangeNotifier {
   List<Song> getAllSongs() {
     return _songService.getAllSongs();
   }
-
-  // Future<void> startLoadingSongs() async {
-  //   _finishedLoading = false;
-  //   debugPrint("Loading songs...");
-  //   try {
-  //     await _songService.retrieveAllSongs();
-  //   } catch (e) {
-  //     debugPrint("Error loading songs: $e");
-  //   }
-  //   _finishedLoading = true;
-  // }
 }

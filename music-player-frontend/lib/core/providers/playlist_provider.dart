@@ -18,7 +18,7 @@ class PlaylistProvider with ChangeNotifier {
     playlistsFuture = Future(() => _playlistService.getAllPlaylists());
 
     playlistsStream.listen((_) {
-      debugPrint("Playlists stream updated");
+      // debugPrint("Playlists stream updated");
       playlistsFuture = Future(
         () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
       );
@@ -60,7 +60,7 @@ class PlaylistProvider with ChangeNotifier {
     String name,
     List<Song> songs,
     String whereToAdd,
-    Uint8List? coverArt,
+    Uint8List coverArt,
   ) {
     _playlistService.addPlaylist(name, songs, whereToAdd, coverArt);
     notifyListeners();
@@ -92,8 +92,8 @@ class PlaylistProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteSongFromPlaylist(Playlist playlist, Song song) {
-    _playlistService.deleteFromPlaylist(playlist, song);
+  void deleteSongFromPlaylist(Song song, Playlist playlist) {
+    _playlistService.deleteFromPlaylist(song, playlist);
     notifyListeners();
   }
 }
