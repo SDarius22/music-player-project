@@ -126,9 +126,7 @@ class _ImageWidgetState extends State<ImageWidget> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: Future.delayed(
-        const Duration(milliseconds: 500),
-      ).then((value) => imageFuture),
+      future: imageFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return imageWidget(_image);

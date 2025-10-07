@@ -1,22 +1,22 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
-import 'package:music_player_frontend/core/providers/abstract/queriable_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:rxdart/rxdart.dart';
 
-class AlbumProvider with ChangeNotifier implements QueriableProvider {
+class AlbumProvider with ChangeNotifier implements QueryableProvider {
   final AlbumService _albumService;
 
-  bool _isAscending = false;
+  bool _isAscending = true;
   String _query = '';
-  String _sortField = 'Name'; // Name, Duration, Number of Songs
+  String _sortField = 'Name';
 
   late Future albumsFuture;
 
   AlbumProvider(this._albumService) {
     albumsFuture = Future(() => _albumService.getAllAlbums());
 
-    albumsStream.debounceTime(const Duration(seconds: 10)).listen((_) {
+    albumsStream.throttleTime(const Duration(seconds: 2)).listen((_) {
       debugPrint("Albums stream updated");
       albumsFuture = Future(
         () => _albumService.getAlbums(_query, _sortField, _isAscending),
@@ -26,6 +26,8 @@ class AlbumProvider with ChangeNotifier implements QueriableProvider {
   }
 
   Stream get albumsStream => _albumService.watchAlbums();
+
+  get sortFields => _albumService.sortFields;
 
   @override
   bool getFlag() {

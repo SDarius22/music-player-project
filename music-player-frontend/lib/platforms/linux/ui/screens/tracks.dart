@@ -51,7 +51,9 @@ class _TracksState extends State<Tracks> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(15.0),
+        borderRadius: BorderRadius.circular(
+          MediaQuery.of(context).size.height * 0.015,
+        ),
         blur: 45.0,
         borderWidth: 1.5,
         elevation: 3.0,
@@ -85,28 +87,82 @@ class _TracksState extends State<Tracks> {
                         return const Center(child: Text("Error loading songs"));
                       }
                       debugPrint("Songs loaded: ${snapshot.data?.length ?? 0}");
-                      return CustomScrollView(
-                        slivers: [
-                          SliverPadding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.01,
-                              right: width * 0.01,
-                              bottom: height * 0.1,
-                            ),
-                            sliver: ValueListenableBuilder(
-                              valueListenable: selected,
-                              builder: (context, value, child) {
-                                return GridComponent(
-                                  items: snapshot.data ?? [],
-                                  isSelected: (entity) {
-                                    Song song = entity as Song;
-                                    return selected.value.contains(song);
-                                  },
-                                  onTap: (entity) async {
-                                    debugPrint("tapped ${entity.name}");
-                                    Song song = entity as Song;
+                      return RepaintBoundary(
+                        child: CustomScrollView(
+                          slivers: [
+                            SliverPadding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.01,
+                                right: width * 0.01,
+                                bottom: height * 0.1,
+                              ),
+                              sliver: ValueListenableBuilder(
+                                valueListenable: selected,
+                                builder: (context, value, child) {
+                                  return GridComponent(
+                                    items: snapshot.data ?? [],
+                                    isSelected: (entity) {
+                                      Song song = entity as Song;
+                                      return selected.value.contains(song);
+                                    },
+                                    onTap: (entity) async {
+                                      debugPrint("tapped ${entity.name}");
+                                      Song song = entity as Song;
 
-                                    if (selected.value.isNotEmpty) {
+                                      if (selected.value.isNotEmpty) {
+                                        if (selected.value.contains(song)) {
+                                          selected.value = List<Song>.from(
+                                            selected.value,
+                                          )..remove(song);
+                                        } else {
+                                          selected.value = List<Song>.from(
+                                            selected.value,
+                                          )..add(song);
+                                        }
+                                        return;
+                                      }
+
+                                      var audioProvider =
+                                          Provider.of<AbstractAudioProvider>(
+                                            context,
+                                            listen: false,
+                                          );
+                                      try {
+                                        if (audioProvider.currentSong.path !=
+                                            song.path) {
+                                          List<Song> songs =
+                                              snapshot.data as List<Song>;
+                                          audioProvider.setQueue(songs);
+                                          await audioProvider.setCurrentSong(
+                                            song,
+                                          );
+                                          await audioProvider.play();
+                                        } else {
+                                          if (audioProvider
+                                                  .playingNotifier
+                                                  .value ==
+                                              true) {
+                                            debugPrint("Pausing song");
+                                            await audioProvider.pause();
+                                          } else {
+                                            debugPrint("Playing song");
+                                            await audioProvider.play();
+                                          }
+                                        }
+                                      } catch (e) {
+                                        debugPrint(e.toString());
+                                        List<Song> songs =
+                                            snapshot.data as List<Song>;
+                                        audioProvider.setQueue(songs);
+                                        await audioProvider.setCurrentSong(
+                                          song,
+                                        );
+                                        await audioProvider.play();
+                                      }
+                                    },
+                                    onLongPress: (entity) {
+                                      debugPrint("long pressed ${entity.name}");
+                                      Song song = entity as Song;
                                       if (selected.value.contains(song)) {
                                         selected.value = List<Song>.from(
                                           selected.value,
@@ -116,206 +172,166 @@ class _TracksState extends State<Tracks> {
                                           selected.value,
                                         )..add(song);
                                       }
-                                      return;
-                                    }
-
-                                    var audioProvider =
-                                        Provider.of<AbstractAudioProvider>(
-                                          context,
-                                          listen: false,
-                                        );
-                                    try {
-                                      if (audioProvider.currentSong.path !=
-                                          song.path) {
-                                        List<Song> songs =
-                                            snapshot.data as List<Song>;
-                                        audioProvider.setQueue(songs);
-                                        await audioProvider.setCurrentSong(
-                                          song,
-                                        );
-                                        await audioProvider.play();
-                                      } else {
-                                        if (audioProvider
-                                                .playingNotifier
-                                                .value ==
-                                            true) {
-                                          debugPrint("Pausing song");
-                                          await audioProvider.pause();
-                                        } else {
-                                          debugPrint("Playing song");
-                                          await audioProvider.play();
-                                        }
+                                    },
+                                    buildLeftAction: (entity) {
+                                      if (selected.value.contains(entity)) {
+                                        return const SizedBox.shrink();
                                       }
-                                    } catch (e) {
-                                      debugPrint(e.toString());
-                                      List<Song> songs =
-                                          snapshot.data as List<Song>;
-                                      audioProvider.setQueue(songs);
-                                      await audioProvider.setCurrentSong(song);
-                                      await audioProvider.play();
-                                    }
-                                  },
-                                  onLongPress: (entity) {
-                                    debugPrint("long pressed ${entity.name}");
-                                    Song song = entity as Song;
-                                    if (selected.value.contains(song)) {
-                                      selected.value = List<Song>.from(
-                                        selected.value,
-                                      )..remove(song);
-                                    } else {
-                                      selected.value = List<Song>.from(
-                                        selected.value,
-                                      )..add(song);
-                                    }
-                                  },
-                                  buildLeftAction: (entity) {
-                                    if (selected.value.contains(entity)) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return IconButton(
-                                      tooltip: "Go to Album",
-                                      onPressed: () {
-                                        Song song = entity as Song;
-                                        Navigator.push(
-                                          context,
-                                          AlbumScreen.route(
-                                            album: song.album.target as Album,
-                                          ),
-                                        );
-                                      },
-                                      padding: const EdgeInsets.all(0),
-                                      icon: Icon(
-                                        FluentIcons.album,
-                                        color: Colors.white,
-                                        size: height * 0.03,
-                                      ),
-                                    );
-                                  },
-                                  buildMainAction: (entity) {
-                                    if (selected.value.contains(entity)) {
-                                      return Icon(
-                                        FluentIcons.checkCircleOn,
-                                        color: Colors.white,
+                                      return IconButton(
+                                        tooltip: "Go to Album",
+                                        onPressed: () {
+                                          Song song = entity as Song;
+                                          Navigator.push(
+                                            context,
+                                            AlbumScreen.route(
+                                              album: song.album.target as Album,
+                                            ),
+                                          );
+                                        },
+                                        padding: const EdgeInsets.all(0),
+                                        icon: Icon(
+                                          FluentIcons.album,
+                                          color: Colors.white,
+                                          size: height * 0.03,
+                                        ),
                                       );
-                                    }
-                                    if (selected.value.isNotEmpty) {
-                                      return Icon(
-                                        FluentIcons.checkCircleOff,
-                                        color: Colors.white,
-                                      );
-                                    }
-                                    return Consumer<AbstractAudioProvider>(
-                                      builder: (_, audioProvider, __) {
-                                        Song song = entity as Song;
-                                        return ValueListenableBuilder(
-                                          valueListenable:
-                                              audioProvider.playingNotifier,
-                                          builder: (context, isPlaying, child) {
-                                            return Icon(
-                                              audioProvider.currentSong.path ==
-                                                          song.path &&
-                                                      audioProvider
-                                                              .playingNotifier
-                                                              .value ==
-                                                          true
-                                                  ? FluentIcons.pause
-                                                  : FluentIcons.play,
-                                              color: Colors.white,
-                                            );
-                                          },
+                                    },
+                                    buildMainAction: (entity) {
+                                      if (selected.value.contains(entity)) {
+                                        return Icon(
+                                          FluentIcons.checkCircleOn,
+                                          color: Colors.white,
                                         );
-                                      },
-                                    );
-                                  },
-                                  buildRightAction: (entity) {
-                                    if (selected.value.contains(entity)) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return PopupMenuButton<String>(
-                                      icon: Icon(
-                                        FluentIcons.moreVertical,
-                                        color: Colors.white,
-                                        size: height * 0.03,
-                                      ),
-                                      onSelected: (String value) {
-                                        switch (value) {
-                                          case 'add':
-                                            var appState = Provider.of<
-                                              AbstractAppStateProvider
-                                            >(context, listen: false);
-                                            appState.navigatorKey.currentState
-                                                ?.push(
-                                                  AddOrExportScreen.route(
-                                                    songs: [entity as Song],
-                                                  ),
-                                                );
-                                            break;
-                                          case 'playNext':
-                                            var audioProvider = Provider.of<
-                                              AbstractAudioProvider
-                                            >(context, listen: false);
-                                            audioProvider.addNextToQueue(
-                                              (entity as Song),
-                                            );
-                                            break;
-                                          case 'select':
-                                            debugPrint("Select ${entity.name}");
-                                            Song song = entity as Song;
-                                            if (selected.value.contains(
-                                              entity,
-                                            )) {
-                                              selected.value = List<Song>.from(
-                                                selected.value,
-                                              )..remove(song);
-                                            } else {
-                                              selected.value = List<Song>.from(
-                                                selected.value,
-                                              )..add(song);
-                                            }
-                                            break;
-                                          case 'details':
-                                            debugPrint(
-                                              "Details ${entity.name}",
-                                            );
-                                            var appState = Provider.of<
-                                              AbstractAppStateProvider
-                                            >(context, listen: false);
-                                            appState.navigatorKey.currentState
-                                                ?.push(
-                                                  TrackScreen.route(
-                                                    song: entity as Song,
-                                                  ),
-                                                );
-                                            break;
-                                        }
-                                      },
-                                      itemBuilder: (context) {
-                                        return [
-                                          const PopupMenuItem<String>(
-                                            value: 'add',
-                                            child: Text("Add to Playlist"),
-                                          ),
-                                          const PopupMenuItem<String>(
-                                            value: 'playNext',
-                                            child: Text("Play Next"),
-                                          ),
-                                          const PopupMenuItem<String>(
-                                            value: 'select',
-                                            child: Text("Select"),
-                                          ),
-                                          const PopupMenuItem<String>(
-                                            value: 'details',
-                                            child: Text("Track Details"),
-                                          ),
-                                        ];
-                                      },
-                                    );
-                                  },
-                                );
-                              },
+                                      }
+                                      if (selected.value.isNotEmpty) {
+                                        return Icon(
+                                          FluentIcons.checkCircleOff,
+                                          color: Colors.white,
+                                        );
+                                      }
+                                      return Consumer<AbstractAudioProvider>(
+                                        builder: (_, audioProvider, __) {
+                                          Song song = entity as Song;
+                                          return ValueListenableBuilder(
+                                            valueListenable:
+                                                audioProvider.playingNotifier,
+                                            builder: (
+                                              context,
+                                              isPlaying,
+                                              child,
+                                            ) {
+                                              return Icon(
+                                                audioProvider
+                                                                .currentSong
+                                                                .path ==
+                                                            song.path &&
+                                                        audioProvider
+                                                                .playingNotifier
+                                                                .value ==
+                                                            true
+                                                    ? FluentIcons.pause
+                                                    : FluentIcons.play,
+                                                color: Colors.white,
+                                              );
+                                            },
+                                          );
+                                        },
+                                      );
+                                    },
+                                    buildRightAction: (entity) {
+                                      if (selected.value.contains(entity)) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return PopupMenuButton<String>(
+                                        icon: Icon(
+                                          FluentIcons.moreVertical,
+                                          color: Colors.white,
+                                          size: height * 0.03,
+                                        ),
+                                        onSelected: (String value) {
+                                          switch (value) {
+                                            case 'add':
+                                              var appState = Provider.of<
+                                                AbstractAppStateProvider
+                                              >(context, listen: false);
+                                              appState.navigatorKey.currentState
+                                                  ?.push(
+                                                    AddOrExportScreen.route(
+                                                      songs: [entity as Song],
+                                                    ),
+                                                  );
+                                              break;
+                                            case 'playNext':
+                                              var audioProvider = Provider.of<
+                                                AbstractAudioProvider
+                                              >(context, listen: false);
+                                              audioProvider.addNextToQueue(
+                                                (entity as Song),
+                                              );
+                                              break;
+                                            case 'select':
+                                              debugPrint(
+                                                "Select ${entity.name}",
+                                              );
+                                              Song song = entity as Song;
+                                              if (selected.value.contains(
+                                                entity,
+                                              )) {
+                                                selected
+                                                    .value = List<Song>.from(
+                                                  selected.value,
+                                                )..remove(song);
+                                              } else {
+                                                selected
+                                                    .value = List<Song>.from(
+                                                  selected.value,
+                                                )..add(song);
+                                              }
+                                              break;
+                                            case 'details':
+                                              debugPrint(
+                                                "Details ${entity.name}",
+                                              );
+                                              var appState = Provider.of<
+                                                AbstractAppStateProvider
+                                              >(context, listen: false);
+                                              appState.navigatorKey.currentState
+                                                  ?.push(
+                                                    TrackScreen.route(
+                                                      song: entity as Song,
+                                                    ),
+                                                  );
+                                              break;
+                                          }
+                                        },
+                                        itemBuilder: (context) {
+                                          return [
+                                            const PopupMenuItem<String>(
+                                              value: 'add',
+                                              child: Text("Add to Playlist"),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'playNext',
+                                              child: Text("Play Next"),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'select',
+                                              child: Text("Select"),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'details',
+                                              child: Text("Track Details"),
+                                            ),
+                                          ];
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -340,11 +356,15 @@ class _TracksState extends State<Tracks> {
               ),
               decoration: BoxDecoration(
                 color: Colors.blue,
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(
+                  MediaQuery.of(context).size.height * 0.015,
+                ),
               ),
               foregroundDecoration: BoxDecoration(
                 border: Border.all(color: Colors.grey, width: 1),
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(
+                  MediaQuery.of(context).size.height * 0.015,
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -2,6 +2,7 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/top_bar_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class AppBarWidget extends AbstractAppBarWidget {
@@ -26,9 +27,12 @@ class AppBarWidget extends AbstractAppBarWidget {
                     child: Container(
                       padding: const EdgeInsets.only(left: 10),
                       alignment: Alignment.centerLeft,
-                      child: const Text(
+                      child: Text(
                         'Music Player',
-                        style: TextStyle(color: Colors.white, fontSize: 16.0),
+                        style:
+                            MusicPlayerTheme.getTheme(
+                              context,
+                            ).textTheme.bodyLarge,
                       ),
                     ),
                   ),

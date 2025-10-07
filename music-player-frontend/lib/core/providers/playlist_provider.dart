@@ -3,15 +3,15 @@ import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/queriable_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 
-class PlaylistProvider with ChangeNotifier implements QueriableProvider {
+class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   final PlaylistService _playlistService;
 
-  bool _isAscending = false;
+  bool _isAscending = true;
   String _query = '';
-  String _sortField = 'Name'; // Name, Duration, Number of Songs, Created At
+  String _sortField = 'Name';
 
   late Future playlistsFuture;
 
@@ -28,6 +28,8 @@ class PlaylistProvider with ChangeNotifier implements QueriableProvider {
   }
 
   Stream get playlistsStream => _playlistService.watchPlaylists();
+
+  get sortFields => _playlistService.sortFields;
 
   @override
   bool getFlag() {

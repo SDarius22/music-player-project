@@ -7,6 +7,8 @@ class AlbumRepository {
 
   Stream watchAlbums() => _albumBox.query().watch(triggerImmediately: true);
 
+  Map<String, dynamic> get sortFields => {'Name': Album_.name};
+
   Album saveAlbum(Album album) {
     album.id = _albumBox.put(album);
     return album;
@@ -16,26 +18,32 @@ class AlbumRepository {
     return _albumBox.get(albumId);
   }
 
-  Album? getAlbumByNameAndArtist(String albumName, int artistId) {
-    return _albumBox
-        .query(Album_.name.equals(albumName) & Album_.artist.equals(artistId))
-        .build()
-        .findUnique();
+  Album? getAlbumByName(String albumName) {
+    return _albumBox.query(Album_.name.equals(albumName)).build().findUnique();
   }
 
   List<Album> getAlbums(String query, String sortField, bool flag) {
     Query<Album> builderQuery;
-    if (flag == false) {
+    if (flag == true) {
       builderQuery =
           _albumBox
               .query(Album_.name.contains(query, caseSensitive: false))
-              .order(Album_.name)
+              .order(
+                sortFields.containsKey(sortField)
+                    ? sortFields[sortField]
+                    : Album_.name,
+              )
               .build();
     } else {
       builderQuery =
           _albumBox
               .query(Album_.name.contains(query, caseSensitive: false))
-              .order(Album_.name, flags: Order.descending)
+              .order(
+                sortFields.containsKey(sortField)
+                    ? sortFields[sortField]
+                    : Album_.name,
+                flags: Order.descending,
+              )
               .build();
     }
     return builderQuery.find();

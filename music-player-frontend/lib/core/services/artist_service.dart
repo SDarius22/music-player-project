@@ -8,6 +8,8 @@ class ArtistService {
 
   Stream watchArtists() => _artistRepository.watchArtists();
 
+  get sortFields => _artistRepository.sortFields;
+
   Artist getArtist(int artistId) {
     try {
       return _artistRepository.getArtist(artistId)!;

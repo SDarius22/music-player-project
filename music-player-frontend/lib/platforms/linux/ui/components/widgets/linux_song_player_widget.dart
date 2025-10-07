@@ -71,6 +71,14 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       imageLeftMargin = 0;
     }
 
+    double minTopMargin = 0;
+    double maxTopMargin = height * 0.02;
+    double imageTopMargin =
+        lerpDouble(minTopMargin, maxTopMargin, percentage / 0.25) ?? 0.0;
+    if (imageTopMargin < 0) {
+      imageTopMargin = 0;
+    }
+
     double minRadius = 15;
     double maxRadius = 15;
     double borderRadius = lerpDouble(maxRadius, minRadius, percentage) ?? 0.0;
@@ -82,7 +90,11 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       children: [
         Container(
           alignment: Alignment.center,
-          margin: EdgeInsets.only(left: imageLeftMargin),
+          margin: EdgeInsets.only(
+            left: imageLeftMargin,
+            top: imageTopMargin,
+            bottom: imageTopMargin,
+          ),
           padding: const EdgeInsets.all(1.5),
           child: AspectRatio(
             aspectRatio: 1.0,
@@ -102,10 +114,50 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
 
         Opacity(
           opacity: progressBarOpacity,
-          child: SizedBox(
-            width: width * 0.25,
+          child: Container(
             height: height * 0.15,
-            child: _buildPlayerButtons(audioProvider),
+            width: width * 0.2,
+            margin: EdgeInsets.only(left: width * 0.01),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  audioProvider.currentSong.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: MusicPlayerTheme.getTheme(
+                    context,
+                  ).textTheme.headlineLarge?.copyWith(
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.75),
+                        offset: const Offset(1, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  audioProvider.currentSong.artist.target?.name ??
+                      'Unknown Artist',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: MusicPlayerTheme.getTheme(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(
+                    color: Colors.white70,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.75),
+                        offset: const Offset(1, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -124,6 +176,15 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
         ),
 
         const Spacer(),
+
+        Opacity(
+          opacity: progressBarOpacity,
+          child: SizedBox(
+            width: width * 0.25,
+            height: height * 0.15,
+            child: _buildPlayerButtons(audioProvider),
+          ),
+        ),
 
         Opacity(
           opacity: progressBarOpacity,
@@ -162,10 +223,6 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     double progressBarHeight = lerpDouble(0.0, height * 0.05, normalized)!;
     double buttonsHeight = lerpDouble(0.0, height * 0.15, normalized)!;
     double progressBarOpacity = normalized;
-
-    // double topPadding = lerpDouble(height * 0.005, height * 0.02, percentage)!;
-    // double bottomPadding =
-    //     lerpDouble(height * 0.005, height * 0.02, percentage)!;
 
     final showSidePanels = normalizedPercentage > 0.8;
     final sidePanelsOpacity = ((normalizedPercentage - 0.8) / 0.2).clamp(
@@ -216,8 +273,12 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                   opacity: sidePanelsOpacity,
                   child: Container(
                     width: width * 0.3,
-                    height: width * 0.32,
+                    height: width * 0.3,
                     margin: EdgeInsets.only(left: width * 0.01),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: width * 0.01,
+                      vertical: height * 0.01,
+                    ),
                     child: const LyricsTab(),
                   ),
                 ),
@@ -227,7 +288,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
               // Album Art
               Container(
                 alignment: Alignment.center,
-                constraints: BoxConstraints(maxWidth: width * 0.35),
+                constraints: BoxConstraints(maxWidth: width * 0.325),
                 margin: EdgeInsets.only(right: imageRightMargin),
                 // width: width * 0.325,
                 child: DetailsTab(
@@ -243,8 +304,9 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                   opacity: sidePanelsOpacity,
                   child: Container(
                     width: width * 0.3,
-                    height: width * 0.32,
+                    height: width * 0.3,
                     margin: EdgeInsets.only(right: width * 0.01),
+                    padding: EdgeInsets.symmetric(vertical: height * 0.01),
                     child: QueueTab(itemScrollController: itemScrollController),
                   ),
                 ),

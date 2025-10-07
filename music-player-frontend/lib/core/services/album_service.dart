@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/repository/album_repo.dart';
 
@@ -10,6 +11,8 @@ class AlbumService {
 
   Stream watchAlbums() => _albumRepository.watchAlbums();
 
+  get sortFields => _albumRepository.sortFields;
+
   Album getAlbum(int albumId) {
     try {
       return _albumRepository.getAlbum(albumId)!;
@@ -19,10 +22,7 @@ class AlbumService {
   }
 
   Album getOrCreateAlbum(String albumName, int artistId, {Uint8List? image}) {
-    Album? existingAlbum = _albumRepository.getAlbumByNameAndArtist(
-      albumName,
-      artistId,
-    );
+    Album? existingAlbum = _albumRepository.getAlbumByName(albumName);
     if (existingAlbum != null) {
       existingAlbum.imageBytes ??= image;
       _albumRepository.saveAlbum(existingAlbum);
@@ -30,19 +30,10 @@ class AlbumService {
     }
     Album newAlbum = Album();
     newAlbum.name = albumName;
-    newAlbum.imageBytes = image;
+    newAlbum.imageBytes =
+        albumName == 'Unknown Album' ? Constants.logoBytes : image;
     newAlbum.artist.targetId = artistId;
     return _albumRepository.saveAlbum(newAlbum);
-  }
-
-  Album getAlbumByNameAndArtist(String albumName, int artistId) {
-    try {
-      return _albumRepository.getAlbumByNameAndArtist(albumName, artistId)!;
-    } catch (e) {
-      throw Exception(
-        "Album with name $albumName and artist ID $artistId not found.",
-      );
-    }
   }
 
   List<Album> getAlbums(String query, String sortField, bool flag) {

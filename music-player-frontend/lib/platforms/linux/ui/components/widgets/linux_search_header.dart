@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/queriable_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
@@ -16,7 +16,7 @@ class LinuxSearchHeader extends StatefulWidget {
   });
 
   final String title;
-  final QueriableProvider provider;
+  final QueryableProvider provider;
   final void Function()? clickedPlayAll;
   final void Function()? clickedShuffle;
 
@@ -28,7 +28,7 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
   FocusNode searchNode = FocusNode();
   Timer? _debounce;
   final TextEditingController _controller = TextEditingController();
-  String _sortField = "title";
+  String _sortField = "Name";
   bool _isAscending = true;
 
   @override
@@ -61,7 +61,7 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.transparent,
-              hintText: "Tracks",
+              hintText: widget.title,
               hintStyle: TextStyle(
                 color: Colors.white,
                 fontSize: height * 0.025,
@@ -130,7 +130,9 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
             size: LinuxScaler.scale(context, 24),
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(
+              MediaQuery.of(context).size.height * 0.015,
+            ),
           ),
           menuPadding: EdgeInsets.all(LinuxScaler.scale(context, 8)),
           itemBuilder:
@@ -145,11 +147,14 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
                   ),
                 ),
                 const PopupMenuDivider(),
-                _buildSortMenuItem(context, "Title"),
-                // _buildSortMenuItem(context, "Artist", "artist"),
-                // _buildSortMenuItem(context, "Album", "album"),
-                _buildSortMenuItem(context, "Duration"),
-                _buildSortMenuItem(context, "Date Added"),
+                ...widget.provider.sortFields.keys.map(
+                  (field) => _buildSortMenuItem(context, field),
+                ),
+                // _buildSortMenuItem(context, "Title"),
+                // // _buildSortMenuItem(context, "Artist", "artist"),
+                // // _buildSortMenuItem(context, "Album", "album"),
+                // _buildSortMenuItem(context, "Duration"),
+                // _buildSortMenuItem(context, "Date Added"),
                 const PopupMenuDivider(),
                 PopupMenuItem(
                   child: Row(

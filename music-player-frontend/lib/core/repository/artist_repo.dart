@@ -7,6 +7,8 @@ class ArtistRepository {
 
   Stream watchArtists() => _artistBox.query().watch(triggerImmediately: true);
 
+  Map<String, dynamic> get sortFields => {'Name': Artist_.name};
+
   Artist saveArtist(Artist artist) {
     artist.id = _artistBox.put(artist);
     return artist;
@@ -29,13 +31,22 @@ class ArtistRepository {
       builderQuery =
           _artistBox
               .query(Artist_.name.contains(query, caseSensitive: false))
-              .order(Artist_.name)
+              .order(
+                sortFields.containsKey(sortField)
+                    ? sortFields[sortField]
+                    : Artist_.name,
+              )
               .build();
     } else {
       builderQuery =
           _artistBox
               .query(Artist_.name.contains(query, caseSensitive: false))
-              .order(Artist_.name, flags: Order.descending)
+              .order(
+                sortFields.containsKey(sortField)
+                    ? sortFields[sortField]
+                    : Artist_.name,
+                flags: Order.descending,
+              )
               .build();
     }
     return builderQuery.find();

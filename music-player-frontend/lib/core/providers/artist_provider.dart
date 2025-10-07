@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
-import 'package:music_player_frontend/core/providers/abstract/queriable_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:rxdart/rxdart.dart';
 
-class ArtistProvider with ChangeNotifier implements QueriableProvider {
+class ArtistProvider with ChangeNotifier implements QueryableProvider {
   final ArtistService _artistService;
 
-  bool _isAscending = false;
+  bool _isAscending = true;
   String _query = '';
   String _sortField = 'Name'; // Name, Duration, Number of Songs
 
@@ -16,7 +16,7 @@ class ArtistProvider with ChangeNotifier implements QueriableProvider {
   ArtistProvider(this._artistService) {
     artistsFuture = Future(() => _artistService.getAllArtists());
 
-    artistsStream.debounceTime(const Duration(seconds: 10)).listen((_) {
+    artistsStream.throttleTime(const Duration(seconds: 2)).listen((_) {
       debugPrint("Artists stream updated");
       artistsFuture = Future(
         () => _artistService.getArtists(_query, _sortField, _isAscending),
@@ -26,6 +26,8 @@ class ArtistProvider with ChangeNotifier implements QueriableProvider {
   }
 
   Stream get artistsStream => _artistService.watchArtists();
+
+  get sortFields => _artistService.sortFields;
 
   @override
   bool getFlag() {

@@ -1,20 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/queriable_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:rxdart/rxdart.dart';
 
-class SongProvider with ChangeNotifier implements QueriableProvider {
+class SongProvider with ChangeNotifier implements QueryableProvider {
   final SongService _songService;
   final MusicScannerService _scannerService;
 
   bool _isAscending = true;
   String _query = '';
-  String _sortField = 'Name'; // Name or Duration
+  String _sortField = 'Title';
 
-  bool _finishedLoading = true;
-  bool _isEnrichingMetadata = false;
   bool _isInitialized = false;
 
   late Future songsFuture;
@@ -22,18 +20,19 @@ class SongProvider with ChangeNotifier implements QueriableProvider {
   SongProvider(this._songService, this._scannerService) {
     songsFuture = Future(() => _songService.getAllSongs());
 
-    songsStream.delay(const Duration(seconds: 2)).listen((_) {
-      if (!_finishedLoading) {
-        debugPrint("Songs stream updated");
-        songsFuture = Future(
-          () => _songService.getSongs(_query, _sortField, _isAscending),
-        );
-        notifyListeners();
-      }
+    songsStream.throttleTime(const Duration(seconds: 2)).listen((_) {
+      debugPrint("Songs stream updated");
+      songsFuture = Future(
+        () => _songService.getSongs(_query, _sortField, _isAscending),
+      );
+      notifyListeners();
     });
   }
 
   Stream get songsStream => _songService.watchSongs();
+
+  @override
+  get sortFields => _songService.sortFields;
 
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
@@ -57,23 +56,23 @@ class SongProvider with ChangeNotifier implements QueriableProvider {
     }
 
     // Load songs from database
-    _refreshSongs();
+    // _refreshSongs();
     _isInitialized = true;
   }
 
   // Enrich metadata in background
   void _enrichMetadataInBackground() async {
-    _isEnrichingMetadata = true;
     notifyListeners();
 
     debugPrint("Starting metadata enrichment...");
-    await _scannerService.enrichMetadata();
+    bool refresh = await _scannerService.enrichMetadata();
 
-    _isEnrichingMetadata = false;
     debugPrint("Metadata enrichment complete!");
 
     // Refresh songs to show updated metadata
-    _refreshSongs();
+    if (refresh) {
+      _refreshSongs();
+    }
   }
 
   // Refresh songs from database with current filters

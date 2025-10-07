@@ -1,12 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +17,7 @@ class Albums extends StatefulWidget {
     return PageRouteBuilder(
       settings: const RouteSettings(name: '/albums'),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Albums();
+        return const Albums();
       },
     );
   }
@@ -29,153 +30,47 @@ class Albums extends StatefulWidget {
 
 class _AlbumsState extends State<Albums> {
   ValueNotifier<List<Album>> selected = ValueNotifier<List<Album>>([]);
-  FocusNode searchNode = FocusNode();
-  Timer? _debounce;
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
-    // var boldSize = height * 0.025;
-    var normalSize = height * 0.02;
-    var smallSize = height * 0.015;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Container(
-        padding: EdgeInsets.only(
-          top: height * 0.02,
-          left: width * 0.01,
-          right: width * 0.01,
-          bottom: height * 0.02,
+      body: GlassContainer(
+        height: height,
+        width: width,
+        color: Colors.black.withValues(alpha: 0.4),
+        borderGradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.60),
+            Colors.indigoAccent.withOpacity(0.6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(
+          MediaQuery.of(context).size.height * 0.015,
+        ),
+        blur: 45.0,
+        borderWidth: 1.5,
+        elevation: 3.0,
+        shadowColor: Colors.black.withOpacity(0.20),
+        padding: EdgeInsets.only(bottom: height * 0.01),
         child: Consumer<AlbumProvider>(
-          builder: (_, albumProvider, __) {
+          builder: (context, albumProvider, child) {
             return Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
-                  height: height * 0.05,
-                  margin: EdgeInsets.only(
-                    left: width * 0.01,
-                    right: width * 0.01,
-                    bottom: height * 0.01,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _controller,
-                          focusNode: searchNode,
-                          onChanged: (value) {
-                            if (_debounce?.isActive ?? false)
-                              _debounce?.cancel();
-                            _debounce = Timer(
-                              const Duration(milliseconds: 500),
-                              () {
-                                albumProvider.setQuery(value);
-                              },
-                            );
-                          },
-                          cursorColor: Colors.white,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: normalSize,
-                          ),
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * 0.02),
-                              borderSide: const BorderSide(color: Colors.white),
-                            ),
-                            contentPadding: EdgeInsets.only(
-                              left: width * 0.01,
-                              right: width * 0.01,
-                            ),
-                            floatingLabelBehavior: FloatingLabelBehavior.never,
-                            labelStyle: TextStyle(
-                              color: Colors.white,
-                              fontSize: smallSize,
-                            ),
-                            labelText: 'Search',
-                            suffixIcon:
-                                _controller.text.isNotEmpty
-                                    ? IconButton(
-                                      icon: Icon(
-                                        Icons.clear,
-                                        color: Colors.white,
-                                        size: height * 0.03,
-                                      ),
-                                      onPressed: () {
-                                        _controller.clear();
-                                        albumProvider.setQuery("");
-                                        searchNode.unfocus();
-                                      },
-                                    )
-                                    : Icon(
-                                      FluentIcons.search,
-                                      color: Colors.white,
-                                      size: height * 0.03,
-                                    ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: width * 0.01),
-                      Container(
-                        padding: EdgeInsets.only(
-                          left: width * 0.01,
-                          right: width * 0.01,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            PopupMenuButton<String>(
-                              onSelected: (value) {
-                                albumProvider.setSortField(value);
-                              },
-                              tooltip: "Sort by",
-                              itemBuilder:
-                                  (context) => [
-                                    PopupMenuItem(
-                                      value: "Name",
-                                      child: Text("Name"),
-                                    ),
-                                    PopupMenuItem(
-                                      value: "Duration",
-                                      child: Text("Duration"),
-                                    ),
-                                    PopupMenuItem(
-                                      value: "Number of Songs",
-                                      child: Text("Number of Songs"),
-                                    ),
-                                  ],
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8.0,
-                                ),
-                                child: Text(
-                                  albumProvider.getSortField(),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: smallSize,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  height: height * 0.065,
+                  width: width,
+                  padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+                  child: LinuxSearchHeader(
+                    title: 'Albums',
+                    provider: albumProvider,
                   ),
                 ),
                 Expanded(
@@ -183,7 +78,7 @@ class _AlbumsState extends State<Albums> {
                     future: albumProvider.albumsFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
+                        return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError) {
                         debugPrint(snapshot.error.toString());
@@ -191,10 +86,9 @@ class _AlbumsState extends State<Albums> {
                         return Center(
                           child: Text(
                             "Error loading albums",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: smallSize,
-                            ),
+                            style: MusicPlayerTheme.getTheme(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(color: Colors.red),
                           ),
                         );
                       }
@@ -426,11 +320,15 @@ class _AlbumsState extends State<Albums> {
               ),
               decoration: BoxDecoration(
                 color: Colors.blue,
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(
+                  MediaQuery.of(context).size.height * 0.015,
+                ),
               ),
               foregroundDecoration: BoxDecoration(
                 border: Border.all(color: Colors.grey, width: 1),
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(
+                  MediaQuery.of(context).size.height * 0.015,
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -444,10 +342,10 @@ class _AlbumsState extends State<Albums> {
                       ),
                       label: Text(
                         "Add",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: normalSize,
-                        ),
+                        style:
+                            MusicPlayerTheme.getTheme(
+                              context,
+                            ).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),
                       onPressed: () async {

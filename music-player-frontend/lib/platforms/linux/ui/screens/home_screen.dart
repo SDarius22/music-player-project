@@ -31,7 +31,7 @@ class HomeScreen extends StatelessWidget {
               listen: false,
             ).gradientController,
         padding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.height * 0.015,
+          horizontal: MediaQuery.of(context).size.width * 0.0075,
           vertical: MediaQuery.of(context).size.height * 0.015,
         ),
         child: Stack(
@@ -42,7 +42,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const LinuxDrawerWidget(),
-                  SizedBox(width: MediaQuery.of(context).size.height * 0.015),
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.0075),
                   Consumer<AbstractAppStateProvider>(
                     builder: (context, abstractAppStateProvider, child) {
                       return Theme(

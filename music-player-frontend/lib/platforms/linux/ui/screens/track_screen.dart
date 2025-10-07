@@ -90,7 +90,7 @@ class _TrackScreenState extends State<TrackScreen> {
                               //color: Colors.red,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(
-                                  width * 0.025,
+                                  MediaQuery.of(context).size.height * 0.015,
                                 ),
                                 child: ImageWidget(
                                   path: widget.song.path,
@@ -138,7 +138,9 @@ class _TrackScreenState extends State<TrackScreen> {
                       padding: EdgeInsets.all(width * 0.01),
                       margin: EdgeInsets.only(top: height * 0.02),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(width * 0.02),
+                        borderRadius: BorderRadius.circular(
+                          MediaQuery.of(context).size.height * 0.015,
+                        ),
                         color: const Color(0xFF242424),
                       ),
                       child: CustomScrollView(

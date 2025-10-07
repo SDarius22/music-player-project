@@ -194,13 +194,15 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(width * 0.02),
+                            borderRadius: BorderRadius.circular(
+                              MediaQuery.of(context).size.height * 0.015,
+                            ),
                             child: Container(
                               width: width * 0.3,
                               height: width * 0.3,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(
-                                  width * 0.02,
+                                  MediaQuery.of(context).size.height * 0.015,
                                 ),
                                 color: Colors.black,
                               ),
@@ -375,7 +377,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                 ),
                                 underline: Container(height: 0),
                                 borderRadius: BorderRadius.circular(
-                                  width * 0.01,
+                                  MediaQuery.of(context).size.height * 0.015,
                                 ),
                                 padding: EdgeInsets.zero,
                                 alignment: Alignment.center,
@@ -407,7 +409,9 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                       margin: EdgeInsets.only(top: height * 0.02),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(width * 0.02),
+                        borderRadius: BorderRadius.circular(
+                          MediaQuery.of(context).size.height * 0.015,
+                        ),
                         color: const Color(0xFF242424),
                       ),
                       child: Column(
@@ -428,7 +432,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(
-                                  width * 0.02,
+                                  MediaQuery.of(context).size.height * 0.015,
                                 ),
                                 borderSide: const BorderSide(
                                   color: Colors.white,

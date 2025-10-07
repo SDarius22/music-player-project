@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
 
 class MusicPlayerTheme {
   // Define the color palette
@@ -44,6 +43,8 @@ class MusicPlayerTheme {
 
   // Create the ThemeData
   static ThemeData getTheme(BuildContext context) {
+    var height = MediaQuery.of(context).size.height;
+
     return ThemeData(
       brightness: Brightness.dark,
       fontFamily: 'Inter',
@@ -63,17 +64,17 @@ class MusicPlayerTheme {
       scaffoldBackgroundColor: backgroundDark,
 
       // App bar theme
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
           fontFamily: 'Inter',
-          fontSize: 20,
+          fontSize: height * 0.025,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
-        iconTheme: IconThemeData(color: textPrimary),
+        iconTheme: const IconThemeData(color: textPrimary),
       ),
 
       // Card theme
@@ -81,7 +82,11 @@ class MusicPlayerTheme {
         color: surfaceDark,
         elevation: 8,
         shadowColor: primaryPurple.withOpacity(0.3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            MediaQuery.of(context).size.height * 0.015,
+          ),
+        ),
       ),
 
       // Button themes
@@ -92,13 +97,13 @@ class MusicPlayerTheme {
           elevation: 8,
           shadowColor: primaryPurple.withOpacity(0.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
+            borderRadius: BorderRadius.circular(15),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: const TextStyle(
+          textStyle: TextStyle(
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: height * 0.02,
           ),
         ),
       ),
@@ -108,7 +113,7 @@ class MusicPlayerTheme {
           backgroundColor: Colors.transparent,
           foregroundColor: accentPurple,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(15),
           ),
         ),
       ),
@@ -144,67 +149,67 @@ class MusicPlayerTheme {
       textTheme: TextTheme(
         displayLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 32),
+          fontSize: height * 0.04,
           fontWeight: FontWeight.bold,
           color: textPrimary,
         ),
         displayMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 28),
+          fontSize: height * 0.03,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         displaySmall: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 24),
+          fontSize: height * 0.025,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         headlineLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 20),
+          fontSize: height * 0.02,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         headlineMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 18),
+          fontSize: height * 0.018,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         titleLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 16),
+          fontSize: height * 0.018,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         titleMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 14),
+          fontSize: height * 0.016,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         titleSmall: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 12),
+          fontSize: height * 0.014,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         bodyLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 16),
+          fontSize: height * 0.016,
           fontWeight: FontWeight.w400,
           color: textPrimary,
         ),
         bodyMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 14),
+          fontSize: height * 0.014,
           fontWeight: FontWeight.w400,
           color: textPrimary,
         ),
         bodySmall: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxScaler.scale(context, 12),
+          fontSize: height * 0.012,
           fontWeight: FontWeight.w400,
           color: textPrimary,
         ),
@@ -215,7 +220,7 @@ class MusicPlayerTheme {
         filled: true,
         fillColor: surfaceDark,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
         ),
         hintStyle: const TextStyle(fontFamily: 'Inter', color: textSecondary),

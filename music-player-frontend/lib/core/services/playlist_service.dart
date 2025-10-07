@@ -19,6 +19,8 @@ class PlaylistService {
 
   Stream watchPlaylists() => _playlistRepository.watchPlaylists();
 
+  get sortFields => _playlistRepository.sortFields;
+
   Playlist addPlaylist(
     String name,
     List<Song> songs,

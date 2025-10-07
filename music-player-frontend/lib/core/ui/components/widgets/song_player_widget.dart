@@ -91,8 +91,12 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
           maxHeight: getMaxHeight(context),
           minWidth: getMinWidth(context),
           maxWidth: getMaxWidth(context),
-          borderRadius: BorderRadius.circular(15.0),
-          maxBorderRadius: BorderRadius.circular(15.0),
+          borderRadius: BorderRadius.circular(
+            MediaQuery.of(context).size.height * 0.015,
+          ),
+          maxBorderRadius: BorderRadius.circular(
+            MediaQuery.of(context).size.height * 0.015,
+          ),
           controller:
               Provider.of<AbstractAppStateProvider>(
                 context,
@@ -127,7 +131,9 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      borderRadius: BorderRadius.circular(15.0),
+      borderRadius: BorderRadius.circular(
+        MediaQuery.of(context).size.height * 0.015,
+      ),
       blur: 45.0,
       borderWidth: 1.5,
       elevation: 3.0,
@@ -147,12 +153,17 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      borderRadius: BorderRadius.circular(15.0),
+      borderRadius: BorderRadius.circular(
+        MediaQuery.of(context).size.height * 0.015,
+      ),
       blur: 45.0,
       borderWidth: 1.5,
       elevation: 3.0,
       shadowColor: Colors.black.withOpacity(0.20),
-      // padding: EdgeInsets.all(MediaQuery.of(context).size.height * 0.025),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.01,
+        vertical: MediaQuery.of(context).size.height * 0.02,
+      ),
       child: buildMaximizedPlayerContent(context, percentage),
     );
   }

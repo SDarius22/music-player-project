@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:music_player_frontend/core/database/objectBox.dart';
-import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/played_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/played_song_repo.dart';
@@ -27,6 +25,8 @@ class SongService {
 
   Stream watchPlayedSongs() => _playedSongRepository.watchPlayedSongs();
 
+  get sortFields => _songRepository.sortFields;
+
   Future<Song> addSong(String songPath) async {
     if (songPath.isEmpty) {
       throw ArgumentError("Song path cannot be empty");
@@ -38,33 +38,12 @@ class SongService {
   }
 
   bool isInitialScanComplete() {
-    try {
-      final settingsBox = ObjectBox.store.box<AppSettings>();
-      final settings = settingsBox.get(1);
-      return settings?.initialScanComplete ?? false;
-    } catch (e) {
-      debugPrint("Error checking initial scan status: $e");
-      return false;
-    }
+    return _settingsService.currentAppSettings.initialScanComplete;
   }
 
   void markInitialScanComplete() {
-    try {
-      final settingsBox = ObjectBox.store.box<AppSettings>();
-      var settings = settingsBox.get(1);
-      if (settings == null) {
-        settings =
-            AppSettings()
-              ..id = 1
-              ..initialScanComplete = true;
-      } else {
-        settings.initialScanComplete = true;
-      }
-      settingsBox.put(settings);
-      debugPrint("Initial scan marked as complete");
-    } catch (e) {
-      debugPrint("Error marking initial scan complete: $e");
-    }
+    _settingsService.currentAppSettings.initialScanComplete = true;
+    _settingsService.updateAppSettings();
   }
 
   Song addSongEntity(Song song) {

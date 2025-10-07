@@ -30,7 +30,9 @@ class DetailsTab extends AbstractDetailsTab {
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
             color: Colors.black,
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(
+              MediaQuery.of(context).size.height * 0.015,
+            ),
             image: DecorationImage(
               fit: BoxFit.cover,
               image: MemoryImage(audioProvider.currentSong.coverArt),
@@ -42,7 +44,9 @@ class DetailsTab extends AbstractDetailsTab {
             decoration: BoxDecoration(
               shape: BoxShape.rectangle,
               color: Colors.black,
-              borderRadius: BorderRadius.circular(width * 0.0125),
+              borderRadius: BorderRadius.circular(
+                MediaQuery.of(context).size.height * 0.015,
+              ),
               gradient: LinearGradient(
                 begin: FractionalOffset.center,
                 end: FractionalOffset.bottomCenter,
@@ -68,9 +72,9 @@ class DetailsTab extends AbstractDetailsTab {
                         MusicPlayerTheme.getTheme(
                           context,
                         ).textTheme.displaySmall,
-                    pauseOnBounce: const Duration(seconds: 2),
-                    delayBefore: const Duration(seconds: 2),
-                    pauseBetween: const Duration(seconds: 2),
+                    pauseOnBounce: const Duration(seconds: 5),
+                    delayBefore: const Duration(seconds: 0),
+                    pauseBetween: const Duration(seconds: 5),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -110,9 +114,9 @@ class DetailsTab extends AbstractDetailsTab {
                                 MusicPlayerTheme.getTheme(
                                   context,
                                 ).textTheme.titleLarge,
-                            pauseOnBounce: const Duration(seconds: 3),
-                            delayBefore: const Duration(seconds: 3),
-                            pauseBetween: const Duration(seconds: 3),
+                            pauseOnBounce: const Duration(seconds: 5),
+                            delayBefore: const Duration(seconds: 0),
+                            pauseBetween: const Duration(seconds: 5),
                           ),
                         ),
                       ),
@@ -151,9 +155,9 @@ class DetailsTab extends AbstractDetailsTab {
                                 MusicPlayerTheme.getTheme(
                                   context,
                                 ).textTheme.titleLarge,
-                            pauseOnBounce: const Duration(seconds: 2),
-                            delayBefore: const Duration(seconds: 2),
-                            pauseBetween: const Duration(seconds: 2),
+                            pauseOnBounce: const Duration(seconds: 5),
+                            delayBefore: const Duration(seconds: 0),
+                            pauseBetween: const Duration(seconds: 5),
                           ),
                         ),
                       ),

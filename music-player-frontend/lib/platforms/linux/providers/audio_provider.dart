@@ -46,6 +46,7 @@ class AudioProvider extends AbstractAudioProvider {
 
     super.audioService.audioPlayer.onPositionChanged.listen((Duration event) {
       sliderNotifier.value = event.inMilliseconds;
+
       super.audioService.setSlider(event.inMilliseconds);
     });
     audioService.audioPlayer.onPlayerStateChanged.listen((state) {

@@ -102,7 +102,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
     final bool isSelected = _selected == itemIndex;
 
     return AnimatedContainer(
-      height: LinuxScaler.scaleHeight(context, height * 0.05),
+      height: height * 0.05,
       duration: const Duration(milliseconds: 300),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -115,8 +115,8 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                     ? Colors.white.withValues(alpha: 0.15)
                     : Colors.transparent,
             padding: EdgeInsets.symmetric(
-              horizontal: LinuxScaler.scaleWidth(context, width * 0.01),
-              vertical: LinuxScaler.scaleHeight(context, height * 0.01),
+              horizontal: width * 0.01,
+              vertical: height * 0.01,
             ),
             alignment: Alignment.center,
             child: Row(
@@ -124,7 +124,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
               children: [
                 // Fixed width container for icon to prevent shifting
                 SizedBox(
-                  width: LinuxScaler.scaleHeight(context, height * 0.025),
+                  width: width * 0.0125,
                   child: Icon(
                     item["icon"],
                     size: LinuxScaler.scale(context, 24),
@@ -132,9 +132,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                   ),
                 ),
                 if (isDrawerOpen) ...[
-                  SizedBox(
-                    width: LinuxScaler.scaleWidth(context, width * 0.01),
-                  ),
+                  SizedBox(width: width * 0.01),
                   Expanded(
                     child: AnimatedOpacity(
                       opacity: _finishedAnimation ? 1.0 : 0.0,
@@ -177,10 +175,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       builder: (context, isDrawerOpen, child) {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          width:
-              isDrawerOpen
-                  ? LinuxScaler.scaleWidth(context, width * 0.12)
-                  : LinuxScaler.scaleWidth(context, width * 0.035),
+          width: isDrawerOpen ? width * 0.12 : width * 0.035,
           curve: Curves.easeInOut,
           alignment: Alignment.center,
           child: GlassContainer(
@@ -201,7 +196,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
               end: Alignment.bottomRight,
               stops: [0.0, 1.0],
             ),
-            borderRadius: BorderRadius.circular(15.0),
+            borderRadius: BorderRadius.circular(
+              MediaQuery.of(context).size.height * 0.015,
+            ),
             blur: 45.0,
             borderWidth: 1.5,
             elevation: 3.0,
@@ -214,18 +211,18 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
               children: [
                 // Menu toggle button
                 AnimatedContainer(
-                  height: LinuxScaler.scaleHeight(context, height * 0.05),
+                  height: height * 0.05,
                   duration: const Duration(milliseconds: 300),
                   padding: EdgeInsets.symmetric(
-                    horizontal: LinuxScaler.scaleWidth(context, width * 0.01),
-                    vertical: LinuxScaler.scaleHeight(context, height * 0.01),
+                    horizontal: width * 0.01,
+                    vertical: height * 0.01,
                   ),
                   alignment: Alignment.center,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: LinuxScaler.scaleHeight(context, height * 0.025),
+                        width: width * 0.0125,
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -269,7 +266,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                 const Spacer(),
                 // User section at bottom
                 AnimatedContainer(
-                  height: LinuxScaler.scaleHeight(context, height * 0.07),
+                  height: height * 0.07,
                   duration: const Duration(milliseconds: 300),
                   child: MouseRegion(
                     cursor: SystemMouseCursors.click,
@@ -285,21 +282,15 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                 ? Colors.white.withValues(alpha: 0.15)
                                 : Colors.transparent,
                         padding: EdgeInsets.symmetric(
-                          horizontal: LinuxScaler.scaleWidth(
-                            context,
-                            width * 0.01,
-                          ),
-                          vertical: LinuxScaler.scaleHeight(
-                            context,
-                            height * 0.01,
-                          ),
+                          horizontal: width * 0.01,
+                          vertical: height * 0.01,
                         ),
                         alignment: Alignment.center,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             SizedBox(
-                              width: height * 0.025,
+                              width: width * 0.0125,
                               child: CircleAvatar(
                                 radius: height * 0.0125,
                                 backgroundColor: Colors.indigo.withOpacity(0.3),

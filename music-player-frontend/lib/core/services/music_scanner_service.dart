@@ -41,6 +41,7 @@ class MusicScannerService {
         _albumService.updateAlbum(album);
 
         artist.songs.add(song);
+        artist.albums.add(album);
         _artistService.updateArtist(artist);
 
         _songService.addSongEntity(song);
@@ -53,13 +54,13 @@ class MusicScannerService {
     );
   }
 
-  Future<void> enrichMetadata() async {
+  Future<bool> enrichMetadata() async {
     final songs =
         _songService.getAllSongs().where((song) => !song.fullyLoaded).toList();
 
     if (songs.isEmpty) {
       debugPrint("No songs need metadata enrichment");
-      return;
+      return false;
     }
 
     debugPrint("Enriching metadata for ${songs.length} songs...");
@@ -92,11 +93,8 @@ class MusicScannerService {
         _albumService.updateAlbum(album);
 
         artist.songs.add(song);
+        artist.albums.add(album);
         _artistService.updateArtist(artist);
-        // Log progress every 10 songs
-        if ((i + 1) % 10 == 0) {
-          debugPrint("Enriched ${i + 1}/${songs.length} songs");
-        }
       } catch (e) {
         debugPrint('Error extracting metadata for ${song.path}: $e');
         song.fullyLoaded = true;
@@ -105,38 +103,7 @@ class MusicScannerService {
     }
 
     debugPrint("Metadata enrichment complete!");
-  }
-
-  Future<void> enrichSingleSong(String path) async {
-    try {
-      // Use FileService to retrieve full metadata
-      final metadata = await _fileService.retrieveSong(path, withImage: true);
-
-      final song = _songService.getSong(path);
-      if (song == null) return;
-
-      song.fromJson(metadata);
-      var artist = _artistService.getOrCreateArtist(
-        metadata['artist'] ?? 'Unknown Artist',
-      );
-      var album = _albumService.getOrCreateAlbum(
-        metadata['album'] ?? 'Unknown Album',
-        artist.id,
-      );
-      song.artist.target = artist;
-      song.album.target = album;
-      song.fullyLoaded = true;
-
-      _songService.updateSong(song);
-    } catch (e) {
-      debugPrint('Error extracting metadata for $path: $e');
-      // Mark as having metadata anyway to avoid repeated failures
-      final song = _songService.getSong(path);
-      if (song != null) {
-        song.fullyLoaded = true;
-        _songService.updateSong(song);
-      }
-    }
+    return true;
   }
 
   String _getFileNameWithoutExtension(String path) {

@@ -22,9 +22,9 @@ class CustomTextScroll extends StatelessWidget {
       mode: TextScrollMode.bouncing,
       velocity: const Velocity(pixelsPerSecond: Offset(20, 0)),
       style: style,
-      pauseOnBounce: const Duration(seconds: 2),
-      delayBefore: const Duration(seconds: 2),
-      pauseBetween: const Duration(seconds: 2),
+      pauseOnBounce: const Duration(seconds: 5),
+      delayBefore: const Duration(seconds: 0),
+      pauseBetween: const Duration(seconds: 5),
     );
   }
 }

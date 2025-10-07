@@ -7,6 +7,12 @@ class SongRepository {
 
   Stream watchSongs() => _songBox.query().watch(triggerImmediately: true);
 
+  Map<String, dynamic> get sortFields => {
+    'Title': Song_.name,
+    'Duration': Song_.duration,
+    'Year': Song_.year,
+  };
+
   Song saveSong(Song song) {
     song.id = _songBox.put(song);
     return song;
@@ -45,14 +51,20 @@ class SongRepository {
       builderQuery =
           _songBox
               .query(Song_.name.contains(query, caseSensitive: false))
-              .order(sortField == 'Name' ? Song_.name : Song_.duration)
+              .order(
+                sortFields.containsKey(sortField)
+                    ? sortFields[sortField]
+                    : Song_.name,
+              )
               .build();
     } else {
       builderQuery =
           _songBox
               .query(Song_.name.contains(query, caseSensitive: false))
               .order(
-                sortField == 'Name' ? Song_.name : Song_.duration,
+                sortFields.containsKey(sortField)
+                    ? sortFields[sortField]
+                    : Song_.name,
                 flags: Order.descending,
               )
               .build();

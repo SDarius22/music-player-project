@@ -1,4 +1,4 @@
-abstract class QueriableProvider<T> {
+abstract class QueryableProvider {
   void setFlag(bool value);
 
   bool getFlag();
@@ -8,4 +8,6 @@ abstract class QueriableProvider<T> {
   String getSortField();
 
   void setQuery(String query);
+
+  Map<String, dynamic> get sortFields;
 }

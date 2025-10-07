@@ -63,7 +63,7 @@ class CustomGridTile extends AbstractCustomGridTile {
         child: Hero(
           tag: entity is Song ? (entity as Song).path : entity.name,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(height * 0.015),
             child: ImageWidget(
               path: _pathForImageWidget(entity),
               type: _getImageWidgetType(entity),

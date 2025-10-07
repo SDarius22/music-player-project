@@ -6,6 +6,7 @@ import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/animated_background.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/home_screen.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/welcome_screen.dart';
 import 'package:provider/provider.dart';
 
 class LoadingScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
     if (abstractAppStateProvider.appSettings.firstTime ||
         abstractAppStateProvider.appSettings.mainSongPlace.isEmpty) {
-      // Navigator.pushReplacement(context, WelcomeScreen.route());
+      Navigator.pushReplacement(context, WelcomeScreen.route());
     } else {
       Provider.of<SongProvider>(
         context,

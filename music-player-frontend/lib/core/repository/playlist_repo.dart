@@ -8,6 +8,11 @@ class PlaylistRepository {
   Stream watchPlaylists() =>
       _playlistBox.query().watch(triggerImmediately: true);
 
+  Map<String, dynamic> get sortFields => {
+    'Name': Playlist_.name,
+    'Created At': Playlist_.createdAt,
+  };
+
   Playlist savePlaylist(Playlist playlist) {
     playlist.id = _playlistBox.put(playlist);
     return playlist;
@@ -48,12 +53,16 @@ class PlaylistRepository {
 
   List<Playlist> getPlaylists(String query, String sortField, bool flag) {
     Query<Playlist> builderQuery;
-    if (flag == false) {
+    if (flag == true) {
       builderQuery =
           _playlistBox
               .query(Playlist_.name.contains(query, caseSensitive: false))
               .order(Playlist_.indestructible, flags: Order.descending)
-              .order(sortField == 'Name' ? Playlist_.name : Playlist_.createdAt)
+              .order(
+                sortFields.containsKey(sortField)
+                    ? sortFields[sortField]
+                    : Playlist_.name,
+              )
               .build();
     } else {
       builderQuery =
@@ -61,7 +70,9 @@ class PlaylistRepository {
               .query(Playlist_.name.contains(query, caseSensitive: false))
               .order(Playlist_.indestructible, flags: Order.descending)
               .order(
-                sortField == 'Name' ? Playlist_.name : Playlist_.createdAt,
+                sortFields.containsKey(sortField)
+                    ? sortFields[sortField]
+                    : Playlist_.name,
                 flags: Order.descending,
               )
               .build();

@@ -65,7 +65,7 @@ class CustomListTile extends AbstractCustomListTile {
         child: HoverContainer(
           hoverColor: Theme.of(context).hoverColor,
           padding: EdgeInsets.symmetric(
-            horizontal: height * 0.02,
+            horizontal: width * 0.01,
             vertical: height * 0.01,
           ),
           child: Row(
@@ -74,7 +74,7 @@ class CustomListTile extends AbstractCustomListTile {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                margin: EdgeInsets.only(right: height * 0.01),
+                margin: EdgeInsets.only(right: width * 0.005),
                 decoration: BoxDecoration(
                   boxShadow: [
                     BoxShadow(
@@ -85,7 +85,9 @@ class CustomListTile extends AbstractCustomListTile {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
+                  borderRadius: BorderRadius.circular(
+                    MediaQuery.of(context).size.height * 0.015,
+                  ),
                   child: ImageWidget(
                     path: _pathForImageWidget(entity),
                     type: _getImageWidgetType(entity),
