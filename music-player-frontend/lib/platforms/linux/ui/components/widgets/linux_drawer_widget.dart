@@ -175,7 +175,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       builder: (context, isDrawerOpen, child) {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          width: isDrawerOpen ? width * 0.12 : width * 0.035,
+          width: isDrawerOpen ? width * 0.12 : width * 0.0315,
           curve: Curves.easeInOut,
           alignment: Alignment.center,
           child: GlassContainer(
