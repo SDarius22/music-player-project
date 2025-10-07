@@ -27,8 +27,7 @@ class ImageWidget extends StatefulWidget {
 class _ImageWidgetState extends State<ImageWidget> {
   ValueNotifier<bool> isHovered = ValueNotifier(false);
   late Future imageFuture;
-  final ImageProvider image =
-      Image.asset('assets/logo.png', fit: BoxFit.cover).image;
+  static const ImageProvider _image = AssetImage('assets/logo.png');
 
   @override
   void initState() {
@@ -54,21 +53,21 @@ class _ImageWidgetState extends State<ImageWidget> {
     if (widget.type == ImageWidgetType.bytes) {
       return Future(() async {
         final image = await decodeImage(widget.path);
-        return Image.memory(image).image;
+        return MemoryImage(image);
       });
     }
     if (widget.type == ImageWidgetType.network) {
       return Future(() async {
-        return Image.network(widget.path).image;
+        return NetworkImage(widget.path);
       });
     }
     if (widget.type == ImageWidgetType.asset) {
       return Future(() async {
-        return Image.asset(widget.path).image;
+        return AssetImage(widget.path);
       });
     }
     return Future(() async {
-      return Image.asset('assets/logo.png', fit: BoxFit.cover).image;
+      return const AssetImage('assets/logo.png');
     });
   }
 
@@ -127,12 +126,14 @@ class _ImageWidgetState extends State<ImageWidget> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: imageFuture,
+      future: Future.delayed(
+        const Duration(milliseconds: 500),
+      ).then((value) => imageFuture),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return imageWidget(image);
+          return imageWidget(_image);
         }
-        return imageWidget(snapshot.data ?? image);
+        return imageWidget(snapshot.data ?? _image);
       },
     );
   }

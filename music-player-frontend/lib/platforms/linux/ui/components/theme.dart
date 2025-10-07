@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/linux_font_scaler.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
 
 class MusicPlayerTheme {
   // Define the color palette
@@ -105,7 +105,7 @@ class MusicPlayerTheme {
 
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
-          backgroundColor: darkPurple.withOpacity(0.3),
+          backgroundColor: Colors.transparent,
           foregroundColor: accentPurple,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -144,57 +144,69 @@ class MusicPlayerTheme {
       textTheme: TextTheme(
         displayLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxFontScaler.scale(context, 32),
+          fontSize: LinuxScaler.scale(context, 32),
           fontWeight: FontWeight.bold,
           color: textPrimary,
         ),
         displayMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxFontScaler.scale(context, 28),
+          fontSize: LinuxScaler.scale(context, 28),
+          fontWeight: FontWeight.w600,
+          color: textPrimary,
+        ),
+        displaySmall: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: LinuxScaler.scale(context, 24),
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         headlineLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: 20,
+          fontSize: LinuxScaler.scale(context, 20),
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         headlineMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxFontScaler.scale(context, 18),
+          fontSize: LinuxScaler.scale(context, 18),
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         titleLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxFontScaler.scale(context, 16),
+          fontSize: LinuxScaler.scale(context, 16),
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         titleMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxFontScaler.scale(context, 14),
+          fontSize: LinuxScaler.scale(context, 14),
+          fontWeight: FontWeight.w600,
+          color: textPrimary,
+        ),
+        titleSmall: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: LinuxScaler.scale(context, 12),
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
         bodyLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxFontScaler.scale(context, 16),
+          fontSize: LinuxScaler.scale(context, 16),
           fontWeight: FontWeight.w400,
           color: textPrimary,
         ),
         bodyMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxFontScaler.scale(context, 14),
+          fontSize: LinuxScaler.scale(context, 14),
           fontWeight: FontWeight.w400,
-          color: textSecondary,
+          color: textPrimary,
         ),
         bodySmall: TextStyle(
           fontFamily: 'Inter',
-          fontSize: LinuxFontScaler.scale(context, 12),
+          fontSize: LinuxScaler.scale(context, 12),
           fontWeight: FontWeight.w400,
-          color: textSecondary,
+          color: textPrimary,
         ),
       ),
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
@@ -16,6 +17,11 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
     with TickerProviderStateMixin {
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   final ScrollController itemScrollController = ScrollController();
+  late MemoryImage cachedCoverArt;
+
+  void _getCoverArtImage(Song currentSong) {
+    cachedCoverArt = MemoryImage(currentSong.coverArt);
+  }
 
   double getMinHeight(BuildContext context) {
     throw UnimplementedError();
@@ -76,6 +82,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
           debugPrint("Queue is empty, not showing player");
           return const SizedBox.shrink();
         }
+        _getCoverArtImage(audioProvider.currentSong);
         final ValueNotifier<double> playerExpandProgress =
             ValueNotifier<double>(getMinHeight(context));
         return MiniPlayer(
@@ -102,22 +109,6 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
               return _buildMinimizedPlayer(percentage);
             }
 
-            if (itemScrollController.hasClients) {
-              int currentSongIndex =
-                  audioProvider.currentAudioSettings.currentIndexInNonShuffled;
-              Future.delayed(const Duration(milliseconds: 500), () {
-                try {
-                  itemScrollController.animateTo(
-                    getItemExtent(context) * currentSongIndex,
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                  );
-                } catch (e) {
-                  debugPrint("Error animating to current song index: $e");
-                }
-              });
-            }
-
             return _buildMaximizedPlayer(percentage);
           },
         );
@@ -127,14 +118,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
 
   Widget _buildMinimizedPlayer(double percentage) {
     return GlassContainer(
-      gradient: LinearGradient(
-        colors: [
-          Colors.black.withOpacity(0.20),
-          Colors.black.withOpacity(0.10),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
+      color: Colors.black.withValues(alpha: 0.2),
       borderGradient: LinearGradient(
         colors: [
           Colors.white.withOpacity(0.60),
@@ -144,12 +128,10 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
         end: Alignment.bottomRight,
       ),
       borderRadius: BorderRadius.circular(15.0),
-      blur: 15.0,
+      blur: 45.0,
       borderWidth: 1.5,
       elevation: 3.0,
-      isFrostedGlass: true,
       shadowColor: Colors.black.withOpacity(0.10),
-      frostedOpacity: 0.12,
       child: buildMinimizedPlayerContent(context, percentage),
     );
   }
@@ -169,8 +151,6 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
       blur: 45.0,
       borderWidth: 1.5,
       elevation: 3.0,
-      isFrostedGlass: true,
-      frostedOpacity: 0.12,
       shadowColor: Colors.black.withOpacity(0.20),
       // padding: EdgeInsets.all(MediaQuery.of(context).size.height * 0.025),
       child: buildMaximizedPlayerContent(context, percentage),

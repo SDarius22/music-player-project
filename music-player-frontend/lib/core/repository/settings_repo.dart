@@ -14,8 +14,11 @@ class SettingsRepository {
     return settings;
   }
 
-  AudioSettings? getAudioSettings() {
-    return _audioSettingsBox.query().build().findFirst();
+  AudioSettings getAudioSettings() {
+    if (_audioSettingsBox.isEmpty()) {
+      saveAudioSettings(AudioSettings());
+    }
+    return _audioSettingsBox.query().build().findFirst()!;
   }
 
   void deleteAudioSettings(AudioSettings settings) {
@@ -31,8 +34,11 @@ class SettingsRepository {
     return settings;
   }
 
-  AppSettings? getAppSettings() {
-    return _appSettingsBox.query().build().findFirst();
+  AppSettings getAppSettings() {
+    if (_appSettingsBox.isEmpty()) {
+      saveAppSettings(AppSettings());
+    }
+    return _appSettingsBox.query().build().findFirst()!;
   }
 
   void deleteAppSettings(AppSettings settings) {

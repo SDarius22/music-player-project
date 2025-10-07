@@ -1,14 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/queriable_provider.dart';
 import 'package:music_player_frontend/core/services/music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:rxdart/rxdart.dart';
 
-class SongProvider with ChangeNotifier {
+class SongProvider with ChangeNotifier implements QueriableProvider {
   final SongService _songService;
   final MusicScannerService _scannerService;
 
-  bool _isAscending = false;
+  bool _isAscending = true;
   String _query = '';
   String _sortField = 'Name'; // Name or Duration
 
@@ -83,6 +84,12 @@ class SongProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  bool getFlag() {
+    return _isAscending;
+  }
+
+  @override
   void setFlag(bool value) {
     _isAscending = value;
     songsFuture = Future(
@@ -91,10 +98,12 @@ class SongProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   String getSortField() {
     return _sortField;
   }
 
+  @override
   void setSortField(String field) {
     _sortField = field;
     songsFuture = Future(
@@ -103,6 +112,7 @@ class SongProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   void setQuery(String newQuery) {
     if (newQuery == _query) return;
     _query = newQuery;

@@ -33,7 +33,7 @@ class ConcreteAudioPlayer extends AbstractAudioPlayer {
 
   @override
   Future<void> seek(Duration position) async {
-    audioPlayer.seek(position);
+    await audioPlayer.seek(position);
   }
 
   @override

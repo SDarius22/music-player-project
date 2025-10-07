@@ -1,3 +1,4 @@
+import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
@@ -18,6 +19,7 @@ import 'package:music_player_frontend/core/repository/settings_repo.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
+import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/music_scanner_service.dart';
@@ -92,15 +94,21 @@ class LinuxApp extends StatelessWidget {
                 context.read<FileService>(),
               ),
         ),
+        Provider<AppAudioService>(
+          create:
+              (context) => AppAudioService(
+                context.read<QueueSongRepository>(),
+                context.read<AbstractAudioPlayer>(),
+                context.read<SongService>(),
+                context.read<SettingsService>(),
+              ),
+        ),
 
         ChangeNotifierProvider<AlbumProvider>(
           create: (context) => AlbumProvider(context.read<AlbumService>()),
         ),
         ChangeNotifierProvider<ArtistProvider>(
           create: (context) => ArtistProvider(context.read<ArtistService>()),
-        ),
-        ChangeNotifierProvider<AbstractAudioProvider>(
-          create: (context) => AudioProvider(),
         ),
         ChangeNotifierProvider<PlaylistProvider>(
           create:
@@ -112,6 +120,27 @@ class LinuxApp extends StatelessWidget {
                 context.read<SongService>(),
                 context.read<MusicScannerService>(),
               ),
+        ),
+        ChangeNotifierProvider<AbstractAudioProvider>(
+          create: (context) {
+            var audioProvider = AudioProvider(
+              context.read<AppAudioService>(),
+              context.read<FileService>(),
+            );
+            try {
+              platform_service.AudioService.init(
+                builder: () => audioProvider,
+                config: const platform_service.AudioServiceConfig(
+                  androidNotificationChannelId: 'com.example.musicplayer',
+                  androidNotificationChannelName: 'Music Player',
+                  androidNotificationOngoing: true,
+                ),
+              );
+            } catch (e) {
+              debugPrint('Error initializing AudioProvider: $e');
+            }
+            return audioProvider;
+          },
         ),
         ChangeNotifierProvider<LyricsProvider>(
           create:

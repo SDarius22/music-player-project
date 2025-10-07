@@ -8,13 +8,8 @@ class SettingsService {
   AppSettings currentAppSettings = AppSettings();
 
   SettingsService(this._settingsRepository) {
-    _settingsRepository.getAppSettings() == null
-        ? _settingsRepository.saveAppSettings(currentAppSettings)
-        : currentAppSettings = _settingsRepository.getAppSettings()!;
-
-    _settingsRepository.getAudioSettings() == null
-        ? _settingsRepository.saveAudioSettings(currentAudioSettings)
-        : currentAudioSettings = _settingsRepository.getAudioSettings()!;
+    currentAppSettings = _settingsRepository.getAppSettings();
+    currentAudioSettings = _settingsRepository.getAudioSettings();
   }
 
   void updateAudioSettings() {

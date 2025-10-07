@@ -4,6 +4,8 @@ import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.d
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/albums.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artists.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/playlists.dart';
@@ -95,13 +97,12 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
     required double width,
     required double height,
     required bool isDrawerOpen,
-    required double normalSize,
   }) {
     final int itemIndex = item["index"];
     final bool isSelected = _selected == itemIndex;
 
     return AnimatedContainer(
-      height: height * 0.05,
+      height: LinuxScaler.scaleHeight(context, height * 0.05),
       duration: const Duration(milliseconds: 300),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -114,8 +115,8 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                     ? Colors.white.withValues(alpha: 0.15)
                     : Colors.transparent,
             padding: EdgeInsets.symmetric(
-              horizontal: width * 0.01,
-              vertical: height * 0.01,
+              horizontal: LinuxScaler.scaleWidth(context, width * 0.01),
+              vertical: LinuxScaler.scaleHeight(context, height * 0.01),
             ),
             alignment: Alignment.center,
             child: Row(
@@ -123,26 +124,30 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
               children: [
                 // Fixed width container for icon to prevent shifting
                 SizedBox(
-                  width: height * 0.025,
+                  width: LinuxScaler.scaleHeight(context, height * 0.025),
                   child: Icon(
                     item["icon"],
-                    size: height * 0.025,
+                    size: LinuxScaler.scale(context, 24),
                     color: Colors.white,
                   ),
                 ),
                 if (isDrawerOpen) ...[
-                  SizedBox(width: width * 0.01),
+                  SizedBox(
+                    width: LinuxScaler.scaleWidth(context, width * 0.01),
+                  ),
                   Expanded(
                     child: AnimatedOpacity(
                       opacity: _finishedAnimation ? 1.0 : 0.0,
                       duration: const Duration(milliseconds: 300),
                       child: Text(
                         item["text"],
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: normalSize,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                        style: MusicPlayerTheme.getTheme(
+                          context,
+                        ).textTheme.bodyLarge!.copyWith(
+                          color:
+                              isSelected
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.7),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -166,14 +171,18 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
 
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
-    var normalSize = height * 0.02;
 
-    return Consumer<AbstractAppStateProvider>(
-      builder: (context, appState, child) {
+    return Selector<AbstractAppStateProvider, bool>(
+      selector: (_, appState) => appState.isDrawerOpen,
+      builder: (context, isDrawerOpen, child) {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          width: appState.isDrawerOpen ? width * 0.12 : width * 0.035,
+          width:
+              isDrawerOpen
+                  ? LinuxScaler.scaleWidth(context, width * 0.12)
+                  : LinuxScaler.scaleWidth(context, width * 0.035),
           curve: Curves.easeInOut,
+          alignment: Alignment.center,
           child: GlassContainer(
             gradient: LinearGradient(
               colors: [
@@ -193,13 +202,11 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
               stops: [0.0, 1.0],
             ),
             borderRadius: BorderRadius.circular(15.0),
-            blur: 15.0,
+            blur: 45.0,
             borderWidth: 1.5,
             elevation: 3.0,
-            isFrostedGlass: true,
             shadowColor: Colors.black.withOpacity(0.20),
             alignment: Alignment.center,
-            frostedOpacity: 0.12,
             shape: BoxShape.rectangle,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -207,31 +214,30 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
               children: [
                 // Menu toggle button
                 AnimatedContainer(
-                  height: height * 0.05,
+                  height: LinuxScaler.scaleHeight(context, height * 0.05),
                   duration: const Duration(milliseconds: 300),
                   padding: EdgeInsets.symmetric(
-                    horizontal: width * 0.01,
-                    vertical: height * 0.01,
+                    horizontal: LinuxScaler.scaleWidth(context, width * 0.01),
+                    vertical: LinuxScaler.scaleHeight(context, height * 0.01),
                   ),
                   alignment: Alignment.center,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: height * 0.025,
+                        width: LinuxScaler.scaleHeight(context, height * 0.025),
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          onPressed:
-                              appState.isDrawerOpen ? null : _toggleDrawer,
+                          onPressed: isDrawerOpen ? null : _toggleDrawer,
                           icon: Icon(
                             FluentIcons.menu,
-                            size: height * 0.025,
+                            size: LinuxScaler.scale(context, 22),
                             color: Colors.white,
                           ),
                         ),
                       ),
-                      if (appState.isDrawerOpen) ...[
+                      if (isDrawerOpen) ...[
                         const Spacer(),
                         AnimatedOpacity(
                           opacity: _finishedAnimation ? 1.0 : 0.0,
@@ -243,7 +249,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                             icon: Icon(
                               FluentIcons.drawerOff,
                               color: Colors.white,
-                              size: height * 0.025,
+                              size: LinuxScaler.scale(context, 22),
                             ),
                           ),
                         ),
@@ -257,14 +263,13 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                     item: item,
                     width: width,
                     height: height,
-                    isDrawerOpen: appState.isDrawerOpen,
-                    normalSize: normalSize,
+                    isDrawerOpen: isDrawerOpen,
                   ),
                 ),
                 const Spacer(),
                 // User section at bottom
                 AnimatedContainer(
-                  height: height * 0.075,
+                  height: LinuxScaler.scaleHeight(context, height * 0.07),
                   duration: const Duration(milliseconds: 300),
                   child: MouseRegion(
                     cursor: SystemMouseCursors.click,
@@ -280,8 +285,14 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                 ? Colors.white.withValues(alpha: 0.15)
                                 : Colors.transparent,
                         padding: EdgeInsets.symmetric(
-                          horizontal: width * 0.01,
-                          vertical: height * 0.01,
+                          horizontal: LinuxScaler.scaleWidth(
+                            context,
+                            width * 0.01,
+                          ),
+                          vertical: LinuxScaler.scaleHeight(
+                            context,
+                            height * 0.01,
+                          ),
                         ),
                         alignment: Alignment.center,
                         child: Row(
@@ -294,12 +305,12 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                 backgroundColor: Colors.indigo.withOpacity(0.3),
                                 child: Icon(
                                   FluentIcons.circlePerson,
-                                  size: height * 0.03,
+                                  size: LinuxScaler.scale(context, 24),
                                   color: Colors.white,
                                 ),
                               ),
                             ),
-                            if (appState.isDrawerOpen) ...[
+                            if (isDrawerOpen) ...[
                               SizedBox(width: width * 0.01),
                               Expanded(
                                 child: AnimatedOpacity(
@@ -312,18 +323,18 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                     children: [
                                       Text(
                                         "User Name",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: normalSize * 0.9,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style:
+                                            MusicPlayerTheme.getTheme(
+                                              context,
+                                            ).textTheme.bodyLarge,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
                                         "user@email.com",
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.6),
-                                          fontSize: normalSize * 0.7,
+                                        style: MusicPlayerTheme.getTheme(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(
+                                          color: Colors.white.withOpacity(0.7),
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),

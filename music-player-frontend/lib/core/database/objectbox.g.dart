@@ -211,13 +211,7 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
     ],
-    relations: <obx_int.ModelRelation>[
-      obx_int.ModelRelation(
-        id: const obx_int.IdUid(4, 4329599273410235920),
-        name: 'songs',
-        targetId: const obx_int.IdUid(10, 1656493538472770553),
-      ),
-    ],
+    relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
   obx_int.ModelEntity(
@@ -567,7 +561,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
       4849993503317089340,
       8760273509754657128,
     ],
-    retiredRelationUids: const [1387782578054686999],
+    retiredRelationUids: const [1387782578054686999, 4329599273410235920],
     modelVersion: 5,
     modelVersionParserMinimum: 5,
     version: 1,
@@ -744,9 +738,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     AudioSettings: obx_int.EntityDefinition<AudioSettings>(
       model: _entities[3],
       toOneRelations: (AudioSettings object) => [],
-      toManyRelations: (AudioSettings object) => {
-        obx_int.RelInfo<AudioSettings>.toMany(4, object.id): object.songs,
-      },
+      toManyRelations: (AudioSettings object) => {},
       getId: (AudioSettings object) => object.id,
       setId: (AudioSettings object, int id) {
         object.id = id;
@@ -802,11 +794,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
             20,
             0,
           );
-        obx_int.InternalToManyAccess.setRelInfo<AudioSettings>(
-          object.songs,
-          store,
-          obx_int.RelInfo<AudioSettings>.toMany(4, object.id),
-        );
+
         return object;
       },
     ),
@@ -1248,11 +1236,6 @@ class AudioSettings_ {
   /// See [AudioSettings.volume].
   static final volume = obx.QueryDoubleProperty<AudioSettings>(
     _entities[3].properties[7],
-  );
-
-  /// see [AudioSettings.songs]
-  static final songs = obx.QueryRelationToMany<AudioSettings, QueueSong>(
-    _entities[3].relations[0],
   );
 }
 

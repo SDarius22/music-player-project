@@ -1,57 +1,43 @@
+import 'dart:io';
+
 import 'package:audio_service/audio_service.dart' as platform_service;
-import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/audio_player/player_state.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
-import 'package:music_player_frontend/core/repository/queue_song_repo.dart';
-import 'package:music_player_frontend/core/services/app_audio_service.dart';
-import 'package:music_player_frontend/core/services/settings_service.dart';
-import 'package:music_player_frontend/core/services/song_service.dart';
-import 'package:music_player_frontend/platforms/linux/audio_player/system_audio_handler.dart';
 
 class AudioProvider extends AbstractAudioProvider {
   bool hasBeenInitialized = false;
 
-  @override
-  Song get currentSong =>
-      super.audioService.settingsService.currentAudioSettings.currentSong;
+  AudioProvider(super.audioService, super.fileService) {
+    playbackState.add(
+      playbackState.value.copyWith(
+        controls: [
+          platform_service.MediaControl.skipToPrevious,
+          platform_service.MediaControl.play,
+          platform_service.MediaControl.pause,
+          platform_service.MediaControl.skipToNext,
+        ],
+        systemActions: {platform_service.MediaAction.seek},
+        playing: false,
+      ),
+    );
+    init();
+  }
 
   @override
-  List<Song> get currentQueue =>
-      super.audioService.settingsService.currentAudioSettings.currentQueue;
+  List<Song> get currentQueue => super.audioService.currentQueue;
 
   @override
   AudioSettings get currentAudioSettings =>
       super.audioService.settingsService.currentAudioSettings;
 
   @override
-  Future<void> init(
-    QueueSongRepository queueSongRepository,
-    SettingsService settingsService,
-    SongService songService,
-    AbstractAudioPlayer audioPlayer,
-  ) async {
-    if (!hasBeenInitialized) {
-      var audioService = AppAudioService(
-        queueSongRepository,
-        audioPlayer,
-        songService,
-        settingsService,
-      );
-      var audioHandler = await platform_service.AudioService.init(
-        builder: () => SystemAudioHandler(audioService),
-        config: const platform_service.AudioServiceConfig(
-          androidNotificationChannelId: 'com.example.musicplayer',
-          androidNotificationChannelName: 'Music Player',
-          androidNotificationOngoing: true,
-        ),
-      );
-      super.audioService = audioHandler.audioService;
-      hasBeenInitialized = true;
-    }
+  Future<void> init() async {
     await super.audioService.updateCurrentSong();
     await super.audioService.initSettings();
+    currentSong = super.audioService.currentSong;
+    currentQueue = super.audioService.currentQueue;
     repeatNotifier.value = currentAudioSettings.repeat;
     shuffleNotifier.value = currentAudioSettings.shuffle;
     sliderNotifier.value = currentAudioSettings.slider;
@@ -62,34 +48,56 @@ class AudioProvider extends AbstractAudioProvider {
       sliderNotifier.value = event.inMilliseconds;
       super.audioService.setSlider(event.inMilliseconds);
     });
-    audioPlayer.onPlayerStateChanged.listen((state) {
+    audioService.audioPlayer.onPlayerStateChanged.listen((state) {
       playingNotifier.value = state == PlayerState.playing;
       if (state == PlayerState.completed) {
         skipToNext();
       }
     });
+    changeMediaItem();
     notifyListeners();
   }
 
   @override
   Future<void> play() async {
+    playbackState.add(
+      playbackState.value.copyWith(
+        playing: true,
+        controls: [platform_service.MediaControl.pause],
+      ),
+    );
     await super.audioService.play();
   }
 
   @override
   Future<void> pause() async {
+    playbackState.add(
+      playbackState.value.copyWith(
+        playing: false,
+        controls: [platform_service.MediaControl.play],
+      ),
+    );
     await super.audioService.pause();
   }
 
   @override
   Future<void> skipToNext() async {
+    playbackState.add(
+      playbackState.value.copyWith(
+        controls: [platform_service.MediaControl.skipToNext],
+      ),
+    );
     await super.audioService.skipToNext();
+    currentSong = super.audioService.currentSong;
+    changeMediaItem();
     notifyListeners();
   }
 
   @override
   Future<void> skipToPrevious() async {
     await super.audioService.skipToPrevious();
+    currentSong = super.audioService.currentSong;
+    changeMediaItem();
     notifyListeners();
   }
 
@@ -136,7 +144,7 @@ class AudioProvider extends AbstractAudioProvider {
   }
 
   @override
-  void setQueue(List<Song> songs) {
+  Future<void> setQueue(List<Song> songs) async {
     super.audioService.setQueue(songs);
     notifyListeners();
   }
@@ -149,41 +157,61 @@ class AudioProvider extends AbstractAudioProvider {
   @override
   void addToQueue(Song song) {
     super.audioService.addToQueue(song);
+    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   void addMultipleToQueue(List<Song> songs) {
     super.audioService.addMultipleToQueue(songs);
+    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   void addNextToQueue(Song song) {
     super.audioService.addNextToQueue(song);
+    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   void addMultipleNextToQueue(List<Song> songs) {
     super.audioService.addMultipleNextToQueue(songs);
+    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   void removeFromQueue(Song song) {
     super.audioService.removeFromQueue(song);
+    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   Future<void> setCurrentSong(Song song) async {
     await super.audioService.setCurrentSong(song);
+    currentSong = song;
+    changeMediaItem();
     notifyListeners();
   }
 
   @override
   void likeCurrentSong() {
     super.audioService.likeCurrentSong();
+  }
+
+  Future<void> changeMediaItem() async {
+    File tempFile = await fileService.createWorkaroundFile(currentSong);
+    platform_service.MediaItem item = platform_service.MediaItem(
+      id: currentSong.id.toString(),
+      album: currentSong.album.target?.name ?? 'Unknown Album',
+      title: currentSong.name,
+      artist: currentSong.artist.target?.name ?? 'Unknown Artist',
+      duration: Duration(milliseconds: currentSong.duration),
+      artUri: tempFile.uri,
+    );
+    mediaItem.add(item);
   }
 }

@@ -21,7 +21,7 @@ class LyricsTab extends AbstractLyricsTab {
     UINetease lyricUI = UINetease(
       defaultTextStyle: MusicPlayerTheme.getTheme(
         context,
-      ).textTheme.bodyLarge!.copyWith(
+      ).textTheme.headlineLarge!.copyWith(
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.75),
@@ -32,7 +32,7 @@ class LyricsTab extends AbstractLyricsTab {
       ),
       defaultExtTextStyle: MusicPlayerTheme.getTheme(
         context,
-      ).textTheme.bodyMedium!.copyWith(
+      ).textTheme.headlineMedium!.copyWith(
         color: oneLine ? Colors.transparent : Colors.grey,
         shadows: [
           Shadow(
@@ -44,7 +44,7 @@ class LyricsTab extends AbstractLyricsTab {
       ),
       otherMainTextStyle: MusicPlayerTheme.getTheme(
         context,
-      ).textTheme.bodyMedium!.copyWith(
+      ).textTheme.headlineMedium!.copyWith(
         color: oneLine ? Colors.transparent : Colors.grey,
         shadows: [
           Shadow(

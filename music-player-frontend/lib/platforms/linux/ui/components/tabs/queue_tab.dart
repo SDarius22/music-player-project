@@ -27,7 +27,7 @@ class QueueTab extends AbstractQueueTab {
               items:
                   Provider.of<AbstractAudioProvider>(
                     context,
-                  ).currentAudioSettings.queue,
+                  ).audioService.queue,
               itemExtent: height * 0.1,
               isSelected: (entity) {
                 return false;

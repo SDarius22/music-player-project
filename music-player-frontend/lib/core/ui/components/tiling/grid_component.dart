@@ -33,6 +33,7 @@ abstract class AbstractGridComponent extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverGrid.builder(
       gridDelegate: getGridDelegate(context),
+      addAutomaticKeepAlives: true,
       itemCount: items.length + (buildExtraTile != null ? 1 : 0),
       itemBuilder: (BuildContext context, int index) {
         if (buildExtraTile != null && index == 0) {

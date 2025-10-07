@@ -1,18 +1,20 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/repository/queue_song_repo.dart';
+import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
-import 'package:music_player_frontend/core/services/settings_service.dart';
-import 'package:music_player_frontend/core/services/song_service.dart';
 
-abstract class AbstractAudioProvider with ChangeNotifier {
-  late AppAudioService audioService;
+abstract class AbstractAudioProvider extends BaseAudioHandler
+    with ChangeNotifier {
+  final AppAudioService audioService;
+  final FileService fileService;
 
-  Song get currentSong;
+  AbstractAudioProvider(this.audioService, this.fileService);
 
-  List<Song> get currentQueue;
+  Song currentSong = Song();
+
+  List<Song> currentQueue = [];
 
   AudioSettings get currentAudioSettings;
 
@@ -24,23 +26,24 @@ abstract class AbstractAudioProvider with ChangeNotifier {
   ValueNotifier<double> volumeNotifier = ValueNotifier<double>(0.5);
   ValueNotifier<double> playbackSpeedNotifier = ValueNotifier<double>(1.0);
 
-  Future<void> init(
-    QueueSongRepository queueSongRepository,
-    SettingsService settingsService,
-    SongService songService,
-    AbstractAudioPlayer audioPlayer,
-  );
+  Future<void> init();
 
+  @override
   Future<void> play();
 
+  @override
   Future<void> pause();
 
+  @override
   Future<void> skipToNext();
 
+  @override
   Future<void> skipToPrevious();
 
+  @override
   Future<void> stop();
 
+  @override
   Future<void> seek(Duration position);
 
   void setPlaybackSpeed(double speed);
@@ -53,7 +56,7 @@ abstract class AbstractAudioProvider with ChangeNotifier {
 
   void setShuffle(bool shuffle);
 
-  void setQueue(List<Song> songs);
+  Future<void> setQueue(List<Song> songs);
 
   Future<Duration> getDuration();
 

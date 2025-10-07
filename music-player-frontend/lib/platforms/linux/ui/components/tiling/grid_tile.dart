@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
@@ -26,9 +25,6 @@ class CustomGridTile extends AbstractCustomGridTile {
   });
 
   String _pathForImageWidget(BaseEntity entity) {
-    if (entity is Song) {
-      return (entity).path;
-    }
     if (entity is Playlist) {
       if (entity.name == 'Current Queue' && entity.indestructible) {
         return 'assets/current_queue.png';
@@ -36,16 +32,9 @@ class CustomGridTile extends AbstractCustomGridTile {
       if (entity.name == 'Create New Playlist' && entity.indestructible) {
         return 'assets/create_playlist.png';
       }
-      if (entity.coverArt.isNotEmpty) {
-        return base64Encode(entity.coverArt);
-      }
+      return base64Encode(entity.coverArt);
     }
-    if (entity is AbstractCollection) {
-      return (entity as AbstractCollection).songs.isNotEmpty
-          ? (entity as AbstractCollection).songs.first.path
-          : '';
-    }
-    return '';
+    return base64Encode(entity.coverArt);
   }
 
   ImageWidgetType _getImageWidgetType(BaseEntity entity) {
@@ -56,17 +45,15 @@ class CustomGridTile extends AbstractCustomGridTile {
       if (entity.name == 'Create New Playlist' && entity.indestructible) {
         return ImageWidgetType.asset;
       }
-      if (entity.coverArt.isNotEmpty) {
-        return ImageWidgetType.bytes;
-      }
     }
-    return ImageWidgetType.song;
+    return ImageWidgetType.bytes;
   }
 
   @override
   Widget buildGridTileContent(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
-    var height = MediaQuery.of(context).size.height;
+    final size = MediaQuery.sizeOf(context);
+    final width = size.width;
+    final height = size.height;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -76,7 +63,7 @@ class CustomGridTile extends AbstractCustomGridTile {
         child: Hero(
           tag: entity is Song ? (entity as Song).path : entity.name,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(width * 0.01),
+            borderRadius: BorderRadius.circular(15),
             child: ImageWidget(
               path: _pathForImageWidget(entity),
               type: _getImageWidgetType(entity),
@@ -132,16 +119,18 @@ class CustomGridTile extends AbstractCustomGridTile {
                         ),
                         child:
                             entity is Song
-                                ? Consumer<AbstractAudioProvider>(
-                                  builder: (_, audioProvider, __) {
+                                ? Selector<AbstractAudioProvider, Song>(
+                                  selector:
+                                      (_, audioProvider) =>
+                                          audioProvider.currentSong,
+                                  builder: (_, song, __) {
                                     return CustomTextScroll(
                                       text: entity.name,
                                       style: Theme.of(
                                         context,
-                                      ).textTheme.bodyLarge!.copyWith(
+                                      ).textTheme.headlineMedium!.copyWith(
                                         color:
-                                            audioProvider.currentSong.path ==
-                                                    (entity as Song).path
+                                            song.path == (entity as Song).path
                                                 ? Colors.blue
                                                 : Colors.white,
                                       ),

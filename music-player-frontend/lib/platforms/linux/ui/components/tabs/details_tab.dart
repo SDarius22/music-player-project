@@ -4,7 +4,7 @@ import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/local_libs/text_scroll/text_scroll.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/linux_font_scaler.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artist_screen.dart';
@@ -30,10 +30,10 @@ class DetailsTab extends AbstractDetailsTab {
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
             color: Colors.black,
-            borderRadius: BorderRadius.circular(width * 0.0125),
+            borderRadius: BorderRadius.circular(15),
             image: DecorationImage(
               fit: BoxFit.cover,
-              image: Image.memory(audioProvider.currentSong.coverArt).image,
+              image: MemoryImage(audioProvider.currentSong.coverArt),
             ),
           ),
           child: Container(
@@ -67,7 +67,7 @@ class DetailsTab extends AbstractDetailsTab {
                     style:
                         MusicPlayerTheme.getTheme(
                           context,
-                        ).textTheme.headlineSmall,
+                        ).textTheme.displaySmall,
                     pauseOnBounce: const Duration(seconds: 2),
                     delayBefore: const Duration(seconds: 2),
                     pauseBetween: const Duration(seconds: 2),
@@ -97,29 +97,29 @@ class DetailsTab extends AbstractDetailsTab {
                           icon: Icon(
                             FluentIcons.open,
                             color: Colors.white,
-                            size: LinuxFontScaler.scale(context, 20),
+                            size: LinuxScaler.scale(context, 20),
                           ),
                           iconAlignment: IconAlignment.end,
                           label: TextScroll(
                             audioProvider.currentSong.artist.target.toString(),
                             mode: TextScrollMode.bouncing,
                             velocity: const Velocity(
-                              pixelsPerSecond: Offset(20, 0),
+                              pixelsPerSecond: Offset(25, 0),
                             ),
                             style:
                                 MusicPlayerTheme.getTheme(
                                   context,
-                                ).textTheme.bodyMedium,
-                            pauseOnBounce: const Duration(seconds: 2),
-                            delayBefore: const Duration(seconds: 2),
-                            pauseBetween: const Duration(seconds: 2),
+                                ).textTheme.titleLarge,
+                            pauseOnBounce: const Duration(seconds: 3),
+                            delayBefore: const Duration(seconds: 3),
+                            pauseBetween: const Duration(seconds: 3),
                           ),
                         ),
                       ),
                       Icon(
                         FluentIcons.divider,
                         color: Colors.white,
-                        size: LinuxFontScaler.scale(context, 16),
+                        size: LinuxScaler.scale(context, 16),
                       ),
                       Expanded(
                         // width: width * 0.13,
@@ -139,7 +139,7 @@ class DetailsTab extends AbstractDetailsTab {
                           icon: Icon(
                             FluentIcons.open,
                             color: Colors.white,
-                            size: LinuxFontScaler.scale(context, 20),
+                            size: LinuxScaler.scale(context, 20),
                           ),
                           label: TextScroll(
                             audioProvider.currentSong.album.target.toString(),
@@ -150,7 +150,7 @@ class DetailsTab extends AbstractDetailsTab {
                             style:
                                 MusicPlayerTheme.getTheme(
                                   context,
-                                ).textTheme.bodyMedium,
+                                ).textTheme.titleLarge,
                             pauseOnBounce: const Duration(seconds: 2),
                             delayBefore: const Duration(seconds: 2),
                             pauseBetween: const Duration(seconds: 2),

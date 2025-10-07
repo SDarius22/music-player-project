@@ -64,7 +64,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     var width = MediaQuery.of(context).size.width;
 
     double minLeftMargin = 0;
-    double maxLeftMargin = width * 0.75;
+    double maxLeftMargin = width * 0.725;
     double imageLeftMargin =
         lerpDouble(minLeftMargin, maxLeftMargin, percentage) ?? 0.0;
     if (imageLeftMargin < 0) {
@@ -92,7 +92,8 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                 borderRadius: BorderRadius.circular(borderRadius),
                 image: DecorationImage(
                   fit: BoxFit.cover,
-                  image: Image.memory(audioProvider.currentSong.coverArt).image,
+                  image: cachedCoverArt,
+                  isAntiAlias: true,
                 ),
               ),
             ),
@@ -166,8 +167,8 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     // double bottomPadding =
     //     lerpDouble(height * 0.005, height * 0.02, percentage)!;
 
-    final showSidePanels = normalizedPercentage > 0.7;
-    final sidePanelsOpacity = ((normalizedPercentage - 0.7) / 0.3).clamp(
+    final showSidePanels = normalizedPercentage > 0.8;
+    final sidePanelsOpacity = ((normalizedPercentage - 0.8) / 0.2).clamp(
       0.0,
       1.0,
     );
@@ -184,11 +185,11 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
 
     final detailsOpacity = ((percentage - 0.7) / 0.3).clamp(0.0, 1.0);
 
-    if (showSidePanels) {
+    if (sidePanelsOpacity > 0.99) {
       if (itemScrollController.hasClients) {
         debugPrint("Jumping to current song index in queue");
         int currentSongIndex =
-            audioProvider.currentAudioSettings.currentIndexInNonShuffled;
+            audioProvider.audioService.currentIndexInNonShuffled;
         if (currentSongIndex > 15) {
           itemScrollController.jumpTo(height * 0.1 * (currentSongIndex - 10));
         }
@@ -259,7 +260,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: width * 0.03),
               child:
-                  percentage > 0.9
+                  sidePanelsOpacity > 0.99
                       ? FutureBuilder(
                         future: audioProvider.getDuration(),
                         builder: (context, snapshot) {

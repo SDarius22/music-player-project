@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -9,6 +7,7 @@ import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/track_screen.dart';
@@ -32,18 +31,6 @@ class Tracks extends StatefulWidget {
 
 class _TracksState extends State<Tracks> {
   ValueNotifier<List<Song>> selected = ValueNotifier<List<Song>>([]);
-  FocusNode searchNode = FocusNode();
-  Timer? _debounce;
-  final TextEditingController _controller = TextEditingController();
-  bool _isSearching = false;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _controller.dispose();
-    searchNode.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,14 +42,7 @@ class _TracksState extends State<Tracks> {
       body: GlassContainer(
         height: height,
         width: width,
-        gradient: LinearGradient(
-          colors: [
-            Colors.black.withOpacity(0.40),
-            Colors.black.withOpacity(0.10),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.black.withValues(alpha: 0.4),
         borderGradient: LinearGradient(
           colors: [
             Colors.white.withOpacity(0.60),
@@ -72,12 +52,10 @@ class _TracksState extends State<Tracks> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(15.0),
-        blur: 15.0,
+        blur: 45.0,
         borderWidth: 1.5,
         elevation: 3.0,
-        isFrostedGlass: true,
         shadowColor: Colors.black.withOpacity(0.20),
-        frostedOpacity: 0.12,
         padding: EdgeInsets.only(bottom: height * 0.01),
         child: Consumer<SongProvider>(
           builder: (context, songProvider, child) {
@@ -88,115 +66,10 @@ class _TracksState extends State<Tracks> {
                 Container(
                   height: height * 0.065,
                   width: width,
-                  padding: EdgeInsets.symmetric(horizontal: width * 0.015),
-                  child: Row(
-                    children: [
-                      Text(
-                        "Tracks",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: height * 0.025,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      // Play All Button
-                      IconButton(
-                        tooltip: "Play All",
-                        onPressed: () async {},
-                        padding: EdgeInsets.all(height * 0.005),
-                        icon: Icon(
-                          FluentIcons.play,
-                          color: Colors.white,
-                          size: height * 0.025,
-                        ),
-                      ),
-                      //Shuffle Button
-                      IconButton(
-                        tooltip: "Shuffle",
-                        onPressed: () async {},
-                        padding: EdgeInsets.all(height * 0.005),
-                        icon: Icon(
-                          FluentIcons.shuffleOn,
-                          color: Colors.white,
-                          size: height * 0.025,
-                        ),
-                      ),
-
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        width: _isSearching ? width * 0.3 : width * 0.02,
-                        height: height * 0.04,
-                        child:
-                            _isSearching
-                                ? TextFormField(
-                                  focusNode: searchNode,
-                                  controller: _controller,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: height * 0.02,
-                                  ),
-                                  cursorColor: Colors.white,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: Colors.transparent,
-                                    hintText: "Search",
-                                    hintStyle: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
-                                      fontSize: height * 0.02,
-                                    ),
-                                    border: InputBorder.none,
-                                    prefixIcon: Icon(
-                                      FluentIcons.search,
-                                      color: Colors.white,
-                                      size: height * 0.025,
-                                    ),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        Icons.clear,
-                                        color: Colors.white,
-                                        size: height * 0.025,
-                                      ),
-                                      onPressed: () {
-                                        _controller.clear();
-                                        songProvider.setQuery("");
-                                        setState(() {
-                                          _isSearching = false;
-                                        });
-                                        searchNode.unfocus();
-                                      },
-                                    ),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: height * 0.005,
-                                    ),
-                                  ),
-                                  onChanged: (value) {
-                                    if (_debounce?.isActive ?? false) {
-                                      _debounce?.cancel();
-                                    }
-                                    _debounce = Timer(
-                                      const Duration(milliseconds: 500),
-                                      () {
-                                        songProvider.setQuery(value);
-                                      },
-                                    );
-                                  },
-                                )
-                                : IconButton(
-                                  icon: Icon(
-                                    FluentIcons.search,
-                                    color: Colors.white,
-                                    size: height * 0.025,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _isSearching = true;
-                                    });
-                                    searchNode.requestFocus();
-                                  },
-                                ),
-                      ),
-                    ],
+                  padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+                  child: LinuxSearchHeader(
+                    title: 'Tracks',
+                    provider: songProvider,
                   ),
                 ),
                 Expanded(
@@ -279,6 +152,7 @@ class _TracksState extends State<Tracks> {
                                           snapshot.data as List<Song>;
                                       audioProvider.setQueue(songs);
                                       await audioProvider.setCurrentSong(song);
+                                      await audioProvider.play();
                                     }
                                   },
                                   onLongPress: (entity) {
@@ -296,7 +170,7 @@ class _TracksState extends State<Tracks> {
                                   },
                                   buildLeftAction: (entity) {
                                     if (selected.value.contains(entity)) {
-                                      return SizedBox.shrink();
+                                      return const SizedBox.shrink();
                                     }
                                     return IconButton(
                                       tooltip: "Go to Album",
@@ -355,7 +229,7 @@ class _TracksState extends State<Tracks> {
                                   },
                                   buildRightAction: (entity) {
                                     if (selected.value.contains(entity)) {
-                                      return SizedBox.shrink();
+                                      return const SizedBox.shrink();
                                     }
                                     return PopupMenuButton<String>(
                                       icon: Icon(

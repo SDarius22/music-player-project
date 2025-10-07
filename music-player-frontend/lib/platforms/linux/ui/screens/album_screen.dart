@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
@@ -143,7 +144,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                                 onPressed: () async {
                                   debugPrint("Play ${widget.album.name}");
                                   var audioProvider =
-                                      Provider.of<AudioProvider>(
+                                      Provider.of<AbstractAudioProvider>(
                                         context,
                                         listen: false,
                                       );
@@ -151,6 +152,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                                   await audioProvider.setCurrentSong(
                                     widget.album.songs.first,
                                   );
+                                  audioProvider.play();
                                 },
                                 icon: Icon(
                                   FluentIcons.play,

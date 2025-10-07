@@ -529,6 +529,8 @@ class _FrostedWidget extends StatelessWidget {
   /// The width of the image container
   final double? width;
 
+  final AssetImage kNoiseImage = const AssetImage('assets/noise.png');
+
   @override
   Widget build(BuildContext context) {
     return Opacity(
@@ -538,15 +540,17 @@ class _FrostedWidget extends StatelessWidget {
         width: width,
         child: Image(
           image: ResizeImage(
-            const AssetImage(kNoiseImage),
+            kNoiseImage,
             height: height?.toInt(),
             width: width?.toInt(),
             allowUpscaling: true,
           ),
           excludeFromSemantics: true,
-          fit: BoxFit.cover,
+          fit: BoxFit.fill,
           color: kFrostBlendColor,
           colorBlendMode: kFrostBlendMode,
+          isAntiAlias: true,
+          gaplessPlayback: true,
         ),
       ),
     );

@@ -41,7 +41,7 @@ class SongRepository {
 
   List<Song> getSongs(String query, String sortField, bool flag) {
     Query<Song> builderQuery;
-    if (flag == false) {
+    if (flag == true) {
       builderQuery =
           _songBox
               .query(Song_.name.contains(query, caseSensitive: false))

@@ -20,6 +20,54 @@ class AppAudioService {
     this.settingsService,
   );
 
+  List<QueueSong> get queueSongs => queueSongRepository.getAllQueueSongs();
+
+  List<Song> get queue =>
+      queueSongs.map((e) => e.song.target).whereType<Song>().toList();
+
+  List<Song> get shuffledQueue {
+    List<Song> shuffled = List.from(queue);
+    shuffled.shuffle();
+    return shuffled;
+  }
+
+  List<Song> get currentQueue =>
+      settingsService.currentAudioSettings.shuffle ? shuffledQueue : queue;
+
+  int get currentIndexInNonShuffled =>
+      currentQueue.isNotEmpty
+          ? queue.indexOf(
+            currentQueue[settingsService.currentAudioSettings.index],
+          )
+          : -1;
+
+  Song get currentSong =>
+      currentQueue.isNotEmpty
+          ? currentQueue[settingsService.currentAudioSettings.index]
+          : Song();
+
+  Song get nextSong =>
+      currentQueue.isNotEmpty
+          ? currentQueue[(settingsService.currentAudioSettings.index + 1) %
+              currentQueue.length]
+          : Song();
+
+  set currentSong(Song song) {
+    int newIndex = currentQueue.indexOf(song);
+    if (newIndex != -1) {
+      settingsService.currentAudioSettings.index = newIndex;
+      settingsService.updateAudioSettings();
+    }
+  }
+
+  Song get previousSong =>
+      currentQueue.isNotEmpty
+          ? currentQueue[(settingsService.currentAudioSettings.index -
+                  1 +
+                  currentQueue.length) %
+              currentQueue.length]
+          : Song();
+
   Future<void> play() async {
     debugPrint("play");
     await audioPlayer.play();
@@ -32,11 +80,8 @@ class AppAudioService {
 
   Future<void> skipToNext() async {
     if (settingsService.currentAudioSettings.repeat) {
-      audioPlayer.setSource(
-        settingsService.currentAudioSettings.currentSong.path,
-      );
+      audioPlayer.setSource(currentSong.path);
       seek(Duration.zero);
-      debugPrint("Replaying current song due to repeat being enabled.");
       play();
       return;
     }
@@ -44,25 +89,22 @@ class AppAudioService {
   }
 
   Future<void> playNext() async {
-    if (settingsService.currentAudioSettings.queue.isEmpty) {
-      debugPrint("Queue is empty, cannot play next.");
+    if (queue.isEmpty) {
       return;
     }
-    await setCurrentSong(settingsService.currentAudioSettings.nextSong);
+    await setCurrentSong(nextSong);
     play();
   }
 
   Future<void> skipToPrevious() async {
-    await setCurrentSong(settingsService.currentAudioSettings.previousSong);
+    await setCurrentSong(previousSong);
     play();
   }
 
   Future<void> setCurrentSong(Song song) async {
-    settingsService.currentAudioSettings.currentSong = song;
+    currentSong = song;
     settingsService.updateAudioSettings();
-    audioPlayer.setSource(
-      settingsService.currentAudioSettings.currentSong.path,
-    );
+    audioPlayer.setSource(currentSong.path);
     updateCurrentSong();
   }
 
@@ -100,10 +142,9 @@ class AppAudioService {
 
   void setShuffle(bool shuffle) {
     settingsService.currentAudioSettings.shuffle = shuffle;
-    settingsService.currentAudioSettings.index = settingsService
-        .currentAudioSettings
-        .currentQueue
-        .indexOf(settingsService.currentAudioSettings.currentSong);
+    settingsService.currentAudioSettings.index = currentQueue.indexOf(
+      currentSong,
+    );
     settingsService.updateAudioSettings();
   }
 
@@ -114,97 +155,71 @@ class AppAudioService {
 
   Future<void> initSettings() async {
     try {
-      audioPlayer.setSource(
-        settingsService.currentAudioSettings.currentSong.path,
-      );
-      audioPlayer.seek(
+      await audioPlayer.setSource(currentSong.path);
+      await audioPlayer.seek(
         Duration(milliseconds: settingsService.currentAudioSettings.slider),
       );
-      debugPrint("Audio player: ${await audioPlayer.getCurrentPosition()}");
     } catch (e) {
       debugPrint("Error initializing audio player: $e");
     }
   }
 
   Future<void> updateCurrentSong() async {
-    if (settingsService.currentAudioSettings.queue.isEmpty) {
+    if (queue.isEmpty) {
       debugPrint("Queue is empty, cannot update current song.");
       return;
     }
-    songService.updateSongPlayed(
-      settingsService.currentAudioSettings.currentSong,
-    );
-    // currentSong?.image = metadata['image'] as Uint8List?;
-    // currentSong?.lastPlayed = DateTime.now();
-    // currentSong?.playCount += 1;
-    // debugPrint(
-    //   "Current song updated: ${currentSong?.name}, play count: ${currentSong?.playCount}",
-    // );
-    // try {
-    //   songService.updateSong(currentSong!);
-    // } catch (e) {
-    //   debugPrint("Error updating song in service: $e");
-    // }
+    songService.updateSongPlayed(currentSong);
   }
 
   Future<Duration> getDuration() async {
     var duration = await audioPlayer.getDuration();
     debugPrint("Duration: $duration");
     if (duration == null) {
-      // debugPrint("Duration is null, using current song duration, ${currentSong.duration})");
-      return settingsService.currentAudioSettings.currentSong.duration > 0
-          ? Duration(
-            seconds: settingsService.currentAudioSettings.currentSong.duration,
-          )
+      return currentSong.duration > 0
+          ? Duration(seconds: currentSong.duration)
           : Duration.zero;
     }
-    if (settingsService.currentAudioSettings.currentSong.duration <= 0) {
-      settingsService.currentAudioSettings.currentSong.duration =
-          duration.inSeconds;
-      songService.updateSong(settingsService.currentAudioSettings.currentSong);
+    if (currentSong.duration <= 0) {
+      currentSong.duration = duration.inSeconds;
+      songService.updateSong(currentSong);
     }
     return duration;
   }
 
   void addToQueue(Song song) {
-    if (!settingsService.currentAudioSettings.queue.contains(song)) {
+    if (!queue.contains(song)) {
       QueueSong queueSong = QueueSong();
       queueSong.song.target = song;
-      queueSong.position =
-          0.0 + settingsService.currentAudioSettings.queue.length;
+      queueSong.position = 0.0 + queue.length;
       queueSongRepository.saveQueueSong(queueSong);
     }
   }
 
   void addMultipleToQueue(List<Song> songs) {
     for (var song in songs) {
-      if (!settingsService.currentAudioSettings.queue.contains(song)) {
+      if (!queue.contains(song)) {
         QueueSong queueSong = QueueSong();
         queueSong.song.target = song;
-        queueSong.position =
-            0.0 + settingsService.currentAudioSettings.queue.length;
+        queueSong.position = 0.0 + queue.length;
         queueSongRepository.saveQueueSong(queueSong);
       }
     }
   }
 
   void addNextToQueue(Song song) {
-    if (!settingsService.currentAudioSettings.queue.contains(song)) {
+    if (!queue.contains(song)) {
       int currentIndex = settingsService.currentAudioSettings.index;
-      int nextIndex =
-          (currentIndex + 1) %
-          settingsService.currentAudioSettings.queue.length;
+      int nextIndex = (currentIndex + 1) % queue.length;
       if (nextIndex == 0) {
-        nextIndex = settingsService.currentAudioSettings.queue.length;
+        nextIndex = queue.length;
         QueueSong queueSong = QueueSong();
         queueSong.song.target = song;
         queueSong.position = 0.0 + nextIndex;
         queueSongRepository.saveQueueSong(queueSong);
       } else {
-        QueueSong currentQueueSong =
-            settingsService.currentAudioSettings.queueSongs[currentIndex];
-        QueueSong nextQueueSong =
-            settingsService.currentAudioSettings.queueSongs[nextIndex];
+        QueueSong currentQueueSong = queueSongs[currentIndex];
+        QueueSong nextQueueSong = queueSongs[nextIndex];
         QueueSong queueSong = QueueSong();
         queueSong.song.target = song;
         queueSong.position =
@@ -221,13 +236,13 @@ class AppAudioService {
   }
 
   void removeFromQueue(Song song) {
-    if (settingsService.currentAudioSettings.queue.contains(song)) {
+    if (queue.contains(song)) {
       queueSongRepository.deleteSongFromQueue(song);
     }
   }
 
   void setQueue(List<Song> songs) async {
-    if (settingsService.currentAudioSettings.queue.equals(songs)) {
+    if (queue.equals(songs)) {
       return;
     }
     queueSongRepository.clearQueue();
@@ -235,12 +250,11 @@ class AppAudioService {
   }
 
   Future<List<Song>> getQueue() async {
-    return settingsService.currentAudioSettings.queue;
+    return queue;
   }
 
   void likeCurrentSong() {
-    settingsService.currentAudioSettings.currentSong.liked =
-        !settingsService.currentAudioSettings.currentSong.liked;
-    songService.updateSong(settingsService.currentAudioSettings.currentSong);
+    currentSong.liked = !currentSong.liked;
+    songService.updateSong(currentSong);
   }
 }

@@ -1,9 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
+import 'package:music_player_frontend/core/providers/abstract/queriable_provider.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:rxdart/rxdart.dart';
 
-class ArtistProvider with ChangeNotifier {
+class ArtistProvider with ChangeNotifier implements QueriableProvider {
   final ArtistService _artistService;
 
   bool _isAscending = false;
@@ -26,6 +27,12 @@ class ArtistProvider with ChangeNotifier {
 
   Stream get artistsStream => _artistService.watchArtists();
 
+  @override
+  bool getFlag() {
+    return _isAscending;
+  }
+
+  @override
   void setFlag(bool value) {
     _isAscending = value;
     artistsFuture = Future(
@@ -34,10 +41,12 @@ class ArtistProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   String getSortField() {
     return _sortField;
   }
 
+  @override
   void setSortField(String field) {
     _sortField = field;
     artistsFuture = Future(
@@ -46,6 +55,7 @@ class ArtistProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   void setQuery(String newQuery) {
     _query = newQuery;
     artistsFuture = Future(

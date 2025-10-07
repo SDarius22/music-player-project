@@ -15,16 +15,20 @@ class QueueSongRepository {
   }
 
   void saveAllQueueSongs(List<Song> songs) {
+    double position = 0.0;
+    for (var song in songs) {
+      QueueSong queueSong = QueueSong();
+      queueSong.song.target = song;
+      queueSong.position = position++;
+      _queueSongBox.put(queueSong);
+    }
+  }
+
+  List<QueueSong> getAllQueueSongs() {
     try {
-      double position = 0.0;
-      for (var song in songs) {
-        QueueSong queueSong = QueueSong();
-        queueSong.song.target = song;
-        queueSong.position = position++;
-        _queueSongBox.put(queueSong);
-      }
+      return _queueSongBox.query().order(QueueSong_.position).build().find();
     } catch (e) {
-      throw Exception("Error saving multiple queue songs: $e");
+      throw Exception("Error getting all queue songs: $e");
     }
   }
 
