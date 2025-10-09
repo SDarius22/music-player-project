@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:duration/duration.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -166,8 +164,9 @@ class _AlbumScreenState extends State<AlbumScreen> {
                                   MediaQuery.of(context).size.height * 0.015,
                                 ),
                                 child: ImageWidget(
-                                  path: base64Encode(widget.album.coverArt),
-                                  type: ImageWidgetType.bytes,
+                                  entity: widget.album,
+                                  // path: base64Encode(widget.album.coverArt),
+                                  // type: ImageWidgetType.bytes,
                                 ),
                               ),
                             ),

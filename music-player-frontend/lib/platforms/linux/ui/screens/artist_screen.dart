@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
@@ -36,41 +38,101 @@ class _ArtistScreenState extends State<ArtistScreen> {
     // var normalSize = height * 0.02;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Container(
-        padding: EdgeInsets.only(
-          top: height * 0.02,
-          left: width * 0.01,
-          right: width * 0.01,
-          bottom: height * 0.125,
+      body: GlassContainer(
+        width: width,
+        height: height,
+        color: Colors.black.withValues(alpha: 0.4),
+        borderGradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.60),
+            Colors.indigoAccent.withOpacity(0.6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        alignment: Alignment.center,
+        borderRadius: BorderRadius.circular(
+          MediaQuery.of(context).size.height * 0.015,
+        ),
+        blur: 45.0,
+        borderWidth: 1.5,
+        elevation: 3.0,
+        shadowColor: Colors.black.withOpacity(0.20),
+        padding: EdgeInsets.only(bottom: height * 0.01),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    debugPrint("Back");
-                    Navigator.pop(context);
-                  },
-                  icon: Icon(
-                    FluentIcons.back,
-                    size: height * 0.02,
-                    color: Colors.white,
+            Container(
+              height: height * 0.065,
+              width: width,
+              padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      debugPrint("Back");
+                      Navigator.pop(context);
+                    },
+                    icon: Icon(
+                      FluentIcons.back,
+                      size: height * 0.02,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                Text(
-                  widget.artist.name,
-                  style: TextStyle(
-                    fontSize: boldSize,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  const Spacer(),
+                  IconButton(
+                    tooltip: "Add",
+                    padding: EdgeInsets.all(height * 0.005),
+                    onPressed: () {
+                      debugPrint("Add ${widget.artist.name}");
+                      var abstractAppStateProvider =
+                          Provider.of<AbstractAppStateProvider>(
+                            context,
+                            listen: false,
+                          );
+                      abstractAppStateProvider.navigatorKey.currentState?.push(
+                        AddOrExportScreen.route(songs: widget.artist.songs),
+                      );
+                    },
+                    icon: Icon(
+                      FluentIcons.add,
+                      color: Colors.white,
+                      size: height * 0.025,
+                    ),
                   ),
-                ),
-                const Spacer(),
-              ],
+                  IconButton(
+                    tooltip: "Play",
+                    padding: EdgeInsets.all(height * 0.005),
+                    onPressed: () async {
+                      debugPrint("Play ${widget.artist.name}");
+                      var audioProvider = Provider.of<AbstractAudioProvider>(
+                        context,
+                        listen: false,
+                      );
+                      audioProvider.setQueue(widget.artist.songs);
+                      await audioProvider.setCurrentSong(
+                        widget.artist.songs.first,
+                      );
+                      audioProvider.play();
+                    },
+                    icon: Icon(
+                      FluentIcons.play,
+                      color: Colors.white,
+                      size: height * 0.025,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: "Shuffle",
+                    onPressed: () async {},
+                    padding: EdgeInsets.all(height * 0.005),
+                    icon: Icon(
+                      FluentIcons.shuffleOn,
+                      color: Colors.white,
+                      size: height * 0.025,
+                    ),
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: Row(
@@ -93,13 +155,7 @@ class _ArtistScreenState extends State<ArtistScreen> {
                                 borderRadius: BorderRadius.circular(
                                   MediaQuery.of(context).size.height * 0.015,
                                 ),
-                                child: ImageWidget(
-                                  path:
-                                      widget.artist.songs.isNotEmpty
-                                          ? widget.artist.songs.first.path
-                                          : '',
-                                  type: ImageWidgetType.song,
-                                ),
+                                child: ImageWidget(entity: widget.artist),
                               ),
                             ),
                           ),
@@ -113,76 +169,49 @@ class _ArtistScreenState extends State<ArtistScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: height * 0.01),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              IconButton(
-                                onPressed: () async {
-                                  debugPrint("Play ${widget.artist.name}");
-                                  var audioProvider =
-                                      Provider.of<AudioProvider>(
-                                        context,
-                                        listen: false,
-                                      );
-                                  audioProvider.setQueue(widget.artist.songs);
-                                  await audioProvider.setCurrentSong(
-                                    widget.artist.songs.first,
-                                  );
-                                },
-                                icon: Icon(
-                                  FluentIcons.play,
-                                  color: Colors.white,
-                                  size: height * 0.025,
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  debugPrint("Add ${widget.artist.name}");
-                                  var abstractAppStateProvider =
-                                      Provider.of<AbstractAppStateProvider>(
-                                        context,
-                                        listen: false,
-                                      );
-                                  abstractAppStateProvider
-                                      .navigatorKey
-                                      .currentState
-                                      ?.push(
-                                        AddOrExportScreen.route(
-                                          songs: widget.artist.songs,
-                                        ),
-                                      );
-                                },
-                                icon: Icon(
-                                  FluentIcons.add,
-                                  color: Colors.white,
-                                  size: height * 0.025,
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
                   ),
                   Expanded(
-                    child: Container(
-                      padding: EdgeInsets.all(width * 0.01),
-                      margin: EdgeInsets.only(top: height * 0.02),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          MediaQuery.of(context).size.height * 0.015,
-                        ),
-                        color: const Color(0xFF242424),
+                    child: GlassContainer(
+                      margin: EdgeInsets.only(
+                        top: height * 0.025,
+                        bottom: height * 0.025,
+                        right: width * 0.05,
                       ),
+                      padding: EdgeInsets.only(
+                        right: width * 0.01,
+                        top: height * 0.01,
+                        bottom: height * 0.01,
+                      ),
+                      color: Colors.black.withValues(alpha: 0.4),
+                      borderGradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.60),
+                          Colors.indigoAccent.withOpacity(0.6),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        MediaQuery.of(context).size.height * 0.015,
+                      ),
+                      blur: 45.0,
+                      borderWidth: 1.5,
+                      elevation: 3.0,
+                      shadowColor: Colors.black.withOpacity(0.20),
+                      isFrostedGlass: true,
+                      frostedOpacity: 0.15,
                       child: CustomScrollView(
                         slivers: [
                           SliverPadding(
-                            padding: EdgeInsets.only(bottom: height * 0.02),
+                            padding: EdgeInsets.symmetric(
+                              vertical: height * 0.01,
+                            ),
                             sliver: ListComponent(
                               items: widget.artist.songs,
-                              itemExtent: height * 0.125,
+                              itemExtent: height * 0.1,
                               isSelected: (entity) {
                                 return false;
                               },
@@ -207,7 +236,6 @@ class _ArtistScreenState extends State<ArtistScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(width: width * 0.025),
                 ],
               ),
             ),

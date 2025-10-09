@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
@@ -31,6 +33,20 @@ class Playlists extends StatefulWidget {
 
 class _PlaylistsState extends State<Playlists> {
   ValueNotifier<List<Playlist>> selected = ValueNotifier<List<Playlist>>([]);
+  Uint8List _createPlaylistImageBytes = Constants.logoBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCreatePlaylistImage();
+  }
+
+  Future<void> _loadCreatePlaylistImage() async {
+    final ByteData data = await rootBundle.load('assets/create_playlist.png');
+    setState(() {
+      _createPlaylistImageBytes = data.buffer.asUint8List();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -322,6 +338,8 @@ class _PlaylistsState extends State<Playlists> {
                                     Playlist emptyPlaylist = Playlist();
                                     emptyPlaylist.name = "Create New Playlist";
                                     emptyPlaylist.indestructible = true;
+                                    emptyPlaylist.imageBytes =
+                                        _createPlaylistImageBytes;
                                     return CustomGridTile(
                                       onTap: () {
                                         debugPrint(

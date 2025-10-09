@@ -14,5 +14,5 @@ abstract class AbstractAppBarWidget extends StatelessWidget
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

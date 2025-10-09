@@ -167,7 +167,7 @@ class MusicPlayerTheme {
         ),
         headlineLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: height * 0.02,
+          fontSize: height * 0.022,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),

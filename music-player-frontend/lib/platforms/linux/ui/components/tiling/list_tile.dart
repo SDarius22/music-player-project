@@ -1,9 +1,6 @@
-import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart';
@@ -23,31 +20,6 @@ class CustomListTile extends AbstractCustomListTile {
     super.leadingAction,
     super.trailingAction,
   });
-
-  String _pathForImageWidget(BaseEntity entity) {
-    if (entity is Playlist) {
-      if (entity.name == 'Current Queue' && entity.indestructible) {
-        return 'assets/current_queue.png';
-      }
-      if (entity.name == 'Create New Playlist' && entity.indestructible) {
-        return 'assets/create_playlist.png';
-      }
-      return base64Encode(entity.coverArt);
-    }
-    return base64Encode(entity.coverArt);
-  }
-
-  ImageWidgetType _getImageWidgetType(BaseEntity entity) {
-    if (entity is Playlist) {
-      if (entity.name == 'Current Queue' && entity.indestructible) {
-        return ImageWidgetType.asset;
-      }
-      if (entity.name == 'Create New Playlist' && entity.indestructible) {
-        return ImageWidgetType.asset;
-      }
-    }
-    return ImageWidgetType.bytes;
-  }
 
   @override
   Widget buildListTileContent(BuildContext context) {
@@ -89,8 +61,9 @@ class CustomListTile extends AbstractCustomListTile {
                     MediaQuery.of(context).size.height * 0.015,
                   ),
                   child: ImageWidget(
-                    path: _pathForImageWidget(entity),
-                    type: _getImageWidgetType(entity),
+                    entity: entity,
+                    // path: _pathForImageWidget(entity),
+                    // type: _getImageWidgetType(entity),
                     hoveredChild: leadingAction,
                     child:
                         isSelected

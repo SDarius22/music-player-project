@@ -1,46 +1,46 @@
 import 'package:flutter/material.dart';
 
-///lyric UI base
-///all lyric UI should be extends this file
+/// Lyric UI base
+/// All lyric UIs should extend this file
 abstract class LyricUI {
-  ///主歌词样式（播放行）
+  /// Main lyric style (playing line)
   TextStyle getPlayingMainTextStyle();
 
-  ///扩展歌词样式（播放行）
+  /// Extended lyric style (playing line)
   TextStyle getPlayingExtTextStyle();
 
-  ///主歌词样式（其他行）
+  /// Main lyric style (other lines)
   TextStyle getOtherMainTextStyle();
 
-  ///扩展歌词样式（其他行）
+  /// Extended lyric style (other lines)
   TextStyle getOtherExtTextStyle();
 
-  ///空白行默认高度
+  /// Default height for blank lines
   double getBlankLineHeight() => 0;
 
-  ///行高
+  /// Line spacing
   double getLineSpace();
 
-  ///行内间距
+  /// Inline spacing
   double getInlineSpace();
 
-  ///播放行偏移
-  ///由上而下偏移，范围：0~1；
-  ///eg:0.4
+  /// Offset for the playing line
+  /// Offset from top to bottom, range: 0~1;
+  /// e.g.: 0.4
   double getPlayingLineBias();
 
-  ///ending在比一半尺寸还小的位置时太丑
-  ///true 最少也会偏移到bias0.5的位置，不会比0.5再小了
-  ///false 无限制 将会偏移到bias0.5
+  /// Ending looks ugly when it's smaller than half the size
+  /// true: will at least offset to bias 0.5, won't be smaller than 0.5
+  /// false: no limit, will offset to bias 0.5
   bool halfSizeLimit() => getPlayingLineBias() < 0.5;
 
-  ///歌词对齐方向
-  ///支持左中右对齐
+  /// Lyric alignment direction
+  /// Supports left, center, and right alignment
   LyricAlign getLyricHorizontalAlign();
 
   LyricBaseLine getBiasBaseLine() => LyricBaseLine.center;
 
-  ///单行铺满后的居中方式
+  /// Centering method when a single line fills the width
   TextAlign getLyricTextAlign() {
     switch (getLyricHorizontalAlign()) {
       case LyricAlign.left:
@@ -52,12 +52,12 @@ abstract class LyricUI {
     }
   }
 
-  ///启用行动画
+  /// Enable line animation
   bool enableLineAnimation() => true;
 
   bool enableHighlight() => true;
 
-  //init progress animation scroll to position
+  // Init progress animation scroll to position
   bool initAnimation() => false;
 
   HighlightDirection getHighlightDirection() => HighlightDirection.leftToRight;
@@ -80,10 +80,10 @@ abstract class LyricUI {
   }
 }
 
-///lyric align enum
+/// Lyric align enum
 enum LyricAlign { left, center, right }
 
 enum HighlightDirection { leftToRight, rightToLeft }
 
-///lyric base line enum
+/// Lyric base line enum
 enum LyricBaseLine { mainCenter, center, extCenter }

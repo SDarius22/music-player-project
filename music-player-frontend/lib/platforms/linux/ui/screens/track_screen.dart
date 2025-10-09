@@ -92,10 +92,7 @@ class _TrackScreenState extends State<TrackScreen> {
                                 borderRadius: BorderRadius.circular(
                                   MediaQuery.of(context).size.height * 0.015,
                                 ),
-                                child: ImageWidget(
-                                  path: widget.song.path,
-                                  type: ImageWidgetType.song,
-                                ),
+                                child: ImageWidget(entity: widget.song),
                               ),
                             ),
                           ),

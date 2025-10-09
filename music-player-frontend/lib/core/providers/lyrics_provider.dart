@@ -20,8 +20,8 @@ class LyricsProvider with ChangeNotifier {
     });
   }
 
-  Future<void> buildLyricsModel() async {
-    String? lyrics = await _getLyricsForCurrentSong();
+  void buildLyricsModel() async {
+    String? lyrics = _getLyricsForCurrentSong();
     lyricsModelBuilder =
         LyricsModelBuilder.create().bindLyricToMain(lyrics ?? '').getModel();
     debugPrint('LyricsModelBuilder: ${lyricsModelBuilder.lyrics.length} lines');
@@ -33,7 +33,7 @@ class LyricsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<String?> _getLyricsForCurrentSong() async {
-    return await _fileService.getLyrics(_audioProvider.currentSong.path);
+  String? _getLyricsForCurrentSong() {
+    return _fileService.getLyrics(_audioProvider.currentSong.path);
   }
 }

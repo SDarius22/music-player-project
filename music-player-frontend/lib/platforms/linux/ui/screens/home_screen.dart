@@ -25,52 +25,46 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: const AppBarWidget(),
       body: AnimatedBackground(
-        controller:
-            Provider.of<AbstractAppStateProvider>(
-              context,
-              listen: false,
-            ).gradientController,
+        controller: context.read<AbstractAppStateProvider>().gradientController,
         padding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.0075,
-          vertical: MediaQuery.of(context).size.height * 0.015,
+          horizontal: MediaQuery.of(context).size.width * 0.01,
+          vertical: MediaQuery.of(context).size.width * 0.01,
         ),
         child: Stack(
           children: [
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.825,
+            Container(
+              padding: EdgeInsets.only(
+                bottom:
+                    MediaQuery.of(context).size.width * 0.01 +
+                    MediaQuery.of(context).size.height * 0.1,
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const LinuxDrawerWidget(),
-                  SizedBox(width: MediaQuery.of(context).size.width * 0.0075),
-                  Consumer<AbstractAppStateProvider>(
-                    builder: (context, abstractAppStateProvider, child) {
-                      return Theme(
-                        data: MusicPlayerTheme.getTheme(context),
-                        child: Expanded(
-                          child: HeroControllerScope(
-                            controller:
-                                MaterialApp.createMaterialHeroController(),
-                            child: Navigator(
-                              key: abstractAppStateProvider.navigatorKey,
-                              // observers: [SecondNavigatorObserver()],
-                              onGenerateRoute: (settings) {
-                                return Tracks.route();
-                              },
-                            ),
-                          ),
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.01),
+                  Theme(
+                    data: MusicPlayerTheme.getTheme(context),
+                    child: Expanded(
+                      child: HeroControllerScope(
+                        controller: MaterialApp.createMaterialHeroController(),
+                        child: Navigator(
+                          key:
+                              context
+                                  .read<AbstractAppStateProvider>()
+                                  .navigatorKey,
+                          // observers: [SecondNavigatorObserver()],
+                          onGenerateRoute: (settings) {
+                            return Tracks.route();
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 500),
-              alignment: Alignment.bottomCenter,
-              child: const LinuxSongPlayerWidget(),
-            ),
+            const LinuxSongPlayerWidget(),
 
             // ValueListenableBuilder(
             //   valueListenable: _dragging,
@@ -157,16 +151,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      // body: Container(
-      //   decoration: const BoxDecoration(
-      //     gradient: MusicPlayerTheme.primaryGradient,
-      //   ),
-      //   padding: EdgeInsets.symmetric(
-      //     horizontal: MediaQuery.of(context).size.height * 0.025,
-      //     vertical: MediaQuery.of(context).size.height * 0.025,
-      //   ),
-      //   child:
-      // ),
     );
   }
 }

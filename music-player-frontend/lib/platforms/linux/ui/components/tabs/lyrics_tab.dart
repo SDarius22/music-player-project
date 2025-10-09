@@ -55,10 +55,10 @@ class LyricsTab extends AbstractLyricsTab {
         ],
       ),
       bias: 0.5,
-      lineGap: 5,
-      inlineGap: 5,
+      lineGap: 10,
+      inlineGap: 25,
       lyricAlign: LyricAlign.center,
-      lyricBaseLine: LyricBaseLine.center,
+      lyricBaseLine: LyricBaseLine.mainCenter,
       highlight: false,
     );
     var audioProvider = Provider.of<AbstractAudioProvider>(

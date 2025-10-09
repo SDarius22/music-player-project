@@ -20,10 +20,11 @@ class GridComponent extends AbstractGridComponent {
   @override
   SliverGridDelegate getGridDelegate(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     return SliverGridDelegateWithMaxCrossAxisExtent(
-      maxCrossAxisExtent: width * 0.1,
-      crossAxisSpacing: width * 0.0075,
-      mainAxisSpacing: width * 0.0075,
+      maxCrossAxisExtent: height * 0.2,
+      crossAxisSpacing: width * 0.01,
+      mainAxisSpacing: width * 0.01,
     );
   }
 

@@ -104,7 +104,6 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
 
   ///Used to determine SnapPosition
   late double _startHeight;
-  late double _startWidth;
 
   bool dismissed = false;
 
@@ -299,7 +298,6 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
                                   ),
                       onPanStart: (details) {
                         _startHeight = _dragHeight;
-                        _startWidth = _dragWidth;
                         updateCount = 0;
 
                         if (animating) {

@@ -10,35 +10,48 @@ class AppBarWidget extends AbstractAppBarWidget {
 
   @override
   Widget buildAppBar(BuildContext context) {
-    return Consumer<AbstractAppStateProvider>(
-      builder: (_, appStateProvider, __) {
-        return WindowTitleBarBox(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 500),
-            color:
-                appStateProvider.isDarkMode
-                    ? Colors.black
-                    : Colors.blueGrey.shade100,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: MoveWindow(
-                    child: Container(
-                      padding: const EdgeInsets.only(left: 10),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Music Player',
-                        style:
-                            MusicPlayerTheme.getTheme(
-                              context,
-                            ).textTheme.bodyLarge,
-                      ),
-                    ),
+    return WindowTitleBarBox(
+      child: Container(
+        color: Colors.black,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: MoveWindow(
+                child: Container(
+                  padding: const EdgeInsets.only(left: 10),
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Music Player',
+                    style:
+                        MusicPlayerTheme.getTheme(context).textTheme.bodyLarge,
                   ),
                 ),
+              ),
+            ),
 
-                MinimizeWindowButton(
+            MinimizeWindowButton(
+              animate: true,
+              colors: WindowButtonColors(
+                normal: Colors.transparent,
+                iconNormal: Colors.white,
+                iconMouseOver: Colors.black,
+                mouseOver: Colors.grey,
+                mouseDown: Colors.grey,
+              ),
+            ),
+            appWindow.isMaximized
+                ? RestoreWindowButton(
+                  animate: true,
+                  colors: WindowButtonColors(
+                    normal: Colors.transparent,
+                    iconNormal: Colors.white,
+                    iconMouseOver: Colors.black,
+                    mouseOver: Colors.grey,
+                    mouseDown: Colors.grey,
+                  ),
+                )
+                : MaximizeWindowButton(
                   animate: true,
                   colors: WindowButtonColors(
                     normal: Colors.transparent,
@@ -48,52 +61,30 @@ class AppBarWidget extends AbstractAppBarWidget {
                     mouseDown: Colors.grey,
                   ),
                 ),
-                appWindow.isMaximized
-                    ? RestoreWindowButton(
-                      animate: true,
-                      colors: WindowButtonColors(
-                        normal: Colors.transparent,
-                        iconNormal: Colors.white,
-                        iconMouseOver: Colors.black,
-                        mouseOver: Colors.grey,
-                        mouseDown: Colors.grey,
-                      ),
-                    )
-                    : MaximizeWindowButton(
-                      animate: true,
-                      colors: WindowButtonColors(
-                        normal: Colors.transparent,
-                        iconNormal: Colors.white,
-                        iconMouseOver: Colors.black,
-                        mouseOver: Colors.grey,
-                        mouseDown: Colors.grey,
-                      ),
-                    ),
-                CloseWindowButton(
-                  animate: true,
-                  onPressed: () {
-                    if (appStateProvider
-                        .settingsService
-                        .currentAppSettings
-                        .fullClose) {
-                      appWindow.close();
-                    } else {
-                      appWindow.hide();
-                    }
-                  },
-                  colors: WindowButtonColors(
-                    normal: Colors.transparent,
-                    iconNormal: Colors.white,
-                    iconMouseOver: Colors.black,
-                    mouseOver: Colors.red,
-                    mouseDown: Colors.grey,
-                  ),
-                ),
-              ],
+            CloseWindowButton(
+              animate: true,
+              onPressed: () {
+                var appStateProvider = context.read<AbstractAppStateProvider>();
+                if (appStateProvider
+                    .settingsService
+                    .currentAppSettings
+                    .fullClose) {
+                  appWindow.close();
+                } else {
+                  appWindow.hide();
+                }
+              },
+              colors: WindowButtonColors(
+                normal: Colors.transparent,
+                iconNormal: Colors.white,
+                iconMouseOver: Colors.black,
+                mouseOver: Colors.red,
+                mouseDown: Colors.grey,
+              ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

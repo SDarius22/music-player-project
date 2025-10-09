@@ -29,6 +29,7 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
 
   Stream get playlistsStream => _playlistService.watchPlaylists();
 
+  @override
   get sortFields => _playlistService.sortFields;
 
   @override

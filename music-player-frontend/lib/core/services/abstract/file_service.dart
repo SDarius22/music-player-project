@@ -136,7 +136,7 @@ abstract class FileService {
     return MergeStream(streams);
   }
 
-  Future<String> getLyrics(String? songPath) async {
+  String getLyrics(String? songPath) {
     if (songPath == null || songPath.isEmpty) {
       return "";
     }
@@ -144,7 +144,7 @@ abstract class FileService {
       String lyricsPath =
           '${songPath.split('.').sublist(0, songPath.split('.').length - 1).join('.')}.lrc';
       if (File(lyricsPath).existsSync()) {
-        String lyricsContent = await File(lyricsPath).readAsString();
+        String lyricsContent = File(lyricsPath).readAsStringSync();
         if (lyricsContent.isNotEmpty) {
           return lyricsContent;
         }

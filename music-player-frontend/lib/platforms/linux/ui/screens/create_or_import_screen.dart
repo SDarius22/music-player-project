@@ -218,8 +218,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                       "Cover art is not null, length: ${cover.length}",
                                     );
                                     return ImageWidget(
-                                      path: encodeImage(cover),
-                                      type: ImageWidgetType.bytes,
+                                      imageBytes: cover,
                                       hoveredChild: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
@@ -282,8 +281,10 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                   }
                                   var value = values[1] as List<String>;
                                   return ImageWidget(
-                                    path: value.isEmpty ? '' : value.first,
-                                    type: ImageWidgetType.song,
+                                    imageBytes:
+                                        value.isNotEmpty
+                                            ? (value.first as Song).coverArt
+                                            : Constants.logoBytes,
                                     hoveredChild: IconButton(
                                       onPressed: () async {
                                         debugPrint("Change cover art");
