@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/core/services/music_scanner_service.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
@@ -21,7 +23,7 @@ class LinuxDrawerWidget extends DrawerWidget {
 }
 
 class _LinuxDrawerWidgetState extends DrawerWidgetState {
-  bool _finishedAnimation = false;
+  bool _finishedAnimation = true;
   int _selected = 3;
   late AbstractAppStateProvider _appStateProvider;
 
@@ -81,7 +83,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
   ];
 
   void _toggleDrawer() {
-    if (_appStateProvider.isDrawerOpen) {
+    if (_appStateProvider.appSettings.drawerOpen) {
       setState(() => _finishedAnimation = false);
       _appStateProvider.setDrawerOpen(false);
     } else {
@@ -171,7 +173,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
     var height = MediaQuery.of(context).size.height;
 
     return Selector<AbstractAppStateProvider, bool>(
-      selector: (_, appState) => appState.isDrawerOpen,
+      selector: (_, appState) => _appStateProvider.appSettings.drawerOpen,
       builder: (context, isDrawerOpen, child) {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
@@ -194,7 +196,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              stops: [0.0, 1.0],
+              stops: const [0.0, 1.0],
             ),
             borderRadius: BorderRadius.circular(
               MediaQuery.of(context).size.height * 0.015,
@@ -263,6 +265,79 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                     isDrawerOpen: isDrawerOpen,
                   ),
                 ),
+
+                StreamBuilder(
+                  stream: context.read<MusicScannerService>().enrichMetadata(),
+                  builder: (context, snapshot) {
+                    debugPrint(
+                      "Metadata enrichment progress: ${snapshot.data}",
+                    );
+                    final toBeShown = snapshot.hasData && snapshot.data! < 2.0;
+                    debugPrint("toBeShown: $toBeShown");
+                    final isFinished = snapshot.hasData && snapshot.data == 1.0;
+                    if (isFinished) {
+                      debugPrint("Refresh after metadata enrichment finished.");
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        context.read<SongProvider>().refreshSongs();
+                      });
+                    }
+
+                    return AnimatedContainer(
+                      height: height * 0.05,
+                      duration: const Duration(milliseconds: 300),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * 0.01,
+                        vertical: height * 0.01,
+                      ),
+                      alignment: Alignment.center,
+                      child:
+                          toBeShown
+                              ? Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: width * 0.0125,
+                                    child: AspectRatio(
+                                      aspectRatio: 1,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                        value: snapshot.data,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isDrawerOpen) ...[
+                                    SizedBox(width: width * 0.01),
+                                    Expanded(
+                                      child: AnimatedOpacity(
+                                        opacity:
+                                            !isFinished && _finishedAnimation
+                                                ? 1.0
+                                                : 0.0,
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        child: Text(
+                                          "Scanning...",
+                                          style: MusicPlayerTheme.getTheme(
+                                            context,
+                                          ).textTheme.bodyLarge!.copyWith(
+                                            color: Colors.white.withOpacity(
+                                              0.7,
+                                            ),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              )
+                              : const SizedBox.shrink(),
+                    );
+                  },
+                ),
+
                 const Spacer(),
                 // User section at bottom
                 AnimatedContainer(

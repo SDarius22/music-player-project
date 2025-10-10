@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
@@ -30,4 +31,6 @@ class Playlist implements BaseEntity {
 
   @override
   Uint8List get coverArt => imageBytes;
+
+  final playlistSongs = ToMany<PlaylistSong>();
 }

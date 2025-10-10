@@ -8,6 +8,7 @@ class AppSettings {
   bool firstTime = true;
   bool systemTray = true;
   bool fullClose = false;
+  bool drawerOpen = true;
 
   @Transient()
   bool initialScanComplete = false;

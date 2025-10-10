@@ -5,7 +5,10 @@ import 'package:music_player_frontend/core/entities/song.dart';
 class SongRepository {
   Box<Song> get _songBox => ObjectBox.store.box<Song>();
 
-  Stream watchSongs() => _songBox.query().watch(triggerImmediately: true);
+  Stream watchSongs() => _songBox
+      .query()
+      .watch(triggerImmediately: true)
+      .map((query) => query.find());
 
   Map<String, dynamic> get sortFields => {
     'Title': Song_.name,
@@ -16,6 +19,14 @@ class SongRepository {
   Song saveSong(Song song) {
     song.id = _songBox.put(song);
     return song;
+  }
+
+  List<Song> saveSongsBatch(List<Song> songs) {
+    final ids = _songBox.putMany(songs);
+    for (int i = 0; i < songs.length; i++) {
+      songs[i].id = ids[i];
+    }
+    return songs;
   }
 
   Song getSongByPath(String path) {
@@ -82,6 +93,10 @@ class SongRepository {
 
   void updateSong(Song song) {
     _songBox.put(song);
+  }
+
+  void updateSongsBatch(List<Song> songs) {
+    _songBox.putMany(songs);
   }
 
   List<Song> getFavoriteSongs() {

@@ -34,13 +34,12 @@ class AudioProvider extends AbstractAudioProvider {
 
   @override
   Future<void> init() async {
-    await super.audioService.updateCurrentSong();
     await super.audioService.initSettings();
     currentSong = super.audioService.currentSong;
     currentQueue = super.audioService.currentQueue;
     repeatNotifier.value = currentAudioSettings.repeat;
     shuffleNotifier.value = currentAudioSettings.shuffle;
-    sliderNotifier.value = currentAudioSettings.slider;
+    sliderNotifier.value = super.audioService.currentPlayedSong.duration;
     balanceNotifier.value = currentAudioSettings.balance;
     volumeNotifier.value = currentAudioSettings.volume;
 

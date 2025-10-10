@@ -28,18 +28,19 @@ class PlaylistSongRepository {
 
   void deletePlaylistSong(Song song, int playlistId) {
     try {
-      final query =
+      final playlistSong =
           _playlistSongBox
               .query(
                 PlaylistSong_.song.equals(song.id) &
                     PlaylistSong_.playlist.equals(playlistId),
               )
-              .build();
-      final playlistSongs = query.find();
-      for (var playlistSong in playlistSongs) {
-        _playlistSongBox.remove(playlistSong.id);
+              .build()
+              .findFirst();
+      if (playlistSong == null) {
+        throw Exception("Song ${song.id} not found in playlist $playlistId");
       }
-      query.close();
+      playlistSong.playlist.target?.playlistSongs.remove(playlistSong);
+      _playlistSongBox.remove(playlistSong.id);
     } catch (e) {
       throw Exception(
         "Error deleting song ${song.id} from playlist $playlistId: $e",

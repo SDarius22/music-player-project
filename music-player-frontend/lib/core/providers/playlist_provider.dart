@@ -19,7 +19,7 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     playlistsFuture = Future(() => _playlistService.getAllPlaylists());
 
     playlistsStream.listen((_) {
-      // debugPrint("Playlists stream updated");
+      debugPrint("Playlists stream updated");
       playlistsFuture = Future(
         () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
       );

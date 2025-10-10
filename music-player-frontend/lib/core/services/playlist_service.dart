@@ -1,23 +1,37 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/repository/played_song_repo.dart';
 import 'package:music_player_frontend/core/repository/playlist_repo.dart';
 import 'package:music_player_frontend/core/repository/playlist_song_repo.dart';
 
 class PlaylistService {
   final PlaylistRepository _playlistRepository;
   final PlaylistSongRepository _playlistSongRepository;
+  final PlayedSongRepository _playedSongRepository;
 
-  PlaylistService(this._playlistRepository, this._playlistSongRepository) {
+  PlaylistService(
+    this._playlistRepository,
+    this._playlistSongRepository,
+    this._playedSongRepository,
+  ) {
     if (getIndestructiblePlaylists().isEmpty) {
       initializeIndestructible();
     }
+    _playedSongsStream.listen((_) {
+      debugPrint("Played songs stream updated");
+      updateIndestructiblePlaylists();
+    });
   }
 
   Stream watchPlaylists() => _playlistRepository.watchPlaylists();
+
+  get _playedSongsStream => _playedSongRepository.songAdded;
 
   get sortFields => _playlistRepository.sortFields;
 
@@ -82,6 +96,38 @@ class PlaylistService {
     return _playlistRepository.getIndestructiblePlaylists();
   }
 
+  void updateIndestructiblePlaylists() {
+    updateMostPlayedPlaylist();
+    updateRecentlyPlayedPlaylist();
+  }
+
+  void updateMostPlayedPlaylist() {
+    Playlist? mostPlayed = _playlistRepository
+        .getIndestructiblePlaylists()
+        .firstWhereOrNull((pl) => pl.name == "Most Played");
+    if (mostPlayed == null) {
+      debugPrint("Most Played playlist not found");
+      return;
+    }
+    List<Song> topSongs = getMostPlayedSongs(50);
+    debugPrint("Updating Most Played with ${topSongs.length} songs");
+    mostPlayed.playlistSongs.clear();
+    addToPlaylist(mostPlayed, topSongs);
+  }
+
+  void updateRecentlyPlayedPlaylist() {
+    Playlist? recentlyPlayed = _playlistRepository
+        .getIndestructiblePlaylists()
+        .firstWhereOrNull((pl) => pl.name == "Recently Played");
+    if (recentlyPlayed == null) {
+      debugPrint("Recently Played playlist not found");
+      return;
+    }
+    List<Song> recentSongs = getRecentlyPlayedSongs(50);
+    recentlyPlayed.playlistSongs.clear();
+    addToPlaylist(recentlyPlayed, recentSongs);
+  }
+
   List<Playlist> getNormalPlaylists() {
     return _playlistRepository.getNormalPlaylists();
   }
@@ -95,12 +141,12 @@ class PlaylistService {
   }
 
   void addToPlaylist(Playlist playlist, List<Song> songs) {
-    var playlistSongs = _playlistSongRepository.getPlaylistSongs(playlist.id);
-
+    var playlistSongs = playlist.playlistSongs;
     if (playlist.nextAdded == 'last') {
-      int maxOrder = playlistSongs.last.order;
+      int maxOrder = playlistSongs.isNotEmpty ? playlistSongs.last.order : 0;
       for (var song in songs) {
         if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
+          debugPrint("Song '${song.id}' already in playlist");
           continue;
         }
         maxOrder += 1;
@@ -108,15 +154,10 @@ class PlaylistService {
         ps.playlist.target = playlist;
         ps.song.target = song;
         ps.order = maxOrder;
-        _playlistSongRepository.savePlaylistSong(ps);
+        playlist.playlistSongs.add(
+          _playlistSongRepository.savePlaylistSong(ps),
+        );
       }
-      // for (var song in songs) {
-      //   if (playlist.pathsInOrder.contains(song.path)) {
-      //     continue;
-      //   }
-      //   playlist.pathsInOrder.add(song.path);
-      //   playlist.songs.add(song);
-      // }
     } else {
       int minOrder = playlistSongs.isNotEmpty ? playlistSongs.first.order : 0;
       for (var song in songs.reversed) {
@@ -128,15 +169,10 @@ class PlaylistService {
         ps.playlist.target = playlist;
         ps.song.target = song;
         ps.order = minOrder;
-        _playlistSongRepository.savePlaylistSong(ps);
+        playlist.playlistSongs.add(
+          _playlistSongRepository.savePlaylistSong(ps),
+        );
       }
-      // for (int i = songs.length - 1; i >= 0; i--) {
-      //   if (playlist.pathsInOrder.contains(songs[i].path)) {
-      //     continue;
-      //   }
-      //   playlist.pathsInOrder.insert(0, songs[i].path);
-      //   playlist.songs.insert(0, songs[i]);
-      // }
     }
     _playlistRepository.savePlaylist(playlist);
   }
@@ -155,5 +191,21 @@ class PlaylistService {
       return;
     }
     _playlistRepository.deletePlaylist(playlist);
+  }
+
+  List<Song> getMostPlayedSongs(int limit) {
+    return _playedSongRepository
+        .getMostPlayedSongs(limit)
+        .map((ps) => ps.song.target)
+        .whereType<Song>()
+        .toList();
+  }
+
+  List<Song> getRecentlyPlayedSongs(int limit) {
+    return _playedSongRepository
+        .getRecentPlayedSongs(limit)
+        .map((ps) => ps.song.target)
+        .whereType<Song>()
+        .toList();
   }
 }

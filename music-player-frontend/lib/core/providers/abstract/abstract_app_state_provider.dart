@@ -14,8 +14,6 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
 
   get appSettings => settingsService.currentAppSettings;
 
-  bool isDarkMode = true;
-  bool isDrawerOpen = false;
   List<String> appActions = [];
 
   ValueNotifier<bool> isPanelOpen = ValueNotifier(false);
@@ -43,7 +41,8 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   }
 
   void setDrawerOpen(bool isOpen) {
-    isDrawerOpen = isOpen;
+    settingsService.currentAppSettings.drawerOpen = isOpen;
+    updateAppSettings();
     notifyListeners();
   }
 

@@ -6,7 +6,6 @@ class AudioSettings {
   int id = 0;
 
   int index = 0;
-  int slider = 0; // this is the time in milliseconds
 
   @Transient()
   bool playing = false;

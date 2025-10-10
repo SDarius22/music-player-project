@@ -3,7 +3,6 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
-import 'package:rxdart/rxdart.dart';
 
 class SongProvider with ChangeNotifier implements QueryableProvider {
   final SongService _songService;
@@ -19,17 +18,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   SongProvider(this._songService, this._scannerService) {
     songsFuture = Future(() => _songService.getAllSongs());
-
-    songsStream.throttleTime(const Duration(seconds: 2)).listen((_) {
-      debugPrint("Songs stream updated");
-      songsFuture = Future(
-        () => _songService.getSongs(_query, _sortField, _isAscending),
-      );
-      notifyListeners();
-    });
   }
-
-  Stream get songsStream => _songService.watchSongs();
 
   @override
   get sortFields => _songService.sortFields;
@@ -44,39 +33,24 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
       debugPrint("Performing initial quick scan...");
 
       // Perform quick scan - adds songs with basic info (just filenames)
-      await _scannerService.performQuickScan(musicDirectories);
+      await _scannerService.performQuickScan();
 
       // Mark scan as complete
       _songService.markInitialScanComplete();
 
       // Start enriching metadata in background
-      _enrichMetadataInBackground();
+      // _enrichMetadataInBackground();
     } else {
       debugPrint("Initial scan already complete, loading from database");
     }
 
     // Load songs from database
-    // _refreshSongs();
+    refreshSongs();
     _isInitialized = true;
   }
 
-  // Enrich metadata in background
-  void _enrichMetadataInBackground() async {
-    notifyListeners();
-
-    debugPrint("Starting metadata enrichment...");
-    bool refresh = await _scannerService.enrichMetadata();
-
-    debugPrint("Metadata enrichment complete!");
-
-    // Refresh songs to show updated metadata
-    if (refresh) {
-      _refreshSongs();
-    }
-  }
-
   // Refresh songs from database with current filters
-  void _refreshSongs() {
+  void refreshSongs() {
     songsFuture = Future(
       () => _songService.getSongs(_query, _sortField, _isAscending),
     );

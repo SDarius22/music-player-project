@@ -1,29 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:music_player_frontend/core/entities/played_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/repository/played_song_repo.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 
 class SongService {
   final SongRepository _songRepository;
-  final PlayedSongRepository _playedSongRepository;
   final FileService _fileService;
   final SettingsService _settingsService;
 
-  SongService(
-    this._songRepository,
-    this._playedSongRepository,
-    this._fileService,
-    this._settingsService,
-  );
-
-  Stream watchSongs() => _songRepository.watchSongs();
-
-  Stream watchPlayedSongs() => _playedSongRepository.watchPlayedSongs();
+  SongService(this._songRepository, this._fileService, this._settingsService);
 
   get sortFields => _songRepository.sortFields;
 
@@ -48,6 +36,17 @@ class SongService {
 
   Song addSongEntity(Song song) {
     return _songRepository.saveSong(song);
+  }
+
+  List<Song> addSongsEntitiesBatch(List<Song> songs) {
+    debugPrint("Adding batch of ${songs.length} songs to the database");
+    return _songRepository.saveSongsBatch(songs);
+  }
+
+  void addSongsBatch(List<Song> songs) {
+    for (var song in songs) {
+      _songRepository.saveSong(song);
+    }
   }
 
   Song? getSong(String songPath) {
@@ -88,11 +87,8 @@ class SongService {
     _songRepository.updateSong(song);
   }
 
-  void updateSongPlayed(Song song) {
-    PlayedSong playedSong = PlayedSong();
-    playedSong.song.target = song;
-    playedSong.playedAt = DateTime.now();
-    _playedSongRepository.savePlayedSong(playedSong);
+  void updateSongsBatch(List<Song> songs) {
+    _songRepository.updateSongsBatch(songs);
   }
 
   void deleteSong(Song song) {
@@ -111,21 +107,5 @@ class SongService {
       }
     }
     return songs;
-  }
-
-  List<Song> getMostPlayedSongs(int limit) {
-    return _playedSongRepository
-        .getMostPlayedSongs(limit)
-        .map((ps) => ps.song.target)
-        .whereType<Song>()
-        .toList();
-  }
-
-  List<Song> getRecentlyPlayedSongs(int limit) {
-    return _playedSongRepository
-        .getRecentPlayedSongs(limit)
-        .map((ps) => ps.song.target)
-        .whereType<Song>()
-        .toList();
   }
 }

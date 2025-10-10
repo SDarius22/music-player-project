@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
+import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class MusicScannerService {
@@ -10,15 +13,21 @@ class MusicScannerService {
   final ArtistService _artistService;
   final AlbumService _albumService;
   final FileService _fileService;
+  final SettingsService _settingsService;
 
   MusicScannerService(
     this._songService,
     this._artistService,
     this._albumService,
     this._fileService,
+    this._settingsService,
   );
 
-  Future<void> performQuickScan(List<String> musicDirectories) async {
+  bool _isEnrichmentDone = false;
+
+  Future<void> performQuickScan() async {
+    List<String> musicDirectories =
+        _settingsService.currentAppSettings.songPlaces;
     debugPrint("Starting quick scan for directories: $musicDirectories");
 
     final files = await _fileService.getAudioFiles(musicDirectories);
@@ -54,21 +63,39 @@ class MusicScannerService {
     );
   }
 
-  Future<bool> enrichMetadata() async {
+  Stream<double> enrichMetadata() async* {
+    if (_isEnrichmentDone) {
+      debugPrint("Metadata enrichment already completed");
+      yield 2.0;
+      return;
+    }
+    while (!_settingsService.currentAppSettings.initialScanComplete) {
+      debugPrint("Waiting for initial scan to complete...");
+      await Future.delayed(const Duration(seconds: 3));
+    }
     final songs =
         _songService.getAllSongs().where((song) => !song.fullyLoaded).toList();
 
     if (songs.isEmpty) {
       debugPrint("No songs need metadata enrichment");
-      return false;
+      yield 2.0;
+      return;
     }
 
     debugPrint("Enriching metadata for ${songs.length} songs...");
 
+    int processedCount = 0;
+    DateTime lastEmit = DateTime.now();
+    const emitInterval = Duration(seconds: 5);
+
+    List<Song> songsToUpdate = [];
+
     for (int i = 0; i < songs.length; i++) {
+      if (i % 100 == 0) {
+        await Future.delayed(const Duration(milliseconds: 250));
+      }
       final song = songs[i];
       try {
-        // Use FileService to retrieve full metadata
         final metadata = await _fileService.retrieveSong(
           song.path,
           withImage: true,
@@ -87,7 +114,7 @@ class MusicScannerService {
 
         song.artist.targetId = artist.id;
         song.album.target = album;
-        _songService.updateSong(song);
+        songsToUpdate.add(song);
 
         album.songs.add(song);
         _albumService.updateAlbum(album);
@@ -95,15 +122,33 @@ class MusicScannerService {
         artist.songs.add(song);
         artist.albums.add(album);
         _artistService.updateArtist(artist);
+
+        processedCount++;
       } catch (e) {
         debugPrint('Error extracting metadata for ${song.path}: $e');
         song.fullyLoaded = true;
-        _songService.updateSong(song);
+        songsToUpdate.add(song);
+        processedCount++;
+      }
+
+      // Emit progress every 2 seconds
+      if (DateTime.now().difference(lastEmit) >= emitInterval) {
+        debugPrint("Progress: $processedCount/${songs.length} songs enriched");
+        yield processedCount / songs.length;
+        _songService.updateSongsBatch(songsToUpdate);
+        songsToUpdate.forEach((s) {});
+        songsToUpdate.clear();
+        lastEmit = DateTime.now();
       }
     }
 
-    debugPrint("Metadata enrichment complete!");
-    return true;
+    // Emit final count
+    debugPrint("Metadata enrichment complete! Total: $processedCount songs");
+    if (songsToUpdate.isNotEmpty) {
+      _songService.updateSongsBatch(songsToUpdate);
+    }
+    _isEnrichmentDone = true;
+    yield 1.0;
   }
 
   String _getFileNameWithoutExtension(String path) {

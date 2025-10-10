@@ -714,56 +714,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   SizedBox(height: height * 0.02),
 
-                  Row(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Dark Mode",
-                            style: TextStyle(
-                              fontSize: normalSize,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: height * 0.005),
-                          Text(
-                            "Choose the theme of the app",
-                            style: TextStyle(
-                              fontSize: smallSize,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.grey.shade50,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Switch(
-                        value: appState.isDarkMode,
-                        onChanged: (value) {
-                          setState(() {
-                            appState.isDarkMode = value;
-                            // appState.setTheme();
-                          });
-                          (appState as AppStateProvider).initTray();
-                        },
-                        trackColor: WidgetStateProperty.all(
-                          MusicPlayerTheme.primaryPurple,
-                        ),
-                        thumbColor: WidgetStateProperty.all(Colors.white),
-                        thumbIcon: WidgetStateProperty.all(
-                          appState.isDarkMode
-                              ? const Icon(Icons.check, color: Colors.black)
-                              : const Icon(Icons.close, color: Colors.black),
-                        ),
-                        activeColor: Colors.white,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: height * 0.02),
-
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

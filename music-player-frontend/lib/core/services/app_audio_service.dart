@@ -1,24 +1,38 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
+import 'package:music_player_frontend/core/entities/played_song.dart';
 import 'package:music_player_frontend/core/entities/queue_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/repository/played_song_repo.dart';
 import 'package:music_player_frontend/core/repository/queue_song_repo.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class AppAudioService {
   final QueueSongRepository queueSongRepository;
+  final PlayedSongRepository playedSongRepository;
   final AbstractAudioPlayer audioPlayer;
   final SongService songService;
   final SettingsService settingsService;
 
   AppAudioService(
+    this.playedSongRepository,
     this.queueSongRepository,
     this.audioPlayer,
     this.songService,
     this.settingsService,
-  );
+  ) {
+    PlayedSong? lastPlayed = playedSongRepository.getMostRecentPlayedSong();
+    if (lastPlayed != null && lastPlayed.song.target != null) {
+      debugPrint(
+        "Last played song: ${lastPlayed.song.target!.name}, duration: ${lastPlayed.duration}",
+      );
+      currentPlayedSong = lastPlayed;
+    }
+  }
+
+  PlayedSong currentPlayedSong = PlayedSong();
 
   List<QueueSong> get queueSongs => queueSongRepository.getAllQueueSongs();
 
@@ -42,9 +56,10 @@ class AppAudioService {
           : -1;
 
   Song get currentSong =>
-      currentQueue.isNotEmpty
+      currentPlayedSong.song.target ??
+      (currentQueue.isNotEmpty
           ? currentQueue[settingsService.currentAudioSettings.index]
-          : Song();
+          : Song());
 
   Song get nextSong =>
       currentQueue.isNotEmpty
@@ -58,6 +73,12 @@ class AppAudioService {
       settingsService.currentAudioSettings.index = newIndex;
       settingsService.updateAudioSettings();
     }
+    if (song.id != currentPlayedSong.song.target?.id) {
+      currentPlayedSong = PlayedSong();
+    }
+    currentPlayedSong.song.target = song;
+    currentPlayedSong.playedAt = DateTime.now();
+    playedSongRepository.savePlayedSong(currentPlayedSong);
   }
 
   Song get previousSong =>
@@ -103,9 +124,7 @@ class AppAudioService {
 
   Future<void> setCurrentSong(Song song) async {
     currentSong = song;
-    settingsService.updateAudioSettings();
     audioPlayer.setSource(currentSong.path);
-    updateCurrentSong();
   }
 
   Future<void> seek(Duration position) async {
@@ -149,27 +168,22 @@ class AppAudioService {
   }
 
   void setSlider(int slider) {
-    settingsService.currentAudioSettings.slider = slider;
-    settingsService.updateAudioSettings();
+    if (currentPlayedSong.song.target == null) {
+      currentPlayedSong.song.target = currentSong;
+    }
+    currentPlayedSong.duration = slider;
+    playedSongRepository.savePlayedSong(currentPlayedSong);
   }
 
   Future<void> initSettings() async {
     try {
       await audioPlayer.setSource(currentSong.path);
       await audioPlayer.seek(
-        Duration(milliseconds: settingsService.currentAudioSettings.slider),
+        Duration(milliseconds: currentPlayedSong.duration),
       );
     } catch (e) {
       debugPrint("Error initializing audio player: $e");
     }
-  }
-
-  Future<void> updateCurrentSong() async {
-    if (queue.isEmpty) {
-      debugPrint("Queue is empty, cannot update current song.");
-      return;
-    }
-    songService.updateSongPlayed(currentSong);
   }
 
   Future<Duration> getDuration() async {

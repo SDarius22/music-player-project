@@ -1,12 +1,13 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_tile.dart';
@@ -176,9 +177,6 @@ class _PlaylistsState extends State<Playlists> {
                                     }
                                   },
                                   buildLeftAction: (entity) {
-                                    if (entity is Playlist) {
-                                      return const SizedBox.shrink();
-                                    }
                                     return IconButton(
                                       icon: Icon(
                                         FluentIcons.play,
@@ -196,21 +194,24 @@ class _PlaylistsState extends State<Playlists> {
                                           return;
                                         }
                                         Playlist playlist = entity;
+                                        final songs =
+                                            playlist.playlistSongs
+                                                .sorted(
+                                                  (a, b) => a.order.compareTo(
+                                                    b.order,
+                                                  ),
+                                                )
+                                                .map((e) => e.song.target!)
+                                                .toList();
                                         var audioProvider =
-                                            Provider.of<AudioProvider>(
+                                            Provider.of<AbstractAudioProvider>(
                                               context,
                                               listen: false,
                                             );
-                                        // audioProvider.setQueue(
-                                        //   playlist.pathsInOrder,
-                                        // );
-                                        // await audioProvider.setCurrentSong(
-                                        //   playlist.songs.firstWhere(
-                                        //     (song) =>
-                                        //         song.path ==
-                                        //         playlist.pathsInOrder.first,
-                                        //   ),
-                                        // );
+                                        audioProvider.setQueue(songs);
+                                        await audioProvider.setCurrentSong(
+                                          songs.first,
+                                        );
                                       },
                                     );
                                   },

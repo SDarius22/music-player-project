@@ -70,6 +70,7 @@ class LinuxApp extends StatelessWidget {
               (context) => PlaylistService(
                 context.read<PlaylistRepository>(),
                 context.read<PlaylistSongRepository>(),
+                context.read<PlayedSongRepository>(),
               ),
         ),
         Provider<SettingsService>(
@@ -80,7 +81,6 @@ class LinuxApp extends StatelessWidget {
           create:
               (context) => SongService(
                 context.read<SongRepository>(),
-                context.read<PlayedSongRepository>(),
                 context.read<FileService>(),
                 context.read<SettingsService>(),
               ),
@@ -92,11 +92,13 @@ class LinuxApp extends StatelessWidget {
                 context.read<ArtistService>(),
                 context.read<AlbumService>(),
                 context.read<FileService>(),
+                context.read<SettingsService>(),
               ),
         ),
         Provider<AppAudioService>(
           create:
               (context) => AppAudioService(
+                context.read<PlayedSongRepository>(),
                 context.read<QueueSongRepository>(),
                 context.read<AbstractAudioPlayer>(),
                 context.read<SongService>(),
@@ -106,13 +108,16 @@ class LinuxApp extends StatelessWidget {
 
         ChangeNotifierProvider<AlbumProvider>(
           create: (context) => AlbumProvider(context.read<AlbumService>()),
+          lazy: false,
         ),
         ChangeNotifierProvider<ArtistProvider>(
           create: (context) => ArtistProvider(context.read<ArtistService>()),
+          lazy: false,
         ),
         ChangeNotifierProvider<PlaylistProvider>(
           create:
               (context) => PlaylistProvider(context.read<PlaylistService>()),
+          lazy: false,
         ),
         ChangeNotifierProvider<SongProvider>(
           create:
@@ -120,6 +125,7 @@ class LinuxApp extends StatelessWidget {
                 context.read<SongService>(),
                 context.read<MusicScannerService>(),
               ),
+          lazy: false,
         ),
         ChangeNotifierProvider<AbstractAudioProvider>(
           create: (context) {
@@ -148,6 +154,7 @@ class LinuxApp extends StatelessWidget {
                 context.read<AbstractAudioProvider>(),
                 context.read<FileService>(),
               ),
+          lazy: false,
         ),
         ChangeNotifierProvider<AbstractAppStateProvider>(
           create:

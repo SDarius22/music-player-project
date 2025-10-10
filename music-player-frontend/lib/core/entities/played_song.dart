@@ -6,6 +6,8 @@ class PlayedSong {
   @Id()
   int id = 0;
 
+  int duration = 0; // duration in milliseconds
+
   final song = ToOne<Song>();
   DateTime playedAt = DateTime.now();
 }

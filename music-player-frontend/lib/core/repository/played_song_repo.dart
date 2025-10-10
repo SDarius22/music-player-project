@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:music_player_frontend/core/database/objectBox.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/played_song.dart';
@@ -5,12 +7,30 @@ import 'package:music_player_frontend/core/entities/played_song.dart';
 class PlayedSongRepository {
   Box<PlayedSong> get _playedSongBox => ObjectBox.store.box<PlayedSong>();
 
-  Stream watchPlayedSongs() =>
-      _playedSongBox.query().watch(triggerImmediately: true);
+  final _songAddedController = StreamController<PlayedSong>.broadcast();
+
+  Stream<PlayedSong> get songAdded => _songAddedController.stream;
+
+  void dispose() {
+    _songAddedController.close();
+  }
 
   PlayedSong savePlayedSong(PlayedSong playedSong) {
+    final wasNew = playedSong.id == 0;
     playedSong.id = _playedSongBox.put(playedSong);
+
+    if (wasNew) {
+      _songAddedController.add(playedSong);
+    }
     return playedSong;
+  }
+
+  PlayedSong? getMostRecentPlayedSong() {
+    return _playedSongBox
+        .query()
+        .order(PlayedSong_.playedAt, flags: Order.descending)
+        .build()
+        .findFirst();
   }
 
   List<PlayedSong> getAllPlayedSongs() {
@@ -27,13 +47,13 @@ class PlayedSongRepository {
 
   List<PlayedSong> getRecentPlayedSongs(int limit) {
     try {
-      return _playedSongBox
-          .query()
-          .order(PlayedSong_.playedAt, flags: Order.descending)
-          .build()
-          .find()
-          .take(limit)
-          .toList();
+      final query =
+          _playedSongBox
+              .query()
+              .order(PlayedSong_.playedAt, flags: Order.descending)
+              .build();
+      query.limit = limit;
+      return query.find();
     } catch (e) {
       throw Exception("Error retrieving recent played songs: $e");
     }
@@ -41,8 +61,9 @@ class PlayedSongRepository {
 
   List<PlayedSong> getMostPlayedSongs(int limit) {
     try {
-      final query = _playedSongBox.query();
-      final playedSongs = query.build().find();
+      final query = _playedSongBox.query().build();
+      query.limit = limit;
+      final playedSongs = query.find();
       final songCount = <int, int>{};
 
       for (var playedSong in playedSongs) {

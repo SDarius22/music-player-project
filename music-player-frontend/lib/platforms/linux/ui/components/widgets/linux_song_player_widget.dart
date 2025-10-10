@@ -79,8 +79,8 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       imageTopMargin = 0;
     }
 
-    double minRadius = 15;
-    double maxRadius = 15;
+    double minRadius = height * 0.015;
+    double maxRadius = height * 0.015;
     double borderRadius = lerpDouble(maxRadius, minRadius, percentage) ?? 0.0;
 
     double normalized = (1.0 - (percentage / 0.25).clamp(0.0, 1.0));
