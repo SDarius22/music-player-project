@@ -8,6 +8,7 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_audio_pro
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
 import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/lyrics_tab.dart';
@@ -79,123 +80,133 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     double normalized = (1.0 - (percentage / 0.25).clamp(0.0, 1.0));
     double progressBarOpacity = normalized;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          alignment: Alignment.center,
-          margin: EdgeInsets.only(left: imageLeftMargin),
-          padding: const EdgeInsets.all(1),
-          child: AspectRatio(
-            aspectRatio: 1.0,
+    return GlassContainer(
+      color: Colors.black.withValues(alpha: 0.2),
+      borderColor: Colors.transparent,
+      borderWidth: 0.0,
+      blur: 45.0,
+      elevation: 3.0,
+      borderRadius: getBorderRadius(context),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            alignment: Alignment.center,
+            margin: EdgeInsets.only(left: imageLeftMargin),
+            padding: const EdgeInsets.all(1),
+            child: AspectRatio(
+              aspectRatio: 1.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  borderRadius: getBorderRadius(context),
+                  image: DecorationImage(
+                    fit: BoxFit.cover,
+                    image: cachedCoverArt,
+                    isAntiAlias: true,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          Opacity(
+            opacity: progressBarOpacity,
             child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.rectangle,
-                borderRadius: getBorderRadius(context),
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  image: cachedCoverArt,
-                  isAntiAlias: true,
+              height: height * 0.15,
+              width: width * 0.2,
+              margin: EdgeInsets.only(left: width * 0.01),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    audioProvider.currentSong.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: MusicPlayerTheme.getTheme(
+                      context,
+                    ).textTheme.headlineLarge?.copyWith(
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.75),
+                          offset: const Offset(1, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    audioProvider.currentSong.artist.target?.name ??
+                        'Unknown Artist',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: MusicPlayerTheme.getTheme(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(
+                      color: Colors.white70,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.75),
+                          offset: const Offset(1, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const Spacer(),
+
+          Opacity(
+            opacity: progressBarOpacity,
+            child: SizedBox(
+              width: width * 0.3,
+              height: height * 0.15,
+              child: const IgnorePointer(
+                ignoring: true,
+                child: LyricsTab(oneLine: true),
+              ),
+            ),
+          ),
+
+          const Spacer(),
+
+          Opacity(
+            opacity: progressBarOpacity,
+            child: SizedBox(
+              width: width * 0.25,
+              height: height * 0.15,
+              child: _buildPlayerButtons(audioProvider),
+            ),
+          ),
+
+          Opacity(
+            opacity: progressBarOpacity,
+            child: SizedBox(
+              width: width * 0.05,
+              height: height * 0.15,
+              child: IconButton(
+                onPressed:
+                    () => Provider.of<AbstractAppStateProvider>(
+                      context,
+                      listen: false,
+                    ).miniPlayerController.animateToHeight(
+                      state: PanelState.max,
+                    ),
+                icon: Icon(
+                  FluentIcons.maximize,
+                  color: Colors.white,
+                  size: height * 0.02,
                 ),
               ),
             ),
           ),
-        ),
-
-        Opacity(
-          opacity: progressBarOpacity,
-          child: Container(
-            height: height * 0.15,
-            width: width * 0.2,
-            margin: EdgeInsets.only(left: width * 0.01),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  audioProvider.currentSong.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: MusicPlayerTheme.getTheme(
-                    context,
-                  ).textTheme.headlineLarge?.copyWith(
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.75),
-                        offset: const Offset(1, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  audioProvider.currentSong.artist.target?.name ??
-                      'Unknown Artist',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: MusicPlayerTheme.getTheme(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white70,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.75),
-                        offset: const Offset(1, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        const Spacer(),
-
-        Opacity(
-          opacity: progressBarOpacity,
-          child: SizedBox(
-            width: width * 0.3,
-            height: height * 0.15,
-            child: const IgnorePointer(
-              ignoring: true,
-              child: LyricsTab(oneLine: true),
-            ),
-          ),
-        ),
-
-        const Spacer(),
-
-        Opacity(
-          opacity: progressBarOpacity,
-          child: SizedBox(
-            width: width * 0.25,
-            height: height * 0.15,
-            child: _buildPlayerButtons(audioProvider),
-          ),
-        ),
-
-        Opacity(
-          opacity: progressBarOpacity,
-          child: SizedBox(
-            width: width * 0.05,
-            height: height * 0.15,
-            child: IconButton(
-              onPressed:
-                  () => Provider.of<AbstractAppStateProvider>(
-                    context,
-                    listen: false,
-                  ).miniPlayerController.animateToHeight(state: PanelState.max),
-              icon: Icon(
-                FluentIcons.maximize,
-                color: Colors.white,
-                size: height * 0.02,
-              ),
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -248,209 +259,218 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       }
     }
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Lyrics
-              if (showSidePanels)
-                Opacity(
-                  opacity: sidePanelsOpacity,
-                  child: Container(
-                    width: width * 0.3,
-                    height: width * 0.3,
-                    margin: EdgeInsets.only(left: width * 0.01),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: width * 0.01,
-                      vertical: height * 0.01,
-                    ),
-                    child: const LyricsTab(),
-                  ),
-                ),
-
-              const Spacer(),
-
-              // Album Art
-              Container(
-                alignment: Alignment.center,
-                constraints: BoxConstraints(maxWidth: width * 0.325),
-                margin: EdgeInsets.only(right: imageRightMargin),
-                // width: width * 0.325,
-                child: DetailsTab(
-                  opacity: detailsOpacity,
-                  miniPlayerController: appStateProvider.miniPlayerController,
-                ),
-              ),
-
-              const Spacer(),
-              // Queue
-              if (showSidePanels)
-                Opacity(
-                  opacity: sidePanelsOpacity,
-                  child: Container(
-                    width: width * 0.3,
-                    height: width * 0.3,
-                    margin: EdgeInsets.only(right: width * 0.01),
-                    padding: EdgeInsets.symmetric(vertical: height * 0.01),
-                    child: QueueTab(itemScrollController: itemScrollController),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        // ProgressBar
-        Opacity(
-          opacity: progressBarOpacity,
-          child: SizedBox(
-            height: progressBarHeight,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: width * 0.03),
-              child:
-                  sidePanelsOpacity > 0.99
-                      ? FutureBuilder(
-                        future: audioProvider.getDuration(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: LinearProgressIndicator(
-                                color: Colors.white,
-                                backgroundColor: Colors.white24,
-                              ),
-                            );
-                          }
-                          return ValueListenableBuilder(
-                            valueListenable: audioProvider.sliderNotifier,
-                            builder: (context, value, child) {
-                              return ProgressBar(
-                                progress: Duration(milliseconds: value),
-                                total:
-                                    snapshot.hasData
-                                        ? snapshot.data as Duration
-                                        : Duration.zero,
-
-                                progressBarColor: appStateProvider.colors.first,
-                                baseBarColor: appStateProvider.colors.last
-                                    .withValues(alpha: 0.25),
-                                thumbColor: Colors.white,
-                                barHeight: 4.0,
-                                thumbRadius: 7.0,
-                                timeLabelLocation: TimeLabelLocation.sides,
-                                timeLabelTextStyle: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: height * 0.02,
-                                  fontWeight: FontWeight.normal,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      offset: const Offset(1, 2),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                                timeLabelPadding: 5.0,
-                                onSeek: (duration) {
-                                  audioProvider.seek(duration);
-                                },
-                              );
-                            },
-                          );
-                        },
-                      )
-                      : const Center(
-                        child: LinearProgressIndicator(
-                          color: Colors.white,
-                          backgroundColor: Colors.white24,
-                        ),
-                      ),
-            ),
-          ),
-        ),
-
-        // Player Controls - Previous, Play/Pause, Next
-        Opacity(
-          opacity: progressBarOpacity,
-          child: SizedBox(
-            width: width * 0.9,
-            height: buttonsHeight,
+    return GlassContainer(
+      color: Colors.black.withValues(alpha: 0.1),
+      borderColor: Colors.transparent,
+      blur: 45.0,
+      borderRadius: getBorderRadius(context),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                IconButton(
-                  onPressed: () async {
-                    debugPrint("Liked");
-                    audioProvider.likeCurrentSong();
-                    likedNotifier.value = !likedNotifier.value;
-                    String message =
-                        audioProvider.currentSong.liked
-                            ? "Added ${audioProvider.currentSong.name} to Favorites"
-                            : "Removed ${audioProvider.currentSong.name} from Favorites";
-                    BotToast.showText(
-                      text: message,
-                      duration: const Duration(seconds: 3),
-                      contentColor: Colors.black,
-                      textStyle: TextStyle(
-                        color: Colors.white,
-                        fontSize: height * 0.02,
+                // Lyrics
+                if (showSidePanels)
+                  Opacity(
+                    opacity: sidePanelsOpacity,
+                    child: Container(
+                      width: width * 0.3,
+                      height: width * 0.3,
+                      margin: EdgeInsets.only(left: width * 0.01),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * 0.01,
+                        vertical: height * 0.01,
                       ),
-                    );
-                  },
-                  icon: Icon(
-                    audioProvider.currentSong.liked
-                        ? FluentIcons.liked
-                        : FluentIcons.unliked,
-                    size: height * 0.025,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        offset: const Offset(1, 2),
-                        blurRadius: 7,
-                      ),
-                    ],
+                      child: const LyricsTab(),
+                    ),
+                  ),
+
+                const Spacer(),
+
+                // Album Art
+                Container(
+                  alignment: Alignment.center,
+                  constraints: BoxConstraints(maxWidth: width * 0.325),
+                  margin: EdgeInsets.only(right: imageRightMargin),
+                  // width: width * 0.325,
+                  child: DetailsTab(
+                    opacity: detailsOpacity,
+                    miniPlayerController: appStateProvider.miniPlayerController,
                   ),
                 ),
 
-                SizedBox(
-                  width: width * 0.5,
-                  child: _buildPlayerButtons(audioProvider),
-                ),
-
-                IconButton(
-                  onPressed: () async {
-                    Provider.of<AbstractAppStateProvider>(
-                      context,
-                      listen: false,
-                    ).miniPlayerController.animateToHeight(
-                      state: PanelState.min,
-                    );
-                  },
-                  icon: Icon(
-                    FluentIcons.minimize,
-                    color: Colors.white,
-                    size: height * 0.025,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        offset: const Offset(1, 2),
-                        blurRadius: 7,
+                const Spacer(),
+                // Queue
+                if (showSidePanels)
+                  Opacity(
+                    opacity: sidePanelsOpacity,
+                    child: Container(
+                      width: width * 0.3,
+                      height: width * 0.3,
+                      margin: EdgeInsets.only(right: width * 0.01),
+                      padding: EdgeInsets.symmetric(vertical: height * 0.01),
+                      child: QueueTab(
+                        itemScrollController: itemScrollController,
                       ),
-                    ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-        ),
-      ],
+
+          // ProgressBar
+          Opacity(
+            opacity: progressBarOpacity,
+            child: SizedBox(
+              height: progressBarHeight,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: width * 0.03),
+                child:
+                    sidePanelsOpacity > 0.99
+                        ? FutureBuilder(
+                          future: audioProvider.getDuration(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: LinearProgressIndicator(
+                                  color: Colors.white,
+                                  backgroundColor: Colors.white24,
+                                ),
+                              );
+                            }
+                            return ValueListenableBuilder(
+                              valueListenable: audioProvider.sliderNotifier,
+                              builder: (context, value, child) {
+                                return ProgressBar(
+                                  progress: Duration(milliseconds: value),
+                                  total:
+                                      snapshot.hasData
+                                          ? snapshot.data as Duration
+                                          : Duration.zero,
+
+                                  progressBarColor:
+                                      appStateProvider.colors.first,
+                                  baseBarColor: appStateProvider.colors.last
+                                      .withValues(alpha: 0.25),
+                                  thumbColor: Colors.white,
+                                  barHeight: 4.0,
+                                  thumbRadius: 7.0,
+                                  timeLabelLocation: TimeLabelLocation.sides,
+                                  timeLabelTextStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: height * 0.02,
+                                    fontWeight: FontWeight.normal,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.75,
+                                        ),
+                                        offset: const Offset(1, 2),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  timeLabelPadding: 5.0,
+                                  onSeek: (duration) {
+                                    audioProvider.seek(duration);
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        )
+                        : const Center(
+                          child: LinearProgressIndicator(
+                            color: Colors.white,
+                            backgroundColor: Colors.white24,
+                          ),
+                        ),
+              ),
+            ),
+          ),
+
+          // Player Controls - Previous, Play/Pause, Next
+          Opacity(
+            opacity: progressBarOpacity,
+            child: SizedBox(
+              width: width * 0.9,
+              height: buttonsHeight,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    onPressed: () async {
+                      debugPrint("Liked");
+                      audioProvider.likeCurrentSong();
+                      likedNotifier.value = !likedNotifier.value;
+                      String message =
+                          audioProvider.currentSong.liked
+                              ? "Added ${audioProvider.currentSong.name} to Favorites"
+                              : "Removed ${audioProvider.currentSong.name} from Favorites";
+                      BotToast.showText(
+                        text: message,
+                        duration: const Duration(seconds: 3),
+                        contentColor: Colors.black,
+                        textStyle: TextStyle(
+                          color: Colors.white,
+                          fontSize: height * 0.02,
+                        ),
+                      );
+                    },
+                    icon: Icon(
+                      audioProvider.currentSong.liked
+                          ? FluentIcons.liked
+                          : FluentIcons.unliked,
+                      size: height * 0.025,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          offset: const Offset(1, 2),
+                          blurRadius: 7,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(
+                    width: width * 0.5,
+                    child: _buildPlayerButtons(audioProvider),
+                  ),
+
+                  IconButton(
+                    onPressed: () async {
+                      Provider.of<AbstractAppStateProvider>(
+                        context,
+                        listen: false,
+                      ).miniPlayerController.animateToHeight(
+                        state: PanelState.min,
+                      );
+                    },
+                    icon: Icon(
+                      FluentIcons.minimize,
+                      color: Colors.white,
+                      size: height * 0.025,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          offset: const Offset(1, 2),
+                          blurRadius: 7,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

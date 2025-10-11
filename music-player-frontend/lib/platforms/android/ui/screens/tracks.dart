@@ -7,8 +7,6 @@ import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_component.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_drawer_widget.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_top_bar_widget.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/album_screen.dart';
@@ -33,7 +31,6 @@ class Tracks extends StatefulWidget {
 
 class _TracksState extends State<Tracks> {
   ValueNotifier<List<Song>> selected = ValueNotifier<List<Song>>([]);
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
@@ -41,35 +38,18 @@ class _TracksState extends State<Tracks> {
     var height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      key: _scaffoldKey,
-      // Add the key here
-      appBar: AppBarWidget(
-        title: 'Tracks',
-        leading: IconButton(
-          icon: const Icon(FluentIcons.menu, color: Colors.white),
-          tooltip: 'Open Drawer',
-          onPressed: () {
-            _scaffoldKey.currentState
-                ?.openDrawer(); // Open drawer using the key
-          },
-        ),
-      ),
-      drawer: const AndroidDrawerWidget(selectedIndex: 3),
       backgroundColor: Colors.transparent,
       body: GlassContainer(
         height: height,
         width: width,
-        color: Colors.black.withValues(alpha: 0.4),
+        color: Colors.black.withValues(alpha: 0.2),
         borderColor: Colors.transparent,
         blur: 45.0,
         borderWidth: 0.0,
         elevation: 3.0,
         shadowColor: Colors.black.withOpacity(0.20),
         padding: EdgeInsets.only(bottom: height * 0.01),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(height * 0.015),
-          topRight: Radius.circular(height * 0.015),
-        ),
+        borderRadius: BorderRadius.circular(height * 0.015),
         child: Consumer<SongProvider>(
           builder: (context, songProvider, child) {
             return Column(

@@ -7,6 +7,7 @@ import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class CustomGridTile extends AbstractCustomGridTile {
@@ -24,7 +25,6 @@ class CustomGridTile extends AbstractCustomGridTile {
   @override
   Widget buildGridTileContent(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final width = size.width;
     final height = size.height;
 
     return MouseRegion(
@@ -35,28 +35,9 @@ class CustomGridTile extends AbstractCustomGridTile {
         child: Hero(
           tag: entity is Song ? (entity as Song).path : entity.name,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(height * 0.015),
+            borderRadius: BorderRadius.circular(height * 0.01),
             child: ImageWidget(
               entity: entity,
-              hoveredChild: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: width * 0.035,
-                    height: width * 0.035,
-                    child: leftAction,
-                  ),
-                  Expanded(
-                    child: FittedBox(fit: BoxFit.fill, child: mainAction),
-                  ),
-                  SizedBox(
-                    width: width * 0.035,
-                    height: width * 0.035,
-                    child: rightAction,
-                  ),
-                ],
-              ),
               child:
                   isSelected
                       ? ClipRect(
@@ -75,17 +56,21 @@ class CustomGridTile extends AbstractCustomGridTile {
                       )
                       : Container(
                         alignment: Alignment.bottomCenter,
-                        padding: EdgeInsets.only(bottom: height * 0.005),
+                        padding: EdgeInsets.only(
+                          bottom: height * 0.001,
+                          left: height * 0.005,
+                          right: height * 0.005,
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            begin: FractionalOffset.center,
+                            begin: const FractionalOffset(0.5, 3 / 4),
                             end: FractionalOffset.bottomCenter,
                             colors: [
-                              Colors.black.withValues(alpha: 0.0),
-                              Colors.black.withValues(alpha: 0.5),
-                              Colors.black,
+                              Colors.black26.withValues(alpha: 0.0),
+                              Colors.black26.withValues(alpha: 0.5),
+                              Colors.black26.withValues(alpha: 0.75),
                             ],
-                            stops: const [0.0, 0.5, 1.0],
+                            stops: const [0.0, 0.5, 0.7],
                           ),
                         ),
                         child:
@@ -97,9 +82,9 @@ class CustomGridTile extends AbstractCustomGridTile {
                                   builder: (_, song, __) {
                                     return CustomTextScroll(
                                       text: entity.name,
-                                      style: Theme.of(
+                                      style: MusicPlayerTheme.getTheme(
                                         context,
-                                      ).textTheme.headlineMedium!.copyWith(
+                                      ).textTheme.titleSmall!.copyWith(
                                         color:
                                             song.path == (entity as Song).path
                                                 ? Colors.blue

@@ -14,45 +14,45 @@ class AppBarWidget extends AbstractAppBarWidget {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return GlassContainer(
-      height: kToolbarHeight,
       width: width,
-      color: Colors.black.withValues(alpha: 0.4),
+      color: Colors.black.withValues(alpha: 0.5),
       borderColor: Colors.transparent,
-      blur: 45.0,
+      blur: 0.0,
       borderWidth: 0.0,
-      elevation: 3.0,
-      shadowColor: Colors.black.withOpacity(0.20),
-      padding: EdgeInsets.only(bottom: height * 0.01),
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(height * 0.015),
-        topRight: Radius.circular(height * 0.015),
-      ),
+      elevation: 0.0,
       alignment: Alignment.center,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          leading ?? const SizedBox.shrink(),
-          const Spacer(),
-          Text(
-            title,
-            style: MusicPlayerTheme.getTheme(
-              context,
-            ).textTheme.titleLarge!.copyWith(
-              color: Colors.white,
-              fontSize: height * 0.025,
-              fontWeight: FontWeight.w600,
-            ),
+      isFrostedGlass: true,
+      frostedOpacity: 0.12,
+      child: SafeArea(
+        child: SizedBox(
+          height: kToolbarHeight,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              leading ?? const SizedBox.shrink(),
+              const Spacer(),
+              Text(
+                title,
+                style: MusicPlayerTheme.getTheme(
+                  context,
+                ).textTheme.titleLarge!.copyWith(
+                  color: Colors.white,
+                  fontSize: height * 0.025,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              IgnorePointer(
+                ignoring: true,
+                child: Opacity(
+                  opacity: 0,
+                  child: leading ?? const SizedBox.shrink(),
+                ),
+              ),
+            ],
           ),
-          const Spacer(),
-          IgnorePointer(
-            ignoring: true,
-            child: Opacity(
-              opacity: 0,
-              child: leading ?? const SizedBox.shrink(),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

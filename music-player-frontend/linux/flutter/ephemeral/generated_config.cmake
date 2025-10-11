@@ -12,10 +12,9 @@ set(FLUTTER_VERSION_BUILD 1 PARENT_SCOPE)
 list(APPEND FLUTTER_TOOL_ENVIRONMENT
   "FLUTTER_ROOT=/home/darius/dev/flutter"
   "PROJECT_DIR=/mnt/common-partition/Programming/music-player-project/music-player-frontend"
-  "DART_DEFINES=Zmx1dHRlci5pbnNwZWN0b3Iuc3RydWN0dXJlZEVycm9ycz10cnVl"
   "DART_OBFUSCATION=false"
   "TRACK_WIDGET_CREATION=true"
-  "TREE_SHAKE_ICONS=false"
+  "TREE_SHAKE_ICONS=true"
   "PACKAGE_CONFIG=/mnt/common-partition/Programming/music-player-project/music-player-frontend/.dart_tool/package_config.json"
-  "FLUTTER_TARGET=/mnt/common-partition/Programming/music-player-project/music-player-frontend/lib/main.dart"
+  "FLUTTER_TARGET=lib/main.dart"
 )

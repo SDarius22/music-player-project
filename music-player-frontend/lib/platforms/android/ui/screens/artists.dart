@@ -7,7 +7,6 @@ import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart'
 import 'package:music_player_frontend/platforms/android/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_component.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_drawer_widget.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/artist_screen.dart';
@@ -38,14 +37,6 @@ class _ArtistsState extends State<Artists> {
     var height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: MusicPlayerTheme.getTheme(context).colorScheme.surface,
-        title: Text(
-          'Music Player',
-          style: MusicPlayerTheme.getTheme(context).textTheme.bodyLarge,
-        ),
-      ),
-      drawer: const AndroidDrawerWidget(selectedIndex: 2),
       backgroundColor: Colors.transparent,
       body: GlassContainer(
         height: height,

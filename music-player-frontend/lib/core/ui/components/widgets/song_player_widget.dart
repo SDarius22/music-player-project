@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
-import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:provider/provider.dart';
 
@@ -97,7 +96,15 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
             ).miniPlayerController;
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          controller.animateToHeight(state: PanelState.min);
+          var animateTo =
+              Provider.of<AbstractAppStateProvider>(
+                        context,
+                        listen: false,
+                      ).opacityNotifier.value >
+                      0.8
+                  ? PanelState.min
+                  : PanelState.max;
+          controller.animateToHeight(state: animateTo);
         });
 
         return LayoutBuilder(
@@ -115,10 +122,12 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
               borderRadius: getBorderRadius(context),
               maxBorderRadius: getBorderRadius(context),
               controller: controller,
-              elevation: 3.0,
+              elevation: 0.0,
               curve: Curves.easeOut,
               tapToCollapse: false,
               duration: const Duration(milliseconds: 500),
+              backgroundColor: Colors.transparent,
+              backgroundBoxShadow: Colors.transparent,
               builder: (_, percentage) {
                 final bool minimized = percentage < 0.25;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -147,24 +156,10 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   Widget _buildMinimizedPlayer(double percentage) {
-    return GlassContainer(
-      color: Colors.black.withValues(alpha: 0.2),
-      borderColor: Colors.transparent,
-      borderWidth: 0.0,
-      blur: 45.0,
-      elevation: 3.0,
-      borderRadius: getBorderRadius(context),
-      child: buildMinimizedPlayerContent(context, percentage),
-    );
+    return buildMinimizedPlayerContent(context, percentage);
   }
 
   Widget _buildMaximizedPlayer(double percentage) {
-    return GlassContainer(
-      color: Colors.black.withValues(alpha: 0.1),
-      borderColor: Colors.transparent,
-      blur: 45.0,
-      borderRadius: getBorderRadius(context),
-      child: buildMaximizedPlayerContent(context, percentage),
-    );
+    return buildMaximizedPlayerContent(context, percentage);
   }
 }

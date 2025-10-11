@@ -10,6 +10,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   final SettingsService settingsService;
 
   final navigatorKey = GlobalKey<NavigatorState>();
+  final scaffoldKey = GlobalKey<ScaffoldState>();
   final gradientController = AnimatedMeshGradientController();
   final miniPlayerController = MiniPlayerController();
 
