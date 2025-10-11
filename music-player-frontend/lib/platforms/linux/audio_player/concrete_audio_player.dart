@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/audio_player/player_state.dart'
@@ -48,6 +50,9 @@ class ConcreteAudioPlayer extends AbstractAudioPlayer {
 
   @override
   Future<void> setSource(String source) async {
+    if (File(source).existsSync() == false) {
+      throw Exception('File does not exist: $source');
+    }
     await audioPlayer.setSource(DeviceFileSource(source));
   }
 

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
@@ -14,16 +12,6 @@ class SongService {
   SongService(this._songRepository, this._fileService, this._settingsService);
 
   get sortFields => _songRepository.sortFields;
-
-  Future<Song> addSong(String songPath) async {
-    if (songPath.isEmpty) {
-      throw ArgumentError("Song path cannot be empty");
-    }
-    Song newSong = Song();
-    var metadata = await _fileService.retrieveSong(songPath);
-    newSong.fromJson(metadata);
-    return _songRepository.saveSong(newSong);
-  }
 
   bool isInitialScanComplete() {
     return _settingsService.currentAppSettings.initialScanComplete;

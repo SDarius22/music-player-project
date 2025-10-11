@@ -39,6 +39,10 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
     throw UnimplementedError();
   }
 
+  BorderRadius getBorderRadius(BuildContext context) {
+    throw UnimplementedError();
+  }
+
   double getItemExtent(BuildContext context) {
     throw UnimplementedError();
   }
@@ -85,35 +89,57 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
         _getCoverArtImage(audioProvider.currentSong);
         final ValueNotifier<double> playerExpandProgress =
             ValueNotifier<double>(getMinHeight(context));
-        return MiniPlayer(
-          valueNotifier: playerExpandProgress,
-          minHeight: getMinHeight(context),
-          maxHeight: getMaxHeight(context),
-          minWidth: getMinWidth(context),
-          maxWidth: getMaxWidth(context),
-          borderRadius: BorderRadius.circular(
-            MediaQuery.of(context).size.height * 0.015,
-          ),
-          maxBorderRadius: BorderRadius.circular(
-            MediaQuery.of(context).size.height * 0.015,
-          ),
-          controller:
-              Provider.of<AbstractAppStateProvider>(
-                context,
-                listen: false,
-              ).miniPlayerController,
-          elevation: 3.0,
-          curve: Curves.easeOut,
-          tapToCollapse: false,
-          duration: const Duration(milliseconds: 500),
-          builder: (_, percentage) {
-            final bool minimized = percentage < 0.25;
 
-            if (minimized) {
-              return _buildMinimizedPlayer(percentage);
-            }
+        final controller =
+            Provider.of<AbstractAppStateProvider>(
+              context,
+              listen: false,
+            ).miniPlayerController;
 
-            return _buildMaximizedPlayer(percentage);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          controller.animateToHeight(state: PanelState.min);
+        });
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final minHeight = getMinHeight(context);
+            final maxHeight = getMaxHeight(context);
+            final minWidth = getMinWidth(context);
+            final maxWidth = getMaxWidth(context);
+            return MiniPlayer(
+              valueNotifier: playerExpandProgress,
+              minHeight: minHeight,
+              maxHeight: maxHeight,
+              minWidth: minWidth,
+              maxWidth: maxWidth,
+              borderRadius: getBorderRadius(context),
+              maxBorderRadius: getBorderRadius(context),
+              controller: controller,
+              elevation: 3.0,
+              curve: Curves.easeOut,
+              tapToCollapse: false,
+              duration: const Duration(milliseconds: 500),
+              builder: (_, percentage) {
+                final bool minimized = percentage < 0.25;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final appStateProvider =
+                      Provider.of<AbstractAppStateProvider>(
+                        context,
+                        listen: false,
+                      );
+                  final newOpacity = 1 - (percentage * 1.1).clamp(0.0, 1.0);
+                  if (appStateProvider.opacityNotifier.value != newOpacity) {
+                    appStateProvider.opacityNotifier.value = newOpacity;
+                  }
+                });
+
+                if (minimized) {
+                  return _buildMinimizedPlayer(percentage);
+                }
+
+                return _buildMaximizedPlayer(percentage);
+              },
+            );
           },
         );
       },
@@ -123,47 +149,21 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
   Widget _buildMinimizedPlayer(double percentage) {
     return GlassContainer(
       color: Colors.black.withValues(alpha: 0.2),
-      borderGradient: LinearGradient(
-        colors: [
-          Colors.white.withOpacity(0.60),
-          Colors.indigoAccent.withOpacity(0.6),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.circular(
-        MediaQuery.of(context).size.height * 0.015,
-      ),
+      borderColor: Colors.transparent,
+      borderWidth: 0.0,
       blur: 45.0,
-      borderWidth: 1.5,
       elevation: 3.0,
-      shadowColor: Colors.black.withOpacity(0.10),
+      borderRadius: getBorderRadius(context),
       child: buildMinimizedPlayerContent(context, percentage),
     );
   }
 
   Widget _buildMaximizedPlayer(double percentage) {
     return GlassContainer(
-      color: Colors.black.withOpacity(0.2),
-      borderGradient: LinearGradient(
-        colors: [
-          Colors.white.withOpacity(0.60),
-          Colors.indigoAccent.withOpacity(0.6),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.circular(
-        MediaQuery.of(context).size.height * 0.015,
-      ),
+      color: Colors.black.withValues(alpha: 0.1),
+      borderColor: Colors.transparent,
       blur: 45.0,
-      borderWidth: 1.5,
-      elevation: 3.0,
-      shadowColor: Colors.black.withOpacity(0.20),
-      padding: EdgeInsets.symmetric(
-        horizontal: MediaQuery.of(context).size.width * 0.01,
-        vertical: MediaQuery.of(context).size.height * 0.02,
-      ),
+      borderRadius: getBorderRadius(context),
       child: buildMaximizedPlayerContent(context, percentage),
     );
   }

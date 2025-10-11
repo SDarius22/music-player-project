@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/services/music_scanner_service.dart';
+import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
@@ -181,28 +181,13 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
           curve: Curves.easeInOut,
           alignment: Alignment.center,
           child: GlassContainer(
-            gradient: LinearGradient(
-              colors: [
-                Colors.black.withOpacity(0.40),
-                Colors.black.withOpacity(0.10),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderGradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.60),
-                Colors.indigoAccent.withOpacity(0.6),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              stops: const [0.0, 1.0],
-            ),
+            color: Colors.black.withOpacity(0.40),
+            borderColor: Colors.transparent,
             borderRadius: BorderRadius.circular(
               MediaQuery.of(context).size.height * 0.015,
             ),
             blur: 45.0,
-            borderWidth: 1.5,
+            borderWidth: 0.0,
             elevation: 3.0,
             shadowColor: Colors.black.withOpacity(0.20),
             alignment: Alignment.center,
@@ -267,7 +252,10 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                 ),
 
                 StreamBuilder(
-                  stream: context.read<MusicScannerService>().enrichMetadata(),
+                  stream:
+                      context
+                          .read<AbstractMusicScannerService>()
+                          .enrichMetadata(),
                   builder: (context, snapshot) {
                     debugPrint(
                       "Metadata enrichment progress: ${snapshot.data}",

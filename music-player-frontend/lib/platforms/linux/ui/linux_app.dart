@@ -17,12 +17,12 @@ import 'package:music_player_frontend/core/repository/playlist_song_repo.dart';
 import 'package:music_player_frontend/core/repository/queue_song_repo.dart';
 import 'package:music_player_frontend/core/repository/settings_repo.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
+import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
-import 'package:music_player_frontend/core/services/music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
@@ -30,6 +30,7 @@ import 'package:music_player_frontend/platforms/linux/audio_player/concrete_audi
 import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/services/linux_file_service.dart';
+import 'package:music_player_frontend/platforms/linux/services/music_scanner_service.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
 import 'package:provider/provider.dart';
@@ -85,7 +86,7 @@ class LinuxApp extends StatelessWidget {
                 context.read<SettingsService>(),
               ),
         ),
-        Provider<MusicScannerService>(
+        Provider<AbstractMusicScannerService>(
           create:
               (context) => MusicScannerService(
                 context.read<SongService>(),
@@ -123,7 +124,7 @@ class LinuxApp extends StatelessWidget {
           create:
               (context) => SongProvider(
                 context.read<SongService>(),
-                context.read<MusicScannerService>(),
+                context.read<AbstractMusicScannerService>(),
               ),
           lazy: false,
         ),

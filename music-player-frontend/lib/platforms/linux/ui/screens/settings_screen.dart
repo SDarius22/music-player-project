@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/create_or_import_screen.dart';
@@ -375,7 +375,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Spacer(),
                       ValueListenableBuilder(
                         valueListenable:
-                            Provider.of<AudioProvider>(
+                            Provider.of<AbstractAudioProvider>(
                               context,
                               listen: false,
                             ).playbackSpeedNotifier,
@@ -406,10 +406,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               mouseCursor: SystemMouseCursors.click,
                               value: value,
                               onChanged: (double value) {
-                                var audioProvider = Provider.of<AudioProvider>(
-                                  context,
-                                  listen: false,
-                                );
+                                var audioProvider =
+                                    Provider.of<AbstractAudioProvider>(
+                                      context,
+                                      listen: false,
+                                    );
                                 audioProvider.setPlaybackSpeed(value);
                               },
                             ),
@@ -449,7 +450,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Spacer(),
                       ValueListenableBuilder(
                         valueListenable:
-                            Provider.of<AudioProvider>(
+                            Provider.of<AbstractAudioProvider>(
                               context,
                               listen: false,
                             ).balanceNotifier,
@@ -485,10 +486,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ? "Right : ${value.toStringAsPrecision(2)}"
                                       : "Center",
                               onChanged: (double value) {
-                                var audioProvider = Provider.of<AudioProvider>(
-                                  context,
-                                  listen: false,
-                                );
+                                var audioProvider =
+                                    Provider.of<AbstractAudioProvider>(
+                                      context,
+                                      listen: false,
+                                    );
                                 audioProvider.setBalance(value);
                               },
                             ),

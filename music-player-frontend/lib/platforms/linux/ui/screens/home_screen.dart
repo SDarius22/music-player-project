@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/ui/components/animated_background.dart';
+import 'package:music_player_frontend/local_libs/scaffold_gradient/custom_scaffold.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_drawer_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_song_player_widget.dart';
@@ -22,10 +22,10 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CustomScaffold(
+      controller: context.read<AbstractAppStateProvider>().gradientController,
       appBar: const AppBarWidget(),
-      body: AnimatedBackground(
-        controller: context.read<AbstractAppStateProvider>().gradientController,
+      body: Container(
         padding: EdgeInsets.symmetric(
           horizontal: MediaQuery.of(context).size.width * 0.01,
           vertical: MediaQuery.of(context).size.width * 0.01,
@@ -38,30 +38,39 @@ class HomeScreen extends StatelessWidget {
                     MediaQuery.of(context).size.width * 0.01 +
                     MediaQuery.of(context).size.height * 0.1,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const LinuxDrawerWidget(),
-                  SizedBox(width: MediaQuery.of(context).size.width * 0.01),
-                  Theme(
-                    data: MusicPlayerTheme.getTheme(context),
-                    child: Expanded(
-                      child: HeroControllerScope(
-                        controller: MaterialApp.createMaterialHeroController(),
-                        child: Navigator(
-                          key:
-                              context
-                                  .read<AbstractAppStateProvider>()
-                                  .navigatorKey,
-                          // observers: [SecondNavigatorObserver()],
-                          onGenerateRoute: (settings) {
-                            return Tracks.route();
-                          },
+              child: ValueListenableBuilder(
+                valueListenable:
+                    context.read<AbstractAppStateProvider>().opacityNotifier,
+                builder: (context, opacityNotifier, child) {
+                  return AnimatedOpacity(
+                    opacity: opacityNotifier,
+                    duration: const Duration(milliseconds: 300),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const LinuxDrawerWidget(),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.01,
                         ),
-                      ),
+                        Theme(
+                          data: MusicPlayerTheme.getTheme(context),
+                          child: Expanded(
+                            child: Navigator(
+                              key:
+                                  context
+                                      .read<AbstractAppStateProvider>()
+                                      .navigatorKey,
+                              // observers: [SecondNavigatorObserver()],
+                              onGenerateRoute: (settings) {
+                                return Tracks.route();
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
             const LinuxSongPlayerWidget(),

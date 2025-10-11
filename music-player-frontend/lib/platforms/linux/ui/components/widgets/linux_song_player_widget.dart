@@ -59,6 +59,11 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
   }
 
   @override
+  BorderRadius getBorderRadius(BuildContext context) {
+    return BorderRadius.circular(MediaQuery.of(context).size.height * 0.015);
+  }
+
+  @override
   Widget buildMinimizedPlayerContent(BuildContext context, double percentage) {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
@@ -71,37 +76,22 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
       imageLeftMargin = 0;
     }
 
-    double minTopMargin = 0;
-    double maxTopMargin = height * 0.02;
-    double imageTopMargin =
-        lerpDouble(minTopMargin, maxTopMargin, percentage / 0.25) ?? 0.0;
-    if (imageTopMargin < 0) {
-      imageTopMargin = 0;
-    }
-
-    double minRadius = height * 0.015;
-    double maxRadius = height * 0.015;
-    double borderRadius = lerpDouble(maxRadius, minRadius, percentage) ?? 0.0;
-
     double normalized = (1.0 - (percentage / 0.25).clamp(0.0, 1.0));
     double progressBarOpacity = normalized;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           alignment: Alignment.center,
-          margin: EdgeInsets.only(
-            left: imageLeftMargin,
-            top: imageTopMargin,
-            bottom: imageTopMargin,
-          ),
-          padding: const EdgeInsets.all(1.5),
+          margin: EdgeInsets.only(left: imageLeftMargin),
+          padding: const EdgeInsets.all(1),
           child: AspectRatio(
             aspectRatio: 1.0,
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(borderRadius),
+                borderRadius: getBorderRadius(context),
                 image: DecorationImage(
                   fit: BoxFit.cover,
                   image: cachedCoverArt,
@@ -345,8 +335,8 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                                         ? snapshot.data as Duration
                                         : Duration.zero,
 
-                                progressBarColor: MusicPlayerTheme.darkPurple,
-                                baseBarColor: MusicPlayerTheme.darkPurple
+                                progressBarColor: appStateProvider.colors.first,
+                                baseBarColor: appStateProvider.colors.last
                                     .withValues(alpha: 0.25),
                                 thumbColor: Colors.white,
                                 barHeight: 4.0,

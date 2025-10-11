@@ -1,11 +1,13 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
+import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
+import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:provider/provider.dart';
 
@@ -103,19 +105,22 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                           );
                       for (int i = 0; i < selected.value.length; i++) {
                         Playlist playlist = selected.value[i];
+                        var songPaths =
+                            playlist.songsInOrder.map((e) => e.path).toList();
                         var fileName =
                             "${abstractAppStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
-                        // FileService.exportPlaylist(
-                        //   fileName,
-                        //   playlist.pathsInOrder,
-                        // );
+                        final fileService = Provider.of<FileService>(
+                          context,
+                          listen: false,
+                        );
+                        fileService.exportPlaylist(fileName, songPaths);
                       }
                     }
                     for (int i = 0; i < selected.value.length; i++) {
                       Playlist playlist = selected.value[i];
                       if (playlist.indestructible &&
                           playlist.name == 'Current Queue') {
-                        var audioProvider = Provider.of<AudioProvider>(
+                        var audioProvider = Provider.of<AbstractAudioProvider>(
                           context,
                           listen: false,
                         );
@@ -152,7 +157,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                     ),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
+                        return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError) {
                         debugPrint(snapshot.error.toString());
@@ -170,12 +175,20 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                       List<Playlist> items = snapshot.data ?? [];
                       Playlist queue = Playlist();
                       queue.name = "Current Queue";
-                      var audioProvider = Provider.of<AudioProvider>(
+                      var audioProvider = Provider.of<AbstractAudioProvider>(
                         context,
                         listen: false,
                       );
-                      // queue.pathsInOrder =
-                      //     audioProvider.currentAudioSettings.queue
+                      queue.playlistSongs.addAll(
+                        audioProvider.currentQueueSongs
+                            .map(
+                              (e) =>
+                                  PlaylistSong()
+                                    ..song.target = e.song.target
+                                    ..order = e.position.toInt(),
+                            )
+                            .toList(),
+                      );
                       queue.indestructible = true;
                       items.insert(0, queue);
                       return CustomScrollView(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
+import 'package:music_player_frontend/core/services/worker_service.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 
 abstract class AbstractAppStateProvider with ChangeNotifier {
@@ -15,8 +16,15 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   get appSettings => settingsService.currentAppSettings;
 
   List<String> appActions = [];
+  List<Color> colors = [
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.black26,
+    Colors.deepPurpleAccent,
+  ];
 
   ValueNotifier<bool> isPanelOpen = ValueNotifier(false);
+  ValueNotifier<double> opacityNotifier = ValueNotifier(1.0);
 
   AbstractAppStateProvider(this.audioProvider, this.settingsService) {
     audioProvider.playingNotifier.addListener(() async {
@@ -25,6 +33,11 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
       } else {
         gradientController.stop();
       }
+    });
+
+    audioProvider.currentSongNotifier.addListener(() async {
+      setColors();
+      notifyListeners();
     });
   }
 
@@ -46,21 +59,9 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  //
-  // Future<void> setColors() async {
-  //   debugPrint(
-  //     'Setting colors based on image, length: ${audioProvider.audioService.currentSong?.image?.length ?? 0}',
-  //   );
-  //   if (audioProvider.audioService.currentSong?.image == null) {
-  //     lightColor = MusicPlayerTheme.primaryPurple;
-  //     darkColor = MusicPlayerTheme.darkPurple;
-  //     return;
-  //   }
-  //   var colors = await WorkerService.extractColors(
-  //     audioProvider.audioService.currentSong?.image ?? logoImage,
-  //   );
-  //   lightColor = colors[0];
-  //   darkColor = colors[1];
-  //   debugPrint('Colors set: lightColor: $lightColor, darkColor: $darkColor');
-  // }
+  Future<void> setColors() async {
+    colors = await WorkerService.extractColors(
+      audioProvider.audioService.currentSong.coverArt,
+    );
+  }
 }

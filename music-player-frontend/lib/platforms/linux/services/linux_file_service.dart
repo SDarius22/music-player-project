@@ -9,7 +9,10 @@ import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
 class LinuxFileService extends FileService {
   @override
-  Future<List<File>> getAudioFiles(List<String> songPlaces) async {
+  Future<List<File>> getAudioFiles(List<String>? songPlaces) async {
+    if (songPlaces == null || songPlaces.isEmpty) {
+      return [];
+    }
     // Use a Queue for efficient directory traversal
     List<File> files = [];
     Queue<Directory> dirs = Queue<Directory>();
@@ -41,7 +44,7 @@ class LinuxFileService extends FileService {
   }
 
   @override
-  Future<Uint8List> getImage(String path) async {
+  Future<Uint8List> getImage(dynamic path) async {
     if (path.isEmpty) {
       return Constants.logoBytes;
     }

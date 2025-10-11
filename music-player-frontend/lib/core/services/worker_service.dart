@@ -13,29 +13,10 @@ class WorkerService {
       debugPrint("Image is empty, returning default colors");
       return [Colors.white, Colors.black];
     }
-    List<Color> result = [];
     DominantColors extractor = DominantColors(
       bytes: image,
-      dominantColorsCount: 2,
+      dominantColorsCount: 4,
     );
-    var colors = extractor.extractDominantColors();
-    if (colors.first.computeLuminance() > 0.15 &&
-        colors.last.computeLuminance() > 0.15) {
-      result.add(colors.first);
-      result.add(Colors.black);
-    } else if (colors.first.computeLuminance() < 0.15 &&
-        colors.last.computeLuminance() < 0.15) {
-      result.add(Colors.blue);
-      result.add(colors.first);
-    } else {
-      if (colors.first.computeLuminance() > 0.15) {
-        result.add(colors.first);
-        result.add(colors.last);
-      } else {
-        result.add(colors.last);
-        result.add(colors.first);
-      }
-    }
-    return result;
+    return extractor.extractDominantColors();
   }
 }

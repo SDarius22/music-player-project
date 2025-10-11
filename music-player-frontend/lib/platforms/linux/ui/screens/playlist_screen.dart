@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -37,11 +36,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   @override
   void initState() {
     super.initState();
-    songs =
-        widget.playlist.playlistSongs
-            .sorted((a, b) => a.order.compareTo(b.order))
-            .map((e) => e.song.target!)
-            .toList();
+    songs = widget.playlist.songsInOrder;
     debugPrint(
       "Loaded ${songs.length} songs from ${widget.playlist.playlistSongs.length} paths",
     );

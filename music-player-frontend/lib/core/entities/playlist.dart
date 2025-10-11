@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist_song.dart';
@@ -33,4 +34,10 @@ class Playlist implements BaseEntity {
   Uint8List get coverArt => imageBytes;
 
   final playlistSongs = ToMany<PlaylistSong>();
+
+  get songsInOrder =>
+      playlistSongs
+          .sorted((a, b) => a.order.compareTo(b.order))
+          .map((e) => e.song.target!)
+          .toList();
 }

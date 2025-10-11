@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class AnimatedBackground extends StatefulWidget {
@@ -51,32 +50,45 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
   Widget build(BuildContext context) {
     return Consumer<AbstractAppStateProvider>(
       builder: (context, appState, child) {
-        return AnimatedMeshGradient(
-          controller: widget.controller,
-          colors: const [
-            MusicPlayerTheme.primaryPurple,
-            Colors.black,
-            Color(0xFF0E0E0E),
-            MusicPlayerTheme.darkPurple,
-          ],
-          options: AnimatedMeshGradientOptions(
-            speed: 5,
-            grain: 0.1,
-            amplitude: 25,
-          ),
-          child: Container(
-            alignment: widget.alignment,
-            padding: widget.padding,
-            foregroundDecoration: widget.foregroundDecoration,
-            constraints: widget.constraints,
-            margin: widget.margin,
-            transform: widget.transform,
-            transformAlignment: widget.transformAlignment,
-            clipBehavior: widget.clipBehavior,
-            child: widget.child,
-          ),
+        return TweenAnimationBuilder<List<Color>>(
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeInOut,
+          tween: ColorListTween(begin: appState.colors, end: appState.colors),
+          builder: (context, colors, child) {
+            return AnimatedMeshGradient(
+              controller: widget.controller,
+              colors: colors,
+              options: AnimatedMeshGradientOptions(
+                speed: 5,
+                grain: 0.1,
+                amplitude: 25,
+              ),
+              child: Container(
+                alignment: widget.alignment,
+                padding: widget.padding,
+                foregroundDecoration: widget.foregroundDecoration,
+                constraints: widget.constraints,
+                margin: widget.margin,
+                transform: widget.transform,
+                transformAlignment: widget.transformAlignment,
+                clipBehavior: widget.clipBehavior,
+                child: widget.child,
+              ),
+            );
+          },
         );
       },
     );
+  }
+}
+
+class ColorListTween extends Tween<List<Color>> {
+  ColorListTween({required List<Color> begin, required List<Color> end})
+    : super(begin: begin, end: end);
+
+  @override
+  List<Color> lerp(double t) {
+    final length = begin!.length;
+    return List.generate(length, (i) => Color.lerp(begin![i], end![i], t)!);
   }
 }

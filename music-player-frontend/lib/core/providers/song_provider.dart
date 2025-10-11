@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
-import 'package:music_player_frontend/core/services/music_scanner_service.dart';
+import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class SongProvider with ChangeNotifier implements QueryableProvider {
   final SongService _songService;
-  final MusicScannerService _scannerService;
+  final AbstractMusicScannerService _scannerService;
 
   bool _isAscending = true;
   String _query = '';
@@ -37,9 +37,6 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
       // Mark scan as complete
       _songService.markInitialScanComplete();
-
-      // Start enriching metadata in background
-      // _enrichMetadataInBackground();
     } else {
       debugPrint("Initial scan already complete, loading from database");
     }
@@ -92,11 +89,6 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     songsFuture = Future(
       () => _songService.getSongs(_query, _sortField, _isAscending),
     );
-    notifyListeners();
-  }
-
-  void addSong(String songPath) {
-    _songService.addSong(songPath);
     notifyListeners();
   }
 
