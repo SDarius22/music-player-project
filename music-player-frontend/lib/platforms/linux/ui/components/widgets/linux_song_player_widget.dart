@@ -81,7 +81,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     double progressBarOpacity = normalized;
 
     return GlassContainer(
-      color: Colors.black.withValues(alpha: 0.2),
+      color: Colors.black.withValues(alpha: 0.4),
       borderColor: Colors.transparent,
       borderWidth: 0.0,
       blur: 45.0,
@@ -260,7 +260,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     }
 
     return GlassContainer(
-      color: Colors.black.withValues(alpha: 0.1),
+      color: Colors.black.withValues(alpha: 0.4),
       borderColor: Colors.transparent,
       blur: 45.0,
       borderRadius: getBorderRadius(context),
@@ -280,7 +280,6 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                     child: Container(
                       width: width * 0.3,
                       height: width * 0.3,
-                      margin: EdgeInsets.only(left: width * 0.01),
                       padding: EdgeInsets.symmetric(
                         horizontal: width * 0.01,
                         vertical: height * 0.01,
@@ -311,8 +310,10 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                     child: Container(
                       width: width * 0.3,
                       height: width * 0.3,
-                      margin: EdgeInsets.only(right: width * 0.01),
-                      padding: EdgeInsets.symmetric(vertical: height * 0.01),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * 0.01,
+                        vertical: height * 0.01,
+                      ),
                       child: QueueTab(
                         itemScrollController: itemScrollController,
                       ),

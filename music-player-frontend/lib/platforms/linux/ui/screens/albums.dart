@@ -42,19 +42,12 @@ class _AlbumsState extends State<Albums> {
         height: height,
         width: width,
         color: Colors.black.withValues(alpha: 0.4),
-        borderGradient: LinearGradient(
-          colors: [
-            Colors.white.withOpacity(0.60),
-            Colors.indigoAccent.withOpacity(0.6),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        borderColor: Colors.transparent,
         borderRadius: BorderRadius.circular(
           MediaQuery.of(context).size.height * 0.015,
         ),
         blur: 45.0,
-        borderWidth: 1.5,
+        borderWidth: 0.0,
         elevation: 3.0,
         shadowColor: Colors.black.withOpacity(0.20),
         padding: EdgeInsets.only(bottom: height * 0.01),

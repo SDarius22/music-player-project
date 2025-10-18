@@ -36,10 +36,7 @@ class CustomListTile extends AbstractCustomListTile {
         onLongPress: onLongPress,
         child: HoverContainer(
           hoverColor: Theme.of(context).hoverColor,
-          padding: EdgeInsets.symmetric(
-            horizontal: width * 0.01,
-            vertical: height * 0.01,
-          ),
+          padding: EdgeInsets.symmetric(vertical: height * 0.01),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,

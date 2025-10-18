@@ -181,7 +181,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
           curve: Curves.easeInOut,
           alignment: Alignment.center,
           child: GlassContainer(
-            color: Colors.black.withOpacity(0.40),
+            color: Colors.black.withValues(alpha: 0.4),
             borderColor: Colors.transparent,
             borderRadius: BorderRadius.circular(
               MediaQuery.of(context).size.height * 0.015,
@@ -190,8 +190,6 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
             borderWidth: 0.0,
             elevation: 3.0,
             shadowColor: Colors.black.withOpacity(0.20),
-            alignment: Alignment.center,
-            shape: BoxShape.rectangle,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,

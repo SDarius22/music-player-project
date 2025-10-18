@@ -8,6 +8,7 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_audio_pro
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/grid_component.dart';
 import 'package:provider/provider.dart';
 
@@ -50,16 +51,19 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
     var smallSize = height * 0.015;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Container(
-        width: width,
+      body: GlassContainer(
         height: height,
-        padding: EdgeInsets.only(
-          top: height * 0.02,
-          left: width * 0.01,
-          right: width * 0.01,
-          bottom: height * 0.02,
+        width: width,
+        color: Colors.black.withValues(alpha: 0.4),
+        borderColor: Colors.transparent,
+        borderRadius: BorderRadius.circular(
+          MediaQuery.of(context).size.height * 0.015,
         ),
-        alignment: Alignment.center,
+        blur: 45.0,
+        borderWidth: 0.0,
+        elevation: 3.0,
+        shadowColor: Colors.black.withOpacity(0.20),
+        padding: EdgeInsets.only(bottom: height * 0.01),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -18,10 +18,10 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
 
   List<String> appActions = [];
   List<Color> colors = [
-    Colors.purple,
-    Colors.deepPurple,
+    Colors.black,
+    Colors.black12,
     Colors.black26,
-    Colors.deepPurpleAccent,
+    Colors.black38,
   ];
 
   ValueNotifier<bool> isPanelOpen = ValueNotifier(false);

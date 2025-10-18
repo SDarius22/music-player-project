@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist_song.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
@@ -35,7 +36,7 @@ class Playlist implements BaseEntity {
 
   final playlistSongs = ToMany<PlaylistSong>();
 
-  get songsInOrder =>
+  List<Song> get songsInOrder =>
       playlistSongs
           .sorted((a, b) => a.order.compareTo(b.order))
           .map((e) => e.song.target!)

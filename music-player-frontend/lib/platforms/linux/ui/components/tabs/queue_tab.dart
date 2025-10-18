@@ -22,7 +22,7 @@ class QueueTab extends AbstractQueueTab {
         controller: itemScrollController,
         slivers: [
           SliverPadding(
-            padding: EdgeInsets.only(right: width * 0.01, left: width * 0.01),
+            padding: EdgeInsets.only(right: width * 0.01),
             sliver: ListComponent(
               items:
                   Provider.of<AbstractAudioProvider>(

@@ -39,22 +39,15 @@ class _ArtistScreenState extends State<ArtistScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GlassContainer(
-        width: width,
         height: height,
+        width: width,
         color: Colors.black.withValues(alpha: 0.4),
-        borderGradient: LinearGradient(
-          colors: [
-            Colors.white.withOpacity(0.60),
-            Colors.indigoAccent.withOpacity(0.6),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        borderColor: Colors.transparent,
         borderRadius: BorderRadius.circular(
           MediaQuery.of(context).size.height * 0.015,
         ),
         blur: 45.0,
-        borderWidth: 1.5,
+        borderWidth: 0.0,
         elevation: 3.0,
         shadowColor: Colors.black.withOpacity(0.20),
         padding: EdgeInsets.only(bottom: height * 0.01),
@@ -180,34 +173,21 @@ class _ArtistScreenState extends State<ArtistScreen> {
                         bottom: height * 0.025,
                         right: width * 0.05,
                       ),
-                      padding: EdgeInsets.only(
-                        right: width * 0.01,
-                        top: height * 0.01,
-                        bottom: height * 0.01,
-                      ),
                       color: Colors.black.withValues(alpha: 0.4),
-                      borderGradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.60),
-                          Colors.indigoAccent.withOpacity(0.6),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      borderColor: Colors.transparent,
                       borderRadius: BorderRadius.circular(
                         MediaQuery.of(context).size.height * 0.015,
                       ),
                       blur: 45.0,
-                      borderWidth: 1.5,
+                      borderWidth: 0.0,
                       elevation: 3.0,
                       shadowColor: Colors.black.withOpacity(0.20),
-                      isFrostedGlass: true,
-                      frostedOpacity: 0.15,
                       child: CustomScrollView(
                         slivers: [
                           SliverPadding(
                             padding: EdgeInsets.symmetric(
                               vertical: height * 0.01,
+                              horizontal: width * 0.01,
                             ),
                             sliver: ListComponent(
                               items: widget.artist.songs,

@@ -1,4 +1,5 @@
 import 'package:after_layout/after_layout.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -33,6 +34,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   void _routeUser(BuildContext context) async {
+    appWindow.maximize();
     var abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
       context,
       listen: false,

@@ -12,6 +12,7 @@ import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:provider/provider.dart';
@@ -69,14 +70,15 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     if (paths.isNotEmpty) {
       if (widget.import) {
         var songProvider = Provider.of<SongProvider>(context, listen: false);
-        // selected.value = paths.map((path) {
-        //   var song = songProvider.getSongContaining(path);
-        //   if (song != null) {
-        //     return song as Song;
-        //   } else {
-        //     return;
-        //   }
-        // }).toList();
+        selected.value =
+            paths
+                .map((path) => songProvider.getSongContaining(path))
+                .whereType<Song>()
+                .toList();
+        coverArt.value =
+            selected.value.isNotEmpty
+                ? selected.value.first.coverArt
+                : Constants.logoBytes;
       } else {
         selected.value = List.from(paths);
       }
@@ -98,16 +100,19 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     var smallSize = height * 0.015;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Container(
-        width: width,
+      body: GlassContainer(
         height: height,
-        padding: EdgeInsets.only(
-          top: height * 0.02,
-          left: width * 0.01,
-          right: width * 0.01,
-          bottom: height * 0.125,
+        width: width,
+        color: Colors.black.withValues(alpha: 0.4),
+        borderColor: Colors.transparent,
+        borderRadius: BorderRadius.circular(
+          MediaQuery.of(context).size.height * 0.015,
         ),
-        alignment: Alignment.center,
+        blur: 45.0,
+        borderWidth: 0.0,
+        elevation: 3.0,
+        shadowColor: Colors.black.withOpacity(0.20),
+        padding: EdgeInsets.only(bottom: height * 0.01),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -267,7 +272,8 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                           IconButton(
                                             onPressed: () {
                                               debugPrint("Remove cover art");
-                                              coverArt.value = null;
+                                              coverArt.value =
+                                                  Constants.logoBytes;
                                             },
                                             icon: Icon(
                                               FluentIcons.trash,
@@ -279,11 +285,11 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                       ),
                                     );
                                   }
-                                  var value = values[1] as List<String>;
+                                  var selectedSongs = values[1] as List<Song>;
                                   return ImageWidget(
                                     imageBytes:
-                                        value.isNotEmpty
-                                            ? (value.first as Song).coverArt
+                                        selectedSongs.isNotEmpty
+                                            ? (selectedSongs.first).coverArt
                                             : Constants.logoBytes,
                                     hoveredChild: IconButton(
                                       onPressed: () async {
@@ -460,7 +466,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                     () => songProvider.getSongs(
                                       search,
                                       "Name",
-                                      false,
+                                      true,
                                     ),
                                   ),
                                   builder: (context, snapshot) {

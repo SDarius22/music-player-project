@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/local_libs/scaffold_gradient/custom_scaffold.dart';
+import 'package:music_player_frontend/local_libs/scaffold_gradient/glass_animated_scaffold.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_drawer_widget.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_song_player_widget.dart';
@@ -22,7 +22,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScaffold(
+    return GlassAnimatedScaffold(
       controller: context.read<AbstractAppStateProvider>().gradientController,
       appBar: const AppBarWidget(),
       body: Container(
@@ -55,15 +55,19 @@ class HomeScreen extends StatelessWidget {
                         Theme(
                           data: MusicPlayerTheme.getTheme(context),
                           child: Expanded(
-                            child: Navigator(
-                              key:
-                                  context
-                                      .read<AbstractAppStateProvider>()
-                                      .navigatorKey,
-                              // observers: [SecondNavigatorObserver()],
-                              onGenerateRoute: (settings) {
-                                return Tracks.route();
-                              },
+                            child: HeroControllerScope(
+                              controller:
+                                  MaterialApp.createMaterialHeroController(),
+                              child: Navigator(
+                                key:
+                                    context
+                                        .read<AbstractAppStateProvider>()
+                                        .navigatorKey,
+                                // observers: [SecondNavigatorObserver()],
+                                onGenerateRoute: (settings) {
+                                  return Tracks.route();
+                                },
+                              ),
                             ),
                           ),
                         ),
