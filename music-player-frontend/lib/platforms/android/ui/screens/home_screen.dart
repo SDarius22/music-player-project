@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/scaffold_gradient/glass_animated_scaffold.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_nav_bar.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_song_player_widget.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_top_bar_widget.dart';
+import 'package:music_player_frontend/platforms/android/ui/screens/settings_screen.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/tracks.dart';
 import 'package:provider/provider.dart';
 
@@ -26,7 +28,22 @@ class HomeScreen extends StatelessWidget {
       controller: context.read<AbstractAppStateProvider>().gradientController,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      appBar: const AppBarWidget(title: "Music"),
+      appBar: AppBarWidget(
+        title: "Music Player",
+        actions: [
+          IconButton(
+            icon: const Icon(FluentIcons.settings),
+            color: Colors.white,
+            onPressed: () {
+              context
+                  .read<AbstractAppStateProvider>()
+                  .navigatorKey
+                  .currentState
+                  ?.push(SettingsScreen.route());
+            },
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           ValueListenableBuilder(

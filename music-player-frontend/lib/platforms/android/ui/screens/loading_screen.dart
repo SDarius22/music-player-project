@@ -37,7 +37,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       Permission.audio,
       Permission.storage,
     ].request();
-    Provider.of<SongProvider>(context, listen: false).initialize([]);
+    await Provider.of<SongProvider>(context, listen: false).initialize([]);
     Navigator.pushReplacement(context, HomeScreen.route());
   }
 

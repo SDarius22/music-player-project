@@ -58,7 +58,7 @@ class MusicScannerService implements AbstractMusicScannerService {
           ..path = songModel.data
           ..lyricsPath = _fileService.getLyricsPath(songModel.data)
           ..name = songModel.title
-          ..duration = songModel.duration ?? 0
+          ..duration = (songModel.duration ?? 0) ~/ 1000
           ..trackNumber = songModel.track ?? 0
           ..discNumber = -1
           ..year = -1

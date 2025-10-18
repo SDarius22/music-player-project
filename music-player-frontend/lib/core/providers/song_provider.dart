@@ -23,6 +23,8 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   @override
   get sortFields => _songService.sortFields;
 
+  get totalSongsCount => _songService.getSongCount();
+
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
 
@@ -42,12 +44,17 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     }
 
     // Load songs from database
-    refreshSongs();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      refreshSongs();
+    });
     _isInitialized = true;
   }
 
   // Refresh songs from database with current filters
   void refreshSongs() {
+    debugPrint(
+      "Refreshing songs with query '$_query', sortField '$_sortField', isAscending '$_isAscending'",
+    );
     songsFuture = Future(
       () => _songService.getSongs(_query, _sortField, _isAscending),
     );

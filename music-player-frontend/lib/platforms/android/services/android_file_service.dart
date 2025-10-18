@@ -22,7 +22,7 @@ class AndroidFileService extends FileService {
 
   @override
   Future<Uint8List> getImage(dynamic path) async {
-    return await audioQuery.queryArtwork(path, ArtworkType.AUDIO) ??
+    return await audioQuery.queryArtwork(path, ArtworkType.AUDIO, size: 1024) ??
         Constants.logoBytes;
   }
 

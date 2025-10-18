@@ -79,7 +79,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
 
-    double minLeftMargin = width * 0.01;
+    double minLeftMargin = 0.0;
     double maxLeftMargin = width * 0.05;
     double imageLeftMargin =
         lerpDouble(minLeftMargin, maxLeftMargin, percentage / 0.45) ?? 0.0;
@@ -119,7 +119,6 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
               top: imageTopMargin,
               bottom: imageTopMargin,
             ),
-            padding: const EdgeInsets.all(1.5),
             child: AspectRatio(
               aspectRatio: 1.0,
               child: Container(

@@ -29,6 +29,10 @@ class SongRepository {
     return songs;
   }
 
+  int getSongCount() {
+    return _songBox.count();
+  }
+
   Song getSongByPath(String path) {
     try {
       return _songBox.query(Song_.path.equals(path)).build().findUnique()!;

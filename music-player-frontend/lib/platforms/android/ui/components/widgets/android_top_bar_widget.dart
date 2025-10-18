@@ -9,7 +9,12 @@ class AppBarWidget extends AbstractAppBarWidget {
   final String title;
   final Widget? leading;
 
-  const AppBarWidget({super.key, required this.title, this.leading});
+  const AppBarWidget({
+    super.key,
+    required this.title,
+    this.leading,
+    super.actions,
+  });
 
   @override
   Widget buildAppBar(BuildContext context) {
@@ -22,44 +27,34 @@ class AppBarWidget extends AbstractAppBarWidget {
           duration: const Duration(milliseconds: 100),
           opacity: appBarOpacity,
           child: GlassContainer(
+            height: MediaQuery.of(context).padding.top + kToolbarHeight,
             width: width,
-            color: Colors.black.withValues(alpha: 0.9),
+            color: Colors.black.withValues(alpha: 0.4),
             borderColor: Colors.transparent,
-            blur: 0.0,
+            blur: 45.0,
             borderWidth: 0.0,
             elevation: 0.0,
             alignment: Alignment.center,
-            isFrostedGlass: true,
-            frostedOpacity: 0.12,
             child: SafeArea(
-              child: SizedBox(
-                height: kToolbarHeight,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    leading ?? const SizedBox.shrink(),
-                    const Spacer(),
-                    Text(
-                      title,
-                      style: MusicPlayerTheme.getTheme(
-                        context,
-                      ).textTheme.titleLarge!.copyWith(
-                        color: Colors.white,
-                        fontSize: height * 0.025,
-                        fontWeight: FontWeight.w600,
-                      ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (leading != null) leading!,
+                  SizedBox(width: width * 0.025),
+                  Text(
+                    title,
+                    style: MusicPlayerTheme.getTheme(
+                      context,
+                    ).textTheme.titleLarge!.copyWith(
+                      color: Colors.white,
+                      fontSize: height * 0.025,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const Spacer(),
-                    IgnorePointer(
-                      ignoring: true,
-                      child: Opacity(
-                        opacity: 0,
-                        child: leading ?? const SizedBox.shrink(),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const Spacer(),
+                  Row(mainAxisSize: MainAxisSize.min, children: actions),
+                ],
               ),
             ),
           ),

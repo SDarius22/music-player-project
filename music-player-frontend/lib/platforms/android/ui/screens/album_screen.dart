@@ -143,135 +143,123 @@ class _AlbumScreenState extends State<AlbumScreen> {
               ),
             ),
             Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Hero(
-                            tag: widget.album.name,
-                            child: Container(
-                              height: height * 0.5,
-                              width: height * 0.5,
-                              padding: EdgeInsets.only(bottom: height * 0.01),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(
-                                  MediaQuery.of(context).size.height * 0.015,
-                                ),
-                                child: ImageWidget(
-                                  entity: widget.album,
-                                  // path: base64Encode(widget.album.coverArt),
-                                  // type: ImageWidgetType.bytes,
-                                ),
-                              ),
-                            ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Hero(
+                      tag: widget.album.name,
+                      child: Container(
+                        height: height * 0.5,
+                        width: height * 0.5,
+                        padding: EdgeInsets.only(bottom: height * 0.01),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            MediaQuery.of(context).size.height * 0.015,
                           ),
-                          Text(
-                            widget.album.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: boldSize,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: ImageWidget(
+                            entity: widget.album,
+                            // path: base64Encode(widget.album.coverArt),
+                            // type: ImageWidgetType.bytes,
                           ),
-                          SizedBox(height: height * 0.005),
-                          Text(
-                            widget.album.songs.first.artist.target?.name ??
-                                'Unknown Artist',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: normalSize,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: height * 0.005),
-                          Text(
-                            "${widget.album.songs.length} Songs | ${Duration(seconds: widget.album.duration).pretty()}",
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: normalSize,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: GlassContainer(
-                      margin: EdgeInsets.only(
-                        top: height * 0.025,
-                        bottom: height * 0.025,
-                        right: width * 0.05,
-                      ),
-                      padding: EdgeInsets.only(
-                        right: width * 0.01,
-                        top: height * 0.01,
-                        bottom: height * 0.01,
-                      ),
-                      color: Colors.black.withValues(alpha: 0.4),
-                      borderGradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.60),
-                          Colors.indigoAccent.withOpacity(0.6),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(
-                        MediaQuery.of(context).size.height * 0.015,
-                      ),
-                      blur: 45.0,
-                      borderWidth: 1.5,
-                      elevation: 3.0,
-                      shadowColor: Colors.black.withOpacity(0.20),
-                      isFrostedGlass: true,
-                      frostedOpacity: 0.15,
-                      child: CustomScrollView(
-                        slivers: [
-                          SliverPadding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: height * 0.01,
-                            ),
-                            sliver: ListComponent(
-                              items: widget.album.songs,
-                              itemExtent: height * 0.1,
-                              isSelected: (entity) {
-                                return false;
-                              },
-                              onTap: (entity) async {
-                                debugPrint("Tapped on ${entity.name}");
-                                var audioProvider = Provider.of<AudioProvider>(
-                                  context,
-                                  listen: false,
-                                );
-                                audioProvider.setQueue(widget.album.songs);
-                                await audioProvider.setCurrentSong(
-                                  (entity as Song),
-                                );
-                              },
-                              onLongPress: (entity) {
-                                debugPrint("Long pressed on ${entity.name}");
-                                // Show context menu or options
-                              },
-                            ),
-                          ),
-                        ],
+                    Text(
+                      widget.album.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: boldSize,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: height * 0.005),
+                    Text(
+                      widget.album.songs.first.artist.target?.name ??
+                          'Unknown Artist',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: normalSize,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: height * 0.005),
+                    Text(
+                      "${widget.album.songs.length} Songs | ${Duration(seconds: widget.album.duration).pretty()}",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: normalSize,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: GlassContainer(
+                margin: EdgeInsets.only(
+                  top: height * 0.025,
+                  bottom: height * 0.025,
+                  right: width * 0.05,
+                ),
+                padding: EdgeInsets.only(
+                  right: width * 0.01,
+                  top: height * 0.01,
+                  bottom: height * 0.01,
+                ),
+                color: Colors.black.withValues(alpha: 0.4),
+                borderGradient: LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.60),
+                    Colors.indigoAccent.withOpacity(0.6),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(
+                  MediaQuery.of(context).size.height * 0.015,
+                ),
+                blur: 45.0,
+                borderWidth: 1.5,
+                elevation: 3.0,
+                shadowColor: Colors.black.withOpacity(0.20),
+                isFrostedGlass: true,
+                frostedOpacity: 0.15,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(vertical: height * 0.01),
+                      sliver: ListComponent(
+                        items: widget.album.songs,
+                        itemExtent: height * 0.1,
+                        isSelected: (entity) {
+                          return false;
+                        },
+                        onTap: (entity) async {
+                          debugPrint("Tapped on ${entity.name}");
+                          var audioProvider = Provider.of<AudioProvider>(
+                            context,
+                            listen: false,
+                          );
+                          audioProvider.setQueue(widget.album.songs);
+                          await audioProvider.setCurrentSong((entity as Song));
+                        },
+                        onLongPress: (entity) {
+                          debugPrint("Long pressed on ${entity.name}");
+                          // Show context menu or options
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

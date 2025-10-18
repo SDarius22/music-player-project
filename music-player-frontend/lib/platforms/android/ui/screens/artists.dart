@@ -38,81 +38,108 @@ class _ArtistsState extends State<Artists> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: GlassContainer(
-        height: height,
-        width: width,
-        color: Colors.black.withValues(alpha: 0.4),
-        borderGradient: LinearGradient(
-          colors: [
-            Colors.white.withOpacity(0.60),
-            Colors.indigoAccent.withOpacity(0.6),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(
-          MediaQuery.of(context).size.height * 0.015,
-        ),
-        blur: 45.0,
-        borderWidth: 1.5,
-        elevation: 3.0,
-        shadowColor: Colors.black.withOpacity(0.20),
-        padding: EdgeInsets.only(bottom: height * 0.01),
-        child: Consumer<ArtistProvider>(
-          builder: (context, artistProvider, child) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  height: height * 0.065,
-                  width: width,
-                  padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-                  child: LinuxSearchHeader(
-                    title: 'Artists',
-                    provider: artistProvider,
+      body: SafeArea(
+        child: GlassContainer(
+          height: height,
+          width: width,
+          color: Colors.black.withValues(alpha: 0.4),
+          borderColor: Colors.transparent,
+          blur: 45.0,
+          borderWidth: 0.0,
+          elevation: 3.0,
+          shadowColor: Colors.black.withOpacity(0.20),
+          padding: EdgeInsets.only(bottom: height * 0.01),
+          margin: EdgeInsets.all(height * 0.01),
+          borderRadius: BorderRadius.circular(height * 0.015),
+          child: Consumer<ArtistProvider>(
+            builder: (context, artistProvider, child) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    height: height * 0.065,
+                    width: width,
+                    padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+                    child: LinuxSearchHeader(
+                      title: 'Artists',
+                      provider: artistProvider,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: FutureBuilder(
-                    future: artistProvider.artistsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                        debugPrint(snapshot.error.toString());
-                        debugPrintStack();
-                        return Center(
-                          child: Text(
-                            "Error loading artists",
-                            style: MusicPlayerTheme.getTheme(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(color: Colors.red),
-                          ),
-                        );
-                      }
-                      debugPrint(
-                        "Artists loaded: ${snapshot.data?.length ?? 0}",
-                      );
-                      return CustomScrollView(
-                        slivers: [
-                          SliverPadding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.01,
-                              right: width * 0.01,
+                  Expanded(
+                    child: FutureBuilder(
+                      future: artistProvider.artistsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          debugPrint(snapshot.error.toString());
+                          debugPrintStack();
+                          return Center(
+                            child: Text(
+                              "Error loading artists",
+                              style: MusicPlayerTheme.getTheme(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: Colors.red),
                             ),
-                            sliver: ValueListenableBuilder(
-                              valueListenable: selected,
-                              builder: (_, value, __) {
-                                return GridComponent(
-                                  items: snapshot.data ?? [],
-                                  isSelected: (entity) {
-                                    return value.contains(entity);
-                                  },
-                                  onTap: (entity) async {
-                                    if (entity is Artist) {
-                                      if (selected.value.isNotEmpty) {
+                          );
+                        }
+                        debugPrint(
+                          "Artists loaded: ${snapshot.data?.length ?? 0}",
+                        );
+                        return CustomScrollView(
+                          slivers: [
+                            SliverPadding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.01,
+                                right: width * 0.01,
+                              ),
+                              sliver: ValueListenableBuilder(
+                                valueListenable: selected,
+                                builder: (_, value, __) {
+                                  return GridComponent(
+                                    items: snapshot.data ?? [],
+                                    isSelected: (entity) {
+                                      return value.contains(entity);
+                                    },
+                                    onTap: (entity) async {
+                                      if (entity is Artist) {
+                                        if (selected.value.isNotEmpty) {
+                                          if (selected.value.contains(entity)) {
+                                            selected.value = List<Artist>.from(
+                                              selected.value,
+                                            )..remove(entity);
+                                          } else {
+                                            selected.value = List<Artist>.from(
+                                              selected.value,
+                                            )..add(entity);
+                                          }
+                                          return;
+                                        }
+                                        var abstractAppStateProvider =
+                                            Provider.of<
+                                              AbstractAppStateProvider
+                                            >(context, listen: false);
+                                        abstractAppStateProvider
+                                            .navigatorKey
+                                            .currentState!
+                                            .push(
+                                              ArtistScreen.route(
+                                                artist: entity,
+                                              ),
+                                            );
+                                      } else {
+                                        debugPrint("Entity is not an Artist");
+                                      }
+                                    },
+                                    onLongPress: (entity) {
+                                      debugPrint("long pressed ${entity.name}");
+                                      if (entity is Artist) {
                                         if (selected.value.contains(entity)) {
                                           selected.value = List<Artist>.from(
                                             selected.value,
@@ -122,174 +149,148 @@ class _ArtistsState extends State<Artists> {
                                             selected.value,
                                           )..add(entity);
                                         }
-                                        return;
                                       }
-                                      var abstractAppStateProvider =
-                                          Provider.of<AbstractAppStateProvider>(
-                                            context,
-                                            listen: false,
-                                          );
-                                      abstractAppStateProvider
-                                          .navigatorKey
-                                          .currentState!
-                                          .push(
-                                            ArtistScreen.route(artist: entity),
-                                          );
-                                    } else {
-                                      debugPrint("Entity is not an Artist");
-                                    }
-                                  },
-                                  onLongPress: (entity) {
-                                    debugPrint("long pressed ${entity.name}");
-                                    if (entity is Artist) {
+                                    },
+                                    buildLeftAction: (entity) {
                                       if (selected.value.contains(entity)) {
-                                        selected.value = List<Artist>.from(
-                                          selected.value,
-                                        )..remove(entity);
-                                      } else {
-                                        selected.value = List<Artist>.from(
-                                          selected.value,
-                                        )..add(entity);
+                                        return const SizedBox.shrink();
                                       }
-                                    }
-                                  },
-                                  buildLeftAction: (entity) {
-                                    if (selected.value.contains(entity)) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return IconButton(
-                                      icon: Icon(
-                                        FluentIcons.play,
-                                        color: Colors.white,
-                                        size: height * 0.025,
-                                      ),
-                                      onPressed: () async {
-                                        debugPrint(
-                                          "Playing artist ${entity.name}",
-                                        );
-                                        if (entity is! Artist) {
-                                          debugPrint("Entity is not an Artist");
-                                          return;
-                                        }
-                                        Artist artist = entity;
-                                        var audioProvider =
-                                            Provider.of<AudioProvider>(
-                                              context,
-                                              listen: false,
+                                      return IconButton(
+                                        icon: Icon(
+                                          FluentIcons.play,
+                                          color: Colors.white,
+                                          size: height * 0.025,
+                                        ),
+                                        onPressed: () async {
+                                          debugPrint(
+                                            "Playing artist ${entity.name}",
+                                          );
+                                          if (entity is! Artist) {
+                                            debugPrint(
+                                              "Entity is not an Artist",
                                             );
-                                        audioProvider.setQueue(artist.songs);
-                                        await audioProvider.setCurrentSong(
-                                          artist.songs.first,
+                                            return;
+                                          }
+                                          Artist artist = entity;
+                                          var audioProvider =
+                                              Provider.of<AudioProvider>(
+                                                context,
+                                                listen: false,
+                                              );
+                                          audioProvider.setQueue(artist.songs);
+                                          await audioProvider.setCurrentSong(
+                                            artist.songs.first,
+                                          );
+                                        },
+                                      );
+                                    },
+                                    buildMainAction: (entity) {
+                                      if (selected.value.contains(entity)) {
+                                        return Icon(
+                                          FluentIcons.checkCircleOn,
+                                          color: Colors.white,
                                         );
-                                      },
-                                    );
-                                  },
-                                  buildMainAction: (entity) {
-                                    if (selected.value.contains(entity)) {
+                                      }
+                                      if (selected.value.isNotEmpty) {
+                                        return Icon(
+                                          FluentIcons.checkCircleOff,
+                                          color: Colors.white,
+                                        );
+                                      }
                                       return Icon(
-                                        FluentIcons.checkCircleOn,
-                                        color: Colors.white,
-                                      );
-                                    }
-                                    if (selected.value.isNotEmpty) {
-                                      return Icon(
-                                        FluentIcons.checkCircleOff,
-                                        color: Colors.white,
-                                      );
-                                    }
-                                    return Icon(
-                                      FluentIcons.open,
-                                      color: Colors.white,
-                                      size: height * 0.03,
-                                    );
-                                  },
-                                  buildRightAction: (entity) {
-                                    if (selected.value.contains(entity)) {
-                                      return SizedBox.shrink();
-                                    }
-                                    return PopupMenuButton<String>(
-                                      icon: Icon(
-                                        FluentIcons.moreVertical,
+                                        FluentIcons.open,
                                         color: Colors.white,
                                         size: height * 0.03,
-                                      ),
-                                      onSelected: (String value) {
-                                        switch (value) {
-                                          case 'add':
-                                            Artist artist = entity as Artist;
-                                            var abstractAppStateProvider =
-                                                Provider.of<
-                                                  AbstractAppStateProvider
-                                                >(context, listen: false);
-                                            abstractAppStateProvider
-                                                .navigatorKey
-                                                .currentState!
-                                                .push(
-                                                  AddOrExportScreen.route(
-                                                    songs: artist.songs,
-                                                  ),
-                                                );
-                                            break;
-                                          case 'playNext':
-                                            Artist artist = entity as Artist;
-                                            var audioProvider =
-                                                Provider.of<AudioProvider>(
-                                                  context,
-                                                  listen: false,
-                                                );
-                                            audioProvider
-                                                .addMultipleNextToQueue(
-                                                  artist.songs,
-                                                );
-                                            break;
-                                          case 'select':
-                                            Artist artist = entity as Artist;
-                                            if (selected.value.contains(
-                                              entity,
-                                            )) {
-                                              selected
-                                                  .value = List<Artist>.from(
-                                                selected.value,
-                                              )..remove(artist);
-                                            } else {
-                                              selected
-                                                  .value = List<Artist>.from(
-                                                selected.value,
-                                              )..add(artist);
-                                            }
-                                            break;
-                                        }
-                                      },
-                                      itemBuilder: (context) {
-                                        return [
-                                          const PopupMenuItem<String>(
-                                            value: 'add',
-                                            child: Text("Add to Playlist"),
-                                          ),
-                                          const PopupMenuItem<String>(
-                                            value: 'playNext',
-                                            child: Text("Play Next"),
-                                          ),
-                                          const PopupMenuItem<String>(
-                                            value: 'select',
-                                            child: Text("Select"),
-                                          ),
-                                        ];
-                                      },
-                                    );
-                                  },
-                                );
-                              },
+                                      );
+                                    },
+                                    buildRightAction: (entity) {
+                                      if (selected.value.contains(entity)) {
+                                        return SizedBox.shrink();
+                                      }
+                                      return PopupMenuButton<String>(
+                                        icon: Icon(
+                                          FluentIcons.moreVertical,
+                                          color: Colors.white,
+                                          size: height * 0.03,
+                                        ),
+                                        onSelected: (String value) {
+                                          switch (value) {
+                                            case 'add':
+                                              Artist artist = entity as Artist;
+                                              var abstractAppStateProvider =
+                                                  Provider.of<
+                                                    AbstractAppStateProvider
+                                                  >(context, listen: false);
+                                              abstractAppStateProvider
+                                                  .navigatorKey
+                                                  .currentState!
+                                                  .push(
+                                                    AddOrExportScreen.route(
+                                                      songs: artist.songs,
+                                                    ),
+                                                  );
+                                              break;
+                                            case 'playNext':
+                                              Artist artist = entity as Artist;
+                                              var audioProvider =
+                                                  Provider.of<AudioProvider>(
+                                                    context,
+                                                    listen: false,
+                                                  );
+                                              audioProvider
+                                                  .addMultipleNextToQueue(
+                                                    artist.songs,
+                                                  );
+                                              break;
+                                            case 'select':
+                                              Artist artist = entity as Artist;
+                                              if (selected.value.contains(
+                                                entity,
+                                              )) {
+                                                selected
+                                                    .value = List<Artist>.from(
+                                                  selected.value,
+                                                )..remove(artist);
+                                              } else {
+                                                selected
+                                                    .value = List<Artist>.from(
+                                                  selected.value,
+                                                )..add(artist);
+                                              }
+                                              break;
+                                          }
+                                        },
+                                        itemBuilder: (context) {
+                                          return [
+                                            const PopupMenuItem<String>(
+                                              value: 'add',
+                                              child: Text("Add to Playlist"),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'playNext',
+                                              child: Text("Play Next"),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'select',
+                                              child: Text("Select"),
+                                            ),
+                                          ];
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
       floatingActionButtonLocation:

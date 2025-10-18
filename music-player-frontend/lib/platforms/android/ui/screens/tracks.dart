@@ -7,7 +7,6 @@ import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_component.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_drawer_widget.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/album_screen.dart';
@@ -32,7 +31,6 @@ class Tracks extends StatefulWidget {
 
 class _TracksState extends State<Tracks> {
   ValueNotifier<List<Song>> selected = ValueNotifier<List<Song>>([]);
-  GlobalKey<ScaffoldState> key = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
@@ -40,20 +38,19 @@ class _TracksState extends State<Tracks> {
     var height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      key: key,
       backgroundColor: Colors.transparent,
-      drawer: const AndroidDrawerWidget(selectedIndex: 2),
       body: SafeArea(
         child: GlassContainer(
           height: height,
           width: width,
-          color: Colors.black.withValues(alpha: 0.2),
+          color: Colors.black.withValues(alpha: 0.4),
           borderColor: Colors.transparent,
           blur: 45.0,
           borderWidth: 0.0,
           elevation: 3.0,
           shadowColor: Colors.black.withOpacity(0.20),
           padding: EdgeInsets.only(bottom: height * 0.01),
+          margin: EdgeInsets.all(height * 0.01),
           borderRadius: BorderRadius.circular(height * 0.015),
           child: Consumer<SongProvider>(
             builder: (context, songProvider, child) {
@@ -86,6 +83,15 @@ class _TracksState extends State<Tracks> {
                           return const Center(
                             child: Text("Error loading songs"),
                           );
+                        }
+                        if (snapshot.hasData &&
+                            (snapshot.data!.isEmpty ||
+                                snapshot.data.length <
+                                    songProvider.totalSongsCount)) {
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            songProvider.refreshSongs();
+                          });
+                          return const Center(child: Text("No songs found"));
                         }
                         debugPrint(
                           "Songs loaded: ${snapshot.data?.length ?? 0}",

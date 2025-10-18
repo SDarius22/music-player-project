@@ -26,6 +26,10 @@ class SongService {
     return _songRepository.saveSong(song);
   }
 
+  int getSongCount() {
+    return _songRepository.getSongCount();
+  }
+
   List<Song> addSongsEntitiesBatch(List<Song> songs) {
     debugPrint("Adding batch of ${songs.length} songs to the database");
     return _songRepository.saveSongsBatch(songs);
