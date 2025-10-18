@@ -12,7 +12,6 @@ class QueueTab extends AbstractQueueTab {
 
   @override
   Widget buildQueueContent(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
 
     return Scrollbar(
@@ -22,13 +21,13 @@ class QueueTab extends AbstractQueueTab {
         controller: itemScrollController,
         slivers: [
           SliverPadding(
-            padding: EdgeInsets.only(right: width * 0.01, left: width * 0.01),
+            padding: EdgeInsets.zero,
             sliver: ListComponent(
               items:
                   Provider.of<AbstractAudioProvider>(
                     context,
                   ).audioService.queue,
-              itemExtent: height * 0.1,
+              itemExtent: height * 0.075,
               isSelected: (entity) {
                 return false;
               },

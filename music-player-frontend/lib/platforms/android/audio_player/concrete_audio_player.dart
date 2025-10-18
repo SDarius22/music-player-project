@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/audio_player/player_state.dart'
     as player_state;
@@ -48,6 +49,10 @@ class ConcreteAudioPlayer extends AbstractAudioPlayer {
 
   @override
   Future<void> setSource(String source) async {
+    if (source == '') {
+      debugPrint("Warning: Trying to set empty source");
+      return;
+    }
     await audioPlayer.setSource(DeviceFileSource(source));
   }
 

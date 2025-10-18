@@ -26,145 +26,150 @@ class DetailsTab extends AbstractDetailsTab {
 
     return Consumer<AbstractAudioProvider>(
       builder: (_, audioProvider, __) {
-        return Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.rectangle,
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(
-              MediaQuery.of(context).size.height * 0.015,
-            ),
-            image: DecorationImage(
-              fit: BoxFit.cover,
-              image: MemoryImage(audioProvider.currentSong.coverArt),
-            ),
-          ),
+        return AspectRatio(
+          aspectRatio: 1.0,
           child: Container(
-            alignment: Alignment.bottomCenter,
-            padding: EdgeInsets.only(bottom: height * 0.01),
             decoration: BoxDecoration(
               shape: BoxShape.rectangle,
               color: Colors.black,
               borderRadius: BorderRadius.circular(
                 MediaQuery.of(context).size.height * 0.015,
               ),
-              gradient: LinearGradient(
-                begin: FractionalOffset.center,
-                end: FractionalOffset.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.0),
-                  Colors.black.withValues(alpha: 0.75 * opacity),
-                  Colors.black.withValues(alpha: 1.0 * opacity),
-                ],
-                stops: const [0.0, 0.6, 1.0],
+              image: DecorationImage(
+                fit: BoxFit.cover,
+                image: MemoryImage(audioProvider.currentSong.coverArt),
               ),
             ),
-            child: Opacity(
-              opacity: opacity,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  TextScroll(
-                    audioProvider.currentSong.name,
-                    mode: TextScrollMode.bouncing,
-                    velocity: const Velocity(pixelsPerSecond: Offset(20, 0)),
-                    style:
-                        MusicPlayerTheme.getTheme(
-                          context,
-                        ).textTheme.displaySmall,
-                    pauseOnBounce: const Duration(seconds: 5),
-                    delayBefore: const Duration(seconds: 0),
-                    pauseBetween: const Duration(seconds: 5),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(width: width * 0.01),
-                      Expanded(
-                        // width: width * 0.13,
-                        // alignment: Alignment.centerRight,
-                        child: TextButton.icon(
-                          onPressed: () async {
-                            miniPlayerController.animateToHeight(
-                              state: PanelState.min,
-                            );
+            child: Container(
+              alignment: Alignment.bottomCenter,
+              padding: EdgeInsets.only(bottom: height * 0.01),
+              decoration: BoxDecoration(
+                shape: BoxShape.rectangle,
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(
+                  MediaQuery.of(context).size.height * 0.015,
+                ),
+                gradient: LinearGradient(
+                  begin: FractionalOffset.center,
+                  end: FractionalOffset.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.0),
+                    Colors.black.withValues(alpha: 0.75 * opacity),
+                    Colors.black.withValues(alpha: 1.0 * opacity),
+                  ],
+                  stops: const [0.0, 0.6, 1.0],
+                ),
+              ),
+              child: Opacity(
+                opacity: opacity,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    TextScroll(
+                      audioProvider.currentSong.name,
+                      mode: TextScrollMode.bouncing,
+                      velocity: const Velocity(pixelsPerSecond: Offset(20, 0)),
+                      style:
+                          MusicPlayerTheme.getTheme(
+                            context,
+                          ).textTheme.displaySmall,
+                      pauseOnBounce: const Duration(seconds: 5),
+                      delayBefore: const Duration(seconds: 0),
+                      pauseBetween: const Duration(seconds: 5),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(width: width * 0.01),
+                        Expanded(
+                          // width: width * 0.13,
+                          // alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () async {
+                              miniPlayerController.animateToHeight(
+                                state: PanelState.min,
+                              );
 
-                            var artist =
-                                audioProvider.currentSong.artist.target;
-                            if (artist != null) {
-                              Navigator.push(
-                                context,
-                                ArtistScreen.route(artist: artist),
-                              );
-                            }
-                          },
-                          icon: Icon(
-                            FluentIcons.open,
-                            color: Colors.white,
-                            size: LinuxScaler.scale(context, 20),
-                          ),
-                          iconAlignment: IconAlignment.end,
-                          label: TextScroll(
-                            audioProvider.currentSong.artist.target.toString(),
-                            mode: TextScrollMode.bouncing,
-                            velocity: const Velocity(
-                              pixelsPerSecond: Offset(25, 0),
-                            ),
-                            style:
-                                MusicPlayerTheme.getTheme(
+                              var artist =
+                                  audioProvider.currentSong.artist.target;
+                              if (artist != null) {
+                                Navigator.push(
                                   context,
-                                ).textTheme.titleLarge,
-                            pauseOnBounce: const Duration(seconds: 5),
-                            delayBefore: const Duration(seconds: 0),
-                            pauseBetween: const Duration(seconds: 5),
+                                  ArtistScreen.route(artist: artist),
+                                );
+                              }
+                            },
+                            icon: Icon(
+                              FluentIcons.open,
+                              color: Colors.white,
+                              size: LinuxScaler.scale(context, 20),
+                            ),
+                            iconAlignment: IconAlignment.end,
+                            label: TextScroll(
+                              audioProvider.currentSong.artist.target
+                                  .toString(),
+                              mode: TextScrollMode.bouncing,
+                              velocity: const Velocity(
+                                pixelsPerSecond: Offset(25, 0),
+                              ),
+                              style:
+                                  MusicPlayerTheme.getTheme(
+                                    context,
+                                  ).textTheme.titleLarge,
+                              pauseOnBounce: const Duration(seconds: 5),
+                              delayBefore: const Duration(seconds: 0),
+                              pauseBetween: const Duration(seconds: 5),
+                            ),
                           ),
                         ),
-                      ),
-                      Icon(
-                        FluentIcons.divider,
-                        color: Colors.white,
-                        size: LinuxScaler.scale(context, 16),
-                      ),
-                      Expanded(
-                        // width: width * 0.13,
-                        child: TextButton.icon(
-                          onPressed: () async {
-                            miniPlayerController.animateToHeight(
-                              state: PanelState.min,
-                            );
-                            var album = audioProvider.currentSong.album.target;
-                            if (album != null) {
-                              Navigator.push(
-                                context,
-                                AlbumScreen.route(album: album),
+                        Icon(
+                          FluentIcons.divider,
+                          color: Colors.white,
+                          size: LinuxScaler.scale(context, 16),
+                        ),
+                        Expanded(
+                          // width: width * 0.13,
+                          child: TextButton.icon(
+                            onPressed: () async {
+                              miniPlayerController.animateToHeight(
+                                state: PanelState.min,
                               );
-                            }
-                          },
-                          icon: Icon(
-                            FluentIcons.open,
-                            color: Colors.white,
-                            size: LinuxScaler.scale(context, 20),
-                          ),
-                          label: TextScroll(
-                            audioProvider.currentSong.album.target.toString(),
-                            mode: TextScrollMode.bouncing,
-                            velocity: const Velocity(
-                              pixelsPerSecond: Offset(20, 0),
-                            ),
-                            style:
-                                MusicPlayerTheme.getTheme(
+                              var album =
+                                  audioProvider.currentSong.album.target;
+                              if (album != null) {
+                                Navigator.push(
                                   context,
-                                ).textTheme.titleLarge,
-                            pauseOnBounce: const Duration(seconds: 5),
-                            delayBefore: const Duration(seconds: 0),
-                            pauseBetween: const Duration(seconds: 5),
+                                  AlbumScreen.route(album: album),
+                                );
+                              }
+                            },
+                            icon: Icon(
+                              FluentIcons.open,
+                              color: Colors.white,
+                              size: LinuxScaler.scale(context, 20),
+                            ),
+                            label: TextScroll(
+                              audioProvider.currentSong.album.target.toString(),
+                              mode: TextScrollMode.bouncing,
+                              velocity: const Velocity(
+                                pixelsPerSecond: Offset(20, 0),
+                              ),
+                              style:
+                                  MusicPlayerTheme.getTheme(
+                                    context,
+                                  ).textTheme.titleLarge,
+                              pauseOnBounce: const Duration(seconds: 5),
+                              delayBefore: const Duration(seconds: 0),
+                              pauseBetween: const Duration(seconds: 5),
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: width * 0.01),
-                    ],
-                  ),
-                ],
+                        SizedBox(width: width * 0.01),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

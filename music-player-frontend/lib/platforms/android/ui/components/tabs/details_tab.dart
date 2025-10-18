@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
+import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class DetailsTab extends AbstractDetailsTab {
@@ -17,18 +19,40 @@ class DetailsTab extends AbstractDetailsTab {
   Widget buildDetailsContent(BuildContext context) {
     return Consumer<AbstractAudioProvider>(
       builder: (_, audioProvider, __) {
-        return Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.rectangle,
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(
-              MediaQuery.of(context).size.height * 0.015,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(
+                    MediaQuery.of(context).size.height * 0.015,
+                  ),
+                  image: DecorationImage(
+                    fit: BoxFit.fill,
+                    image: MemoryImage(audioProvider.currentSong.coverArt),
+                  ),
+                ),
+              ),
             ),
-            image: DecorationImage(
-              fit: BoxFit.cover,
-              image: MemoryImage(audioProvider.currentSong.coverArt),
+            const SizedBox(height: 20),
+            CustomTextScroll(
+              text: audioProvider.currentSong.name,
+              style:
+                  MusicPlayerTheme.getTheme(context).textTheme.headlineMedium!,
             ),
-          ),
+            const SizedBox(height: 10),
+            CustomTextScroll(
+              text:
+                  audioProvider.currentSong.artist.target?.name ??
+                  "Unknown Artist",
+              style: MusicPlayerTheme.getTheme(context).textTheme.bodyLarge!,
+            ),
+          ],
         );
       },
     );

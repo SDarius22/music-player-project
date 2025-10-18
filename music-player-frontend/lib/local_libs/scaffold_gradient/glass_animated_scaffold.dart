@@ -6,7 +6,6 @@ import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart'
 
 class GlassAnimatedScaffold extends StatelessWidget {
   final AnimatedMeshGradientController controller;
-  final GlobalKey<ScaffoldState> scaffoldState;
 
   /// An app bar to display at the top of the scaffold.
   final PreferredSizeWidget? appBar;
@@ -377,7 +376,6 @@ class GlassAnimatedScaffold extends StatelessWidget {
     this.endDrawerEnableOpenDragGesture = true,
     this.restorationId,
     required this.controller,
-    required this.scaffoldState,
   });
 
   @override
@@ -392,7 +390,7 @@ class GlassAnimatedScaffold extends StatelessWidget {
         elevation: 0.0,
         alignment: Alignment.center,
         child: Scaffold(
-          key: scaffoldState,
+          key: key,
           appBar: appBar,
           body: body,
           floatingActionButton: floatingActionButton,

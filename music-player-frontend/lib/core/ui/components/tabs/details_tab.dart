@@ -9,6 +9,6 @@ abstract class AbstractDetailsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(aspectRatio: 1.0, child: buildDetailsContent(context));
+    return buildDetailsContent(context);
   }
 }

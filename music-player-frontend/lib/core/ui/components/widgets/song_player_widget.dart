@@ -74,6 +74,10 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
     throw UnimplementedError();
   }
 
+  bool isMinimized(double percentage) {
+    return percentage < 0.25;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AbstractAudioProvider>(
@@ -129,7 +133,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
               backgroundColor: Colors.transparent,
               backgroundBoxShadow: Colors.transparent,
               builder: (_, percentage) {
-                final bool minimized = percentage < 0.25;
+                final bool minimized = isMinimized(percentage);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   final appStateProvider =
                       Provider.of<AbstractAppStateProvider>(

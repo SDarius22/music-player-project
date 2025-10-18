@@ -14,15 +14,19 @@ import 'package:music_player_frontend/platforms/android/ui/screens/tracks.dart';
 import 'package:provider/provider.dart';
 
 class AndroidDrawerWidget extends DrawerWidget {
-  const AndroidDrawerWidget({super.key});
+  const AndroidDrawerWidget({super.key, required this.selectedIndex});
+
+  final int selectedIndex;
 
   @override
   State<DrawerWidget> createState() => _LinuxDrawerWidgetState();
 }
 
 class _LinuxDrawerWidgetState extends DrawerWidgetState {
-  late int _selected = 2;
+  late int _selected;
   late AbstractAppStateProvider _appStateProvider;
+
+  AndroidDrawerWidget get _widget => widget as AndroidDrawerWidget;
 
   List<Map<String, dynamic>> get menuItems => [
     {
@@ -78,6 +82,12 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       },
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = _widget.selectedIndex;
+  }
 
   Widget _buildMenuItem({
     required Map<String, dynamic> item,

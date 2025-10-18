@@ -57,7 +57,7 @@ class LyricsTab extends AbstractLyricsTab {
       bias: 0.5,
       lineGap: 10,
       inlineGap: 25,
-      lyricAlign: LyricAlign.center,
+      lyricAlign: oneLine ? LyricAlign.center : LyricAlign.left,
       lyricBaseLine: LyricBaseLine.mainCenter,
       highlight: false,
     );
@@ -80,7 +80,6 @@ class LyricsTab extends AbstractLyricsTab {
               lyricUi: lyricUI,
               playing: values[1],
               size: Size.infinite,
-              padding: EdgeInsets.only(left: width * 0.01),
               selectLineBuilder:
                   oneLine
                       ? null

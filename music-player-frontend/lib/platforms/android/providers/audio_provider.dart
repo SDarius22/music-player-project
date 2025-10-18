@@ -6,22 +6,11 @@ import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 
-class AudioProvider extends AbstractAudioProvider {
+class AudioProvider extends AbstractAudioProvider
+    with platform_service.SeekHandler {
   bool hasBeenInitialized = false;
 
   AudioProvider(super.audioService, super.fileService) {
-    playbackState.add(
-      playbackState.value.copyWith(
-        controls: [
-          platform_service.MediaControl.skipToPrevious,
-          platform_service.MediaControl.play,
-          platform_service.MediaControl.pause,
-          platform_service.MediaControl.skipToNext,
-        ],
-        systemActions: {platform_service.MediaAction.seek},
-        playing: false,
-      ),
-    );
     init();
   }
 
@@ -49,6 +38,28 @@ class AudioProvider extends AbstractAudioProvider {
       super.audioService.setSlider(event.inMilliseconds);
     });
     audioService.audioPlayer.onPlayerStateChanged.listen((state) {
+      final playing = state == PlayerState.playing;
+      playbackState.add(
+        playbackState.value.copyWith(
+          controls: [
+            platform_service.MediaControl.skipToPrevious,
+
+            playing
+                ? platform_service.MediaControl.pause
+                : platform_service.MediaControl.play,
+
+            platform_service.MediaControl.skipToNext,
+          ],
+          systemActions: {platform_service.MediaAction.seek},
+          androidCompactActionIndices: const [0, 1, 2],
+          processingState: platform_service.AudioProcessingState.ready,
+          playing: playing,
+          updatePosition: Duration(milliseconds: sliderNotifier.value),
+          bufferedPosition: Duration(milliseconds: sliderNotifier.value),
+          speed: audioService.settingsService.currentAudioSettings.speed,
+          queueIndex: audioService.currentIndexInNonShuffled,
+        ),
+      );
       playingNotifier.value = state == PlayerState.playing;
       if (state == PlayerState.completed) {
         skipToNext();

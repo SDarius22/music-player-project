@@ -36,17 +36,14 @@ class CustomListTile extends AbstractCustomListTile {
         onLongPress: onLongPress,
         child: HoverContainer(
           hoverColor: Theme.of(context).hoverColor,
-          padding: EdgeInsets.symmetric(
-            horizontal: width * 0.01,
-            vertical: height * 0.01,
-          ),
+          padding: EdgeInsets.symmetric(vertical: height * 0.005),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                margin: EdgeInsets.only(right: width * 0.005),
+                margin: EdgeInsets.only(right: width * 0.01),
                 decoration: BoxDecoration(
                   boxShadow: [
                     BoxShadow(
@@ -89,7 +86,7 @@ class CustomListTile extends AbstractCustomListTile {
                 ),
               ),
               SizedBox(
-                width: width * 0.15,
+                width: width * 0.5,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,

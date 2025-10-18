@@ -7,6 +7,6 @@ abstract class AbstractQueueTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(aspectRatio: 1.0, child: buildQueueContent(context));
+    return buildQueueContent(context);
   }
 }
