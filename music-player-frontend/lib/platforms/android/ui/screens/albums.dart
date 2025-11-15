@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/android/providers/audio_provider.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/album_screen.dart';
@@ -47,7 +48,7 @@ class _AlbumsState extends State<Albums> {
           blur: 45.0,
           borderWidth: 0.0,
           elevation: 3.0,
-          shadowColor: Colors.black.withOpacity(0.20),
+          shadowColor: Colors.black.withValues(alpha: 0.20),
           padding: EdgeInsets.only(bottom: height * 0.01),
           margin: EdgeInsets.all(height * 0.01),
           borderRadius: BorderRadius.circular(height * 0.015),
@@ -68,7 +69,7 @@ class _AlbumsState extends State<Albums> {
                   ),
                   Expanded(
                     child: FutureBuilder(
-                      future: albumProvider.albumsFuture,
+                      future: albumProvider.query,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -82,10 +83,12 @@ class _AlbumsState extends State<Albums> {
                           return Center(
                             child: Text(
                               "Error loading albums",
-                              style: MusicPlayerTheme.getTheme(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: Colors.red),
+                              style: MusicPlayerTheme.getTheme(
+                                context,
+                                context.read<Scaler>(),
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: Colors.red,
+                              ),
                             ),
                           );
                         }
@@ -102,7 +105,7 @@ class _AlbumsState extends State<Albums> {
                               sliver: ValueListenableBuilder(
                                 valueListenable: selected,
                                 builder: (context, value, child) {
-                                  return GridComponent(
+                                  return CustomGridComponent(
                                     items: snapshot.data ?? [],
                                     isSelected: (entity) {
                                       return selected.value.contains(entity);
@@ -344,6 +347,7 @@ class _AlbumsState extends State<Albums> {
                         style:
                             MusicPlayerTheme.getTheme(
                               context,
+                              context.read<Scaler>(),
                             ).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),

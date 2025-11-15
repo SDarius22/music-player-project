@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
+import 'package:provider/provider.dart';
 
 class LinuxSearchHeader extends StatefulWidget {
   const LinuxSearchHeader({
@@ -127,14 +129,14 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
                 ? FluentIcons.sortAscending
                 : FluentIcons.sortDescending,
             color: Colors.white,
-            size: LinuxScaler.scale(context, 24),
+            size: LinuxScaler().scale(context, 24),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(
               MediaQuery.of(context).size.height * 0.015,
             ),
           ),
-          menuPadding: EdgeInsets.all(LinuxScaler.scale(context, 8)),
+          menuPadding: EdgeInsets.all(LinuxScaler().scale(context, 8)),
           itemBuilder:
               (context) => [
                 PopupMenuItem(
@@ -143,6 +145,7 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
                     "Sort By",
                     style: MusicPlayerTheme.getTheme(
                       context,
+                      context.read<Scaler>(),
                     ).textTheme.titleMedium!.copyWith(color: Colors.grey),
                   ),
                 ),
@@ -164,14 +167,15 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
                             ? FluentIcons.sortAscending
                             : FluentIcons.sortDescending,
                         color: Colors.white,
-                        size: LinuxScaler.scale(context, 16),
+                        size: LinuxScaler().scale(context, 16),
                       ),
-                      SizedBox(width: LinuxScaler.scale(context, 8)),
+                      SizedBox(width: LinuxScaler().scale(context, 8)),
                       Text(
                         _isAscending ? "Ascending" : "Descending",
                         style:
                             MusicPlayerTheme.getTheme(
                               context,
+                              context.read<Scaler>(),
                             ).textTheme.bodyMedium!,
                       ),
                     ],
@@ -198,16 +202,20 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
           Icon(
             isSelected ? FluentIcons.checkCircleOn : FluentIcons.checkCircleOff,
             color: isSelected ? Colors.blue : Colors.transparent,
-            size: LinuxScaler.scale(context, 16),
+            size: LinuxScaler().scale(context, 16),
           ),
-          SizedBox(width: LinuxScaler.scale(context, 8)),
+          SizedBox(width: LinuxScaler().scale(context, 8)),
           Text(
             value,
             style:
                 isSelected
-                    ? MusicPlayerTheme.getTheme(context).textTheme.titleMedium
+                    ? MusicPlayerTheme.getTheme(
+                      context,
+                      context.read<Scaler>(),
+                    ).textTheme.titleMedium
                     : MusicPlayerTheme.getTheme(
                       context,
+                      context.read<Scaler>(),
                     ).textTheme.bodyMedium!.copyWith(color: Colors.grey),
           ),
         ],

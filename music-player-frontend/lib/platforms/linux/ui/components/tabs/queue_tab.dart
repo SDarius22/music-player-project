@@ -23,7 +23,7 @@ class QueueTab extends AbstractQueueTab {
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(right: width * 0.01),
-            sliver: ListComponent(
+            sliver: LinuxListComponent(
               items:
                   Provider.of<AbstractAudioProvider>(
                     context,

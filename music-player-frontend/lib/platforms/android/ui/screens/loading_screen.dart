@@ -2,7 +2,7 @@ import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/animated_background.dart';
+import 'package:music_player_frontend/local_libs/custom_scaffold/animated_background.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_top_bar_widget.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/home_screen.dart';
 import 'package:permission_handler/permission_handler.dart';

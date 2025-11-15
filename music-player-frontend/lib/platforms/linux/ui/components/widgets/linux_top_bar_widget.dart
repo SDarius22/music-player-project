@@ -1,9 +1,10 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/top_bar_widget.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class AppBarWidget extends AbstractAppBarWidget {
@@ -18,7 +19,7 @@ class AppBarWidget extends AbstractAppBarWidget {
         blur: 45.0,
         borderWidth: 0.0,
         elevation: 3.0,
-        shadowColor: Colors.black.withOpacity(0.20),
+        shadowColor: Colors.black.withValues(alpha: 0.20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -30,7 +31,10 @@ class AppBarWidget extends AbstractAppBarWidget {
                   child: Text(
                     'Music Player',
                     style:
-                        MusicPlayerTheme.getTheme(context).textTheme.bodyLarge,
+                        MusicPlayerTheme.getTheme(
+                          context,
+                          context.read<Scaler>(),
+                        ).textTheme.bodyLarge,
                   ),
                 ),
               ),

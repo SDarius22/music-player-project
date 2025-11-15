@@ -38,7 +38,7 @@ class Playlist implements BaseEntity {
 
   List<Song> get songsInOrder =>
       playlistSongs
-          .sorted((a, b) => a.order.compareTo(b.order))
+          .sorted((a, b) => a.position.compareTo(b.position))
           .map((e) => e.song.target!)
           .toList();
 }

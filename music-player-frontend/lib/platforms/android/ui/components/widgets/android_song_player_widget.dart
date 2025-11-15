@@ -4,6 +4,8 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
 import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -12,7 +14,6 @@ import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tabs/queue_tab.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class AndroidSongPlayerWidget extends SongPlayerWidget {
@@ -151,6 +152,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                     overflow: TextOverflow.ellipsis,
                     style: MusicPlayerTheme.getTheme(
                       context,
+                      context.read<Scaler>(),
                     ).textTheme.headlineLarge?.copyWith(
                       shadows: [
                         Shadow(
@@ -168,6 +170,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                     overflow: TextOverflow.ellipsis,
                     style: MusicPlayerTheme.getTheme(
                       context,
+                      context.read<Scaler>(),
                     ).textTheme.bodyLarge?.copyWith(
                       color: Colors.white70,
                       shadows: [
@@ -337,10 +340,12 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                                     thumbRadius: 7.0,
                                     timeLabelLocation: TimeLabelLocation.above,
                                     timeLabelTextStyle:
-                                        MusicPlayerTheme.getTheme(context)
-                                            .textTheme
-                                            .bodyMedium!
-                                            .copyWith(color: Colors.white),
+                                        MusicPlayerTheme.getTheme(
+                                          context,
+                                          context.read<Scaler>(),
+                                        ).textTheme.bodyMedium!.copyWith(
+                                          color: Colors.white,
+                                        ),
                                     timeLabelPadding: 5.0,
                                     onSeek: (duration) {
                                       audioProvider.seek(duration);
@@ -372,7 +377,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                           audioProvider.likeCurrentSong();
                           likedNotifier.value = !likedNotifier.value;
                           String message =
-                              audioProvider.currentSong.liked
+                              likedNotifier.value
                                   ? "Added ${audioProvider.currentSong.name} to Favorites"
                                   : "Removed ${audioProvider.currentSong.name} from Favorites";
                           BotToast.showText(
@@ -386,7 +391,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                           );
                         },
                         icon: Icon(
-                          audioProvider.currentSong.liked
+                          likedNotifier.value
                               ? FluentIcons.liked
                               : FluentIcons.unliked,
                           size: height * 0.025,

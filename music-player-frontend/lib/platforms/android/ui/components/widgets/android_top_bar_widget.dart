@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/top_bar_widget.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class AppBarWidget extends AbstractAppBarWidget {
@@ -46,6 +47,7 @@ class AppBarWidget extends AbstractAppBarWidget {
                     title,
                     style: MusicPlayerTheme.getTheme(
                       context,
+                      context.read<Scaler>(),
                     ).textTheme.titleLarge!.copyWith(
                       color: Colors.white,
                       fontSize: height * 0.025,

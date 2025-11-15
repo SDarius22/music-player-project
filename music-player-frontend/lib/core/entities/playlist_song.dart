@@ -10,5 +10,5 @@ class PlaylistSong {
   final playlist = ToOne<Playlist>();
   final song = ToOne<Song>();
 
-  int order = 0; // Order of the song in the playlist
+  double position = 0.0; // Position in the playlist
 }

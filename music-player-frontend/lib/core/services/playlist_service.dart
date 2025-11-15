@@ -54,9 +54,22 @@ class PlaylistService {
   }
 
   void initializeIndestructible() {
+    initializeQueue();
     initializeFavorites();
     initializeMostPlayed();
     initializeRecentlyPlayed();
+  }
+
+  void initializeQueue() {
+    if (_playlistRepository.getPlaylistByName("Queue") != null) {
+      return;
+    }
+    Playlist queue = Playlist();
+    queue.id = 1;
+    queue.name = "Queue";
+    queue.indestructible = true;
+    queue.nextAdded = "last";
+    _playlistRepository.savePlaylist(queue);
   }
 
   void initializeFavorites() {
@@ -64,6 +77,7 @@ class PlaylistService {
       return;
     }
     Playlist favorites = Playlist();
+    favorites.id = 2;
     favorites.name = "Favorites";
     favorites.indestructible = true;
     favorites.nextAdded = "last";
@@ -75,6 +89,7 @@ class PlaylistService {
       return;
     }
     Playlist mostPlayed = Playlist();
+    mostPlayed.id = 3;
     mostPlayed.name = "Most Played";
     mostPlayed.indestructible = true;
     mostPlayed.nextAdded = "last";
@@ -86,6 +101,7 @@ class PlaylistService {
       return;
     }
     Playlist recentlyPlayed = Playlist();
+    recentlyPlayed.id = 4;
     recentlyPlayed.name = "Recently Played";
     recentlyPlayed.indestructible = true;
     recentlyPlayed.nextAdded = "last";
@@ -97,8 +113,20 @@ class PlaylistService {
   }
 
   void updateIndestructiblePlaylists() {
+    updateQueue();
     updateMostPlayedPlaylist();
     updateRecentlyPlayedPlaylist();
+  }
+
+  void updateQueue() {
+    Playlist? queue = _playlistRepository
+        .getIndestructiblePlaylists()
+        .firstWhereOrNull((pl) => pl.name == "Queue");
+    if (queue == null) {
+      debugPrint("Queue playlist not found");
+      return;
+    }
+    // placeholder for future functionality
   }
 
   void updateMostPlayedPlaylist() {
@@ -141,39 +169,67 @@ class PlaylistService {
   }
 
   void addToPlaylist(Playlist playlist, List<Song> songs) {
-    var playlistSongs = playlist.playlistSongs;
     if (playlist.nextAdded == 'last') {
-      int maxOrder = playlistSongs.isNotEmpty ? playlistSongs.last.order : 0;
       for (var song in songs) {
-        if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
-          debugPrint("Song '${song.id}' already in playlist");
-          continue;
-        }
-        maxOrder += 1;
-        PlaylistSong ps = PlaylistSong();
-        ps.playlist.target = playlist;
-        ps.song.target = song;
-        ps.order = maxOrder;
-        playlist.playlistSongs.add(
-          _playlistSongRepository.savePlaylistSong(ps),
-        );
+        _addLastToPlaylist(playlist, song);
       }
     } else {
-      int minOrder = playlistSongs.isNotEmpty ? playlistSongs.first.order : 0;
       for (var song in songs.reversed) {
-        if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
-          continue;
-        }
-        minOrder -= 1;
-        PlaylistSong ps = PlaylistSong();
-        ps.playlist.target = playlist;
-        ps.song.target = song;
-        ps.order = minOrder;
-        playlist.playlistSongs.add(
-          _playlistSongRepository.savePlaylistSong(ps),
-        );
+        _addFirstToPlaylist(playlist, song);
       }
     }
+    _playlistRepository.savePlaylist(playlist);
+  }
+
+  void addToIndexedPositionInPlaylist(
+    Playlist playlist,
+    Song song,
+    double position,
+  ) {
+    var playlistSongs = playlist.playlistSongs;
+    if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
+      debugPrint("Song '${song.id}' already in playlist");
+      return;
+    }
+    PlaylistSong ps = PlaylistSong();
+    ps.playlist.target = playlist;
+    ps.song.target = song;
+    ps.position = position;
+    playlist.playlistSongs.add(_playlistSongRepository.savePlaylistSong(ps));
+    _playlistRepository.savePlaylist(playlist);
+  }
+
+  void _addLastToPlaylist(Playlist playlist, Song song) {
+    var playlistSongs = playlist.playlistSongs;
+    double maxOrder =
+        playlistSongs.isNotEmpty ? playlistSongs.last.position : 0.0;
+    if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
+      debugPrint("Song '${song.id}' already in playlist");
+      return;
+    }
+    maxOrder += 1;
+    PlaylistSong ps = PlaylistSong();
+    ps.playlist.target = playlist;
+    ps.song.target = song;
+    ps.position = maxOrder;
+    playlist.playlistSongs.add(_playlistSongRepository.savePlaylistSong(ps));
+    _playlistRepository.savePlaylist(playlist);
+  }
+
+  void _addFirstToPlaylist(Playlist playlist, Song song) {
+    var playlistSongs = playlist.playlistSongs;
+    double minOrder =
+        playlistSongs.isNotEmpty ? playlistSongs.first.position : 0.0;
+    if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
+      debugPrint("Song '${song.id}' already in playlist");
+      return;
+    }
+    minOrder -= 1;
+    PlaylistSong ps = PlaylistSong();
+    ps.playlist.target = playlist;
+    ps.song.target = song;
+    ps.position = minOrder;
+    playlist.playlistSongs.add(_playlistSongRepository.savePlaylistSong(ps));
     _playlistRepository.savePlaylist(playlist);
   }
 

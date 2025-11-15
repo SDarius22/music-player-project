@@ -2,15 +2,15 @@ import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/entities/played_song.dart';
-import 'package:music_player_frontend/core/entities/queue_song.dart';
+import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/played_song_repo.dart';
-import 'package:music_player_frontend/core/repository/queue_song_repo.dart';
+import 'package:music_player_frontend/core/repository/playlist_song_repo.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class AppAudioService {
-  final QueueSongRepository queueSongRepository;
+  final PlaylistSongRepository playlistSongRepository;
   final PlayedSongRepository playedSongRepository;
   final AbstractAudioPlayer audioPlayer;
   final SongService songService;
@@ -18,7 +18,7 @@ class AppAudioService {
 
   AppAudioService(
     this.playedSongRepository,
-    this.queueSongRepository,
+    this.playlistSongRepository,
     this.audioPlayer,
     this.songService,
     this.settingsService,
@@ -34,7 +34,8 @@ class AppAudioService {
 
   PlayedSong currentPlayedSong = PlayedSong();
 
-  List<QueueSong> get queueSongs => queueSongRepository.getAllQueueSongs();
+  List<PlaylistSong> get queueSongs =>
+      playlistSongRepository.getPlaylistSongs(1);
 
   List<Song> get queue =>
       queueSongs.map((e) => e.song.target).whereType<Song>().toList();
@@ -203,20 +204,20 @@ class AppAudioService {
 
   void addToQueue(Song song) {
     if (!queue.contains(song)) {
-      QueueSong queueSong = QueueSong();
+      PlaylistSong queueSong = PlaylistSong();
       queueSong.song.target = song;
       queueSong.position = 0.0 + queue.length;
-      queueSongRepository.saveQueueSong(queueSong);
+      playlistSongRepository.savePlaylistSong(queueSong);
     }
   }
 
   void addMultipleToQueue(List<Song> songs) {
     for (var song in songs) {
       if (!queue.contains(song)) {
-        QueueSong queueSong = QueueSong();
+        PlaylistSong queueSong = PlaylistSong();
         queueSong.song.target = song;
         queueSong.position = 0.0 + queue.length;
-        queueSongRepository.saveQueueSong(queueSong);
+        playlistSongRepository.savePlaylistSong(queueSong);
       }
     }
   }
@@ -227,18 +228,18 @@ class AppAudioService {
       int nextIndex = (currentIndex + 1) % queue.length;
       if (nextIndex == 0) {
         nextIndex = queue.length;
-        QueueSong queueSong = QueueSong();
+        PlaylistSong queueSong = PlaylistSong();
         queueSong.song.target = song;
         queueSong.position = 0.0 + nextIndex;
-        queueSongRepository.saveQueueSong(queueSong);
+        playlistSongRepository.savePlaylistSong(queueSong);
       } else {
-        QueueSong currentQueueSong = queueSongs[currentIndex];
-        QueueSong nextQueueSong = queueSongs[nextIndex];
-        QueueSong queueSong = QueueSong();
+        PlaylistSong currentQueueSong = queueSongs[currentIndex];
+        PlaylistSong nextQueueSong = queueSongs[nextIndex];
+        PlaylistSong queueSong = PlaylistSong();
         queueSong.song.target = song;
         queueSong.position =
             (currentQueueSong.position + nextQueueSong.position) / 2;
-        queueSongRepository.saveQueueSong(queueSong);
+        playlistSongRepository.savePlaylistSong(queueSong);
       }
     }
   }
@@ -251,7 +252,7 @@ class AppAudioService {
 
   void removeFromQueue(Song song) {
     if (queue.contains(song)) {
-      queueSongRepository.deleteSongFromQueue(song);
+      playlistSongRepository.deletePlaylistSong(song, 1);
     }
   }
 
@@ -259,8 +260,8 @@ class AppAudioService {
     if (queue.equals(songs)) {
       return;
     }
-    queueSongRepository.clearQueue();
-    queueSongRepository.saveAllQueueSongs(songs);
+    playlistSongRepository.deleteAllSongsFromPlaylist(1);
+    playlistSongRepository.saveAllSongsToPlaylist(songs, 1);
   }
 
   Future<List<Song>> getQueue() async {
@@ -268,7 +269,6 @@ class AppAudioService {
   }
 
   void likeCurrentSong() {
-    currentSong.liked = !currentSong.liked;
-    songService.updateSong(currentSong);
+    // Implement liking functionality here
   }
 }

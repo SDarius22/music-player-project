@@ -73,6 +73,7 @@ class _ImageWidgetState extends State<ImageWidget> {
               isHovered.value = false;
             },
             child: Container(
+              padding: EdgeInsets.zero,
               decoration: BoxDecoration(
                 color: Colors.black,
                 image: DecorationImage(
@@ -89,6 +90,7 @@ class _ImageWidgetState extends State<ImageWidget> {
                         valueListenable: isHovered,
                         builder: (context, value, child) {
                           return Stack(
+                            alignment: Alignment.center,
                             children: [
                               Opacity(
                                 opacity: value ? 0.0 : 1.0,

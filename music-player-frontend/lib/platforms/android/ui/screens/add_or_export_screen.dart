@@ -1,14 +1,13 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
-import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_component.dart';
 import 'package:provider/provider.dart';
 
 class AddOrExportScreen extends StatefulWidget {
@@ -173,24 +172,6 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                         );
                       }
                       List<Playlist> items = snapshot.data ?? [];
-                      Playlist queue = Playlist();
-                      queue.name = "Current Queue";
-                      var audioProvider = Provider.of<AbstractAudioProvider>(
-                        context,
-                        listen: false,
-                      );
-                      queue.playlistSongs.addAll(
-                        audioProvider.currentQueueSongs
-                            .map(
-                              (e) =>
-                                  PlaylistSong()
-                                    ..song.target = e.song.target
-                                    ..order = e.position.toInt(),
-                            )
-                            .toList(),
-                      );
-                      queue.indestructible = true;
-                      items.insert(0, queue);
                       return CustomScrollView(
                         slivers: [
                           SliverPadding(
@@ -201,7 +182,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                             sliver: ValueListenableBuilder(
                               valueListenable: selected,
                               builder: (context, value, child) {
-                                return GridComponent(
+                                return CustomGridComponent(
                                   items: items,
                                   isSelected: (entity) {
                                     return selected.value.contains(

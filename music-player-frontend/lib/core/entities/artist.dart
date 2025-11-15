@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:music_player_frontend/core/constants.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:objectbox/objectbox.dart';

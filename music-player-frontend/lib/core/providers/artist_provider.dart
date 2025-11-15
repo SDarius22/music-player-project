@@ -11,14 +11,14 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
   String _query = '';
   String _sortField = 'Name'; // Name, Duration, Number of Songs
 
-  late Future artistsFuture;
+  late Future _artistsFuture;
 
   ArtistProvider(this._artistService) {
-    artistsFuture = Future(() => _artistService.getAllArtists());
+    _artistsFuture = Future(() => _artistService.getAllArtists());
 
     artistsStream.throttleTime(const Duration(seconds: 2)).listen((_) {
       debugPrint("Artists stream updated");
-      artistsFuture = Future(
+      _artistsFuture = Future(
         () => _artistService.getArtists(_query, _sortField, _isAscending),
       );
       notifyListeners();
@@ -27,7 +27,11 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
 
   Stream get artistsStream => _artistService.watchArtists();
 
+  @override
   get sortFields => _artistService.sortFields;
+
+  @override
+  Future get query => _artistsFuture;
 
   @override
   bool getFlag() {
@@ -37,7 +41,7 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setFlag(bool value) {
     _isAscending = value;
-    artistsFuture = Future(
+    _artistsFuture = Future(
       () => _artistService.getArtists(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -51,7 +55,7 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setSortField(String field) {
     _sortField = field;
-    artistsFuture = Future(
+    _artistsFuture = Future(
       () => _artistService.getArtists(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -60,7 +64,7 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setQuery(String newQuery) {
     _query = newQuery;
-    artistsFuture = Future(
+    _artistsFuture = Future(
       () => _artistService.getArtists(_query, _sortField, _isAscending),
     );
     notifyListeners();

@@ -13,14 +13,14 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   String _query = '';
   String _sortField = 'Name';
 
-  late Future playlistsFuture;
+  late Future _playlistsFuture;
 
   PlaylistProvider(this._playlistService) {
-    playlistsFuture = Future(() => _playlistService.getAllPlaylists());
+    _playlistsFuture = Future(() => _playlistService.getAllPlaylists());
 
     playlistsStream.listen((_) {
       debugPrint("Playlists stream updated");
-      playlistsFuture = Future(
+      _playlistsFuture = Future(
         () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
       );
       notifyListeners();
@@ -33,6 +33,9 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   get sortFields => _playlistService.sortFields;
 
   @override
+  Future get query => _playlistsFuture;
+
+  @override
   bool getFlag() {
     return _isAscending;
   }
@@ -40,7 +43,7 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setFlag(bool value) {
     _isAscending = value;
-    playlistsFuture = Future(
+    _playlistsFuture = Future(
       () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -54,7 +57,7 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setSortField(String field) {
     _sortField = field;
-    playlistsFuture = Future(
+    _playlistsFuture = Future(
       () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -63,7 +66,7 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setQuery(String newQuery) {
     _query = newQuery;
-    playlistsFuture = Future(
+    _playlistsFuture = Future(
       () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
     );
     notifyListeners();

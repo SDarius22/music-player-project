@@ -3,12 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/lyric_ui.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/ui_netease.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_widget.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class LyricsTab extends AbstractLyricsTab {
@@ -21,7 +22,8 @@ class LyricsTab extends AbstractLyricsTab {
     UINetease lyricUI = UINetease(
       defaultTextStyle: MusicPlayerTheme.getTheme(
         context,
-      ).textTheme.headlineLarge!.copyWith(
+        context.read<Scaler>(),
+      ).textTheme.titleLarge!.copyWith(
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.75),
@@ -32,7 +34,8 @@ class LyricsTab extends AbstractLyricsTab {
       ),
       defaultExtTextStyle: MusicPlayerTheme.getTheme(
         context,
-      ).textTheme.headlineMedium!.copyWith(
+        context.read<Scaler>(),
+      ).textTheme.titleMedium!.copyWith(
         color: oneLine ? Colors.transparent : Colors.grey,
         shadows: [
           Shadow(
@@ -44,7 +47,8 @@ class LyricsTab extends AbstractLyricsTab {
       ),
       otherMainTextStyle: MusicPlayerTheme.getTheme(
         context,
-      ).textTheme.headlineMedium!.copyWith(
+        context.read<Scaler>(),
+      ).textTheme.titleMedium!.copyWith(
         color: oneLine ? Colors.transparent : Colors.grey,
         shadows: [
           Shadow(
@@ -122,6 +126,7 @@ class LyricsTab extends AbstractLyricsTab {
                                     style:
                                         MusicPlayerTheme.getTheme(
                                           context,
+                                          context.read<Scaler>(),
                                         ).textTheme.bodyMedium,
                                   ),
                                 ),

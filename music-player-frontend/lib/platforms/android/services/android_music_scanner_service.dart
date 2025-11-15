@@ -6,7 +6,6 @@ import 'package:music_player_frontend/core/services/abstract/abstract_music_scan
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
-import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:on_audio_query_forked/on_audio_query.dart';
 
@@ -15,14 +14,12 @@ class MusicScannerService implements AbstractMusicScannerService {
   final ArtistService _artistService;
   final AlbumService _albumService;
   final FileService _fileService;
-  final SettingsService _settingsService;
 
   MusicScannerService(
     this._songService,
     this._artistService,
     this._albumService,
     this._fileService,
-    this._settingsService,
   );
 
   @override

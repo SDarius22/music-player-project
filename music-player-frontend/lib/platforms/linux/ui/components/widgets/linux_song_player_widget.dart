@@ -5,6 +5,8 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
 import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -13,7 +15,6 @@ import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/queue_tab.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class LinuxSongPlayerWidget extends SongPlayerWidget {
@@ -126,6 +127,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                     overflow: TextOverflow.ellipsis,
                     style: MusicPlayerTheme.getTheme(
                       context,
+                      context.read<Scaler>(),
                     ).textTheme.headlineLarge?.copyWith(
                       shadows: [
                         Shadow(
@@ -143,6 +145,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                     overflow: TextOverflow.ellipsis,
                     style: MusicPlayerTheme.getTheme(
                       context,
+                      context.read<Scaler>(),
                     ).textTheme.bodyLarge?.copyWith(
                       color: Colors.white70,
                       shadows: [
@@ -410,7 +413,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                       audioProvider.likeCurrentSong();
                       likedNotifier.value = !likedNotifier.value;
                       String message =
-                          audioProvider.currentSong.liked
+                          likedNotifier.value
                               ? "Added ${audioProvider.currentSong.name} to Favorites"
                               : "Removed ${audioProvider.currentSong.name} from Favorites";
                       BotToast.showText(
@@ -424,7 +427,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                       );
                     },
                     icon: Icon(
-                      audioProvider.currentSong.liked
+                      likedNotifier.value
                           ? FluentIcons.liked
                           : FluentIcons.unliked,
                       size: height * 0.025,

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/albums_provider.dart';
+import 'package:music_player_frontend/core/providers/artist_provider.dart';
+import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
-import 'package:music_player_frontend/platforms/linux/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/albums.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artists.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/playlists.dart';
@@ -35,7 +39,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 1,
       "onTap": (BuildContext context) {
         setState(() => _selected = 1);
-        _appStateProvider.navigatorKey.currentState!.push(Albums.route());
+        _appStateProvider.navigatorKey.currentState!.push(
+          Albums.route(provider: context.read<AlbumProvider>()),
+        );
       },
     },
     {
@@ -45,7 +51,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 2,
       "onTap": (BuildContext context) {
         setState(() => _selected = 2);
-        _appStateProvider.navigatorKey.currentState!.push(Artists.route());
+        _appStateProvider.navigatorKey.currentState!.push(
+          Artists.route(provider: context.read<ArtistProvider>()),
+        );
       },
     },
     {
@@ -55,7 +63,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 3,
       "onTap": (BuildContext context) {
         setState(() => _selected = 3);
-        _appStateProvider.navigatorKey.currentState!.push(Tracks.route());
+        _appStateProvider.navigatorKey.currentState!.push(
+          Tracks.route(provider: context.read<SongProvider>()),
+        );
       },
     },
     {
@@ -65,7 +75,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 4,
       "onTap": (BuildContext context) {
         setState(() => _selected = 4);
-        _appStateProvider.navigatorKey.currentState!.push(Playlists.route());
+        _appStateProvider.navigatorKey.currentState!.push(
+          Playlists.route(provider: context.read<PlaylistProvider>()),
+        );
       },
     },
     {
@@ -129,7 +141,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                   width: width * 0.0125,
                   child: Icon(
                     item["icon"],
-                    size: LinuxScaler.scale(context, 24),
+                    size: LinuxScaler().scale(context, 24),
                     color: Colors.white,
                   ),
                 ),
@@ -143,11 +155,12 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                         item["text"],
                         style: MusicPlayerTheme.getTheme(
                           context,
+                          context.read<Scaler>(),
                         ).textTheme.bodyLarge!.copyWith(
                           color:
                               isSelected
                                   ? Colors.white
-                                  : Colors.white.withOpacity(0.7),
+                                  : Colors.white.withValues(alpha: 0.7),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -189,7 +202,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
             blur: 45.0,
             borderWidth: 0.0,
             elevation: 3.0,
-            shadowColor: Colors.black.withOpacity(0.20),
+            shadowColor: Colors.black.withValues(alpha: 0.20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -214,7 +227,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                           onPressed: isDrawerOpen ? null : _toggleDrawer,
                           icon: Icon(
                             FluentIcons.menu,
-                            size: LinuxScaler.scale(context, 22),
+                            size: LinuxScaler().scale(context, 22),
                             color: Colors.white,
                           ),
                         ),
@@ -231,7 +244,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                             icon: Icon(
                               FluentIcons.drawerOff,
                               color: Colors.white,
-                              size: LinuxScaler.scale(context, 22),
+                              size: LinuxScaler().scale(context, 22),
                             ),
                           ),
                         ),
@@ -307,9 +320,10 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                           "Scanning...",
                                           style: MusicPlayerTheme.getTheme(
                                             context,
+                                            context.read<Scaler>(),
                                           ).textTheme.bodyLarge!.copyWith(
-                                            color: Colors.white.withOpacity(
-                                              0.7,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.7,
                                             ),
                                           ),
                                           overflow: TextOverflow.ellipsis,
@@ -354,10 +368,12 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                               width: width * 0.0125,
                               child: CircleAvatar(
                                 radius: height * 0.0125,
-                                backgroundColor: Colors.indigo.withOpacity(0.3),
+                                backgroundColor: Colors.indigo.withValues(
+                                  alpha: 0.3,
+                                ),
                                 child: Icon(
                                   FluentIcons.circlePerson,
-                                  size: LinuxScaler.scale(context, 24),
+                                  size: LinuxScaler().scale(context, 24),
                                   color: Colors.white,
                                 ),
                               ),
@@ -378,6 +394,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                         style:
                                             MusicPlayerTheme.getTheme(
                                               context,
+                                              context.read<Scaler>(),
                                             ).textTheme.bodyLarge,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -385,8 +402,11 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                         "user@email.com",
                                         style: MusicPlayerTheme.getTheme(
                                           context,
+                                          context.read<Scaler>(),
                                         ).textTheme.bodyMedium?.copyWith(
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.7,
+                                          ),
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),

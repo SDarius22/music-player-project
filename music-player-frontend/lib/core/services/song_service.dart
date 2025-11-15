@@ -1,15 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
-import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 
 class SongService {
   final SongRepository _songRepository;
-  final FileService _fileService;
   final SettingsService _settingsService;
 
-  SongService(this._songRepository, this._fileService, this._settingsService);
+  SongService(this._songRepository, this._settingsService);
 
   get sortFields => _songRepository.sortFields;
 

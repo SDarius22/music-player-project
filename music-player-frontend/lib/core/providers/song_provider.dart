@@ -14,16 +14,21 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   bool _isInitialized = false;
 
-  late Future songsFuture;
+  late Future _songsFuture;
 
   SongProvider(this._songService, this._scannerService) {
-    songsFuture = Future(() => _songService.getAllSongs());
+    _songsFuture = Future(() => _songService.getAllSongs());
   }
 
   @override
   get sortFields => _songService.sortFields;
 
+  @override
+  Future get query => _songsFuture;
+
   get totalSongsCount => _songService.getSongCount();
+
+  get initialScanComplete => _songService.isInitialScanComplete();
 
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
@@ -55,7 +60,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     debugPrint(
       "Refreshing songs with query '$_query', sortField '$_sortField', isAscending '$_isAscending'",
     );
-    songsFuture = Future(
+    _songsFuture = Future(
       () => _songService.getSongs(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -69,7 +74,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setFlag(bool value) {
     _isAscending = value;
-    songsFuture = Future(
+    _songsFuture = Future(
       () => _songService.getSongs(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -83,7 +88,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setSortField(String field) {
     _sortField = field;
-    songsFuture = Future(
+    _songsFuture = Future(
       () => _songService.getSongs(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -93,7 +98,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   void setQuery(String newQuery) {
     if (newQuery == _query) return;
     _query = newQuery;
-    songsFuture = Future(
+    _songsFuture = Future(
       () => _songService.getSongs(_query, _sortField, _isAscending),
     );
     notifyListeners();

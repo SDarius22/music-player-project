@@ -3,12 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/lyric_ui.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/ui_netease.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_widget.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
 import 'package:provider/provider.dart';
 
 class LyricsTab extends AbstractLyricsTab {
@@ -16,11 +17,10 @@ class LyricsTab extends AbstractLyricsTab {
 
   @override
   Widget buildLyricsContent(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
-
     UINetease lyricUI = UINetease(
       defaultTextStyle: MusicPlayerTheme.getTheme(
         context,
+        context.read<Scaler>(),
       ).textTheme.headlineLarge!.copyWith(
         shadows: [
           Shadow(
@@ -32,6 +32,7 @@ class LyricsTab extends AbstractLyricsTab {
       ),
       defaultExtTextStyle: MusicPlayerTheme.getTheme(
         context,
+        context.read<Scaler>(),
       ).textTheme.headlineMedium!.copyWith(
         color: oneLine ? Colors.transparent : Colors.grey,
         shadows: [
@@ -44,6 +45,7 @@ class LyricsTab extends AbstractLyricsTab {
       ),
       otherMainTextStyle: MusicPlayerTheme.getTheme(
         context,
+        context.read<Scaler>(),
       ).textTheme.headlineMedium!.copyWith(
         color: oneLine ? Colors.transparent : Colors.grey,
         shadows: [
@@ -121,6 +123,7 @@ class LyricsTab extends AbstractLyricsTab {
                                     style:
                                         MusicPlayerTheme.getTheme(
                                           context,
+                                          context.read<Scaler>(),
                                         ).textTheme.bodyMedium,
                                   ),
                                 ),

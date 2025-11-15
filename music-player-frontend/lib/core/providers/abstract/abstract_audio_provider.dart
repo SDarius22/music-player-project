@@ -1,7 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
-import 'package:music_player_frontend/core/entities/queue_song.dart';
+import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
@@ -24,7 +24,7 @@ abstract class AbstractAudioProvider extends BaseAudioHandler
 
   List<Song> currentQueue = [];
 
-  List<QueueSong> get currentQueueSongs => audioService.queueSongs;
+  List<PlaylistSong> get currentQueueSongs => audioService.queueSongs;
 
   AudioSettings get currentAudioSettings;
 

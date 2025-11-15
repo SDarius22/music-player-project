@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 
-abstract class AbstractGridComponent extends StatelessWidget {
+class CustomGridComponent extends StatelessWidget {
   final List items;
   final Function(BaseEntity) onTap;
   final Function(BaseEntity) onLongPress;
@@ -13,7 +13,7 @@ abstract class AbstractGridComponent extends StatelessWidget {
   final Widget Function(BaseEntity)? buildRightAction;
   final Widget Function()? buildExtraTile;
 
-  const AbstractGridComponent({
+  const CustomGridComponent({
     super.key,
     required this.items,
     required this.onTap,
@@ -25,9 +25,36 @@ abstract class AbstractGridComponent extends StatelessWidget {
     this.buildExtraTile,
   });
 
-  SliverGridDelegate getGridDelegate(BuildContext context);
+  SliverGridDelegate getGridDelegate(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+    return SliverGridDelegateWithMaxCrossAxisExtent(
+      maxCrossAxisExtent: height * 0.2,
+      crossAxisSpacing: width * 0.005,
+      mainAxisSpacing: width * 0.005,
+    );
+  }
 
-  AbstractCustomGridTile getCustomGridTile(BaseEntity entity);
+  CustomGridTile getCustomGridTile(BaseEntity entity) {
+    return CustomGridTile(
+      entity: entity,
+      isSelected: isSelected(entity),
+      onTap: () => onTap(entity),
+      onLongPress: () => onLongPress(entity),
+      leftAction:
+          buildLeftAction != null
+              ? buildLeftAction!(entity)
+              : const SizedBox.shrink(),
+      mainAction:
+          buildMainAction != null
+              ? buildMainAction!(entity)
+              : const SizedBox.shrink(),
+      rightAction:
+          buildRightAction != null
+              ? buildRightAction!(entity)
+              : const SizedBox.shrink(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

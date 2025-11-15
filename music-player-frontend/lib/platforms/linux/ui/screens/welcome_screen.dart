@@ -1,7 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/ui/components/animated_background.dart';
+import 'package:music_player_frontend/local_libs/custom_scaffold/animated_background.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';

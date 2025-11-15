@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/linux_scaler.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
+import 'package:music_player_frontend/platforms/android/ui/components/android_scaler.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/albums.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/artists.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/playlists.dart';
@@ -123,7 +124,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                   width: width * 0.0125,
                   child: Icon(
                     item["icon"],
-                    size: LinuxScaler.scale(context, 24),
+                    size: AndroidScaler().scale(context, 24),
                     color: Colors.white,
                   ),
                 ),
@@ -132,11 +133,12 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                     item["text"],
                     style: MusicPlayerTheme.getTheme(
                       context,
+                      context.read<Scaler>(),
                     ).textTheme.bodyLarge!.copyWith(
                       color:
                           isSelected
                               ? Colors.white
-                              : Colors.white.withOpacity(0.7),
+                              : Colors.white.withValues(alpha: 0.7),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -168,8 +170,8 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
         child: GlassContainer(
           gradient: LinearGradient(
             colors: [
-              Colors.black.withOpacity(0.40),
-              Colors.black.withOpacity(0.10),
+              Colors.black.withValues(alpha: 0.40),
+              Colors.black.withValues(alpha: 0.10),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -182,7 +184,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
           blur: 45.0,
           borderWidth: 0.0,
           elevation: 3.0,
-          shadowColor: Colors.black.withOpacity(0.20),
+          shadowColor: Colors.black.withValues(alpha: 0.20),
           alignment: Alignment.center,
           shape: BoxShape.rectangle,
           child: Column(
@@ -225,10 +227,12 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                             width: width * 0.0125,
                             child: CircleAvatar(
                               radius: height * 0.0125,
-                              backgroundColor: Colors.indigo.withOpacity(0.3),
+                              backgroundColor: Colors.indigo.withValues(
+                                alpha: 0.3,
+                              ),
                               child: Icon(
                                 FluentIcons.circlePerson,
-                                size: LinuxScaler.scale(context, 24),
+                                size: AndroidScaler().scale(context, 24),
                                 color: Colors.white,
                               ),
                             ),
@@ -244,6 +248,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                   style:
                                       MusicPlayerTheme.getTheme(
                                         context,
+                                        context.read<Scaler>(),
                                       ).textTheme.bodyLarge,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -251,8 +256,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                   "user@email.com",
                                   style: MusicPlayerTheme.getTheme(
                                     context,
+                                    context.read<Scaler>(),
                                   ).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: Colors.white.withValues(alpha: 0.7),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),

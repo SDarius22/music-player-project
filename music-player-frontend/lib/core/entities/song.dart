@@ -26,7 +26,6 @@ class Song implements BaseEntity {
   int discNumber = 0;
   int year = 0;
 
-  bool liked = false;
   bool fullyLoaded = false;
 
   @override

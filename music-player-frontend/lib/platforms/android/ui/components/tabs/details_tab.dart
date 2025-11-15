@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
-import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
+import 'package:music_player_frontend/local_libs/text_scroll/custom_text_scroll.dart';
 import 'package:provider/provider.dart';
 
 class DetailsTab extends AbstractDetailsTab {
@@ -43,14 +44,21 @@ class DetailsTab extends AbstractDetailsTab {
             CustomTextScroll(
               text: audioProvider.currentSong.name,
               style:
-                  MusicPlayerTheme.getTheme(context).textTheme.headlineMedium!,
+                  MusicPlayerTheme.getTheme(
+                    context,
+                    context.read<Scaler>(),
+                  ).textTheme.headlineMedium!,
             ),
             const SizedBox(height: 10),
             CustomTextScroll(
               text:
                   audioProvider.currentSong.artist.target?.name ??
                   "Unknown Artist",
-              style: MusicPlayerTheme.getTheme(context).textTheme.bodyLarge!,
+              style:
+                  MusicPlayerTheme.getTheme(
+                    context,
+                    context.read<Scaler>(),
+                  ).textTheme.bodyLarge!,
             ),
           ],
         );

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/platforms/android/providers/audio_provider.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/artist_screen.dart';
@@ -68,7 +69,7 @@ class _ArtistsState extends State<Artists> {
                   ),
                   Expanded(
                     child: FutureBuilder(
-                      future: artistProvider.artistsFuture,
+                      future: artistProvider.query,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -82,10 +83,12 @@ class _ArtistsState extends State<Artists> {
                           return Center(
                             child: Text(
                               "Error loading artists",
-                              style: MusicPlayerTheme.getTheme(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: Colors.red),
+                              style: MusicPlayerTheme.getTheme(
+                                context,
+                                context.read<Scaler>(),
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: Colors.red,
+                              ),
                             ),
                           );
                         }
@@ -102,7 +105,7 @@ class _ArtistsState extends State<Artists> {
                               sliver: ValueListenableBuilder(
                                 valueListenable: selected,
                                 builder: (_, value, __) {
-                                  return GridComponent(
+                                  return CustomGridComponent(
                                     items: snapshot.data ?? [],
                                     isSelected: (entity) {
                                       return value.contains(entity);
@@ -292,115 +295,6 @@ class _ArtistsState extends State<Artists> {
             },
           ),
         ),
-      ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.miniCenterFloat,
-      floatingActionButton: ValueListenableBuilder(
-        valueListenable: selected,
-        builder: (context, value, child) {
-          return Visibility(
-            visible: value.isNotEmpty,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.1,
-              height: MediaQuery.of(context).size.height * 0.05,
-              margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height * 0.1,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(
-                  MediaQuery.of(context).size.height * 0.015,
-                ),
-              ),
-              foregroundDecoration: BoxDecoration(
-                border: Border.all(color: Colors.grey, width: 1),
-                borderRadius: BorderRadius.circular(
-                  MediaQuery.of(context).size.height * 0.015,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: TextButton.icon(
-                      icon: Icon(
-                        FluentIcons.add,
-                        color: Colors.white,
-                        size: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      label: Text(
-                        "Add",
-                        style:
-                            MusicPlayerTheme.getTheme(
-                              context,
-                            ).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      onPressed: () async {
-                        debugPrint("Add button pressed");
-                        if (selected.value.isEmpty) {
-                          return;
-                        }
-                        var appState = Provider.of<AbstractAppStateProvider>(
-                          context,
-                          listen: false,
-                        );
-                        var songs =
-                            selected.value
-                                .expand((artist) => artist.songs)
-                                .toList();
-                        appState.navigatorKey.currentState
-                            ?.push(AddOrExportScreen.route(songs: songs))
-                            .then((value) {
-                              selected.value = [];
-                            });
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(30),
-                            bottomLeft: Radius.circular(30),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: MediaQuery.of(context).size.height * 0.05,
-                    color: Colors.grey,
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      debugPrint("Delete button pressed");
-                      if (selected.value.isEmpty) {
-                        return;
-                      }
-                      selected.value = [];
-                    },
-                    icon: Icon(
-                      FluentIcons.trash,
-                      color: Colors.white,
-                      size: MediaQuery.of(context).size.height * 0.02,
-                    ),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(30),
-                          bottomRight: Radius.circular(30),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }

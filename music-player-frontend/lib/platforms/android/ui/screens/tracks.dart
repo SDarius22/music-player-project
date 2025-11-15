@@ -4,9 +4,9 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/album_screen.dart';
@@ -69,7 +69,7 @@ class _TracksState extends State<Tracks> {
                   ),
                   Expanded(
                     child: FutureBuilder(
-                      future: songProvider.songsFuture,
+                      future: songProvider.query,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -84,14 +84,17 @@ class _TracksState extends State<Tracks> {
                             child: Text("Error loading songs"),
                           );
                         }
+
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(child: Text("No songs found"));
+                        }
+
                         if (snapshot.hasData &&
-                            (snapshot.data!.isEmpty ||
-                                snapshot.data.length <
-                                    songProvider.totalSongsCount)) {
+                            !songProvider.initialScanComplete) {
                           Future.delayed(const Duration(milliseconds: 500), () {
                             songProvider.refreshSongs();
                           });
-                          return const Center(child: Text("No songs found"));
+                          return const Center(child: Text("Loading songs..."));
                         }
                         debugPrint(
                           "Songs loaded: ${snapshot.data?.length ?? 0}",
@@ -108,7 +111,7 @@ class _TracksState extends State<Tracks> {
                                 sliver: ValueListenableBuilder(
                                   valueListenable: selected,
                                   builder: (context, value, child) {
-                                    return GridComponent(
+                                    return CustomGridComponent(
                                       items: snapshot.data ?? [],
                                       isSelected: (entity) {
                                         Song song = entity as Song;

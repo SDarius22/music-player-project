@@ -1,9 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:collection/collection.dart';
 import 'package:music_player_frontend/core/constants.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/entities/abstract/mixin_collection.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:objectbox/objectbox.dart';
@@ -40,14 +39,6 @@ class Album with AbstractCollection implements BaseEntity {
       total += song.duration;
     }
     return total;
-  }
-
-  get year {
-    if (_songs.isEmpty) return 'Unknown Year';
-    List<int> years =
-        _songs.map((song) => song.year).where((year) => year > 0).toList();
-    if (years.isEmpty) return 'Unknown Year';
-    return "${years.average.round()}";
   }
 
   @override

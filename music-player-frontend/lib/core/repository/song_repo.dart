@@ -102,12 +102,4 @@ class SongRepository {
   void updateSongsBatch(List<Song> songs) {
     _songBox.putMany(songs);
   }
-
-  List<Song> getFavoriteSongs() {
-    return _songBox
-        .query(Song_.liked.equals(true))
-        .order(Song_.name)
-        .build()
-        .find();
-  }
 }

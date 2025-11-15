@@ -14,11 +14,22 @@ class PlaylistSongRepository {
     return playlistSong;
   }
 
+  void saveAllSongsToPlaylist(List<Song> songs, int playlistId) {
+    double position = 0.0;
+    for (var song in songs) {
+      PlaylistSong playlistSong = PlaylistSong();
+      playlistSong.playlist.targetId = playlistId;
+      playlistSong.song.target = song;
+      playlistSong.position = position++;
+      _playlistSongBox.put(playlistSong);
+    }
+  }
+
   List<PlaylistSong> getPlaylistSongs(int playlistId) {
     try {
       return _playlistSongBox
           .query(PlaylistSong_.playlist.equals(playlistId))
-          .order(PlaylistSong_.order)
+          .order(PlaylistSong_.position)
           .build()
           .find();
     } catch (e) {
@@ -45,6 +56,22 @@ class PlaylistSongRepository {
       throw Exception(
         "Error deleting song ${song.id} from playlist $playlistId: $e",
       );
+    }
+  }
+
+  void deleteAllSongsFromPlaylist(int playlistId) {
+    try {
+      final playlistSongs =
+          _playlistSongBox
+              .query(PlaylistSong_.playlist.equals(playlistId))
+              .build()
+              .find();
+      for (var playlistSong in playlistSongs) {
+        playlistSong.playlist.target?.playlistSongs.remove(playlistSong);
+        _playlistSongBox.remove(playlistSong.id);
+      }
+    } catch (e) {
+      throw Exception("Error deleting all songs from playlist $playlistId: $e");
     }
   }
 }

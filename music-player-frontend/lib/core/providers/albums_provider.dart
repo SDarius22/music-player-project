@@ -11,14 +11,14 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
   String _query = '';
   String _sortField = 'Name';
 
-  late Future albumsFuture;
+  late Future _albumsFuture;
 
   AlbumProvider(this._albumService) {
-    albumsFuture = Future(() => _albumService.getAllAlbums());
+    _albumsFuture = Future(() => _albumService.getAllAlbums());
 
     albumsStream.throttleTime(const Duration(seconds: 2)).listen((_) {
       debugPrint("Albums stream updated");
-      albumsFuture = Future(
+      _albumsFuture = Future(
         () => _albumService.getAlbums(_query, _sortField, _isAscending),
       );
       notifyListeners();
@@ -27,7 +27,11 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
 
   Stream get albumsStream => _albumService.watchAlbums();
 
+  @override
   get sortFields => _albumService.sortFields;
+
+  @override
+  Future get query => _albumsFuture;
 
   @override
   bool getFlag() {
@@ -37,7 +41,7 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setFlag(bool value) {
     _isAscending = value;
-    albumsFuture = Future(
+    _albumsFuture = Future(
       () => _albumService.getAlbums(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -51,7 +55,7 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setSortField(String field) {
     _sortField = field;
-    albumsFuture = Future(
+    _albumsFuture = Future(
       () => _albumService.getAlbums(_query, _sortField, _isAscending),
     );
     notifyListeners();
@@ -60,7 +64,7 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
   @override
   void setQuery(String newQuery) {
     _query = newQuery;
-    albumsFuture = Future(
+    _albumsFuture = Future(
       () => _albumService.getAlbums(_query, _sortField, _isAscending),
     );
     notifyListeners();

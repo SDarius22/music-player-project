@@ -6,11 +6,12 @@ import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
+import 'package:music_player_frontend/core/ui/components/scaler.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/theme.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_component.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/playlist_screen.dart';
@@ -86,7 +87,7 @@ class _PlaylistsState extends State<Playlists> {
                   ),
                   Expanded(
                     child: FutureBuilder(
-                      future: playlistProvider.playlistsFuture,
+                      future: playlistProvider.query,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -100,10 +101,12 @@ class _PlaylistsState extends State<Playlists> {
                           return Center(
                             child: Text(
                               "Error loading playlists",
-                              style: MusicPlayerTheme.getTheme(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: Colors.red),
+                              style: MusicPlayerTheme.getTheme(
+                                context,
+                                context.read<Scaler>(),
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: Colors.red,
+                              ),
                             ),
                           );
                         }
@@ -120,7 +123,7 @@ class _PlaylistsState extends State<Playlists> {
                               sliver: ValueListenableBuilder(
                                 valueListenable: selected,
                                 builder: (context, value, child) {
-                                  return GridComponent(
+                                  return CustomGridComponent(
                                     items: snapshot.data ?? [],
                                     isSelected: (entity) {
                                       return selected.value.contains(entity);
@@ -197,9 +200,8 @@ class _PlaylistsState extends State<Playlists> {
                                           final songs =
                                               playlist.playlistSongs
                                                   .sorted(
-                                                    (a, b) => a.order.compareTo(
-                                                      b.order,
-                                                    ),
+                                                    (a, b) => a.position
+                                                        .compareTo(b.position),
                                                   )
                                                   .map((e) => e.song.target!)
                                                   .toList();
@@ -381,132 +383,6 @@ class _PlaylistsState extends State<Playlists> {
             },
           ),
         ),
-      ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.miniCenterFloat,
-      floatingActionButton: ValueListenableBuilder(
-        valueListenable: selected,
-        builder: (context, value, child) {
-          return Visibility(
-            visible: value.isNotEmpty,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.1,
-              height: MediaQuery.of(context).size.height * 0.05,
-              margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height * 0.1,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(
-                  MediaQuery.of(context).size.height * 0.015,
-                ),
-              ),
-              foregroundDecoration: BoxDecoration(
-                border: Border.all(color: Colors.grey, width: 1),
-                borderRadius: BorderRadius.circular(
-                  MediaQuery.of(context).size.height * 0.015,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: TextButton.icon(
-                      icon: Icon(
-                        FluentIcons.add,
-                        color: Colors.white,
-                        size: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      label: Text(
-                        "Add",
-                        style:
-                            MusicPlayerTheme.getTheme(
-                              context,
-                            ).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      onPressed: () async {
-                        // debugPrint("Add button pressed");
-                        // if (selected.value.isEmpty) {
-                        //   return;
-                        // }
-                        // var appState = Provider.of<AbstractAppStateProvider>(
-                        //   context,
-                        //   listen: false,
-                        // );
-                        // var songs =
-                        //     selected.value.expand((playlist) {
-                        //       final orderMap = {
-                        //         for (
-                        //           int i = 0;
-                        //           i < playlist.pathsInOrder.length;
-                        //           i++
-                        //         )
-                        //           playlist.pathsInOrder[i]: i,
-                        //       };
-                        //
-                        //       playlist.songs.sort((a, b) {
-                        //         return (orderMap[a.path] ??
-                        //                 playlist.pathsInOrder.length)
-                        //             .compareTo(
-                        //               orderMap[b.path] ??
-                        //                   playlist.pathsInOrder.length,
-                        //             );
-                        //       });
-                        //       return playlist.songs;
-                        //     }).toList();
-                        // appState.navigatorKey.currentState
-                        //     ?.push(AddOrExportScreen.route(songs: songs))
-                        //     .then((value) {
-                        //       selected.value = [];
-                        //     });
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(30),
-                            bottomLeft: Radius.circular(30),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: MediaQuery.of(context).size.height * 0.05,
-                    color: Colors.grey,
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      debugPrint("Delete button pressed");
-                      if (selected.value.isEmpty) {
-                        return;
-                      }
-                      selected.value = [];
-                    },
-                    icon: Icon(
-                      FluentIcons.trash,
-                      color: Colors.white,
-                      size: MediaQuery.of(context).size.height * 0.02,
-                    ),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(30),
-                          bottomRight: Radius.circular(30),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }

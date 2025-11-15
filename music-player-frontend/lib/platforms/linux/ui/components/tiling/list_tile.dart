@@ -3,15 +3,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
-import 'package:music_player_frontend/core/ui/components/custom_text_scroll.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_tile.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
+import 'package:music_player_frontend/local_libs/text_scroll/custom_text_scroll.dart';
 import 'package:provider/provider.dart';
 
-class CustomListTile extends AbstractCustomListTile {
-  const CustomListTile({
+class LinuxCustomListTile extends AbstractCustomListTile {
+  const LinuxCustomListTile({
     super.key,
     required super.entity,
     required super.onTap,
