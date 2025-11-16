@@ -47,6 +47,6 @@ class _LoadingScreenState extends LoadingScreenState<LoadingScreen>
 
   @override
   PreferredSizeWidget buildAppBar(BuildContext context) {
-    return const AppBarWidget();
+    return const LinuxAppBarWidget();
   }
 }

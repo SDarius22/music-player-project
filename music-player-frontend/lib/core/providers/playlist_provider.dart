@@ -103,6 +103,10 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     return _playlistService.getPlaylists(_query, _sortField, _isAscending);
   }
 
+  List<Playlist> getAllPlaylists() {
+    return _playlistService.getAllPlaylists();
+  }
+
   void addSongsToPlaylist(Playlist playlist, List<Song> songs) {
     _playlistService.addToPlaylist(playlist, songs);
     notifyListeners();

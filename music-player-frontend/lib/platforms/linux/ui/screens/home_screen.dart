@@ -28,7 +28,8 @@ class HomeScreen extends AbstractHomeScreen {
 
 class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
   @override
-  PreferredSizeWidget buildAppBar(BuildContext context) => const AppBarWidget();
+  PreferredSizeWidget buildAppBar(BuildContext context) =>
+      const LinuxAppBarWidget();
 
   @override
   Widget buildSongPlayer() => const LinuxSongPlayerWidget();

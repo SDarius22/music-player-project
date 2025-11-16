@@ -26,13 +26,14 @@ abstract class AbstractHomeScreenState<T extends AbstractHomeScreen>
         padding: buildPadding(context),
         child: Stack(
           children: [
-            ValueListenableBuilder(
+            ValueListenableBuilder<double>(
               valueListenable: provider.opacityNotifier,
-              builder: (context, opacity, _) {
+              child: buildMainContent(),
+              builder: (context, opacity, child) {
                 return AnimatedOpacity(
                   opacity: opacity,
                   duration: const Duration(milliseconds: 300),
-                  child: buildMainContent(),
+                  child: child,
                 );
               },
             ),

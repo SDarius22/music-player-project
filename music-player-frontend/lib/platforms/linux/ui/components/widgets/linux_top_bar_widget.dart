@@ -7,8 +7,8 @@ import 'package:music_player_frontend/core/ui/components/widgets/top_bar_widget.
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
 
-class AppBarWidget extends AbstractAppBarWidget {
-  const AppBarWidget({super.key, super.actions = const []});
+class LinuxAppBarWidget extends AbstractAppBarWidget {
+  const LinuxAppBarWidget({super.key, super.actions = const []});
 
   @override
   Widget buildAppBar(BuildContext context) {

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
@@ -49,6 +48,8 @@ abstract class AbstractAddOrExportScreenState<
 
     if (widget.export) {
       _exportPlaylists();
+      Navigator.pop(context);
+      return;
     }
 
     _addSongsToPlaylists();
@@ -71,21 +72,13 @@ abstract class AbstractAddOrExportScreenState<
   }
 
   void _addSongsToPlaylists() {
-    final audioProvider = Provider.of<AbstractAudioProvider>(
-      context,
-      listen: false,
-    );
     final playlistProvider = Provider.of<PlaylistProvider>(
       context,
       listen: false,
     );
 
     for (final playlist in selected.value) {
-      if (playlist.indestructible && playlist.name == 'Current Queue') {
-        audioProvider.addMultipleToQueue(widget.songs);
-      } else {
-        playlistProvider.addSongsToPlaylist(playlist, widget.songs);
-      }
+      playlistProvider.addSongsToPlaylist(playlist, widget.songs);
     }
   }
 
@@ -141,7 +134,7 @@ abstract class AbstractAddOrExportScreenState<
                 future: Future(
                   () =>
                       widget.export
-                          ? playlistProvider.getPlaylists()
+                          ? playlistProvider.getAllPlaylists()
                           : playlistProvider.getNormalPlaylists(),
                 ),
                 builder: (context, snapshot) {
