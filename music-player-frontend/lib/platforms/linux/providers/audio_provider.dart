@@ -6,11 +6,11 @@ import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 
-class AudioProvider extends AbstractAudioProvider
+class LinuxAudioProvider extends AbstractAudioProvider
     with platform_service.SeekHandler {
   bool hasBeenInitialized = false;
 
-  AudioProvider(super.audioService, super.fileService) {
+  LinuxAudioProvider(super.audioService, super.fileService) {
     playbackState.add(
       playbackState.value.copyWith(
         controls: [

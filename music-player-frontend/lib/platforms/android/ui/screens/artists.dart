@@ -176,7 +176,7 @@ class _ArtistsState extends State<Artists> {
                                           }
                                           Artist artist = entity;
                                           var audioProvider =
-                                              Provider.of<AudioProvider>(
+                                              Provider.of<AndroidAudioProvider>(
                                                 context,
                                                 listen: false,
                                               );
@@ -235,11 +235,9 @@ class _ArtistsState extends State<Artists> {
                                               break;
                                             case 'playNext':
                                               Artist artist = entity as Artist;
-                                              var audioProvider =
-                                                  Provider.of<AudioProvider>(
-                                                    context,
-                                                    listen: false,
-                                                  );
+                                              var audioProvider = Provider.of<
+                                                AndroidAudioProvider
+                                              >(context, listen: false);
                                               audioProvider
                                                   .addMultipleNextToQueue(
                                                     artist.songs,

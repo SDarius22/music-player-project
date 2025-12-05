@@ -442,6 +442,17 @@ class _CreateOrImportScreenState
                                 debugPrint(
                                   "Songs loaded: ${snapshot.data?.length ?? 0}",
                                 );
+                                if ((snapshot.data ?? []).isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      "No songs found",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: smallSize,
+                                      ),
+                                    ),
+                                  );
+                                }
                                 return CustomScrollView(
                                   slivers: [
                                     SliverPadding(

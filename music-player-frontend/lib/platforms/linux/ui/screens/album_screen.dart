@@ -199,7 +199,7 @@ class AlbumScreen extends EntityScreen {
                           },
                           onTap: (entity) async {
                             debugPrint("Tapped on ${entity.name}");
-                            var audioProvider = Provider.of<AudioProvider>(
+                            var audioProvider = Provider.of<LinuxAudioProvider>(
                               context,
                               listen: false,
                             );

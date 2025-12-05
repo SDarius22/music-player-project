@@ -245,7 +245,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                         },
                         onTap: (entity) async {
                           debugPrint("Tapped on ${entity.name}");
-                          var audioProvider = Provider.of<AudioProvider>(
+                          var audioProvider = Provider.of<AndroidAudioProvider>(
                             context,
                             listen: false,
                           );

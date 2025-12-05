@@ -390,6 +390,7 @@ class GlassAnimatedScaffold extends StatelessWidget {
         elevation: 0.0,
         alignment: Alignment.center,
         child: Scaffold(
+          key: const Key('glass_animated_scaffold'),
           appBar: appBar,
           body: body,
           floatingActionButton: floatingActionButton,

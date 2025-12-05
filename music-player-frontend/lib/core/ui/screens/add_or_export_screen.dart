@@ -122,81 +122,89 @@ abstract class AbstractAddOrExportScreenState<
 
   Widget buildBody(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final playlistProvider = Provider.of<PlaylistProvider>(
+      context,
+      listen: false,
+    );
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         buildHeader(context),
         Expanded(
-          child: Consumer<PlaylistProvider>(
-            builder: (_, playlistProvider, __) {
-              return FutureBuilder(
-                future: Future(
-                  () =>
-                      widget.export
-                          ? playlistProvider.getAllPlaylists()
-                          : playlistProvider.getNormalPlaylists(),
-                ),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    debugPrint(snapshot.error.toString());
-                    debugPrintStack();
-                    return Center(
-                      child: Text(
-                        "Error loading playlists",
-                        style:
-                            MusicPlayerTheme.getTheme(
-                              context,
-                              context.read<Scaler>(),
-                            ).textTheme.bodyMedium,
-                      ),
-                    );
-                  }
-                  List<Playlist> items = snapshot.data ?? [];
-                  return CustomScrollView(
-                    slivers: [
-                      SliverPadding(
-                        padding: EdgeInsets.only(
-                          left: width * 0.01,
-                          right: width * 0.01,
-                        ),
-                        sliver: ValueListenableBuilder(
-                          valueListenable: selected,
-                          builder: (context, value, child) {
-                            return CustomGridComponent(
-                              items: items,
-                              isSelected: (entity) {
-                                return selected.value.contains(
-                                  entity as Playlist,
-                                );
-                              },
-                              onTap: (entity) {
-                                debugPrint("Tapped on ${entity.name}");
-                                if (selected.value.contains(
-                                  entity as Playlist,
-                                )) {
-                                  selected.value = List<Playlist>.from(
-                                    selected.value,
-                                  )..remove(entity);
-                                } else {
-                                  selected.value = List<Playlist>.from(
-                                    selected.value,
-                                  )..add(entity);
-                                }
-                              },
-                              onLongPress: (entity) {
-                                debugPrint("Long pressed on ${entity.name}");
-                              },
-                            );
+          child: FutureBuilder(
+            future: Future(
+              () =>
+                  widget.export
+                      ? playlistProvider.getAllPlaylists()
+                      : playlistProvider.getNormalPlaylists(),
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                debugPrint(snapshot.error.toString());
+                debugPrintStack();
+                return Center(
+                  child: Text(
+                    "Error loading playlists",
+                    style:
+                        MusicPlayerTheme.getTheme(
+                          context,
+                          context.read<Scaler>(),
+                        ).textTheme.bodyMedium,
+                  ),
+                );
+              }
+              List<Playlist> items = snapshot.data ?? [];
+              if (items.isEmpty) {
+                return Center(
+                  child: Text(
+                    "No playlists found",
+                    style:
+                        MusicPlayerTheme.getTheme(
+                          context,
+                          context.read<Scaler>(),
+                        ).textTheme.bodyMedium,
+                  ),
+                );
+              }
+              return CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: EdgeInsets.only(
+                      left: width * 0.01,
+                      right: width * 0.01,
+                    ),
+                    sliver: ValueListenableBuilder(
+                      valueListenable: selected,
+                      builder: (context, value, child) {
+                        return CustomGridComponent(
+                          items: items,
+                          isSelected: (entity) {
+                            return selected.value.contains(entity as Playlist);
                           },
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                          onTap: (entity) {
+                            debugPrint("Tapped on ${entity.name}");
+                            if (selected.value.contains(entity as Playlist)) {
+                              selected.value = List<Playlist>.from(
+                                selected.value,
+                              )..remove(entity);
+                            } else {
+                              selected.value = List<Playlist>.from(
+                                selected.value,
+                              )..add(entity);
+                            }
+                          },
+                          onLongPress: (entity) {
+                            debugPrint("Long pressed on ${entity.name}");
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               );
             },
           ),

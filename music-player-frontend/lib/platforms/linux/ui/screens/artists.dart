@@ -35,7 +35,10 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
           return;
         }
         Artist artist = entity;
-        var audioProvider = Provider.of<AudioProvider>(context, listen: false);
+        var audioProvider = Provider.of<LinuxAudioProvider>(
+          context,
+          listen: false,
+        );
         audioProvider.setQueue(artist.songs);
         await audioProvider.setCurrentSong(artist.songs.first);
       },
@@ -69,7 +72,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             break;
           case 'playNext':
             Artist artist = entity as Artist;
-            var audioProvider = Provider.of<AudioProvider>(
+            var audioProvider = Provider.of<LinuxAudioProvider>(
               context,
               listen: false,
             );

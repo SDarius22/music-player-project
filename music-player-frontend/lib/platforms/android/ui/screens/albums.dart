@@ -179,7 +179,7 @@ class _AlbumsState extends State<Albums> {
                                             ),
                                           );
                                           var audioProvider =
-                                              Provider.of<AudioProvider>(
+                                              Provider.of<AndroidAudioProvider>(
                                                 context,
                                                 listen: false,
                                               );
@@ -246,11 +246,9 @@ class _AlbumsState extends State<Albums> {
                                                 (a, b) => b.trackNumber
                                                     .compareTo(a.trackNumber),
                                               );
-                                              var audioProvider =
-                                                  Provider.of<AudioProvider>(
-                                                    context,
-                                                    listen: false,
-                                                  );
+                                              var audioProvider = Provider.of<
+                                                AndroidAudioProvider
+                                              >(context, listen: false);
                                               audioProvider
                                                   .addMultipleNextToQueue(
                                                     album.songs,

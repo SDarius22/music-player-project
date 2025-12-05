@@ -217,10 +217,11 @@ class _ArtistScreenState extends State<ArtistScreen> {
                               },
                               onTap: (entity) async {
                                 debugPrint("Tapped on ${entity.name}");
-                                var audioProvider = Provider.of<AudioProvider>(
-                                  context,
-                                  listen: false,
-                                );
+                                var audioProvider =
+                                    Provider.of<AndroidAudioProvider>(
+                                      context,
+                                      listen: false,
+                                    );
                                 audioProvider.setQueue(widget.artist.songs);
                                 await audioProvider.setCurrentSong(
                                   (entity as Song),

@@ -139,7 +139,7 @@ class LinuxApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<AbstractAudioProvider>(
           create: (context) {
-            var audioProvider = AudioProvider(
+            var audioProvider = LinuxAudioProvider(
               context.read<AppAudioService>(),
               context.read<FileService>(),
             );

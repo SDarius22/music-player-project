@@ -4,21 +4,26 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 class SelectionProvider with ChangeNotifier {
   final Set<BaseEntity> _selectedEntities = {};
 
-  Set<BaseEntity> get selectedEntities => _selectedEntities;
+  late Set<BaseEntity> selectedEntities = _selectedEntities;
+
+  void refreshSelection() {
+    selectedEntities = _selectedEntities;
+    notifyListeners();
+  }
 
   void selectEntity(BaseEntity entity) {
     _selectedEntities.add(entity);
-    notifyListeners();
+    refreshSelection();
   }
 
   void deselectEntity(BaseEntity entity) {
     _selectedEntities.remove(entity);
-    notifyListeners();
+    refreshSelection();
   }
 
   void clearSelection() {
     _selectedEntities.clear();
-    notifyListeners();
+    refreshSelection();
   }
 
   bool isSelected(BaseEntity entity) {

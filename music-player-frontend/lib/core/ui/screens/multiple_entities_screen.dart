@@ -22,8 +22,9 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
       appBar: buildAppBar(context),
       body: Padding(
         padding: buildPadding(width, height),
-        child: Consumer<T>(
-          builder: (context, provider, child) {
+        child: Selector<T, Future>(
+          selector: (context, provider) => provider.query,
+          builder: (context, query, child) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -31,7 +32,7 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
                 buildHeader(context),
                 Expanded(
                   child: FutureBuilder(
-                    future: provider.query,
+                    future: query,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -50,15 +51,7 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
                               left: width * 0.01,
                               right: width * 0.01,
                             ),
-                            sliver: Consumer<SelectionProvider>(
-                              builder: (context, selectionProvider, child) {
-                                return buildGridComponent(
-                                  context,
-                                  snapshot,
-                                  selectionProvider,
-                                );
-                              },
-                            ),
+                            sliver: buildGridComponent(context, snapshot),
                           ),
                         ],
                       );
@@ -114,59 +107,67 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
     // Can be overridden by subclasses for custom tap behavior
   }
 
-  CustomGridComponent buildGridComponent(
-    BuildContext context,
-    AsyncSnapshot snapshot,
-    SelectionProvider selectionProvider,
-  ) {
-    final selected = selectionProvider.selectedEntities;
-    return CustomGridComponent(
-      items: snapshot.data ?? [],
-      isSelected: (entity) {
-        return selected.contains(entity);
+  Widget buildGridComponent(BuildContext context, AsyncSnapshot snapshot) {
+    final selectionProvider = Provider.of<SelectionProvider>(
+      context,
+      listen: false,
+    );
+    return Selector<SelectionProvider, Set<BaseEntity>>(
+      selector:
+          (context, selectionProvider) => selectionProvider.selectedEntities,
+      builder: (context, selected, child) {
+        return CustomGridComponent(
+          items: snapshot.data ?? [],
+          isSelected: (entity) {
+            return selected.contains(entity);
+          },
+          onTap: (entity) async {
+            if (selected.isNotEmpty) {
+              if (selected.contains(entity)) {
+                selectionProvider.deselectEntity(entity);
+              } else {
+                selectionProvider.selectEntity(entity);
+              }
+              return;
+            }
+            await onEntityTap(entity, snapshot, context);
+          },
+          onLongPress: (entity) {
+            debugPrint("long pressed ${entity.name}");
+            if (selected.contains(entity)) {
+              selectionProvider.deselectEntity(entity);
+            } else {
+              selectionProvider.selectEntity(entity);
+            }
+          },
+          buildLeftAction: (entity) {
+            if (selected.contains(entity)) {
+              return const SizedBox.shrink();
+            }
+            return buildLeftAction(entity, context);
+          },
+          buildMainAction: (entity) {
+            if (selected.contains(entity)) {
+              return const Icon(FluentIcons.checkCircleOn, color: Colors.white);
+            }
+            if (selected.isNotEmpty) {
+              return const Icon(
+                FluentIcons.checkCircleOff,
+                color: Colors.white,
+              );
+            }
+            return buildMainAction(entity, context);
+          },
+          buildRightAction: (entity) {
+            if (selected.contains(entity)) {
+              return const SizedBox.shrink();
+            }
+            return buildRightAction(entity, context);
+          },
+          buildExtraTile:
+              buildExtraTile == null ? null : () => buildExtraTile!(context),
+        );
       },
-      onTap: (entity) async {
-        if (selected.isNotEmpty) {
-          if (selected.contains(entity)) {
-            selectionProvider.deselectEntity(entity);
-          } else {
-            selectionProvider.selectEntity(entity);
-          }
-          return;
-        }
-        await onEntityTap(entity, snapshot, context);
-      },
-      onLongPress: (entity) {
-        debugPrint("long pressed ${entity.name}");
-        if (selected.contains(entity)) {
-          selectionProvider.deselectEntity(entity);
-        } else {
-          selectionProvider.selectEntity(entity);
-        }
-      },
-      buildLeftAction: (entity) {
-        if (selected.contains(entity)) {
-          return const SizedBox.shrink();
-        }
-        return buildLeftAction(entity, context);
-      },
-      buildMainAction: (entity) {
-        if (selected.contains(entity)) {
-          return const Icon(FluentIcons.checkCircleOn, color: Colors.white);
-        }
-        if (selected.isNotEmpty) {
-          return const Icon(FluentIcons.checkCircleOff, color: Colors.white);
-        }
-        return buildMainAction(entity, context);
-      },
-      buildRightAction: (entity) {
-        if (selected.contains(entity)) {
-          return const SizedBox.shrink();
-        }
-        return buildRightAction(entity, context);
-      },
-      buildExtraTile:
-          buildExtraTile == null ? null : () => buildExtraTile!(context),
     );
   }
 }

@@ -130,7 +130,7 @@ class AndroidApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<AbstractAudioProvider>(
           create: (context) {
-            var audioProvider = AudioProvider(
+            var audioProvider = AndroidAudioProvider(
               context.read<AppAudioService>(),
               context.read<FileService>(),
             );
