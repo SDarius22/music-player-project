@@ -27,9 +27,6 @@ class LinuxAudioProvider extends AbstractAudioProvider
   }
 
   @override
-  List<Song> get currentQueue => super.audioService.currentQueue;
-
-  @override
   AudioSettings get currentAudioSettings =>
       super.audioService.settingsService.currentAudioSettings;
 
@@ -37,10 +34,9 @@ class LinuxAudioProvider extends AbstractAudioProvider
   Future<void> init() async {
     await super.audioService.initSettings();
     currentSong = super.audioService.currentSong;
-    currentQueue = super.audioService.currentQueue;
     repeatNotifier.value = currentAudioSettings.repeat;
     shuffleNotifier.value = currentAudioSettings.shuffle;
-    sliderNotifier.value = super.audioService.currentPlayedSong.duration;
+    sliderNotifier.value = super.audioService.currentSong.duration;
     balanceNotifier.value = currentAudioSettings.balance;
     volumeNotifier.value = currentAudioSettings.volume;
 
@@ -158,35 +154,30 @@ class LinuxAudioProvider extends AbstractAudioProvider
   @override
   void addToQueue(Song song) {
     super.audioService.addToQueue(song);
-    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   void addMultipleToQueue(List<Song> songs) {
     super.audioService.addMultipleToQueue(songs);
-    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   void addNextToQueue(Song song) {
     super.audioService.addNextToQueue(song);
-    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   void addMultipleNextToQueue(List<Song> songs) {
     super.audioService.addMultipleNextToQueue(songs);
-    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 
   @override
   void removeFromQueue(Song song) {
     super.audioService.removeFromQueue(song);
-    currentQueue = super.audioService.currentQueue;
     notifyListeners();
   }
 

@@ -5,8 +5,6 @@ class AudioSettings {
   @Id()
   int id = 0;
 
-  int index = 0;
-
   @Transient()
   bool playing = false;
 

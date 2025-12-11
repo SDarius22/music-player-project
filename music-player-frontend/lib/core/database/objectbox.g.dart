@@ -51,6 +51,7 @@ final _entities = <obx_int.ModelEntity>[
         type: 11,
         flags: 520,
         indexId: const obx_int.IdUid(6, 1626958777364333393),
+        relationField: 'artist',
         relationTarget: 'Artist',
       ),
       obx_int.ModelProperty(
@@ -172,12 +173,6 @@ final _entities = <obx_int.ModelEntity>[
         name: 'id',
         type: 6,
         flags: 1,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 1712099644485876943),
-        name: 'index',
-        type: 6,
-        flags: 0,
       ),
       obx_int.ModelProperty(
         id: const obx_int.IdUid(5, 8073265993596439316),
@@ -332,6 +327,7 @@ final _entities = <obx_int.ModelEntity>[
         type: 11,
         flags: 520,
         indexId: const obx_int.IdUid(4, 774830058903062476),
+        relationField: 'artist',
         relationTarget: 'Artist',
       ),
       obx_int.ModelProperty(
@@ -340,6 +336,7 @@ final _entities = <obx_int.ModelEntity>[
         type: 11,
         flags: 520,
         indexId: const obx_int.IdUid(5, 6060959533894279167),
+        relationField: 'album',
         relationTarget: 'Album',
       ),
     ],
@@ -410,6 +407,7 @@ final _entities = <obx_int.ModelEntity>[
         type: 11,
         flags: 520,
         indexId: const obx_int.IdUid(7, 7294647678718152494),
+        relationField: 'song',
         relationTarget: 'Song',
       ),
       obx_int.ModelProperty(
@@ -446,6 +444,7 @@ final _entities = <obx_int.ModelEntity>[
         type: 11,
         flags: 520,
         indexId: const obx_int.IdUid(15, 696723449049501133),
+        relationField: 'playlist',
         relationTarget: 'Playlist',
       ),
       obx_int.ModelProperty(
@@ -454,6 +453,7 @@ final _entities = <obx_int.ModelEntity>[
         type: 11,
         flags: 520,
         indexId: const obx_int.IdUid(16, 9075972739914124463),
+        relationField: 'song',
         relationTarget: 'Song',
       ),
       obx_int.ModelProperty(
@@ -557,6 +557,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
       8372476156145397775,
       6560857396959259464,
       1951961947720040855,
+      1712099644485876943,
     ],
     retiredRelationUids: const [
       1387782578054686999,
@@ -756,7 +757,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectToFB: (AudioSettings object, fb.Builder fbb) {
         fbb.startTable(12);
         fbb.addInt64(0, object.id);
-        fbb.addInt64(2, object.index);
         fbb.addBool(4, object.repeat);
         fbb.addBool(5, object.shuffle);
         fbb.addFloat64(6, object.balance);
@@ -771,7 +771,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
 
         final object = AudioSettings()
           ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-          ..index = const fb.Int64Reader().vTableGet(buffer, rootOffset, 8, 0)
           ..repeat = const fb.BoolReader().vTableGet(
             buffer,
             rootOffset,
@@ -1189,34 +1188,29 @@ class AudioSettings_ {
     _entities[3].properties[0],
   );
 
-  /// See [AudioSettings.index].
-  static final index = obx.QueryIntegerProperty<AudioSettings>(
-    _entities[3].properties[1],
-  );
-
   /// See [AudioSettings.repeat].
   static final repeat = obx.QueryBooleanProperty<AudioSettings>(
-    _entities[3].properties[2],
+    _entities[3].properties[1],
   );
 
   /// See [AudioSettings.shuffle].
   static final shuffle = obx.QueryBooleanProperty<AudioSettings>(
-    _entities[3].properties[3],
+    _entities[3].properties[2],
   );
 
   /// See [AudioSettings.balance].
   static final balance = obx.QueryDoubleProperty<AudioSettings>(
-    _entities[3].properties[4],
+    _entities[3].properties[3],
   );
 
   /// See [AudioSettings.speed].
   static final speed = obx.QueryDoubleProperty<AudioSettings>(
-    _entities[3].properties[5],
+    _entities[3].properties[4],
   );
 
   /// See [AudioSettings.volume].
   static final volume = obx.QueryDoubleProperty<AudioSettings>(
-    _entities[3].properties[6],
+    _entities[3].properties[5],
   );
 }
 

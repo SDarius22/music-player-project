@@ -2,93 +2,84 @@ import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/entities/played_song.dart';
+import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/repository/played_song_repo.dart';
-import 'package:music_player_frontend/core/repository/playlist_song_repo.dart';
+import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class AppAudioService {
-  final PlaylistSongRepository playlistSongRepository;
-  final PlayedSongRepository playedSongRepository;
   final AbstractAudioPlayer audioPlayer;
   final SongService songService;
   final SettingsService settingsService;
+  final PlaylistService playlistService;
 
   AppAudioService(
-    this.playedSongRepository,
-    this.playlistSongRepository,
     this.audioPlayer,
     this.songService,
     this.settingsService,
+    this.playlistService,
   ) {
-    PlayedSong? lastPlayed = playedSongRepository.getMostRecentPlayedSong();
+    PlayedSong? lastPlayed = playlistService.getMostRecentPlayedSong();
     if (lastPlayed != null && lastPlayed.song.target != null) {
       debugPrint(
         "Last played song: ${lastPlayed.song.target!.name}, duration: ${lastPlayed.duration}",
       );
-      currentPlayedSong = lastPlayed;
+      _currentPlayedSong = lastPlayed;
+      _queuePlaylist = playlistService.getPlaylist(1)!;
     }
   }
 
-  PlayedSong currentPlayedSong = PlayedSong();
+  PlayedSong _currentPlayedSong = PlayedSong();
+  Playlist _queuePlaylist = Playlist();
 
-  List<PlaylistSong> get queueSongs =>
-      playlistSongRepository.getPlaylistSongs(1);
+  List<PlaylistSong> get _queueSongs =>
+      _queuePlaylist.playlistSongs
+          .sorted((a, b) => a.position.compareTo(b.position))
+          .toList();
 
-  List<Song> get queue =>
-      queueSongs.map((e) => e.song.target).whereType<Song>().toList();
+  late List<Song> queue = _queueSongs.map((e) => e.song.target!).toList();
 
-  List<Song> get shuffledQueue {
-    List<Song> shuffled = List.from(queue);
-    shuffled.shuffle();
-    return shuffled;
-  }
+  late List<Song> shuffledQueue = List.from(queue)..shuffle();
+
+  late Song _currentSong = _currentPlayedSong.song.target ?? Song();
 
   List<Song> get currentQueue =>
       settingsService.currentAudioSettings.shuffle ? shuffledQueue : queue;
 
   int get currentIndexInNonShuffled =>
-      currentQueue.isNotEmpty
-          ? queue.indexOf(
-            currentQueue[settingsService.currentAudioSettings.index],
-          )
-          : -1;
+      currentQueue.isNotEmpty ? queue.indexOf(currentSong) : -1;
 
-  Song get currentSong =>
-      currentPlayedSong.song.target ??
-      (currentQueue.isNotEmpty
-          ? currentQueue[settingsService.currentAudioSettings.index]
-          : Song());
+  int get currentIndex => currentQueue.indexOf(currentSong);
+
+  Song get currentSong => _currentSong;
 
   Song get nextSong =>
       currentQueue.isNotEmpty
-          ? currentQueue[(settingsService.currentAudioSettings.index + 1) %
-              currentQueue.length]
+          ? currentQueue[(currentIndexInNonShuffled + 1) % currentQueue.length]
           : Song();
 
   set currentSong(Song song) {
-    int newIndex = currentQueue.indexOf(song);
-    if (newIndex != -1) {
-      settingsService.currentAudioSettings.index = newIndex;
-      settingsService.updateAudioSettings();
+    _currentSong = song;
+    if (song.id != _currentPlayedSong.song.target?.id) {
+      _currentPlayedSong = PlayedSong();
     }
-    if (song.id != currentPlayedSong.song.target?.id) {
-      currentPlayedSong = PlayedSong();
-    }
-    currentPlayedSong.song.target = song;
-    currentPlayedSong.playedAt = DateTime.now();
-    playedSongRepository.savePlayedSong(currentPlayedSong);
+    _currentPlayedSong.song.target = song;
+    _currentPlayedSong.playedAt = DateTime.now();
+    playlistService.savePlayedSong(_currentPlayedSong);
   }
 
   Song get previousSong =>
       currentQueue.isNotEmpty
-          ? currentQueue[(settingsService.currentAudioSettings.index -
-                  1 +
-                  currentQueue.length) %
+          ? currentQueue[(currentIndexInNonShuffled - 1 + currentQueue.length) %
               currentQueue.length]
           : Song();
+
+  void refreshQueue() {
+    queue = _queueSongs.map((e) => e.song.target!).toList();
+    shuffledQueue = List.from(queue)..shuffle();
+  }
 
   Future<void> play() async {
     debugPrint("play");
@@ -162,25 +153,20 @@ class AppAudioService {
 
   void setShuffle(bool shuffle) {
     settingsService.currentAudioSettings.shuffle = shuffle;
-    settingsService.currentAudioSettings.index = currentQueue.indexOf(
-      currentSong,
-    );
     settingsService.updateAudioSettings();
   }
 
   void setSlider(int slider) {
-    if (currentPlayedSong.song.target == null) {
-      currentPlayedSong.song.target = currentSong;
-    }
-    currentPlayedSong.duration = slider;
-    playedSongRepository.savePlayedSong(currentPlayedSong);
+    _currentPlayedSong.song.target ??= currentSong;
+    _currentPlayedSong.duration = slider;
+    playlistService.savePlayedSong(_currentPlayedSong);
   }
 
   Future<void> initSettings() async {
     try {
       await audioPlayer.setSource(currentSong.path);
       await audioPlayer.seek(
-        Duration(milliseconds: currentPlayedSong.duration),
+        Duration(milliseconds: _currentPlayedSong.duration),
       );
     } catch (e) {
       debugPrint("Error initializing audio player: $e");
@@ -197,50 +183,48 @@ class AppAudioService {
     }
     if (currentSong.duration <= 0) {
       currentSong.duration = duration.inSeconds;
-      songService.updateSong(currentSong);
     }
     return duration;
   }
 
   void addToQueue(Song song) {
     if (!queue.contains(song)) {
-      PlaylistSong queueSong = PlaylistSong();
-      queueSong.song.target = song;
-      queueSong.position = 0.0 + queue.length;
-      playlistSongRepository.savePlaylistSong(queueSong);
+      playlistService.addToPlaylist(_queuePlaylist, [song]);
+      refreshQueue();
     }
   }
 
   void addMultipleToQueue(List<Song> songs) {
     for (var song in songs) {
       if (!queue.contains(song)) {
-        PlaylistSong queueSong = PlaylistSong();
-        queueSong.song.target = song;
-        queueSong.position = 0.0 + queue.length;
-        playlistSongRepository.savePlaylistSong(queueSong);
+        addToQueue(song);
       }
     }
   }
 
   void addNextToQueue(Song song) {
     if (!queue.contains(song)) {
-      int currentIndex = settingsService.currentAudioSettings.index;
+      int currentIndex = currentIndexInNonShuffled;
       int nextIndex = (currentIndex + 1) % queue.length;
       if (nextIndex == 0) {
         nextIndex = queue.length;
         PlaylistSong queueSong = PlaylistSong();
+        queueSong.playlist.targetId = 1;
         queueSong.song.target = song;
         queueSong.position = 0.0 + nextIndex;
-        playlistSongRepository.savePlaylistSong(queueSong);
+        playlistService.savePlaylistSong(queueSong);
       } else {
-        PlaylistSong currentQueueSong = queueSongs[currentIndex];
-        PlaylistSong nextQueueSong = queueSongs[nextIndex];
+        PlaylistSong currentQueueSong = _queueSongs[currentIndex];
+        PlaylistSong nextQueueSong = _queueSongs[nextIndex];
         PlaylistSong queueSong = PlaylistSong();
+        queueSong.playlist.targetId = 1;
         queueSong.song.target = song;
         queueSong.position =
             (currentQueueSong.position + nextQueueSong.position) / 2;
-        playlistSongRepository.savePlaylistSong(queueSong);
+        playlistService.savePlaylistSong(queueSong);
       }
+      playlistService.updatePlaylist(_queuePlaylist);
+      refreshQueue();
     }
   }
 
@@ -252,20 +236,18 @@ class AppAudioService {
 
   void removeFromQueue(Song song) {
     if (queue.contains(song)) {
-      playlistSongRepository.deletePlaylistSong(song, 1);
+      playlistService.deleteFromPlaylist(song, _queuePlaylist);
+      refreshQueue();
     }
   }
 
   void setQueue(List<Song> songs) async {
     if (queue.equals(songs)) {
+      debugPrint("Queue is the same, not updating.");
       return;
     }
-    playlistSongRepository.deleteAllSongsFromPlaylist(1);
-    playlistSongRepository.saveAllSongsToPlaylist(songs, 1);
-  }
-
-  Future<List<Song>> getQueue() async {
-    return queue;
+    playlistService.deleteAllSongsFromPlaylist(_queuePlaylist);
+    addMultipleToQueue(songs);
   }
 
   void likeCurrentSong() {

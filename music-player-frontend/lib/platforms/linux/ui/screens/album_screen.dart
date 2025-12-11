@@ -11,7 +11,6 @@ import 'package:music_player_frontend/core/ui/components/widgets/image_widget.da
 import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:provider/provider.dart';
@@ -199,10 +198,11 @@ class AlbumScreen extends EntityScreen {
                           },
                           onTap: (entity) async {
                             debugPrint("Tapped on ${entity.name}");
-                            var audioProvider = Provider.of<LinuxAudioProvider>(
-                              context,
-                              listen: false,
-                            );
+                            var audioProvider =
+                                Provider.of<AbstractAudioProvider>(
+                                  context,
+                                  listen: false,
+                                );
                             audioProvider.setQueue(album.songs);
                             await audioProvider.setCurrentSong(
                               (entity as Song),

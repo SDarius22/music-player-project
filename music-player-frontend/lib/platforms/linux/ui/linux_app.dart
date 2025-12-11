@@ -104,11 +104,10 @@ class LinuxApp extends StatelessWidget {
         Provider<AppAudioService>(
           create:
               (context) => AppAudioService(
-                context.read<PlayedSongRepository>(),
-                context.read<PlaylistSongRepository>(),
                 context.read<AbstractAudioPlayer>(),
                 context.read<SongService>(),
                 context.read<SettingsService>(),
+                context.read<PlaylistService>(),
               ),
         ),
 

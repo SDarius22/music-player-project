@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:music_player_frontend/core/entities/played_song.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -31,9 +32,9 @@ class PlaylistService {
 
   Stream watchPlaylists() => _playlistRepository.watchPlaylists();
 
-  get _playedSongsStream => _playedSongRepository.songAdded;
+  Stream<PlayedSong> get _playedSongsStream => _playedSongRepository.songAdded;
 
-  get sortFields => _playlistRepository.sortFields;
+  Map<String, dynamic> get sortFields => _playlistRepository.sortFields;
 
   Playlist addPlaylist(
     String name,
@@ -49,8 +50,24 @@ class PlaylistService {
     return _playlistRepository.savePlaylist(newPlaylist);
   }
 
+  Playlist updatePlaylist(Playlist playlist) {
+    return _playlistRepository.savePlaylist(playlist);
+  }
+
   Playlist? getPlaylist(int playlistId) {
     return _playlistRepository.getPlaylist(playlistId);
+  }
+
+  PlayedSong savePlayedSong(PlayedSong playedSong) {
+    return _playedSongRepository.savePlayedSong(playedSong);
+  }
+
+  PlaylistSong savePlaylistSong(PlaylistSong playlistSong) {
+    return _playlistSongRepository.savePlaylistSong(playlistSong);
+  }
+
+  PlayedSong? getMostRecentPlayedSong() {
+    return _playedSongRepository.getMostRecentPlayedSong();
   }
 
   void initializeIndestructible() {
@@ -113,20 +130,8 @@ class PlaylistService {
   }
 
   void updateIndestructiblePlaylists() {
-    updateQueue();
     updateMostPlayedPlaylist();
     updateRecentlyPlayedPlaylist();
-  }
-
-  void updateQueue() {
-    Playlist? queue = _playlistRepository
-        .getIndestructiblePlaylists()
-        .firstWhereOrNull((pl) => pl.name == "Queue");
-    if (queue == null) {
-      debugPrint("Queue playlist not found");
-      return;
-    }
-    // placeholder for future functionality
   }
 
   void updateMostPlayedPlaylist() {
@@ -236,9 +241,17 @@ class PlaylistService {
   void deleteFromPlaylist(Song song, Playlist playlist) {
     try {
       _playlistSongRepository.deletePlaylistSong(song, playlist.id);
+      playlist.playlistSongs.removeWhere((ps) => ps.song.targetId == song.id);
+      _playlistRepository.savePlaylist(playlist);
     } catch (e) {
       debugPrint("Error removing song from playlist: $e");
     }
+  }
+
+  void deleteAllSongsFromPlaylist(Playlist playlist) {
+    _playlistSongRepository.deleteAllSongsFromPlaylist(playlist.id);
+    playlist.playlistSongs.clear();
+    _playlistRepository.savePlaylist(playlist);
   }
 
   void deletePlaylist(Playlist playlist) {

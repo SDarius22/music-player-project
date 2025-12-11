@@ -85,8 +85,8 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
         debugPrint(
           "Building SongPlayerWidget, current song: ${audioProvider.currentSong.name}",
         );
-        if (audioProvider.currentQueue.isEmpty) {
-          debugPrint("Queue is empty, not showing player");
+        if (audioProvider.currentSong == Song()) {
+          debugPrint("Not showing player");
           return const SizedBox.shrink();
         }
         _getCoverArtImage(audioProvider.currentSong);
