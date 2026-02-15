@@ -35,8 +35,7 @@ class QueueTab extends AbstractQueueTab {
                   context,
                   listen: false,
                 );
-                await audioProvider.setCurrentSong(entity as Song);
-                audioProvider.play();
+                await audioProvider.setCurrentSongAndPlay(entity as Song);
               },
               onLongPress: (entity) {
                 debugPrint("Long pressed on: ${entity.name}");

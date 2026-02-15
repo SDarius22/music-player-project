@@ -117,6 +117,10 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     notifyListeners();
   }
 
+  void updateFavoritesPlaylist() {
+    _playlistService.updateFavoritesPlaylist();
+  }
+
   @override
   Future<void> refresh() async {
     _playlistsFuture = Future(

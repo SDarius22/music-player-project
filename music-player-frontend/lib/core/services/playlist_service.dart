@@ -37,6 +37,9 @@ class PlaylistService {
   }
 
   Playlist updatePlaylist(Playlist playlist) {
+    if (playlist.indestructible) {
+      playlist.imageBytes = playlist.songsList.first.coverArt;
+    }
     return _playlistRepository.savePlaylist(playlist);
   }
 
@@ -67,6 +70,17 @@ class PlaylistService {
     _playlistRepository.savePlaylist(queue);
   }
 
+  Playlist getQueuePlaylist() {
+    var queue = _playlistRepository.getPlaylistByName("Queue");
+    if (queue == null) {
+      debugPrint("Queue playlist not found, initializing...");
+      initializeQueue();
+      return _playlistRepository.getPlaylistByName("Queue")!;
+    } else {
+      return queue;
+    }
+  }
+
   void initializeFavorites() {
     if (_playlistRepository.getPlaylistByName("Favorites") != null) {
       return;
@@ -77,6 +91,17 @@ class PlaylistService {
     favorites.indestructible = true;
     favorites.nextAdded = "last";
     _playlistRepository.savePlaylist(favorites);
+  }
+
+  Playlist getFavoritesPlaylist() {
+    var favorites = _playlistRepository.getPlaylistByName("Favorites");
+    if (favorites == null) {
+      debugPrint("Favorites playlist not found, initializing...");
+      initializeFavorites();
+      return _playlistRepository.getPlaylistByName("Favorites")!;
+    } else {
+      return favorites;
+    }
   }
 
   void initializeMostPlayed() {
@@ -101,15 +126,6 @@ class PlaylistService {
     recentlyPlayed.indestructible = true;
     recentlyPlayed.nextAdded = "last";
     _playlistRepository.savePlaylist(recentlyPlayed);
-  }
-
-  List<Playlist> getIndestructiblePlaylists() {
-    return _playlistRepository.getIndestructiblePlaylists();
-  }
-
-  void updateIndestructiblePlaylists() {
-    updateMostPlayedPlaylist();
-    updateRecentlyPlayedPlaylist();
   }
 
   void updateMostPlayedPlaylist() {
@@ -141,6 +157,24 @@ class PlaylistService {
     addToPlaylist(recentlyPlayed, recentSongs);
   }
 
+  void updateFavoritesPlaylist() {
+    Playlist? favorites = _playlistRepository
+        .getIndestructiblePlaylists()
+        .firstWhereOrNull((pl) => pl.name == "Favorites");
+    if (favorites == null) {
+      debugPrint("Favorites playlist not found");
+      return;
+    }
+    List<Song> favoriteSongs = _songRepository.getFavoriteSongs();
+    favorites.songs.clear();
+    favorites.songsIds.clear();
+    addToPlaylist(favorites, favoriteSongs);
+  }
+
+  List<Playlist> getIndestructiblePlaylists() {
+    return _playlistRepository.getIndestructiblePlaylists();
+  }
+
   List<Playlist> getNormalPlaylists() {
     return _playlistRepository.getNormalPlaylists();
   }
@@ -165,7 +199,7 @@ class PlaylistService {
         playlist.songs.add(song);
       }
     }
-    _playlistRepository.savePlaylist(playlist);
+    updatePlaylist(playlist);
   }
 
   void deleteFromPlaylist(Song song, Playlist playlist) {

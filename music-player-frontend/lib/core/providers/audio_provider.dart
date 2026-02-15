@@ -13,6 +13,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   final AppAudioService _audioService;
   final FileService _fileService;
 
+  ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> playingNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> repeatNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> shuffleNotifier = ValueNotifier<bool>(false);
@@ -29,6 +30,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     shuffledQueue = List<Song>.from(normalQueue)..shuffle();
 
     currentSongNotifier.value = _audioService.getCurrentSong();
+    likedNotifier.value = currentSongNotifier.value.likedByUser;
 
     repeatNotifier.value = _currentAudioSettings.repeat;
     shuffleNotifier.value = _currentAudioSettings.shuffle;
@@ -89,10 +91,16 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   @override
   Future<void> skipToNext() async {
-    await _audioService.skipToNext(_nextSong);
-    currentSongNotifier.value = _audioService.getCurrentSong();
+    debugPrint("Skipping to next song: ${_nextSong.name}");
+    currentSongNotifier.value = _nextSong;
+    likedNotifier.value = _nextSong.likedByUser;
     changeMediaItem();
     notifyListeners();
+    try {
+      await _audioService.skipToNext(currentSong);
+    } catch (e) {
+      debugPrint("Error skipping to next: $e");
+    }
   }
 
   @override
@@ -101,10 +109,15 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       await seek(Duration.zero);
       return;
     }
-    await _audioService.skipToPrevious(_previousSong);
-    currentSongNotifier.value = _audioService.getCurrentSong();
+    currentSongNotifier.value = _previousSong;
+    likedNotifier.value = _previousSong.likedByUser;
     changeMediaItem();
     notifyListeners();
+    try {
+      await _audioService.skipToPrevious(currentSong);
+    } catch (e) {
+      debugPrint("Error skipping to previous: $e");
+    }
   }
 
   @override
@@ -147,6 +160,9 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<Duration> getDuration() async {
+    if (currentSong.durationInSeconds > 0) {
+      return Duration(seconds: currentSong.durationInSeconds);
+    }
     return await _audioService.getDuration();
   }
 
@@ -185,14 +201,16 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setCurrentSong(Song song) async {
+  Future<void> setCurrentSongAndPlay(Song song) async {
     currentSongNotifier.value = song;
-    await _audioService.setCurrentSong(song);
+    likedNotifier.value = song.likedByUser;
+    await _audioService.setCurrentSongAndPlay(song);
     changeMediaItem();
     notifyListeners();
   }
 
   void likeCurrentSong() {
+    likedNotifier.value = !likedNotifier.value;
     _audioService.likeCurrentSong();
   }
 
@@ -224,7 +242,13 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       playingNotifier.value = playing;
 
       if (event.processingState == ProcessingState.completed) {
-        skipToNext();
+        if (_currentAudioSettings.repeat) {
+          pause();
+          seek(Duration.zero);
+          play();
+        } else if (_currentAudioSettings.shuffle) {
+          skipToNext();
+        }
       }
 
       playbackState.add(

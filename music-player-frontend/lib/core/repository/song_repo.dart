@@ -92,6 +92,10 @@ class SongRepository {
     return query.find();
   }
 
+  List<Song> getFavoriteSongs() {
+    return _songBox.query(Song_.likedByUser.equals(true)).build().find();
+  }
+
   List<Song> getSongs(String query, String sortField, bool flag) {
     Query<Song> builderQuery;
     if (flag == true) {

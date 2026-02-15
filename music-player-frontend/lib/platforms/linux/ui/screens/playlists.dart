@@ -71,8 +71,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
         final songs = playlist.songsList;
         var audioProvider = Provider.of<AudioProvider>(context, listen: false);
         audioProvider.setQueue(songs);
-        await audioProvider.setCurrentSong(songs.first);
-        audioProvider.play();
+        await audioProvider.setCurrentSongAndPlay(songs.first);
       },
     );
   }

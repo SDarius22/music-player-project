@@ -19,8 +19,7 @@ class AppAudioService {
     this.playlistService,
   ) {
     _currentSong = playlistService.getMostRecentPlayedSong() ?? Song();
-    _queuePlaylist = playlistService.getPlaylist(1)!;
-
+    _queuePlaylist = playlistService.getQueuePlaylist();
     _initPlayer();
   }
 
@@ -38,7 +37,7 @@ class AppAudioService {
   Future<void> play(Song song) async {
     debugPrint("play");
     if (song.path != _currentSong.path) {
-      await setCurrentSong(song);
+      await setCurrentSongAndPlay(song);
     }
     await audioPlayer.play();
   }
@@ -49,19 +48,6 @@ class AppAudioService {
   }
 
   Future<void> skipToNext(Song nextSong) async {
-    if (settingsService.currentAudioSettings.repeat) {
-      audioPlayer.setUrl(_currentSong.path);
-      seek(Duration.zero);
-      play(_currentSong);
-      return;
-    }
-    await _playNext(nextSong);
-  }
-
-  Future<void> _playNext(Song nextSong) async {
-    if (queue.isEmpty) {
-      return;
-    }
     await play(nextSong);
   }
 
@@ -69,16 +55,18 @@ class AppAudioService {
     await play(previousSong);
   }
 
-  Future<void> setCurrentSong(Song song) async {
+  Future<void> setCurrentSongAndPlay(Song song) async {
+    debugPrint("Setting current song to ${song.path}");
+
     _currentSong = song;
     _currentSong.lastPlayed = DateTime.now();
     _currentSong.playCount += 1;
-
-    debugPrint("Setting current song to ${song.path}");
-
-    await audioPlayer.setUrl(song.path);
-
     songService.updateSong(_currentSong);
+    playlistService.updateMostPlayedPlaylist();
+    playlistService.updateRecentlyPlayedPlaylist();
+
+    await audioPlayer.setFilePath(song.path);
+    await audioPlayer.play();
   }
 
   Future<void> seek(Duration position) async {
@@ -114,7 +102,7 @@ class AppAudioService {
   Future<void> _initPlayer() async {
     try {
       await audioPlayer.setVolume(settingsService.currentAudioSettings.volume);
-      await audioPlayer.setUrl(
+      await audioPlayer.setFilePath(
         _currentSong.path,
         initialPosition: Duration(
           seconds: settingsService.currentAudioSettings.sliderInSeconds,
@@ -186,6 +174,7 @@ class AppAudioService {
   void likeCurrentSong() {
     _currentSong.likedByUser = !_currentSong.likedByUser;
     songService.updateSong(_currentSong);
+    playlistService.updateFavoritesPlaylist();
   }
 
   Future<void> updateSliderInSeconds(int seconds) async {

@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
-import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
@@ -415,47 +414,16 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  IconButton(
-                    onPressed: () async {
-                      debugPrint("Liked");
-                      audioProvider.likeCurrentSong();
-                      likedNotifier.value = !likedNotifier.value;
-                      String message =
-                          likedNotifier.value
-                              ? "Added ${audioProvider.currentSong.name} to Favorites"
-                              : "Removed ${audioProvider.currentSong.name} from Favorites";
-                      BotToast.showText(
-                        text: message,
-                        duration: const Duration(seconds: 3),
-                        contentColor: Colors.black,
-                        textStyle: TextStyle(
-                          color: Colors.white,
-                          fontSize: height * 0.02,
-                        ),
-                      );
-                    },
-                    icon: Icon(
-                      likedNotifier.value
-                          ? FluentIcons.liked
-                          : FluentIcons.unliked,
-                      size: height * 0.025,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          offset: const Offset(1, 2),
-                          blurRadius: 7,
-                        ),
-                      ],
-                    ),
-                  ),
+                  LinuxVolumeWidget(),
+
+                  const Spacer(),
 
                   SizedBox(
                     width: width * 0.5,
                     child: _buildPlayerButtons(audioProvider),
                   ),
 
-                  LinuxVolumeWidget(),
+                  const Spacer(),
 
                   IconButton(
                     onPressed: () async {

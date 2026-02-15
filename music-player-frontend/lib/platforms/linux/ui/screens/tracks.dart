@@ -147,8 +147,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
       if (audioProvider.currentSong.path != song.path) {
         List<Song> songs = snapshot.data as List<Song>;
         audioProvider.setQueue(songs);
-        await audioProvider.setCurrentSong(song);
-        await audioProvider.play();
+        await audioProvider.setCurrentSongAndPlay(song);
       } else {
         if (audioProvider.playingNotifier.value == true) {
           debugPrint("Pausing song");
@@ -162,8 +161,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
       debugPrint(e.toString());
       List<Song> songs = snapshot.data as List<Song>;
       audioProvider.setQueue(songs);
-      await audioProvider.setCurrentSong(song);
-      await audioProvider.play();
+      await audioProvider.setCurrentSongAndPlay(song);
     }
   }
 

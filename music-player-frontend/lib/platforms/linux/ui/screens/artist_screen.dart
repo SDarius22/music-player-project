@@ -80,8 +80,7 @@ class ArtistScreen extends EntityScreen {
                     listen: false,
                   );
                   audioProvider.setQueue(artist.songs);
-                  await audioProvider.setCurrentSong(artist.songs.first);
-                  audioProvider.play();
+                  await audioProvider.setCurrentSongAndPlay(artist.songs.first);
                 },
                 icon: Icon(
                   FluentIcons.play,
@@ -178,10 +177,9 @@ class ArtistScreen extends EntityScreen {
                               listen: false,
                             );
                             await audioProvider.setQueue(artist.songs);
-                            await audioProvider.setCurrentSong(
+                            await audioProvider.setCurrentSongAndPlay(
                               (entity as Song),
                             );
-                            await audioProvider.play();
                           },
                           onLongPress: (entity) {
                             debugPrint("Long pressed on ${entity.name}");
