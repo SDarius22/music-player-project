@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/settings_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/library_settings.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends AbstractSettingsScreen {
   static Route<void> route() {
@@ -23,10 +26,19 @@ class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
     {
       "title": const Text("Library Settings"),
       "subtitle": const Text("Manage your music library settings"),
-      "trailing": Icon(
-        FluentIcons.right,
-        color: Colors.white,
-        size: MediaQuery.of(context).size.height * 0.03,
+      "trailing": IconButton(
+        onPressed: () {
+          context
+              .read<AbstractAppStateProvider>()
+              .navigatorKey
+              .currentState
+              ?.push(LibrarySettings.route());
+        },
+        icon: Icon(
+          FluentIcons.right,
+          color: Colors.white,
+          size: MediaQuery.of(context).size.height * 0.03,
+        ),
       ),
     },
   ];
