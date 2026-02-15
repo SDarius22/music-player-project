@@ -3,10 +3,10 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artist_screen.dart';
@@ -35,12 +35,10 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
           return;
         }
         Artist artist = entity;
-        var audioProvider = Provider.of<LinuxAudioProvider>(
-          context,
-          listen: false,
-        );
+        var audioProvider = Provider.of<AudioProvider>(context, listen: false);
         audioProvider.setQueue(artist.songs);
         await audioProvider.setCurrentSong(artist.songs.first);
+        await audioProvider.play();
       },
     );
   }
@@ -72,11 +70,11 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             break;
           case 'playNext':
             Artist artist = entity as Artist;
-            var audioProvider = Provider.of<LinuxAudioProvider>(
+            var audioProvider = Provider.of<AudioProvider>(
               context,
               listen: false,
             );
-            audioProvider.addMultipleNextToQueue(artist.songs);
+            audioProvider.addNextToQueue(artist.songs);
             break;
           case 'select':
             var selectionProvider = Provider.of<SelectionProvider>(

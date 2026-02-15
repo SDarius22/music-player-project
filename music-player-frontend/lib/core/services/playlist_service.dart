@@ -3,36 +3,22 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/entities/played_song.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
-import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/repository/played_song_repo.dart';
 import 'package:music_player_frontend/core/repository/playlist_repo.dart';
-import 'package:music_player_frontend/core/repository/playlist_song_repo.dart';
+import 'package:music_player_frontend/core/repository/song_repo.dart';
 
 class PlaylistService {
   final PlaylistRepository _playlistRepository;
-  final PlaylistSongRepository _playlistSongRepository;
-  final PlayedSongRepository _playedSongRepository;
+  final SongRepository _songRepository;
 
-  PlaylistService(
-    this._playlistRepository,
-    this._playlistSongRepository,
-    this._playedSongRepository,
-  ) {
+  PlaylistService(this._playlistRepository, this._songRepository) {
     if (getIndestructiblePlaylists().isEmpty) {
       initializeIndestructible();
     }
-    _playedSongsStream.listen((_) {
-      debugPrint("Played songs stream updated");
-      updateIndestructiblePlaylists();
-    });
   }
 
   Stream watchPlaylists() => _playlistRepository.watchPlaylists();
-
-  Stream<PlayedSong> get _playedSongsStream => _playedSongRepository.songAdded;
 
   Map<String, dynamic> get sortFields => _playlistRepository.sortFields;
 
@@ -58,16 +44,8 @@ class PlaylistService {
     return _playlistRepository.getPlaylist(playlistId);
   }
 
-  PlayedSong savePlayedSong(PlayedSong playedSong) {
-    return _playedSongRepository.savePlayedSong(playedSong);
-  }
-
-  PlaylistSong savePlaylistSong(PlaylistSong playlistSong) {
-    return _playlistSongRepository.savePlaylistSong(playlistSong);
-  }
-
-  PlayedSong? getMostRecentPlayedSong() {
-    return _playedSongRepository.getMostRecentPlayedSong();
+  Song? getMostRecentPlayedSong() {
+    return _songRepository.getMostRecentPlayedSong();
   }
 
   void initializeIndestructible() {
@@ -142,9 +120,10 @@ class PlaylistService {
       debugPrint("Most Played playlist not found");
       return;
     }
-    List<Song> topSongs = getMostPlayedSongs(50);
+    List<Song> topSongs = _songRepository.getMostPlayedSongs(50);
     debugPrint("Updating Most Played with ${topSongs.length} songs");
-    mostPlayed.playlistSongs.clear();
+    mostPlayed.songs.clear();
+    mostPlayed.songsIds.clear();
     addToPlaylist(mostPlayed, topSongs);
   }
 
@@ -156,8 +135,9 @@ class PlaylistService {
       debugPrint("Recently Played playlist not found");
       return;
     }
-    List<Song> recentSongs = getRecentlyPlayedSongs(50);
-    recentlyPlayed.playlistSongs.clear();
+    List<Song> recentSongs = _songRepository.getRecentlyPlayedSongs(50);
+    recentlyPlayed.songs.clear();
+    recentlyPlayed.songsIds.clear();
     addToPlaylist(recentlyPlayed, recentSongs);
   }
 
@@ -176,72 +156,22 @@ class PlaylistService {
   void addToPlaylist(Playlist playlist, List<Song> songs) {
     if (playlist.nextAdded == 'last') {
       for (var song in songs) {
-        _addLastToPlaylist(playlist, song);
+        playlist.songsIds.add(song.id);
+        playlist.songs.add(song);
       }
     } else {
       for (var song in songs.reversed) {
-        _addFirstToPlaylist(playlist, song);
+        playlist.songsIds.insert(0, song.id);
+        playlist.songs.add(song);
       }
     }
-    _playlistRepository.savePlaylist(playlist);
-  }
-
-  void addToIndexedPositionInPlaylist(
-    Playlist playlist,
-    Song song,
-    double position,
-  ) {
-    var playlistSongs = playlist.playlistSongs;
-    if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
-      debugPrint("Song '${song.id}' already in playlist");
-      return;
-    }
-    PlaylistSong ps = PlaylistSong();
-    ps.playlist.target = playlist;
-    ps.song.target = song;
-    ps.position = position;
-    playlist.playlistSongs.add(_playlistSongRepository.savePlaylistSong(ps));
-    _playlistRepository.savePlaylist(playlist);
-  }
-
-  void _addLastToPlaylist(Playlist playlist, Song song) {
-    var playlistSongs = playlist.playlistSongs;
-    double maxOrder =
-        playlistSongs.isNotEmpty ? playlistSongs.last.position : 0.0;
-    if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
-      debugPrint("Song '${song.id}' already in playlist");
-      return;
-    }
-    maxOrder += 1;
-    PlaylistSong ps = PlaylistSong();
-    ps.playlist.target = playlist;
-    ps.song.target = song;
-    ps.position = maxOrder;
-    playlist.playlistSongs.add(_playlistSongRepository.savePlaylistSong(ps));
-    _playlistRepository.savePlaylist(playlist);
-  }
-
-  void _addFirstToPlaylist(Playlist playlist, Song song) {
-    var playlistSongs = playlist.playlistSongs;
-    double minOrder =
-        playlistSongs.isNotEmpty ? playlistSongs.first.position : 0.0;
-    if (playlistSongs.any((ps) => ps.song.targetId == song.id)) {
-      debugPrint("Song '${song.id}' already in playlist");
-      return;
-    }
-    minOrder -= 1;
-    PlaylistSong ps = PlaylistSong();
-    ps.playlist.target = playlist;
-    ps.song.target = song;
-    ps.position = minOrder;
-    playlist.playlistSongs.add(_playlistSongRepository.savePlaylistSong(ps));
     _playlistRepository.savePlaylist(playlist);
   }
 
   void deleteFromPlaylist(Song song, Playlist playlist) {
     try {
-      _playlistSongRepository.deletePlaylistSong(song, playlist.id);
-      playlist.playlistSongs.removeWhere((ps) => ps.song.targetId == song.id);
+      playlist.songsIds.remove(song.id);
+      playlist.songs.remove(song);
       _playlistRepository.savePlaylist(playlist);
     } catch (e) {
       debugPrint("Error removing song from playlist: $e");
@@ -249,8 +179,8 @@ class PlaylistService {
   }
 
   void deleteAllSongsFromPlaylist(Playlist playlist) {
-    _playlistSongRepository.deleteAllSongsFromPlaylist(playlist.id);
-    playlist.playlistSongs.clear();
+    playlist.songsIds.clear();
+    playlist.songs.clear();
     _playlistRepository.savePlaylist(playlist);
   }
 
@@ -260,21 +190,5 @@ class PlaylistService {
       return;
     }
     _playlistRepository.deletePlaylist(playlist);
-  }
-
-  List<Song> getMostPlayedSongs(int limit) {
-    return _playedSongRepository
-        .getMostPlayedSongs(limit)
-        .map((ps) => ps.song.target)
-        .whereType<Song>()
-        .toList();
-  }
-
-  List<Song> getRecentlyPlayedSongs(int limit) {
-    return _playedSongRepository
-        .getRecentPlayedSongs(limit)
-        .map((ps) => ps.song.target)
-        .whereType<Song>()
-        .toList();
   }
 }

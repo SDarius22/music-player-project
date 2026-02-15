@@ -44,16 +44,22 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
                         );
                       }
                       customLogic(snapshot);
-                      return CustomScrollView(
-                        slivers: [
-                          SliverPadding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.01,
-                              right: width * 0.01,
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          await provider.refresh();
+                        },
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            SliverPadding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.01,
+                                right: width * 0.01,
+                              ),
+                              sliver: buildGridComponent(context, snapshot),
                             ),
-                            sliver: buildGridComponent(context, snapshot),
-                          ),
-                        ],
+                          ],
+                        ),
                       );
                     },
                   ),

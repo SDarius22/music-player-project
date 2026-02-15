@@ -26,9 +26,9 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   @override
   Future get query => _songsFuture;
 
-  get totalSongsCount => _songService.getSongCount();
+  int get totalSongsCount => _songService.getSongCount();
 
-  get initialScanComplete => _songService.isInitialScanComplete();
+  bool get initialScanComplete => _songService.isInitialScanComplete();
 
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
@@ -132,5 +132,13 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   List<Song> getAllSongs() {
     return _songService.getAllSongs();
+  }
+
+  @override
+  Future<void> refresh() async {
+    _songsFuture = Future(
+      () => _songService.getSongs(_query, _sortField, _isAscending),
+    );
+    notifyListeners();
   }
 }

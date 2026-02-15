@@ -3,10 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  audioplayers_linux
   bitsdojo_window_linux
   desktop_drop
   file_saver
+  media_kit_libs_linux
   objectbox_flutter_libs
   screen_retriever_linux
   tray_manager

@@ -12,7 +12,7 @@ class SongRepository {
 
   Map<String, dynamic> get sortFields => {
     'Title': Song_.name,
-    'Duration': Song_.duration,
+    'Duration': Song_.durationInSeconds,
     'Year': Song_.year,
   };
 
@@ -21,7 +21,7 @@ class SongRepository {
     return song;
   }
 
-  List<Song> saveSongsBatch(List<Song> songs) {
+  List<Song> saveSongs(List<Song> songs) {
     final ids = _songBox.putMany(songs);
     for (int i = 0; i < songs.length; i++) {
       songs[i].id = ids[i];
@@ -58,6 +58,38 @@ class SongRepository {
     } catch (e) {
       throw Exception("Song containing $query not found");
     }
+  }
+
+  Song? getMostRecentPlayedSong() {
+    return _songBox
+        .query(Song_.lastPlayed.notNull())
+        .order(Song_.lastPlayed, flags: Order.descending)
+        .build()
+        .findFirst();
+  }
+
+  List<Song> getRecentlyPlayedSongs(int limit) {
+    var query =
+        _songBox
+            .query(Song_.lastPlayed.notNull())
+            .order(Song_.lastPlayed, flags: Order.descending)
+            .build();
+
+    query.limit = limit;
+
+    return query.find();
+  }
+
+  List<Song> getMostPlayedSongs(int limit) {
+    var query =
+        _songBox
+            .query(Song_.playCount.greaterThan(0))
+            .order(Song_.playCount, flags: Order.descending)
+            .build();
+
+    query.limit = limit;
+
+    return query.find();
   }
 
   List<Song> getSongs(String query, String sortField, bool flag) {
@@ -99,7 +131,7 @@ class SongRepository {
     _songBox.put(song);
   }
 
-  void updateSongsBatch(List<Song> songs) {
+  void updateSongs(List<Song> songs) {
     _songBox.putMany(songs);
   }
 }

@@ -18,8 +18,8 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   PlaylistProvider(this._playlistService) {
     _playlistsFuture = Future(() => _playlistService.getAllPlaylists());
 
-    playlistsStream.listen((_) {
-      debugPrint("Playlists stream updated");
+    playlistsStream.listen((event) {
+      debugPrint("Playlists stream updated with ${event.toString()} playlists");
       _playlistsFuture = Future(
         () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
       );
@@ -114,6 +114,14 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
 
   void deleteSongFromPlaylist(Song song, Playlist playlist) {
     _playlistService.deleteFromPlaylist(song, playlist);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> refresh() async {
+    _playlistsFuture = Future(
+      () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
+    );
     notifyListeners();
   }
 }

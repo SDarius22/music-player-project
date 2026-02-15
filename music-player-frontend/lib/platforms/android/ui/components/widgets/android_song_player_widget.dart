@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
@@ -25,7 +25,7 @@ class AndroidSongPlayerWidget extends SongPlayerWidget {
 
 class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
   late AbstractAppStateProvider appStateProvider;
-  late AbstractAudioProvider audioProvider;
+  late AudioProvider audioProvider;
   final MiniPlayerController _miniPlayerController = MiniPlayerController();
   ValueNotifier<bool> _listView = ValueNotifier<bool>(false);
 
@@ -33,7 +33,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
   void initState() {
     super.initState();
     appStateProvider = context.read<AbstractAppStateProvider>();
-    audioProvider = context.read<AbstractAudioProvider>();
+    audioProvider = context.read<AudioProvider>();
   }
 
   @override
@@ -553,8 +553,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
         Future.delayed(const Duration(milliseconds: 400), () {
           if (itemScrollController.hasClients) {
             debugPrint("Jumping to current song index in queue");
-            int currentSongIndex =
-                audioProvider.audioService.currentIndexInNonShuffled;
+            int currentSongIndex = audioProvider.currentIndexInNonShuffled;
             if (currentSongIndex > 15) {
               itemScrollController.jumpTo(
                 height * 0.075 * (currentSongIndex - 10),
@@ -719,7 +718,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
     );
   }
 
-  Widget _buildPlayerButtons(AbstractAudioProvider audioProvider) {
+  Widget _buildPlayerButtons(AudioProvider audioProvider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.center,

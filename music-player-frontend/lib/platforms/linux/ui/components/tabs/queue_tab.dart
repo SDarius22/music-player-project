@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/queue_tab.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:provider/provider.dart';
@@ -24,17 +24,14 @@ class QueueTab extends AbstractQueueTab {
           SliverPadding(
             padding: EdgeInsets.only(right: width * 0.01),
             sliver: LinuxListComponent(
-              items:
-                  Provider.of<AbstractAudioProvider>(
-                    context,
-                  ).audioService.queue,
+              items: Provider.of<AudioProvider>(context).normalQueue,
               itemExtent: height * 0.1,
               isSelected: (entity) {
                 return false;
               },
               onTap: (entity) async {
                 debugPrint("Tapped on: ${entity.name}");
-                var audioProvider = Provider.of<AbstractAudioProvider>(
+                var audioProvider = Provider.of<AudioProvider>(
                   context,
                   listen: false,
                 );

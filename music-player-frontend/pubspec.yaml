@@ -13,29 +13,34 @@ dependencies:
     sdk: flutter
 
   # state management
-  provider: ^6.1.1
+  provider: ^6.1.5+1
 
   # objectbox
-  objectbox: ^5.0.3
+  objectbox: ^5.2.0
   objectbox_flutter_libs: any
 
   # audio
   just_audio: ^0.10.5 # default audio player
-  audioplayers: ^6.0.0 # audio player for windows and linux
-  audio_service: ^0.18.16 # default audio service
+  just_audio_media_kit: ^2.1.0 # implementation of just_audio for linux and windows using media_kit
+
+  media_kit_libs_linux: any
+  media_kit_libs_windows_audio: any
+
+  audio_service: ^0.18.18 # default audio service
   audio_service_mpris: ^0.2.0 # for linux
+  audio_service_win: ^0.0.2 # for windows
   on_audio_query_forked: ^2.9.1 # query audio files and their metadata on mobile
   audio_metadata_reader: ^1.4.2 # read audio metadata on desktop
 
   # File Management
-  file_picker: ^10.3.7
+  file_picker: ^10.3.10
   file_saver: ^0.3.1
-  path_provider: ^2.1.2
-  watcher: ^1.1.1
+  path_provider: ^2.1.5
+  watcher: ^1.2.1
   permission_handler: ^12.0.1
 
   # ui
-  image: ^4.2.0
+  image: ^4.7.2
   scrollable_positioned_list: ^0.3.5
   cupertino_icons: ^1.0.6
   flutter_svg: ^2.2.3
@@ -63,8 +68,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  build_runner: ^2.0.0
-  objectbox_generator: any
+  build_runner: ^2.11.1
+  objectbox_generator: ^5.2.0
   flutter_lints: ^6.0.0
 
 flutter:

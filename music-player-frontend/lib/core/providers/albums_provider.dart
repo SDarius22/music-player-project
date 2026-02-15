@@ -81,4 +81,10 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
   List<Album> getAllAlbums() {
     return _albumService.getAllAlbums();
   }
+
+  @override
+  Future<void> refresh() async {
+    _albumsFuture = Future(() => _albumService.getAllAlbums());
+    notifyListeners();
+  }
 }

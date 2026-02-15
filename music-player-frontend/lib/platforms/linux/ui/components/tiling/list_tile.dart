@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_tile.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -92,7 +92,7 @@ class LinuxCustomListTile extends AbstractCustomListTile {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     entity is Song
-                        ? Consumer<AbstractAudioProvider>(
+                        ? Consumer<AudioProvider>(
                           builder: (_, audioProvider, __) {
                             return CustomTextScroll(
                               text: entity.name,
@@ -131,7 +131,7 @@ class LinuxCustomListTile extends AbstractCustomListTile {
                           ),
                         ),
                     if (entity is Song)
-                      Consumer<AbstractAudioProvider>(
+                      Consumer<AudioProvider>(
                         builder: (_, audioProvider, __) {
                           return CustomTextScroll(
                             text: (entity as Song).artist.target.toString(),
@@ -159,10 +159,10 @@ class LinuxCustomListTile extends AbstractCustomListTile {
               ),
               const Spacer(),
               if (entity is Song)
-                Consumer<AbstractAudioProvider>(
+                Consumer<AudioProvider>(
                   builder: (_, audioProvider, __) {
                     return Text(
-                      "${(entity as Song).duration ~/ 60}:${((entity as Song).duration % 60).toString().padLeft(2, '0')}",
+                      "${(entity as Song).durationInSeconds ~/ 60}:${((entity as Song).durationInSeconds % 60).toString().padLeft(2, '0')}",
                       style: TextStyle(
                         color:
                             audioProvider.currentSong.path ==

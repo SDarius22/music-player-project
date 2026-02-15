@@ -1,9 +1,8 @@
 import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
@@ -12,9 +11,7 @@ import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/repository/album_repo.dart';
 import 'package:music_player_frontend/core/repository/artist_repo.dart';
-import 'package:music_player_frontend/core/repository/played_song_repo.dart';
 import 'package:music_player_frontend/core/repository/playlist_repo.dart';
-import 'package:music_player_frontend/core/repository/playlist_song_repo.dart';
 import 'package:music_player_frontend/core/repository/settings_repo.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
@@ -28,9 +25,7 @@ import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/platforms/linux/audio_player/concrete_audio_player.dart';
 import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/services/linux_file_service.dart';
 import 'package:music_player_frontend/platforms/linux/services/music_scanner_service.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
@@ -46,20 +41,9 @@ class LinuxApp extends StatelessWidget {
       providers: [
         Provider<Scaler>(create: (_) => LinuxScaler()),
 
-        Provider<AbstractAudioPlayer>(
-          create: (context) => ConcreteAudioPlayer(),
-        ),
-
         Provider<AlbumRepository>(create: (_) => AlbumRepository()),
         Provider<ArtistRepository>(create: (_) => ArtistRepository()),
-        Provider<PlayedSongRepository>(create: (_) => PlayedSongRepository()),
         Provider<PlaylistRepository>(create: (_) => PlaylistRepository()),
-        Provider<PlaylistSongRepository>(
-          create: (_) => PlaylistSongRepository(),
-        ),
-        Provider<PlaylistSongRepository>(
-          create: (_) => PlaylistSongRepository(),
-        ),
         Provider<SettingsRepository>(create: (_) => SettingsRepository()),
         Provider<SongRepository>(create: (_) => SongRepository()),
 
@@ -76,8 +60,7 @@ class LinuxApp extends StatelessWidget {
           create:
               (context) => PlaylistService(
                 context.read<PlaylistRepository>(),
-                context.read<PlaylistSongRepository>(),
-                context.read<PlayedSongRepository>(),
+                context.read<SongRepository>(),
               ),
         ),
         Provider<SettingsService>(
@@ -104,7 +87,6 @@ class LinuxApp extends StatelessWidget {
         Provider<AppAudioService>(
           create:
               (context) => AppAudioService(
-                context.read<AbstractAudioPlayer>(),
                 context.read<SongService>(),
                 context.read<SettingsService>(),
                 context.read<PlaylistService>(),
@@ -136,9 +118,9 @@ class LinuxApp extends StatelessWidget {
         ChangeNotifierProvider<SelectionProvider>(
           create: (context) => SelectionProvider(),
         ),
-        ChangeNotifierProvider<AbstractAudioProvider>(
+        ChangeNotifierProvider<AudioProvider>(
           create: (context) {
-            var audioProvider = LinuxAudioProvider(
+            var audioProvider = AudioProvider(
               context.read<AppAudioService>(),
               context.read<FileService>(),
             );
@@ -160,7 +142,7 @@ class LinuxApp extends StatelessWidget {
         ChangeNotifierProvider<LyricsProvider>(
           create:
               (context) => LyricsProvider(
-                context.read<AbstractAudioProvider>(),
+                context.read<AudioProvider>(),
                 context.read<FileService>(),
               ),
           lazy: false,
@@ -168,7 +150,7 @@ class LinuxApp extends StatelessWidget {
         ChangeNotifierProvider<AbstractAppStateProvider>(
           create:
               (context) => AppStateProvider(
-                context.read<AbstractAudioProvider>(),
+                context.read<AudioProvider>(),
                 context.read<SettingsService>(),
               ),
         ),

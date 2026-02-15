@@ -14,4 +14,6 @@ class AudioSettings {
   double balance = 0;
   double speed = 1;
   double volume = 0.5;
+
+  int sliderInSeconds = 0;
 }

@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
@@ -63,10 +63,7 @@ class LyricsTab extends AbstractLyricsTab {
       lyricBaseLine: LyricBaseLine.mainCenter,
       highlight: false,
     );
-    var audioProvider = Provider.of<AbstractAudioProvider>(
-      context,
-      listen: false,
-    );
+    var audioProvider = Provider.of<AudioProvider>(context, listen: false);
 
     return Consumer<LyricsProvider>(
       builder: (_, lyricsProvider, __) {

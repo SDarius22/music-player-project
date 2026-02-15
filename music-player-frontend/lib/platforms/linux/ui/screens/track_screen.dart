@@ -2,9 +2,11 @@ import 'package:duration/duration.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:provider/provider.dart';
 
 class TrackScreen extends EntityScreen {
   static Route<void> route({required Song song}) {
@@ -88,9 +90,14 @@ class TrackScreen extends EntityScreen {
                         children: [
                           IconButton(
                             onPressed: () async {
-                              // dc.updatePlaying([song.path], 0);
-                              // SettingsController.index = SettingsController.currentQueue.indexOf(song.path);
-                              // await AppAudioHandler.play();
+                              debugPrint("Play ${song.name}");
+                              var audioProvider = Provider.of<AudioProvider>(
+                                context,
+                                listen: false,
+                              );
+                              audioProvider.setQueue([song]);
+                              await audioProvider.setCurrentSong(song);
+                              audioProvider.play();
                             },
                             icon: Icon(
                               FluentIcons.play,
@@ -195,7 +202,7 @@ class TrackScreen extends EntityScreen {
                             ),
                           ),
                           Text(
-                            Duration(seconds: song.duration).pretty(),
+                            Duration(seconds: song.durationInSeconds).pretty(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: normalSize,
@@ -236,22 +243,15 @@ class TrackScreen extends EntityScreen {
                               fontSize: normalSize,
                             ),
                           ),
-                          // Text(
-                          //   "Play Count: ${song.playCount}",
-                          //   style: TextStyle(
-                          //     color: Colors.white,
-                          //     fontSize: normalSize,
-                          //   ),
-                          // ),
-                          // Text(
-                          //   "Last Played: ${song.lastPlayed != null ? song.lastPlayed!.toLocal().toString() : "Never"}",
-                          //   style: TextStyle(
-                          //     color: Colors.white,
-                          //     fontSize: normalSize,
-                          //   ),
-                          // ),
                           Text(
-                            "Lyrics: ${song.lyricsPath.isNotEmpty ? song.lyricsPath : "No lyrics available"}",
+                            "Play Count: ${song.playCount}",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: normalSize,
+                            ),
+                          ),
+                          Text(
+                            "Last Played: ${song.lastPlayed != null ? song.lastPlayed!.toLocal().toString() : "Never"}",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: normalSize,

@@ -3,7 +3,7 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
@@ -44,7 +44,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
 
   @override
   Widget buildMainAction(BaseEntity entity, BuildContext context) {
-    return Consumer<AbstractAudioProvider>(
+    return Consumer<AudioProvider>(
       builder: (_, audioProvider, __) {
         Song song = entity as Song;
         return ValueListenableBuilder(
@@ -84,11 +84,11 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
             );
             break;
           case 'playNext':
-            var audioProvider = Provider.of<AbstractAudioProvider>(
+            var audioProvider = Provider.of<AudioProvider>(
               context,
               listen: false,
             );
-            audioProvider.addNextToQueue((entity as Song));
+            audioProvider.addNextToQueue([(entity as Song)]);
             break;
           case 'select':
             debugPrint("Select ${entity.name}");
@@ -142,10 +142,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
     BuildContext context,
   ) async {
     var song = entity as Song;
-    var audioProvider = Provider.of<AbstractAudioProvider>(
-      context,
-      listen: false,
-    );
+    var audioProvider = Provider.of<AudioProvider>(context, listen: false);
     try {
       if (audioProvider.currentSong.path != song.path) {
         List<Song> songs = snapshot.data as List<Song>;

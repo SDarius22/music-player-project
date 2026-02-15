@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/volume_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
-class LinuxVolumeWidget extends VolumeWidget {
-  const LinuxVolumeWidget({super.key});
+class AndroidVolumeWidget extends VolumeWidget {
+  const AndroidVolumeWidget({super.key});
 
   @override
   State<VolumeWidget> createState() => _VolumeWidgetState();
@@ -13,12 +13,12 @@ class LinuxVolumeWidget extends VolumeWidget {
 
 class _VolumeWidgetState extends VolumeWidgetState {
   final ValueNotifier<bool> _visible = ValueNotifier(false);
-  late final AbstractAudioProvider _audioProvider;
+  late final AudioProvider _audioProvider;
 
   @override
   void initState() {
     super.initState();
-    _audioProvider = Provider.of<AbstractAudioProvider>(context, listen: false);
+    _audioProvider = Provider.of<AudioProvider>(context, listen: false);
   }
 
   @override

@@ -3,7 +3,7 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -31,7 +31,7 @@ class PlaylistScreen extends EntityScreen {
   @override
   Widget buildBody(BuildContext context, double width, double height) {
     var playlist = entity as Playlist;
-    List<Song> songs = playlist.songsInOrder;
+    List<Song> songs = playlist.songsList;
     ValueNotifier<bool> editMode = ValueNotifier<bool>(false);
     ValueNotifier<bool> orderChanged = ValueNotifier<bool>(false);
 
@@ -83,7 +83,7 @@ class PlaylistScreen extends EntityScreen {
                 tooltip: "Play",
                 padding: EdgeInsets.all(height * 0.005),
                 onPressed: () async {
-                  var audioProvider = Provider.of<AbstractAudioProvider>(
+                  var audioProvider = Provider.of<AudioProvider>(
                     context,
                     listen: false,
                   );
@@ -289,13 +289,16 @@ class PlaylistScreen extends EntityScreen {
                                           debugPrint(
                                             "Tapped on ${entity.name}",
                                           );
-                                          var audioProvider = Provider.of<
-                                            AbstractAudioProvider
-                                          >(context, listen: false);
+                                          var audioProvider =
+                                              Provider.of<AudioProvider>(
+                                                context,
+                                                listen: false,
+                                              );
                                           audioProvider.setQueue(songs);
                                           await audioProvider.setCurrentSong(
                                             (entity as Song),
                                           );
+                                          await audioProvider.play();
                                         },
                                         onLongPress: (entity) {
                                           debugPrint(
@@ -407,9 +410,9 @@ class PlaylistScreen extends EntityScreen {
                                                 ),
                                                 const Spacer(),
                                                 Text(
-                                                  song.duration == 0
+                                                  song.durationInSeconds == 0
                                                       ? "??:??"
-                                                      : "${song.duration ~/ 60}:${(song.duration % 60).toString().padLeft(2, '0')}",
+                                                      : "${song.durationInSeconds ~/ 60}:${(song.durationInSeconds % 60).toString().padLeft(2, '0')}",
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize: normalSize,

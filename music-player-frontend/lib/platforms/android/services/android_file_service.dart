@@ -15,7 +15,7 @@ class AndroidFileService extends FileService {
     var songs = await audioQuery.querySongs(
       sortType: SongSortType.TITLE,
       orderType: OrderType.ASC_OR_SMALLER,
-      ignoreCase: true,
+      uriType: UriType.EXTERNAL,
     );
     return songs;
   }

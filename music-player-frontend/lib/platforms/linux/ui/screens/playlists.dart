@@ -1,11 +1,10 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
@@ -69,17 +68,11 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
           return;
         }
         Playlist playlist = entity;
-        final songs =
-            playlist.playlistSongs
-                .sorted((a, b) => a.position.compareTo(b.position))
-                .map((e) => e.song.target!)
-                .toList();
-        var audioProvider = Provider.of<AbstractAudioProvider>(
-          context,
-          listen: false,
-        );
+        final songs = playlist.songsList;
+        var audioProvider = Provider.of<AudioProvider>(context, listen: false);
         audioProvider.setQueue(songs);
         await audioProvider.setCurrentSong(songs.first);
+        audioProvider.play();
       },
     );
   }

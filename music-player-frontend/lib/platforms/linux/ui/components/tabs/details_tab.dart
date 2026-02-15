@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
@@ -25,7 +25,7 @@ class DetailsTab extends AbstractDetailsTab {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
 
-    return Consumer<AbstractAudioProvider>(
+    return Consumer<AudioProvider>(
       builder: (_, audioProvider, __) {
         return AspectRatio(
           aspectRatio: 1.0,

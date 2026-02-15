@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
@@ -18,7 +18,7 @@ class DetailsTab extends AbstractDetailsTab {
 
   @override
   Widget buildDetailsContent(BuildContext context) {
-    return Consumer<AbstractAudioProvider>(
+    return Consumer<AudioProvider>(
       builder: (_, audioProvider, __) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.center,

@@ -1,88 +1,45 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
-import 'package:music_player_frontend/core/entities/played_song.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
-import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class AppAudioService {
-  final AbstractAudioPlayer audioPlayer;
+  final AudioPlayer audioPlayer = AudioPlayer();
   final SongService songService;
   final SettingsService settingsService;
   final PlaylistService playlistService;
 
   AppAudioService(
-    this.audioPlayer,
     this.songService,
     this.settingsService,
     this.playlistService,
   ) {
-    PlayedSong? lastPlayed = playlistService.getMostRecentPlayedSong();
-    if (lastPlayed != null && lastPlayed.song.target != null) {
-      debugPrint(
-        "Last played song: ${lastPlayed.song.target!.name}, duration: ${lastPlayed.duration}",
-      );
-      _currentPlayedSong = lastPlayed;
-      _queuePlaylist = playlistService.getPlaylist(1)!;
-    }
+    _currentSong = playlistService.getMostRecentPlayedSong() ?? Song();
+    _queuePlaylist = playlistService.getPlaylist(1)!;
+
+    _initPlayer();
   }
 
-  PlayedSong _currentPlayedSong = PlayedSong();
+  Song _currentSong = Song();
   Playlist _queuePlaylist = Playlist();
 
-  List<PlaylistSong> get _queueSongs =>
-      _queuePlaylist.playlistSongs
-          .sorted((a, b) => a.position.compareTo(b.position))
-          .toList();
+  bool get shuffle => settingsService.currentAudioSettings.shuffle;
 
-  late List<Song> queue = _queueSongs.map((e) => e.song.target!).toList();
-
-  late List<Song> shuffledQueue = List.from(queue)..shuffle();
-
-  late Song _currentSong = _currentPlayedSong.song.target ?? Song();
-
-  List<Song> get currentQueue =>
-      settingsService.currentAudioSettings.shuffle ? shuffledQueue : queue;
-
-  int get currentIndexInNonShuffled =>
-      currentQueue.isNotEmpty ? queue.indexOf(currentSong) : -1;
-
-  int get currentIndex => currentQueue.indexOf(currentSong);
-
-  Song get currentSong => _currentSong;
-
-  Song get nextSong =>
-      currentQueue.isNotEmpty
-          ? currentQueue[(currentIndexInNonShuffled + 1) % currentQueue.length]
-          : Song();
-
-  set currentSong(Song song) {
-    _currentSong = song;
-    if (song.id != _currentPlayedSong.song.target?.id) {
-      _currentPlayedSong = PlayedSong();
-    }
-    _currentPlayedSong.song.target = song;
-    _currentPlayedSong.playedAt = DateTime.now();
-    playlistService.savePlayedSong(_currentPlayedSong);
+  Song getCurrentSong() {
+    return _currentSong;
   }
 
-  Song get previousSong =>
-      currentQueue.isNotEmpty
-          ? currentQueue[(currentIndexInNonShuffled - 1 + currentQueue.length) %
-              currentQueue.length]
-          : Song();
+  List<Song> get queue => _queuePlaylist.songsList;
 
-  void refreshQueue() {
-    queue = _queueSongs.map((e) => e.song.target!).toList();
-    shuffledQueue = List.from(queue)..shuffle();
-  }
-
-  Future<void> play() async {
+  Future<void> play(Song song) async {
     debugPrint("play");
+    if (song.path != _currentSong.path) {
+      await setCurrentSong(song);
+    }
     await audioPlayer.play();
   }
 
@@ -91,37 +48,41 @@ class AppAudioService {
     await audioPlayer.pause();
   }
 
-  Future<void> skipToNext() async {
+  Future<void> skipToNext(Song nextSong) async {
     if (settingsService.currentAudioSettings.repeat) {
-      audioPlayer.setSource(currentSong.path);
+      audioPlayer.setUrl(_currentSong.path);
       seek(Duration.zero);
-      play();
+      play(_currentSong);
       return;
     }
-    await playNext();
+    await _playNext(nextSong);
   }
 
-  Future<void> playNext() async {
+  Future<void> _playNext(Song nextSong) async {
     if (queue.isEmpty) {
       return;
     }
-    await setCurrentSong(nextSong);
-    play();
+    await play(nextSong);
   }
 
-  Future<void> skipToPrevious() async {
-    await setCurrentSong(previousSong);
-    play();
+  Future<void> skipToPrevious(Song previousSong) async {
+    await play(previousSong);
   }
 
   Future<void> setCurrentSong(Song song) async {
-    currentSong = song;
-    audioPlayer.setSource(currentSong.path);
+    _currentSong = song;
+    _currentSong.lastPlayed = DateTime.now();
+    _currentSong.playCount += 1;
+
+    debugPrint("Setting current song to ${song.path}");
+
+    await audioPlayer.setUrl(song.path);
+
+    songService.updateSong(_currentSong);
   }
 
   Future<void> seek(Duration position) async {
     debugPrint("seek to $position");
-    setSlider(position.inMilliseconds);
     audioPlayer.seek(position);
   }
 
@@ -137,13 +98,7 @@ class AppAudioService {
   }
 
   void setPlaybackSpeed(double speed) {
-    audioPlayer.setPlaybackSpeed(speed);
-  }
-
-  void setBalance(double balance) {
-    settingsService.currentAudioSettings.balance = balance;
-    settingsService.updateAudioSettings();
-    audioPlayer.setBalance(balance);
+    audioPlayer.setSpeed(speed);
   }
 
   void setRepeat(bool repeat) {
@@ -156,17 +111,17 @@ class AppAudioService {
     settingsService.updateAudioSettings();
   }
 
-  void setSlider(int slider) {
-    _currentPlayedSong.song.target ??= currentSong;
-    _currentPlayedSong.duration = slider;
-    playlistService.savePlayedSong(_currentPlayedSong);
-  }
-
-  Future<void> initSettings() async {
+  Future<void> _initPlayer() async {
     try {
-      await audioPlayer.setSource(currentSong.path);
+      await audioPlayer.setVolume(settingsService.currentAudioSettings.volume);
+      await audioPlayer.setUrl(
+        _currentSong.path,
+        initialPosition: Duration(
+          seconds: settingsService.currentAudioSettings.sliderInSeconds,
+        ),
+      );
       await audioPlayer.seek(
-        Duration(milliseconds: _currentPlayedSong.duration),
+        Duration(milliseconds: _currentSong.durationInSeconds),
       );
     } catch (e) {
       debugPrint("Error initializing audio player: $e");
@@ -174,70 +129,47 @@ class AppAudioService {
   }
 
   Future<Duration> getDuration() async {
-    var duration = await audioPlayer.getDuration();
+    var duration = audioPlayer.duration;
     debugPrint("Duration: $duration");
-    if (duration == null) {
-      return currentSong.duration > 0
-          ? Duration(seconds: currentSong.duration)
+    if (duration == null || duration.inSeconds <= 0) {
+      return _currentSong.durationInSeconds > 0
+          ? Duration(seconds: _currentSong.durationInSeconds)
           : Duration.zero;
     }
-    if (currentSong.duration <= 0) {
-      currentSong.duration = duration.inSeconds;
+    if (_currentSong.durationInSeconds <= 0) {
+      _currentSong.durationInSeconds = duration.inSeconds;
     }
     return duration;
   }
 
-  void addToQueue(Song song) {
-    if (!queue.contains(song)) {
-      playlistService.addToPlaylist(_queuePlaylist, [song]);
-      refreshQueue();
-    }
+  void addToQueue(List<Song> songs) {
+    playlistService.addToPlaylist(_queuePlaylist, songs);
   }
 
-  void addMultipleToQueue(List<Song> songs) {
-    for (var song in songs) {
-      if (!queue.contains(song)) {
-        addToQueue(song);
-      }
-    }
-  }
-
-  void addNextToQueue(Song song) {
-    if (!queue.contains(song)) {
-      int currentIndex = currentIndexInNonShuffled;
-      int nextIndex = (currentIndex + 1) % queue.length;
-      if (nextIndex == 0) {
-        nextIndex = queue.length;
-        PlaylistSong queueSong = PlaylistSong();
-        queueSong.playlist.targetId = 1;
-        queueSong.song.target = song;
-        queueSong.position = 0.0 + nextIndex;
-        playlistService.savePlaylistSong(queueSong);
-      } else {
-        PlaylistSong currentQueueSong = _queueSongs[currentIndex];
-        PlaylistSong nextQueueSong = _queueSongs[nextIndex];
-        PlaylistSong queueSong = PlaylistSong();
-        queueSong.playlist.targetId = 1;
-        queueSong.song.target = song;
-        queueSong.position =
-            (currentQueueSong.position + nextQueueSong.position) / 2;
-        playlistService.savePlaylistSong(queueSong);
-      }
-      playlistService.updatePlaylist(_queuePlaylist);
-      refreshQueue();
-    }
-  }
-
-  void addMultipleNextToQueue(List<Song> songs) {
+  void addNextToQueue(List<Song> songs) {
+    bool changesMade = false;
     for (Song song in songs.reversed) {
-      addNextToQueue(song);
+      if (!queue.contains(song)) {
+        changesMade = true;
+        _queuePlaylist.songs.add(song);
+
+        int currentIndex = queue.indexOf(_currentSong);
+        int nextIndex = (currentIndex + 1) % queue.length;
+        if (nextIndex == 0) {
+          _queuePlaylist.songsIds.add(song.id);
+        } else {
+          _queuePlaylist.songsIds.insert(nextIndex, song.id);
+        }
+      }
+    }
+    if (changesMade) {
+      playlistService.updatePlaylist(_queuePlaylist);
     }
   }
 
   void removeFromQueue(Song song) {
     if (queue.contains(song)) {
       playlistService.deleteFromPlaylist(song, _queuePlaylist);
-      refreshQueue();
     }
   }
 
@@ -246,11 +178,18 @@ class AppAudioService {
       debugPrint("Queue is the same, not updating.");
       return;
     }
-    playlistService.deleteAllSongsFromPlaylist(_queuePlaylist);
-    addMultipleToQueue(songs);
+    _queuePlaylist.songs.clear();
+    _queuePlaylist.songsIds.clear();
+    addToQueue(songs);
   }
 
   void likeCurrentSong() {
-    // Implement liking functionality here
+    _currentSong.likedByUser = !_currentSong.likedByUser;
+    songService.updateSong(_currentSong);
+  }
+
+  Future<void> updateSliderInSeconds(int seconds) async {
+    settingsService.currentAudioSettings.sliderInSeconds = seconds;
+    settingsService.updateAudioSettings();
   }
 }

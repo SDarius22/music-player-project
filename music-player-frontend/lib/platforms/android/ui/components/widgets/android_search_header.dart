@@ -8,8 +8,8 @@ import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/android_scaler.dart';
 import 'package:provider/provider.dart';
 
-class LinuxSearchHeader extends StatefulWidget {
-  const LinuxSearchHeader({
+class AndroidSearchHeader extends StatefulWidget {
+  const AndroidSearchHeader({
     super.key,
     required this.title,
     required this.provider,
@@ -23,10 +23,10 @@ class LinuxSearchHeader extends StatefulWidget {
   final void Function()? clickedShuffle;
 
   @override
-  State<StatefulWidget> createState() => _LinuxSearchHeaderState();
+  State<StatefulWidget> createState() => _AndroidSearchHeaderState();
 }
 
-class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
+class _AndroidSearchHeaderState extends State<AndroidSearchHeader> {
   FocusNode searchNode = FocusNode();
   Timer? _debounce;
   final TextEditingController _controller = TextEditingController();

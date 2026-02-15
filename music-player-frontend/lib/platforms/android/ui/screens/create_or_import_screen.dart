@@ -69,14 +69,11 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     if (paths.isNotEmpty) {
       if (widget.import) {
         var songProvider = Provider.of<SongProvider>(context, listen: false);
-        // selected.value = paths.map((path) {
-        //   var song = songProvider.getSongContaining(path);
-        //   if (song != null) {
-        //     return song as Song;
-        //   } else {
-        //     return;
-        //   }
-        // }).toList();
+        selected.value =
+            paths
+                .map((path) => songProvider.getSongContaining(path))
+                .whereType<Song>()
+                .toList();
       } else {
         selected.value = List.from(paths);
       }
@@ -183,231 +180,237 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
               ],
             ),
             Expanded(
-              child: Row(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              MediaQuery.of(context).size.height * 0.015,
-                            ),
-                            child: Container(
-                              width: width * 0.3,
-                              height: width * 0.3,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  MediaQuery.of(context).size.height * 0.015,
-                                ),
-                                color: Colors.black,
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: width * 0.05,
+                      vertical: height * 0.02,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            MediaQuery.of(context).size.height * 0.015,
+                          ),
+                          child: Container(
+                            width: width * 0.5,
+                            height: width * 0.5,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(
+                                MediaQuery.of(context).size.height * 0.015,
                               ),
-                              child: MultiValueListenableBuilder(
-                                valueListenables: [coverArt, selected],
-                                builder: (context, values, child) {
+                              color: Colors.black,
+                            ),
+                            child: MultiValueListenableBuilder(
+                              valueListenables: [coverArt, selected],
+                              builder: (context, values, child) {
+                                debugPrint(
+                                  "something changed in cover art or selected songs",
+                                );
+                                var cover = values[0] as Uint8List?;
+                                if (cover != null) {
                                   debugPrint(
-                                    "something changed in cover art or selected songs",
+                                    "Cover art is not null, length: ${cover.length}",
                                   );
-                                  var cover = values[0] as Uint8List?;
-                                  if (cover != null) {
-                                    debugPrint(
-                                      "Cover art is not null, length: ${cover.length}",
-                                    );
-                                    return ImageWidget(
-                                      imageBytes: cover,
-                                      hoveredChild: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          IconButton(
-                                            onPressed: () async {
-                                              debugPrint("Change cover art");
-                                              var appStates = Provider.of<
-                                                AbstractAppStateProvider
-                                              >(context, listen: false);
-                                              FilePickerResult? result =
-                                                  await FilePicker.platform
-                                                      .pickFiles(
-                                                        initialDirectory:
-                                                            appStates
-                                                                .appSettings
-                                                                .mainSongPlace,
-                                                        type: FileType.image,
-                                                        allowMultiple: false,
-                                                      );
-
-                                              if (result != null &&
-                                                  result.files.isNotEmpty) {
-                                                debugPrint(
-                                                  "Picked file: ${result.files.single.name}",
-                                                );
-                                                File file = File(
-                                                  result.files.single.path!,
-                                                );
-                                                Uint8List imageBytes =
-                                                    file.readAsBytesSync();
-                                                coverArt.value = imageBytes;
-                                                debugPrint(
-                                                  "Cover art set successfully",
-                                                );
-                                              } else {
-                                                debugPrint("No file selected");
-                                              }
-                                            },
-                                            icon: Icon(
-                                              Icons.camera_alt_outlined,
-                                              color: Colors.white,
-                                              size: height * 0.05,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            onPressed: () {
-                                              debugPrint("Remove cover art");
-                                              coverArt.value = null;
-                                            },
-                                            icon: Icon(
-                                              FluentIcons.trash,
-                                              color: Colors.white,
-                                              size: height * 0.05,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                  var value = values[1] as List<String>;
                                   return ImageWidget(
-                                    imageBytes:
-                                        value.isNotEmpty
-                                            ? (value.first as Song).coverArt
-                                            : Constants.logoBytes,
-                                    hoveredChild: IconButton(
-                                      onPressed: () async {
-                                        debugPrint("Change cover art");
-                                        var appStates = Provider.of<
-                                          AbstractAppStateProvider
-                                        >(context, listen: false);
-                                        FilePickerResult? result =
-                                            await FilePicker.platform.pickFiles(
-                                              initialDirectory:
-                                                  appStates
-                                                      .appSettings
-                                                      .mainSongPlace,
-                                              type: FileType.image,
-                                              allowMultiple: false,
-                                            );
+                                    imageBytes: cover,
+                                    hoveredChild: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        IconButton(
+                                          onPressed: () async {
+                                            debugPrint("Change cover art");
+                                            var appStates = Provider.of<
+                                              AbstractAppStateProvider
+                                            >(context, listen: false);
+                                            FilePickerResult? result =
+                                                await FilePicker.platform
+                                                    .pickFiles(
+                                                      initialDirectory:
+                                                          appStates
+                                                              .appSettings
+                                                              .mainSongPlace,
+                                                      type: FileType.image,
+                                                      allowMultiple: false,
+                                                    );
 
-                                        if (result != null &&
-                                            result.files.isNotEmpty) {
-                                          debugPrint(
-                                            "Picked file: ${result.files.single.name}",
-                                          );
-                                          File file = File(
-                                            result.files.single.path!,
-                                          );
-                                          Uint8List imageBytes =
-                                              file.readAsBytesSync();
-                                          coverArt.value = imageBytes;
-                                          debugPrint(
-                                            "Cover art set successfully",
-                                          );
-                                        } else {
-                                          debugPrint("No file selected");
-                                        }
-                                      },
-                                      icon: Icon(
-                                        Icons.camera_alt_outlined,
-                                        color: Colors.white,
-                                        size: height * 0.05,
-                                      ),
+                                            if (result != null &&
+                                                result.files.isNotEmpty) {
+                                              debugPrint(
+                                                "Picked file: ${result.files.single.name}",
+                                              );
+                                              File file = File(
+                                                result.files.single.path!,
+                                              );
+                                              Uint8List imageBytes =
+                                                  file.readAsBytesSync();
+                                              coverArt.value = imageBytes;
+                                              debugPrint(
+                                                "Cover art set successfully",
+                                              );
+                                            } else {
+                                              debugPrint("No file selected");
+                                            }
+                                          },
+                                          icon: Icon(
+                                            Icons.camera_alt_outlined,
+                                            color: Colors.white,
+                                            size: height * 0.05,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            debugPrint("Remove cover art");
+                                            coverArt.value = null;
+                                          },
+                                          icon: Icon(
+                                            FluentIcons.trash,
+                                            color: Colors.white,
+                                            size: height * 0.05,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   );
-                                },
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: height * 0.02),
-                          TextFormField(
-                            maxLength: 50,
-                            initialValue: playlistName,
-                            decoration: InputDecoration(
-                              border: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
-                              ),
-                              hintText: 'Playlist name',
-                              counterText: "",
-                              hintStyle: TextStyle(
-                                color: Colors.grey,
-                                fontSize: smallSize,
-                              ),
-                            ),
-                            cursorColor: Colors.white,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: normalSize,
-                            ),
-                            onChanged: (value) {
-                              playlistName = value;
-                            },
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                "Where to add new songs in the future?",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: normalSize,
-                                ),
-                              ),
-                              const Spacer(),
-                              DropdownButton<String>(
-                                value: playlistAdd,
-                                icon: Icon(
-                                  FluentIcons.down,
-                                  color: Colors.white,
-                                  size: height * 0.025,
-                                ),
-                                style: TextStyle(
-                                  fontSize: normalSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: Colors.white,
-                                ),
-                                underline: Container(height: 0),
-                                borderRadius: BorderRadius.circular(
-                                  MediaQuery.of(context).size.height * 0.015,
-                                ),
-                                padding: EdgeInsets.zero,
-                                alignment: Alignment.center,
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'first',
-                                    child: Text("At the beginning"),
+                                }
+                                var selectedSongs = values[1] as List<Song>;
+                                return ImageWidget(
+                                  imageBytes:
+                                      selectedSongs.isNotEmpty
+                                          ? (selectedSongs.first).coverArt
+                                          : Constants.logoBytes,
+                                  hoveredChild: IconButton(
+                                    onPressed: () async {
+                                      debugPrint("Change cover art");
+                                      var appStates =
+                                          Provider.of<AbstractAppStateProvider>(
+                                            context,
+                                            listen: false,
+                                          );
+                                      FilePickerResult? result =
+                                          await FilePicker.platform.pickFiles(
+                                            initialDirectory:
+                                                appStates
+                                                    .appSettings
+                                                    .mainSongPlace,
+                                            type: FileType.image,
+                                            allowMultiple: false,
+                                          );
+
+                                      if (result != null &&
+                                          result.files.isNotEmpty) {
+                                        debugPrint(
+                                          "Picked file: ${result.files.single.name}",
+                                        );
+                                        File file = File(
+                                          result.files.single.path!,
+                                        );
+                                        Uint8List imageBytes =
+                                            file.readAsBytesSync();
+                                        coverArt.value = imageBytes;
+                                        debugPrint(
+                                          "Cover art set successfully",
+                                        );
+                                      } else {
+                                        debugPrint("No file selected");
+                                      }
+                                    },
+                                    icon: Icon(
+                                      Icons.camera_alt_outlined,
+                                      color: Colors.white,
+                                      size: height * 0.05,
+                                    ),
                                   ),
-                                  DropdownMenuItem(
-                                    value: 'last',
-                                    child: Text("At the end"),
-                                  ),
-                                ],
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    playlistAdd = newValue ?? 'last';
-                                  });
-                                },
-                              ),
-                            ],
+                                );
+                              },
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: height * 0.02),
+                        TextFormField(
+                          maxLength: 50,
+                          initialValue: playlistName,
+                          decoration: InputDecoration(
+                            border: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white),
+                            ),
+                            hintText: 'Playlist name',
+                            counterText: "",
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                              fontSize: smallSize,
+                            ),
+                          ),
+                          cursorColor: Colors.white,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: normalSize,
+                          ),
+                          onChanged: (value) {
+                            playlistName = value;
+                          },
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              "Where to add new songs in the future?",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: normalSize,
+                              ),
+                            ),
+                            const Spacer(),
+                            DropdownButton<String>(
+                              value: playlistAdd,
+                              icon: Icon(
+                                FluentIcons.down,
+                                color: Colors.white,
+                                size: height * 0.025,
+                              ),
+                              style: TextStyle(
+                                fontSize: normalSize,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.white,
+                              ),
+                              underline: Container(height: 0),
+                              borderRadius: BorderRadius.circular(
+                                MediaQuery.of(context).size.height * 0.015,
+                              ),
+                              padding: EdgeInsets.zero,
+                              alignment: Alignment.center,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'first',
+                                  child: Text("At the beginning"),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'last',
+                                  child: Text("At the end"),
+                                ),
+                              ],
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  playlistAdd = newValue ?? 'last';
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(
                     child: Container(
-                      padding: EdgeInsets.all(width * 0.01),
-                      margin: EdgeInsets.only(top: height * 0.02),
+                      padding: EdgeInsets.all(width * 0.05),
+                      margin: EdgeInsets.symmetric(
+                        horizontal: width * 0.05,
+                        vertical: height * 0.01,
+                      ),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(
@@ -544,7 +547,6 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(width: width * 0.025),
                 ],
               ),
             ),

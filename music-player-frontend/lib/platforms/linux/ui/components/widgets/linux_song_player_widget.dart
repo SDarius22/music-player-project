@@ -4,7 +4,7 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
@@ -15,6 +15,7 @@ import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tabs/queue_tab.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_volume_widget.dart';
 import 'package:provider/provider.dart';
 
 class LinuxSongPlayerWidget extends SongPlayerWidget {
@@ -26,13 +27,13 @@ class LinuxSongPlayerWidget extends SongPlayerWidget {
 
 class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
   late AbstractAppStateProvider appStateProvider;
-  late AbstractAudioProvider audioProvider;
+  late AudioProvider audioProvider;
 
   @override
   void initState() {
     super.initState();
     appStateProvider = context.read<AbstractAppStateProvider>();
-    audioProvider = context.read<AbstractAudioProvider>();
+    audioProvider = context.read<AudioProvider>();
   }
 
   @override
@@ -249,8 +250,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     if (sidePanelsOpacity > 0.99) {
       if (itemScrollController.hasClients) {
         debugPrint("Jumping to current song index in queue");
-        int currentSongIndex =
-            audioProvider.audioService.currentIndexInNonShuffled;
+        int currentSongIndex = audioProvider.currentIndexInNonShuffled;
         if (currentSongIndex > 15) {
           itemScrollController.jumpTo(height * 0.1 * (currentSongIndex - 10));
         }
@@ -352,6 +352,12 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                               builder: (context, value, child) {
                                 return ProgressBar(
                                   progress: Duration(milliseconds: value),
+                                  buffered: Duration(
+                                    seconds:
+                                        audioProvider
+                                            .bufferedPositionNotifier
+                                            .value,
+                                  ),
                                   total:
                                       snapshot.hasData
                                           ? snapshot.data as Duration
@@ -361,6 +367,8 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                                       appStateProvider.colors.first,
                                   baseBarColor: appStateProvider.colors.last
                                       .withValues(alpha: 0.25),
+                                  bufferedBarColor: appStateProvider.colors.last
+                                      .withValues(alpha: 0.5),
                                   thumbColor: Colors.white,
                                   barHeight: 4.0,
                                   thumbRadius: 7.0,
@@ -446,6 +454,8 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
                     width: width * 0.5,
                     child: _buildPlayerButtons(audioProvider),
                   ),
+
+                  LinuxVolumeWidget(),
 
                   IconButton(
                     onPressed: () async {
@@ -614,7 +624,7 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
     );
   }
 
-  Widget _buildPlayerButtons(AbstractAudioProvider audioProvider) {
+  Widget _buildPlayerButtons(AudioProvider audioProvider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.center,

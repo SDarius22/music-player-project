@@ -4,7 +4,7 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
@@ -76,7 +76,7 @@ class AlbumScreen extends EntityScreen {
                 padding: EdgeInsets.all(height * 0.005),
                 onPressed: () async {
                   debugPrint("Play ${album.name}");
-                  var audioProvider = Provider.of<AbstractAudioProvider>(
+                  var audioProvider = Provider.of<AudioProvider>(
                     context,
                     listen: false,
                   );
@@ -153,7 +153,7 @@ class AlbumScreen extends EntityScreen {
                       ),
                       SizedBox(height: height * 0.005),
                       Text(
-                        "${album.songs.length} Songs | ${Duration(seconds: album.duration).pretty()}",
+                        "${album.songs.length} Songs | ${Duration(seconds: album.durationInSeconds).pretty()}",
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -198,15 +198,15 @@ class AlbumScreen extends EntityScreen {
                           },
                           onTap: (entity) async {
                             debugPrint("Tapped on ${entity.name}");
-                            var audioProvider =
-                                Provider.of<AbstractAudioProvider>(
-                                  context,
-                                  listen: false,
-                                );
-                            audioProvider.setQueue(album.songs);
+                            var audioProvider = Provider.of<AudioProvider>(
+                              context,
+                              listen: false,
+                            );
+                            await audioProvider.setQueue(album.songs);
                             await audioProvider.setCurrentSong(
                               (entity as Song),
                             );
+                            await audioProvider.play();
                           },
                           onLongPress: (entity) {
                             debugPrint("Long pressed on ${entity.name}");

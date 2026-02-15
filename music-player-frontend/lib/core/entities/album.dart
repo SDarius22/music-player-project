@@ -33,11 +33,17 @@ class Album with AbstractCollection implements BaseEntity {
   @override
   Uint8List get coverArt => imageBytes ?? Constants.logoBytes;
 
-  get duration {
+  int _duration = -1;
+
+  int get durationInSeconds {
+    if (_duration != -1) {
+      return _duration;
+    }
     int total = 0;
     for (var song in _songs) {
-      total += song.duration;
+      total += song.durationInSeconds;
     }
+    _duration = total;
     return total;
   }
 

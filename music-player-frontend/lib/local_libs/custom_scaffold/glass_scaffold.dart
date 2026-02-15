@@ -377,6 +377,7 @@ class GlassScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     var height = MediaQuery.of(context).size.height;
     return GlassContainer(
+      key: key,
       color: Colors.black.withValues(alpha: 0.3),
       borderColor: Colors.transparent,
       blur: 45.0,
@@ -385,7 +386,6 @@ class GlassScaffold extends StatelessWidget {
       alignment: Alignment.center,
       borderRadius: BorderRadius.circular(height * 0.015),
       child: Scaffold(
-        key: key,
         appBar: appBar,
         body: body,
         floatingActionButton: floatingActionButton,

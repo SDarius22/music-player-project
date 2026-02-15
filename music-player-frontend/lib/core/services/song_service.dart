@@ -9,7 +9,7 @@ class SongService {
 
   SongService(this._songRepository, this._settingsService);
 
-  get sortFields => _songRepository.sortFields;
+  Map<String, dynamic> get sortFields => _songRepository.sortFields;
 
   bool isInitialScanComplete() {
     return _settingsService.currentAppSettings.initialScanComplete;
@@ -30,7 +30,7 @@ class SongService {
 
   List<Song> addSongsEntitiesBatch(List<Song> songs) {
     debugPrint("Adding batch of ${songs.length} songs to the database");
-    return _songRepository.saveSongsBatch(songs);
+    return _songRepository.saveSongs(songs);
   }
 
   void addSongsBatch(List<Song> songs) {
@@ -78,7 +78,7 @@ class SongService {
   }
 
   void updateSongsBatch(List<Song> songs) {
-    _songRepository.updateSongsBatch(songs);
+    _songRepository.updateSongs(songs);
   }
 
   void deleteSong(Song song) {

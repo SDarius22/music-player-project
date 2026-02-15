@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_model_builder.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_model.dart';
 
 class LyricsProvider with ChangeNotifier {
-  final AbstractAudioProvider _audioProvider;
+  final AudioProvider _audioProvider;
   final FileService _fileService;
   LyricsReaderModel lyricsModelBuilder = LyricsReaderModel();
   String unsyncedLyrics = '';
@@ -15,7 +15,7 @@ class LyricsProvider with ChangeNotifier {
     if (!hasBeenInitialized) {
       hasBeenInitialized = true;
     }
-    _audioProvider.addListener(() {
+    _audioProvider.currentSongNotifier.addListener(() {
       buildLyricsModel();
     });
   }

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/entities/app_settings.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/worker_service.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 
 abstract class AbstractAppStateProvider with ChangeNotifier {
-  final AbstractAudioProvider audioProvider;
+  final AudioProvider audioProvider;
   final SettingsService settingsService;
 
   final navigatorKey = GlobalKey<NavigatorState>();
@@ -14,7 +15,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   final gradientController = AnimatedMeshGradientController();
   final miniPlayerController = MiniPlayerController();
 
-  get appSettings => settingsService.currentAppSettings;
+  AppSettings get appSettings => settingsService.currentAppSettings;
 
   List<String> appActions = [];
   List<Color> colors = [
@@ -36,7 +37,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
       }
     });
 
-    audioProvider.currentSongNotifier.addListener(() async {
+    audioProvider.currentSongNotifier.addListener(() {
       setColors();
       notifyListeners();
     });
@@ -62,7 +63,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
 
   Future<void> setColors() async {
     colors = await WorkerService.extractColors(
-      audioProvider.audioService.currentSong.coverArt,
+      audioProvider.currentSong.coverArt,
     );
   }
 }

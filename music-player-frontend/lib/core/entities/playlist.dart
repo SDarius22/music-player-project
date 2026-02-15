@@ -1,14 +1,13 @@
 import 'dart:typed_data';
 
-import 'package:collection/collection.dart';
 import 'package:music_player_frontend/core/constants.dart';
+import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/entities/playlist_song.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
-class Playlist implements BaseEntity {
+class Playlist with AbstractCollection implements BaseEntity {
   @Id(assignable: true)
   int id = 0;
 
@@ -31,14 +30,33 @@ class Playlist implements BaseEntity {
   @override
   set name(String value) => _name = value;
 
+  final _songs = ToMany<Song>();
+
+  @override
+  ToMany<Song> get songs => _songs;
+
   @override
   Uint8List get coverArt => imageBytes;
 
-  final playlistSongs = ToMany<PlaylistSong>();
+  List<int> songsIds = [];
 
-  List<Song> get songsInOrder =>
-      playlistSongs
-          .sorted((a, b) => a.position.compareTo(b.position))
-          .map((e) => e.song.target!)
-          .toList();
+  List<Song> get songsList {
+    return songsIds
+        .map((id) => songs.firstWhere((song) => song.id == id))
+        .toList();
+  }
+
+  int _duration = -1;
+
+  int get duration {
+    if (_duration != -1) {
+      return _duration;
+    }
+    int total = 0;
+    for (var song in _songs) {
+      total += song.durationInSeconds;
+    }
+    _duration = total;
+    return total;
+  }
 }
