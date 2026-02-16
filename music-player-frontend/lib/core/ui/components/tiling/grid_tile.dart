@@ -113,7 +113,7 @@ class CustomGridTile extends StatelessWidget {
                               selector:
                                   (_, audioProvider) =>
                                       audioProvider.currentSong,
-                              builder: (_, song, __) {
+                              builder: (_, song, _) {
                                 return CustomTextScroll(
                                   text: entity.name,
                                   style: MusicPlayerTheme.getTheme(
@@ -180,7 +180,7 @@ class CustomGridTile extends StatelessWidget {
                                   selector:
                                       (_, audioProvider) =>
                                           audioProvider.currentSong,
-                                  builder: (_, song, __) {
+                                  builder: (_, song, _) {
                                     return Text(
                                       entity.name,
                                       overflow: TextOverflow.ellipsis,

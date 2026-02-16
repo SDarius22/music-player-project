@@ -93,7 +93,7 @@ class CustomListTile extends AbstractCustomListTile {
                   children: [
                     entity is Song
                         ? Consumer<AudioProvider>(
-                          builder: (_, audioProvider, __) {
+                          builder: (_, audioProvider, _) {
                             return CustomTextScroll(
                               text: entity.name,
                               style: TextStyle(
@@ -132,7 +132,7 @@ class CustomListTile extends AbstractCustomListTile {
                         ),
                     if (entity is Song)
                       Consumer<AudioProvider>(
-                        builder: (_, audioProvider, __) {
+                        builder: (_, audioProvider, _) {
                           return CustomTextScroll(
                             text: (entity as Song).artist.target.toString(),
                             style: TextStyle(
@@ -160,7 +160,7 @@ class CustomListTile extends AbstractCustomListTile {
               const Spacer(),
               if (entity is Song)
                 Consumer<AudioProvider>(
-                  builder: (_, audioProvider, __) {
+                  builder: (_, audioProvider, _) {
                     return Text(
                       "${(entity as Song).durationInSeconds ~/ 60}:${((entity as Song).durationInSeconds % 60).toString().padLeft(2, '0')}",
                       style: TextStyle(

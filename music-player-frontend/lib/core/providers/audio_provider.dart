@@ -64,8 +64,14 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
               _currentQueue.length]
           : Song();
 
-  AudioSettings get _currentAudioSettings =>
-      _audioService.settingsService.currentAudioSettings;
+  AudioSettings get _currentAudioSettings => _audioService.currentAudioSettings;
+
+  @override
+  void dispose() {
+    disposeListeners();
+    _audioService.audioPlayer.dispose();
+    super.dispose();
+  }
 
   @override
   Future<void> play() async {
@@ -204,9 +210,9 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   Future<void> setCurrentSongAndPlay(Song song) async {
     currentSongNotifier.value = song;
     likedNotifier.value = song.likedByUser;
-    await _audioService.setCurrentSongAndPlay(song);
     changeMediaItem();
     notifyListeners();
+    await _audioService.setCurrentSongAndPlay(song);
   }
 
   void likeCurrentSong() {
@@ -277,10 +283,16 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
           playing: playing,
           updatePosition: _audioService.audioPlayer.position,
           bufferedPosition: _audioService.audioPlayer.bufferedPosition,
-          speed: _audioService.settingsService.currentAudioSettings.speed,
+          speed: _currentAudioSettings.speed,
           queueIndex: event.currentIndex,
         ),
       );
     });
+  }
+
+  void disposeListeners() {
+    _audioService.audioPlayer.positionStream.drain();
+    _audioService.audioPlayer.bufferedPositionStream.drain();
+    _audioService.audioPlayer.playbackEventStream.drain();
   }
 }

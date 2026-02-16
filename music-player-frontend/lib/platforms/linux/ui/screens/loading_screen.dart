@@ -1,5 +1,4 @@
 import 'package:after_layout/after_layout.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
@@ -28,7 +27,6 @@ class _LoadingScreenState extends LoadingScreenState<LoadingScreen>
     with AfterLayoutMixin<LoadingScreen> {
   @override
   void routeUser(BuildContext context) async {
-    appWindow.maximize();
     var abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
       context,
       listen: false,
@@ -37,11 +35,13 @@ class _LoadingScreenState extends LoadingScreenState<LoadingScreen>
         abstractAppStateProvider.appSettings.mainSongPlace.isEmpty) {
       Navigator.pushReplacement(context, WelcomeScreen.route());
     } else {
-      Provider.of<SongProvider>(
-        context,
-        listen: false,
-      ).initialize(abstractAppStateProvider.appSettings.songPlaces);
-      Navigator.pushReplacement(context, HomeScreen.route());
+      var songProvider = Provider.of<SongProvider>(context, listen: false);
+      await songProvider.initialize(
+        abstractAppStateProvider.appSettings.songPlaces,
+      );
+      if (context.mounted) {
+        Navigator.pushReplacement(context, HomeScreen.route());
+      }
     }
   }
 

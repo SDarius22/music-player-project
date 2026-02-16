@@ -66,7 +66,7 @@ class LyricsTab extends AbstractLyricsTab {
     var audioProvider = Provider.of<AudioProvider>(context, listen: false);
 
     return Consumer<LyricsProvider>(
-      builder: (_, lyricsProvider, __) {
+      builder: (_, lyricsProvider, _) {
         return MultiValueListenableBuilder(
           valueListenables: [
             audioProvider.sliderNotifier,

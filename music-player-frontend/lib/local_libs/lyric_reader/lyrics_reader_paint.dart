@@ -13,9 +13,10 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
   LyricsReaderPaint(this.model, this.lyricUI);
 
   ///高亮混合笔
-  var lightBlendPaint = Paint()
-    ..blendMode = BlendMode.srcIn
-    ..isAntiAlias = true;
+  var lightBlendPaint =
+      Paint()
+        ..blendMode = BlendMode.srcIn
+        ..isAntiAlias = true;
 
   var playingIndex = 0;
 
@@ -32,7 +33,7 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
 
   var cachePlayingIndex = -1;
 
-  clearCache() {
+  void clearCache() {
     cachePlayingIndex = -1;
     highlightWidth = 0;
   }
@@ -66,19 +67,24 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
       //最大偏移量不包含最后一行
       if (lyrics.isNotEmpty) {
         lyrics = lyrics.sublist(0, lyrics.length - 1);
-        lastLineSpace = LyricHelper.getLineSpaceHeight(lyrics.last, lyricUI,
-            excludeInline: true);
+        lastLineSpace = LyricHelper.getLineSpaceHeight(
+          lyrics.last,
+          lyricUI,
+          excludeInline: true,
+        );
       }
-      totalHeight = -LyricHelper.getTotalHeight(lyrics, playingIndex, lyricUI) +
+      totalHeight =
+          -LyricHelper.getTotalHeight(lyrics, playingIndex, lyricUI) +
           (model?.firstCenterOffset(playingIndex, lyricUI) ?? 0) -
           (model?.lastCenterOffset(playingIndex, lyricUI) ?? 0) -
           lastLineSpace;
     }
   }
 
-  double get baseOffset => lyricUI.halfSizeLimit()
-      ? mSize.height * (0.5 - lyricUI.getPlayingLineBias())
-      : 0;
+  double get baseOffset =>
+      lyricUI.halfSizeLimit()
+          ? mSize.height * (0.5 - lyricUI.getPlayingLineBias())
+          : 0;
 
   double get maxOffset {
     calculateTotalHeight();
@@ -90,7 +96,7 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
   //限制刷新频率
   int ts = DateTime.now().microsecond;
 
-  refresh() {
+  void refresh() {
     notifyListeners();
   }
 
@@ -131,7 +137,8 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
         if (i != centerLyricIndex) {
           centerLyricIndex = i;
           LyricsLog.logD(
-              "drawOffset:$drawOffset next:$nextOffset center:$centerY  当前行是：$i 文本：${element.mainText} ");
+            "drawOffset:$drawOffset next:$nextOffset center:$centerY  当前行是：$i 文本：${element.mainText} ",
+          );
         }
       }
       drawOffset = nextOffset;
@@ -139,7 +146,11 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
   }
 
   double drawLine(
-      int i, double drawOffset, Canvas canvas, LyricsLineModel element) {
+    int i,
+    double drawOffset,
+    Canvas canvas,
+    LyricsLineModel element,
+  ) {
     //空行直接返回
     if (!element.hasMain && !element.hasExt) {
       return lyricUI.getBlankLineHeight();
@@ -149,15 +160,21 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
 
   ///绘制其他歌词行
   ///返回造成的偏移量值
-  double _drawOtherLyricLine(Canvas canvas, double drawOffsetY,
-      LyricsLineModel element, int lineIndex) {
+  double _drawOtherLyricLine(
+    Canvas canvas,
+    double drawOffsetY,
+    LyricsLineModel element,
+    int lineIndex,
+  ) {
     var isPlay = lineIndex == playingIndex;
-    var mainTextPainter = (isPlay
-        ? element.drawInfo?.playingMainTextPainter
-        : element.drawInfo?.otherMainTextPainter);
-    var extTextPainter = (isPlay
-        ? element.drawInfo?.playingExtTextPainter
-        : element.drawInfo?.otherExtTextPainter);
+    var mainTextPainter =
+        (isPlay
+            ? element.drawInfo?.playingMainTextPainter
+            : element.drawInfo?.otherMainTextPainter);
+    var extTextPainter =
+        (isPlay
+            ? element.drawInfo?.playingExtTextPainter
+            : element.drawInfo?.otherExtTextPainter);
     //该行行高
     double otherLineHeight = 0;
     //第一行不加行间距
@@ -167,7 +184,11 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
     var nextOffsetY = drawOffsetY + otherLineHeight;
     if (element.hasMain) {
       otherLineHeight += drawText(
-          canvas, mainTextPainter, nextOffsetY, isPlay ? element : null);
+        canvas,
+        mainTextPainter,
+        nextOffsetY,
+        isPlay ? element : null,
+      );
     }
     if (element.hasExt) {
       //有主歌词时才加内间距
@@ -180,8 +201,12 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
     return otherLineHeight;
   }
 
-  void drawHighlight(LyricsLineModel model, Canvas canvas, TextPainter? painter,
-      Offset offset) {
+  void drawHighlight(
+    LyricsLineModel model,
+    Canvas canvas,
+    TextPainter? painter,
+    Offset offset,
+  ) {
     if (!model.hasMain) return;
     var tmpHighlightWidth = _highlightWidth;
     model.drawInfo?.inlineDrawList.forEach((element) {
@@ -201,9 +226,14 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
         dx -= currentWidth;
       }
       canvas.drawRect(
-          Rect.fromLTWH(dx, offset.dy + element.offset.dy - 2, currentWidth,
-              element.height + 2),
-          lightBlendPaint..color = lyricUI.getLyricHighlightColor());
+        Rect.fromLTWH(
+          dx,
+          offset.dy + element.offset.dy - 2,
+          currentWidth,
+          element.height + 2,
+        ),
+        lightBlendPaint..color = lyricUI.getLyricHighlightColor(),
+      );
     });
   }
 
@@ -220,8 +250,12 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
 
   ///绘制文本并返回行高度
   ///when [element] not null,then draw gradient
-  double drawText(Canvas canvas, TextPainter? paint, double offsetY,
-      [LyricsLineModel? element]) {
+  double drawText(
+    Canvas canvas,
+    TextPainter? paint,
+    double offsetY, [
+    LyricsLineModel? element,
+  ]) {
     //paint 理论上不可能为空，预期报错
     var lineHeight = paint!.height;
     if (offsetY < 0 - lineHeight || offsetY > mSize.height) {
@@ -231,7 +265,9 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
     var offset = Offset(getLineOffsetX(paint), offsetY);
     if (isEnableLight) {
       canvas.saveLayer(
-          Rect.fromLTWH(0, 0, mSize.width, mSize.height), layerPaint);
+        Rect.fromLTWH(0, 0, mSize.width, mSize.height),
+        layerPaint,
+      );
     }
     paint.paint(canvas, offset);
     if (isEnableLight) {
@@ -250,7 +286,7 @@ class LyricsReaderPaint extends ChangeNotifier implements CustomPainter {
         return (mSize.width - textPainter.width) / 2;
       case LyricAlign.right:
         return mSize.width - textPainter.width;
-      }
+    }
   }
 
   @override

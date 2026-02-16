@@ -174,7 +174,7 @@ class TrackScreen extends EntityScreen {
                   blur: 45.0,
                   borderWidth: 0.0,
                   elevation: 3.0,
-                  shadowColor: Colors.black.withOpacity(0.20),
+                  shadowColor: Colors.black.withValues(alpha: 0.20),
                   child: CustomScrollView(
                     slivers: [
                       SliverPadding(

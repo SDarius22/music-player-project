@@ -15,10 +15,10 @@ import 'package:music_player_frontend/platforms/linux/ui/screens/track_screen.da
 import 'package:provider/provider.dart';
 
 class Tracks extends MultipleEntitiesScreen<SongProvider> {
-  static Route<dynamic> route({required SongProvider provider}) {
+  static Route<dynamic> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Tracks(provider: provider);
+        return Tracks(provider: context.read<SongProvider>());
       },
     );
   }
@@ -45,7 +45,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
   @override
   Widget buildMainAction(BaseEntity entity, BuildContext context) {
     return Consumer<AudioProvider>(
-      builder: (_, audioProvider, __) {
+      builder: (_, audioProvider, _) {
         Song song = entity as Song;
         return ValueListenableBuilder(
           valueListenable: audioProvider.playingNotifier,

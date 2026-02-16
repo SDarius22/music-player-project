@@ -63,9 +63,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 3,
       "onTap": (BuildContext context) {
         setState(() => _selected = 3);
-        _appStateProvider.navigatorKey.currentState!.push(
-          Tracks.route(provider: context.read<SongProvider>()),
-        );
+        _appStateProvider.navigatorKey.currentState!.push(Tracks.route());
       },
     },
     {

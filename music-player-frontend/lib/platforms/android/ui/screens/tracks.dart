@@ -46,7 +46,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
   @override
   Widget buildMainAction(BaseEntity entity, BuildContext context) {
     return Consumer<AudioProvider>(
-      builder: (_, audioProvider, __) {
+      builder: (_, audioProvider, _) {
         Song song = entity as Song;
         return ValueListenableBuilder(
           valueListenable: audioProvider.playingNotifier,

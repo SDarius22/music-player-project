@@ -324,18 +324,18 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
 
                         PanelState snap = PanelState.min;
 
-                        final _percentageMax = percentageFromValueInRange(
+                        final percentageMax = percentageFromValueInRange(
                           min: widget.minHeight,
                           max: widget.maxHeight,
                           value: _dragHeight,
                         );
 
                         if (_startHeight > widget.minHeight) {
-                          if (_percentageMax > 1 - snapPercentage) {
+                          if (percentageMax > 1 - snapPercentage) {
                             snap = PanelState.max;
                           }
                         } else {
-                          if (_percentageMax > snapPercentage) {
+                          if (percentageMax > snapPercentage) {
                             snap = PanelState.max;
                           } else if (onDismissed != null &&
                               percentageFromValueInRange(
@@ -386,8 +386,9 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
           value: _dragHeight,
         ),
       );
-      if (dragDownPercentage.value != percentageDown)
+      if (dragDownPercentage.value != percentageDown) {
         dragDownPercentage.value = percentageDown;
+      }
       if (percentageDown >= 1 && animation && !dismissed) {
         if (onDismissed != null) onDismissed!();
         setState(() => dismissed = true);

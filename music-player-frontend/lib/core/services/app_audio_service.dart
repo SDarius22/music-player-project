@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
@@ -18,6 +19,7 @@ class AppAudioService {
     this.settingsService,
     this.playlistService,
   ) {
+    _currentAudioSettings = settingsService.getAudioSettings();
     _currentSong = playlistService.getMostRecentPlayedSong() ?? Song();
     _queuePlaylist = playlistService.getQueuePlaylist();
     _initPlayer();
@@ -25,8 +27,11 @@ class AppAudioService {
 
   Song _currentSong = Song();
   Playlist _queuePlaylist = Playlist();
+  AudioSettings _currentAudioSettings = AudioSettings();
 
-  bool get shuffle => settingsService.currentAudioSettings.shuffle;
+  AudioSettings get currentAudioSettings => _currentAudioSettings;
+
+  bool get shuffle => _currentAudioSettings.shuffle;
 
   Song getCurrentSong() {
     return _currentSong;
@@ -58,12 +63,16 @@ class AppAudioService {
   Future<void> setCurrentSongAndPlay(Song song) async {
     debugPrint("Setting current song to ${song.path}");
 
+    await audioPlayer.stop();
+
     _currentSong = song;
     _currentSong.lastPlayed = DateTime.now();
     _currentSong.playCount += 1;
     songService.updateSong(_currentSong);
     playlistService.updateMostPlayedPlaylist();
     playlistService.updateRecentlyPlayedPlaylist();
+
+    debugPrint("Loading song into audio player: ${song.path}");
 
     await audioPlayer.setFilePath(song.path);
     await audioPlayer.play();
@@ -80,32 +89,34 @@ class AppAudioService {
   }
 
   void setVolume(double volume) {
-    settingsService.currentAudioSettings.volume = volume;
-    settingsService.updateAudioSettings();
+    _currentAudioSettings.volume = volume;
+    settingsService.updateAudioSettings(_currentAudioSettings);
     audioPlayer.setVolume(volume);
   }
 
   void setPlaybackSpeed(double speed) {
+    _currentAudioSettings.speed = speed;
+    settingsService.updateAudioSettings(_currentAudioSettings);
     audioPlayer.setSpeed(speed);
   }
 
   void setRepeat(bool repeat) {
-    settingsService.currentAudioSettings.repeat = repeat;
-    settingsService.updateAudioSettings();
+    _currentAudioSettings.repeat = repeat;
+    settingsService.updateAudioSettings(_currentAudioSettings);
   }
 
   void setShuffle(bool shuffle) {
-    settingsService.currentAudioSettings.shuffle = shuffle;
-    settingsService.updateAudioSettings();
+    _currentAudioSettings.shuffle = shuffle;
+    settingsService.updateAudioSettings(_currentAudioSettings);
   }
 
   Future<void> _initPlayer() async {
     try {
-      await audioPlayer.setVolume(settingsService.currentAudioSettings.volume);
+      await audioPlayer.setVolume(_currentAudioSettings.volume);
       await audioPlayer.setFilePath(
         _currentSong.path,
         initialPosition: Duration(
-          seconds: settingsService.currentAudioSettings.sliderInSeconds,
+          seconds: _currentAudioSettings.sliderInSeconds,
         ),
       );
       await audioPlayer.seek(
@@ -178,7 +189,7 @@ class AppAudioService {
   }
 
   Future<void> updateSliderInSeconds(int seconds) async {
-    settingsService.currentAudioSettings.sliderInSeconds = seconds;
-    settingsService.updateAudioSettings();
+    _currentAudioSettings.sliderInSeconds = seconds;
+    settingsService.updateAudioSettings(_currentAudioSettings);
   }
 }

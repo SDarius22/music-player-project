@@ -2,9 +2,9 @@ import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
@@ -68,11 +68,7 @@ class LinuxApp extends StatelessWidget {
               (context) => SettingsService(context.read<SettingsRepository>()),
         ),
         Provider<SongService>(
-          create:
-              (context) => SongService(
-                context.read<SongRepository>(),
-                context.read<SettingsService>(),
-              ),
+          create: (context) => SongService(context.read<SongRepository>()),
         ),
         Provider<AbstractMusicScannerService>(
           create:

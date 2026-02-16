@@ -28,11 +28,10 @@ class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
       "subtitle": const Text("Manage your music library settings"),
       "trailing": IconButton(
         onPressed: () {
-          context
-              .read<AbstractAppStateProvider>()
-              .navigatorKey
-              .currentState
-              ?.push(LibrarySettings.route());
+          var appState = context.read<AbstractAppStateProvider>();
+          appState.navigatorKey.currentState?.push(
+            LibrarySettings.route(abstractAppStateProvider: appState),
+          );
         },
         icon: Icon(
           FluentIcons.right,

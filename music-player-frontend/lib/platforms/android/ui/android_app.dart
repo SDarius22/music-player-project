@@ -69,11 +69,7 @@ class AndroidApp extends StatelessWidget {
               (context) => SettingsService(context.read<SettingsRepository>()),
         ),
         Provider<SongService>(
-          create:
-              (context) => SongService(
-                context.read<SongRepository>(),
-                context.read<SettingsService>(),
-              ),
+          create: (context) => SongService(context.read<SongRepository>()),
         ),
         Provider<AbstractMusicScannerService>(
           create:

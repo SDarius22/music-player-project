@@ -8,7 +8,7 @@ class ArtistService {
 
   Stream watchArtists() => _artistRepository.watchArtists();
 
-  get sortFields => _artistRepository.sortFields;
+  Map<String, dynamic> get sortFields => _artistRepository.sortFields;
 
   Artist getArtist(int artistId) {
     try {

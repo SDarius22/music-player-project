@@ -146,7 +146,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
             ),
             Expanded(
               child: Consumer<PlaylistProvider>(
-                builder: (_, playlistProvider, __) {
+                builder: (_, playlistProvider, _) {
                   return FutureBuilder(
                     future: Future(
                       () =>

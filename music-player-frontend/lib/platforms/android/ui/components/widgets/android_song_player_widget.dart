@@ -27,7 +27,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
   late AbstractAppStateProvider appStateProvider;
   late AudioProvider audioProvider;
   final MiniPlayerController _miniPlayerController = MiniPlayerController();
-  ValueNotifier<bool> _listView = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _listView = ValueNotifier<bool>(false);
 
   @override
   void initState() {

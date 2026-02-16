@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_single_instance/flutter_single_instance.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
     case 'linux':
       debugPrint('Running on Linux');
       if (await FlutterSingleInstance().isFirstInstance()) {
+        appWindow.maximize();
         runApp(const LinuxApp());
       }
       break;

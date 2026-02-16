@@ -9,21 +9,15 @@ abstract class AbstractWelcomeScreen extends StatefulWidget {
 
 abstract class AbstractWelcomeScreenState<T extends AbstractWelcomeScreen>
     extends State<T> {
-  late AbstractAppStateProvider abstractAppStateProvider;
-
   @override
   void initState() {
     super.initState();
-    abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
-      context,
-      listen: false,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return GlassAnimatedScaffold(
-      controller: abstractAppStateProvider.gradientController,
+      controller: context.read<AbstractAppStateProvider>().gradientController,
       appBar: buildAppBar(context),
       body: Padding(padding: buildPadding(context), child: buildBody(context)),
     );

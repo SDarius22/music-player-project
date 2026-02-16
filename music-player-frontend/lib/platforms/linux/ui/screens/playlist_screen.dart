@@ -43,7 +43,7 @@ class PlaylistScreen extends EntityScreen {
     final boldSize = height * 0.025;
     final smallSize = height * 0.0175;
 
-    Future<void> _handleAction(_PlaylistAction action) async {
+    Future<void> handleAction(_PlaylistAction action) async {
       switch (action) {
         case _PlaylistAction.add:
           {
@@ -123,7 +123,7 @@ class PlaylistScreen extends EntityScreen {
       }
     }
 
-    Widget _actionsMenuButton() {
+    Widget actionsMenuButton() {
       final bool canModify = playlist.indestructible == false;
 
       return ValueListenableBuilder<bool>(
@@ -133,7 +133,7 @@ class PlaylistScreen extends EntityScreen {
             return SizedBox(
               height: height * 0.045,
               child: ElevatedButton.icon(
-                onPressed: () => _handleAction(_PlaylistAction.editToggle),
+                onPressed: () => handleAction(_PlaylistAction.editToggle),
                 icon: Icon(
                   FluentIcons.check,
                   size: height * 0.02,
@@ -152,7 +152,7 @@ class PlaylistScreen extends EntityScreen {
 
           return PopupMenuButton<_PlaylistAction>(
             tooltip: "Actions",
-            onSelected: _handleAction,
+            onSelected: handleAction,
             itemBuilder: (context) {
               final items = <PopupMenuEntry<_PlaylistAction>>[];
 
@@ -276,7 +276,7 @@ class PlaylistScreen extends EntityScreen {
                   size: height * 0.025,
                 ),
               ),
-              _actionsMenuButton(),
+              actionsMenuButton(),
             ],
           ),
         ),

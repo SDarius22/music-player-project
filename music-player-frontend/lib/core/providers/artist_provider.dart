@@ -16,7 +16,7 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
   ArtistProvider(this._artistService) {
     _artistsFuture = Future(() => _artistService.getAllArtists());
 
-    artistsStream.throttleTime(const Duration(seconds: 2)).listen((_) {
+    artistsStream.throttleTime(const Duration(seconds: 10)).listen((_) {
       debugPrint("Artists stream updated");
       _artistsFuture = Future(
         () => _artistService.getArtists(_query, _sortField, _isAscending),

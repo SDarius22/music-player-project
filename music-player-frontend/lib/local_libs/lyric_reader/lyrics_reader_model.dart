@@ -7,7 +7,7 @@ import 'lyric_ui/lyric_ui.dart';
 class LyricsReaderModel {
   List<LyricsLineModel> lyrics = [];
 
-  getCurrentLine(int progress) {
+  int getCurrentLine(int progress) {
     var lastEndTime = 0;
     for (var i = 0; i < lyrics.length; i++) {
       var element = lyrics[i];
@@ -33,23 +33,38 @@ class LyricsReaderModel {
     } else {
       offset += ui.getLineSpace();
       offset += LyricHelper.centerOffset(
-          targetLine, toLine == playLine, ui, playLine);
+        targetLine,
+        toLine == playLine,
+        ui,
+        playLine,
+      );
     }
     //需要特殊处理往上偏移的第一行
     return -LyricHelper.getTotalHeight(
-            lyrics.sublist(0, toLine), playLine, ui) +
+          lyrics.sublist(0, toLine),
+          playLine,
+          ui,
+        ) +
         firstCenterOffset(playLine, ui) -
         offset;
   }
 
   double firstCenterOffset(int playIndex, LyricUI lyricUI) {
     return LyricHelper.centerOffset(
-        lyrics.firstOrNull, playIndex == 0, lyricUI, playIndex);
+      lyrics.firstOrNull,
+      playIndex == 0,
+      lyricUI,
+      playIndex,
+    );
   }
 
   double lastCenterOffset(int playIndex, LyricUI lyricUI) {
     return LyricHelper.centerOffset(
-        lyrics.lastOrNull, playIndex == lyrics.length - 1, lyricUI, playIndex);
+      lyrics.lastOrNull,
+      playIndex == lyrics.length - 1,
+      lyricUI,
+      playIndex,
+    );
   }
 }
 
@@ -70,12 +85,13 @@ class LyricsLineModel {
 
   List<LyricSpanInfo>? _defaultSpanList;
 
-  get defaultSpanList => _defaultSpanList ??= [
+  List<LyricSpanInfo> get defaultSpanList =>
+      _defaultSpanList ??= [
         LyricSpanInfo()
           ..duration = (endTime ?? 0) - (startTime ?? 0)
           ..start = startTime ?? 0
           ..length = mainText?.length ?? 0
-          ..raw = mainText ?? ""
+          ..raw = mainText ?? "",
       ];
 }
 
@@ -119,5 +135,5 @@ class LyricSpanInfo {
 }
 
 extension LyricsReaderModelExt on LyricsReaderModel? {
-  get isNullOrEmpty => this?.lyrics == null || this!.lyrics.isEmpty;
+  bool get isNullOrEmpty => this?.lyrics == null || this!.lyrics.isEmpty;
 }

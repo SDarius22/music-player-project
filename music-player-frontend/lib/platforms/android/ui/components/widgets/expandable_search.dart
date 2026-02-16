@@ -28,7 +28,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
       switchInCurve: Curves.easeInOut,
       child:
           _isExpanded
-              ? Container(
+              ? SizedBox(
                 width: width * 0.9,
                 child: TextFormField(
                   focusNode: searchNode,

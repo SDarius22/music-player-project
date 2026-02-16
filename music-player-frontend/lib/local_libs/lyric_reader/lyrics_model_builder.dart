@@ -13,7 +13,7 @@ class LyricsModelBuilder {
 
   var _lyricModel = LyricsReaderModel();
 
-  reset() {
+  void reset() {
     _lyricModel = LyricsReaderModel();
   }
 
@@ -32,7 +32,7 @@ class LyricsModelBuilder {
     return this;
   }
 
-  _setLyric(List<LyricsLineModel>? lineList, {isMain = true}) {
+  void _setLyric(List<LyricsLineModel>? lineList, {isMain = true}) {
     if (lineList == null) return;
     for (int i = 0; i < lineList.length; i++) {
       var currLine = lineList[i];
@@ -54,11 +54,13 @@ class LyricsModelBuilder {
       //扩展歌词对应行
       for (var mainLine in _lyricModel.lyrics) {
         var extLine = lineList.firstWhere(
-            (extLine) =>
-                mainLine.startTime == extLine.startTime &&
-                mainLine.endTime == extLine.endTime, orElse: () {
-          return LyricsLineModel();
-        });
+          (extLine) =>
+              mainLine.startTime == extLine.startTime &&
+              mainLine.endTime == extLine.endTime,
+          orElse: () {
+            return LyricsLineModel();
+          },
+        );
         mainLine.extText = extLine.extText;
       }
     }

@@ -81,7 +81,7 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
   @override
   Widget build(BuildContext context) {
     return Consumer<AudioProvider>(
-      builder: (_, audioProvider, __) {
+      builder: (_, audioProvider, _) {
         debugPrint(
           "Building SongPlayerWidget, current song: ${audioProvider.currentSong.name}",
         );

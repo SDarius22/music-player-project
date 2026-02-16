@@ -12,7 +12,7 @@ class AppStateProvider extends AbstractAppStateProvider with TrayListener {
   }
 
   Future<void> initTray() async {
-    if (!settingsService.currentAppSettings.systemTray) {
+    if (!appSettings.systemTray) {
       try {
         await trayManager.destroy();
       } catch (e) {

@@ -19,7 +19,7 @@ class DetailsTab extends AbstractDetailsTab {
   @override
   Widget buildDetailsContent(BuildContext context) {
     return Consumer<AudioProvider>(
-      builder: (_, audioProvider, __) {
+      builder: (_, audioProvider, _) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,

@@ -20,7 +20,7 @@ abstract class AbstractSettingsScreenState<T extends AbstractSettingsScreen>
       body: Padding(
         padding: buildPadding(context),
         child: Consumer<AbstractAppStateProvider>(
-          builder: (_, appState, __) {
+          builder: (_, appState, _) {
             return ListView.builder(
               itemCount: settingsMap.length,
               itemBuilder: (context, index) {

@@ -12,7 +12,6 @@ class LoadingScreen extends StatefulWidget {
 
   static Route<void> route() {
     return PageRouteBuilder(
-      settings: const RouteSettings(name: '/loading'),
       pageBuilder: (context, animation, secondaryAnimation) {
         return const LoadingScreen();
       },

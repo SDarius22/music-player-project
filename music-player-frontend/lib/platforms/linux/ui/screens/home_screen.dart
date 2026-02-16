@@ -1,7 +1,6 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
@@ -65,9 +64,7 @@ class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
                 controller: MaterialApp.createMaterialHeroController(),
                 child: Navigator(
                   key: provider.navigatorKey,
-                  onGenerateRoute:
-                      (settings) =>
-                          Tracks.route(provider: context.read<SongProvider>()),
+                  onGenerateRoute: (settings) => Tracks.route(),
                 ),
               ),
             ),

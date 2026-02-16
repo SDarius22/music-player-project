@@ -9,18 +9,18 @@ class LyricsProvider with ChangeNotifier {
   final FileService _fileService;
   LyricsReaderModel lyricsModelBuilder = LyricsReaderModel();
   String unsyncedLyrics = '';
-  bool hasBeenInitialized = false;
+  bool _hasBeenInitialized = false;
 
   LyricsProvider(this._audioProvider, this._fileService) {
-    if (!hasBeenInitialized) {
-      hasBeenInitialized = true;
+    if (!_hasBeenInitialized) {
+      _hasBeenInitialized = true;
     }
     _audioProvider.currentSongNotifier.addListener(() {
       buildLyricsModel();
     });
   }
 
-  void buildLyricsModel() async {
+  void buildLyricsModel() {
     String? lyrics = _getLyricsForCurrentSong();
     lyricsModelBuilder =
         LyricsModelBuilder.create().bindLyricToMain(lyrics ?? '').getModel();
