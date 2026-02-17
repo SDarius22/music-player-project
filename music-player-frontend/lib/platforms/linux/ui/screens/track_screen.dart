@@ -76,8 +76,7 @@ class TrackScreen extends EntityScreen {
                     context,
                     listen: false,
                   );
-                  audioProvider.setQueue([song]);
-                  await audioProvider.setCurrentSongAndPlay(song);
+                  await audioProvider.setQueueAndPlay([song], song);
                 },
                 icon: Icon(
                   FluentIcons.play,

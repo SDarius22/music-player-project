@@ -70,7 +70,7 @@ class _AndroidSearchHeaderState extends State<AndroidSearchHeader> {
                 size: height * 0.025,
               ),
               suffixIcon:
-                  searchNode.hasFocus
+                  _controller.text.isNotEmpty
                       ? IconButton(
                         icon: Icon(
                           Icons.clear,

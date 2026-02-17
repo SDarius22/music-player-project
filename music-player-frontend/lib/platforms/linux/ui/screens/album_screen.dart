@@ -80,8 +80,10 @@ class AlbumScreen extends EntityScreen {
                     context,
                     listen: false,
                   );
-                  audioProvider.setQueue(album.songs);
-                  await audioProvider.setCurrentSongAndPlay(album.songs.first);
+                  await audioProvider.setQueueAndPlay(
+                    album.songs,
+                    album.songs.first,
+                  );
                 },
                 icon: Icon(
                   FluentIcons.play,
@@ -201,9 +203,9 @@ class AlbumScreen extends EntityScreen {
                               context,
                               listen: false,
                             );
-                            await audioProvider.setQueue(album.songs);
-                            await audioProvider.setCurrentSongAndPlay(
-                              (entity as Song),
+                            await audioProvider.setQueueAndPlay(
+                              album.songs,
+                              entity as Song,
                             );
                           },
                           onLongPress: (entity) {

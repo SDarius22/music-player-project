@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
@@ -14,6 +13,7 @@ import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/tabs/queue_tab.dart';
+import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_volume_widget.dart';
 import 'package:provider/provider.dart';
 
 class AndroidSongPlayerWidget extends SongPlayerWidget {
@@ -215,6 +215,8 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
 
     double progressBarOpacity = normalized;
 
+    double topButtonsHeight = lerpDouble(0.0, height * 0.05, normalized)!;
+
     final sidePanelsOpacity = ((normalizedPercentage - 0.8) / 0.2).clamp(
       0.0,
       1.0,
@@ -253,9 +255,47 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                Opacity(
+                  opacity: progressBarOpacity,
+                  child: Container(
+                    height: topButtonsHeight,
+                    padding: EdgeInsets.only(bottom: height * 0.025),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () async {
+                            Provider.of<AbstractAppStateProvider>(
+                              context,
+                              listen: false,
+                            ).miniPlayerController.animateToHeight(
+                              state: PanelState.min,
+                            );
+                          },
+                          icon: Icon(
+                            FluentIcons.down,
+                            color: Colors.white,
+                            size: height * 0.025,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                offset: const Offset(1, 2),
+                                blurRadius: 7,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const Spacer(),
+
+                        AndroidVolumeWidget(),
+                      ],
+                    ),
+                  ),
+                ),
+
                 Container(
                   width: double.infinity,
-                  height: height * 0.5,
+                  height: height * 0.4,
                   alignment: Alignment.topCenter,
                   child: ValueListenableBuilder(
                     valueListenable: _listView,
@@ -279,11 +319,9 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                   ),
                 ),
 
-                const Spacer(),
-
                 Opacity(
                   opacity: progressBarOpacity,
-                  child: SizedBox(height: height * 0.02),
+                  child: SizedBox(height: height * 0.05),
                 ),
 
                 const Spacer(),
@@ -303,6 +341,11 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                 ),
 
                 const Spacer(),
+
+                Opacity(
+                  opacity: progressBarOpacity,
+                  child: SizedBox(height: height * 0.025),
+                ),
 
                 // ProgressBar
                 Opacity(
@@ -365,73 +408,20 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
 
                 const Spacer(),
 
+                Opacity(
+                  opacity: progressBarOpacity,
+                  child: SizedBox(height: height * 0.025),
+                ),
+
                 // Player Controls - Previous, Play/Pause, Next
                 Opacity(
                   opacity: progressBarOpacity,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        onPressed: () async {
-                          debugPrint("Liked");
-                          audioProvider.likeCurrentSong();
-                          likedNotifier.value = !likedNotifier.value;
-                          String message =
-                              likedNotifier.value
-                                  ? "Added ${audioProvider.currentSong.name} to Favorites"
-                                  : "Removed ${audioProvider.currentSong.name} from Favorites";
-                          BotToast.showText(
-                            text: message,
-                            duration: const Duration(seconds: 3),
-                            contentColor: Colors.black,
-                            textStyle: TextStyle(
-                              color: Colors.white,
-                              fontSize: height * 0.02,
-                            ),
-                          );
-                        },
-                        icon: Icon(
-                          likedNotifier.value
-                              ? FluentIcons.liked
-                              : FluentIcons.unliked,
-                          size: height * 0.025,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              offset: const Offset(1, 2),
-                              blurRadius: 7,
-                            ),
-                          ],
-                        ),
-                      ),
-
                       SizedBox(
-                        width: width * 0.5,
+                        width: width * 0.9,
                         child: _buildPlayerButtons(audioProvider),
-                      ),
-
-                      IconButton(
-                        onPressed: () async {
-                          Provider.of<AbstractAppStateProvider>(
-                            context,
-                            listen: false,
-                          ).miniPlayerController.animateToHeight(
-                            state: PanelState.min,
-                          );
-                        },
-                        icon: Icon(
-                          FluentIcons.minimize,
-                          color: Colors.white,
-                          size: height * 0.025,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              offset: const Offset(1, 2),
-                              blurRadius: 7,
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),
@@ -442,7 +432,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                       MediaQuery.of(context).size.height * 0.1 +
                       MediaQuery.of(context).padding.bottom -
                       kBottomNavigationBarHeight +
-                      MediaQuery.of(context).size.height * 0.025,
+                      MediaQuery.of(context).size.height * 0.1,
                 ),
               ],
             ),
@@ -463,7 +453,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
           MediaQuery.of(context).size.height * 0.1 +
           MediaQuery.of(context).padding.bottom -
           kBottomNavigationBarHeight +
-          height * 0.025,
+          height * 0.1,
       maxHeight: MediaQuery.of(context).size.height,
       minWidth: MediaQuery.of(context).size.width * 0.95,
       maxWidth: MediaQuery.of(context).size.width,

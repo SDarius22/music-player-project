@@ -12,7 +12,6 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   final AppAudioService _audioService;
   final FileService _fileService;
 
-  ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> playingNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> repeatNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> shuffleNotifier = ValueNotifier<bool>(false);
@@ -20,7 +19,11 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   ValueNotifier<int> bufferedPositionNotifier = ValueNotifier<int>(0);
   ValueNotifier<double> volumeNotifier = ValueNotifier<double>(0.5);
   ValueNotifier<double> playbackSpeedNotifier = ValueNotifier<double>(1.0);
-  ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
+
+  ValueNotifier<Song> get currentSongNotifier =>
+      _audioService.currentSongNotifier;
+
+  ValueNotifier<bool> get likedNotifier => _audioService.likedNotifier;
 
   Song get currentSong => currentSongNotifier.value;
 
@@ -31,9 +34,6 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   AudioSettings get _currentAudioSettings => _audioService.currentAudioSettings;
 
   AudioProvider(this._audioService, this._fileService) {
-    currentSongNotifier.value = _audioService.currentSong;
-    likedNotifier.value = currentSongNotifier.value.likedByUser;
-
     repeatNotifier.value = _currentAudioSettings.repeat;
     shuffleNotifier.value = _currentAudioSettings.shuffle;
     volumeNotifier.value = _currentAudioSettings.volume;
@@ -130,12 +130,15 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     _audioService.setShuffle(shuffle);
   }
 
-  Future<void> setQueue(List<Song> songs) async {
-    _audioService.setQueue(songs);
+  Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
+    _audioService.setQueueAndPlay(songs, song);
     notifyListeners();
   }
 
   Future<Duration> getDuration() async {
+    if (currentSong.durationInSeconds > 0) {
+      return Duration(seconds: currentSong.durationInSeconds);
+    }
     return await _audioService.getDuration();
   }
 
@@ -155,15 +158,10 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<void> setCurrentSongAndPlay(Song song) async {
-    currentSongNotifier.value = song;
-    likedNotifier.value = song.likedByUser;
-    changeMediaItem();
-    notifyListeners();
     await _audioService.setCurrentSongAndPlay(song);
   }
 
   void likeCurrentSong() {
-    likedNotifier.value = !likedNotifier.value;
     _audioService.likeCurrentSong();
   }
 
@@ -181,6 +179,11 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   void _startListeners() {
+    _audioService.currentSongNotifier.addListener(() {
+      changeMediaItem();
+      notifyListeners();
+    });
+
     _audioService.audioPlayer.positionStream.listen((Duration event) {
       sliderNotifier.value = event.inMilliseconds;
       _audioService.updateSliderInSeconds(event.inSeconds);
@@ -188,27 +191,6 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
     _audioService.audioPlayer.bufferedPositionStream.listen((Duration event) {
       bufferedPositionNotifier.value = event.inSeconds;
-    });
-
-    _audioService.audioPlayer.currentIndexStream.listen((index) {
-      if (index == null) return;
-      final q = _audioService.queue;
-      debugPrint(
-        "First 5 songs in queue: ${q.take(5).map((s) => s.name).toList()}",
-      );
-      if (index < 0 || index >= q.length) return;
-
-      final song = q[index];
-      if (song.path == currentSongNotifier.value.path) return;
-      debugPrint(
-        "Song paths: ${song.path} vs ${currentSongNotifier.value.path}",
-      );
-
-      currentSongNotifier.value = song;
-      likedNotifier.value = song.likedByUser;
-      _audioService.updateCurrentSong(song);
-      changeMediaItem();
-      notifyListeners();
     });
 
     _audioService.audioPlayer.playbackEventStream.listen((event) {

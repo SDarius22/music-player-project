@@ -37,8 +37,7 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
         Album album = entity;
         album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
         var audioProvider = Provider.of<AudioProvider>(context, listen: false);
-        audioProvider.setQueue(album.songs);
-        await audioProvider.setCurrentSongAndPlay(album.songs.first);
+        await audioProvider.setQueueAndPlay(album.songs, album.songs.first);
       },
     );
   }

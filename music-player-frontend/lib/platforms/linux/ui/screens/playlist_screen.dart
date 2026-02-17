@@ -257,8 +257,7 @@ class PlaylistScreen extends EntityScreen {
                     context,
                     listen: false,
                   );
-                  audioProvider.setQueue(songs);
-                  await audioProvider.setCurrentSongAndPlay(songs.first);
+                  await audioProvider.setQueueAndPlay(songs, songs.first);
                 },
                 icon: Icon(
                   FluentIcons.play,
@@ -413,11 +412,10 @@ class PlaylistScreen extends EntityScreen {
                                                 context,
                                                 listen: false,
                                               );
-                                          audioProvider.setQueue(songs);
-                                          await audioProvider
-                                              .setCurrentSongAndPlay(
-                                                (entity as Song),
-                                              );
+                                          await audioProvider.setQueueAndPlay(
+                                            songs,
+                                            entity as Song,
+                                          );
                                         },
                                         onLongPress: (entity) {
                                           debugPrint(

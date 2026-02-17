@@ -89,8 +89,7 @@ class PlaylistScreen extends EntityScreen {
                     context,
                     listen: false,
                   );
-                  audioProvider.setQueue(songs);
-                  await audioProvider.setCurrentSongAndPlay(songs.first);
+                  await audioProvider.setQueueAndPlay(songs, songs.first);
                 },
                 icon: Icon(
                   FluentIcons.play,
@@ -143,91 +142,80 @@ class PlaylistScreen extends EntityScreen {
             ],
           ),
         ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              SizedBox(height: height * 0.02),
-              Hero(
-                tag: playlist.name,
-                child: ValueListenableBuilder(
-                  valueListenable: editMode,
-                  builder: (context, value, child) {
-                    return Container(
-                      height: width * 0.6,
-                      width: width * 0.6,
-                      padding: EdgeInsets.only(bottom: height * 0.01),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          MediaQuery.of(context).size.height * 0.015,
-                        ),
-                        child: ImageWidget(entity: playlist),
-                      ),
-                    );
-                  },
+        Hero(
+          tag: playlist.name,
+          child: ValueListenableBuilder(
+            valueListenable: editMode,
+            builder: (context, value, child) {
+              return SizedBox(
+                height: height * 0.25,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    MediaQuery.of(context).size.height * 0.015,
+                  ),
+                  child: ImageWidget(entity: playlist),
                 ),
-              ),
-              SizedBox(height: height * 0.02),
-              ValueListenableBuilder(
-                valueListenable: editMode,
-                builder: (context, value, child) {
-                  return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
-                    child:
-                        value == false
-                            ? Text(
-                              playlist.name,
-                              key: const ValueKey("Playlist Name"),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: boldSize,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                            : SizedBox(
-                              key: const ValueKey("Playlist Name Edit"),
-                              width: width * 0.7,
-                              child: TextFormField(
-                                initialValue: playlist.name,
-                                decoration: InputDecoration(
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.only(
-                                    top: height * 0.008,
-                                    bottom: height * 0.008,
-                                    left: width * 0.01,
-                                    right: width * 0.01,
-                                  ),
-                                  hintText: "Playlist Name",
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: normalSize,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      width * 0.005,
-                                    ),
-                                  ),
-                                ),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: normalSize,
-                                ),
-                                onChanged: (value) {
-                                  playlist.name = value;
-                                },
-                              ),
-                            ),
-                  );
-                },
-              ),
-              SizedBox(height: height * 0.02),
-            ],
+              );
+            },
           ),
         ),
+        SizedBox(height: height * 0.01),
+        ValueListenableBuilder(
+          valueListenable: editMode,
+          builder: (context, value, child) {
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 500),
+              child:
+                  value == false
+                      ? Text(
+                        playlist.name,
+                        key: const ValueKey("Playlist Name"),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: boldSize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                      : SizedBox(
+                        key: const ValueKey("Playlist Name Edit"),
+                        width: width * 0.7,
+                        child: TextFormField(
+                          initialValue: playlist.name,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.only(
+                              top: height * 0.008,
+                              bottom: height * 0.008,
+                              left: width * 0.01,
+                              right: width * 0.01,
+                            ),
+                            hintText: "Playlist Name",
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: normalSize,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                width * 0.005,
+                              ),
+                            ),
+                          ),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: normalSize,
+                          ),
+                          onChanged: (value) {
+                            playlist.name = value;
+                          },
+                        ),
+                      ),
+            );
+          },
+        ),
+        SizedBox(height: height * 0.01),
         Expanded(
           child: GlassContainer(
             margin: EdgeInsets.symmetric(horizontal: width * 0.05),
@@ -237,23 +225,14 @@ class PlaylistScreen extends EntityScreen {
               bottom: height * 0.01,
             ),
             color: Colors.black.withValues(alpha: 0.4),
-            borderGradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.60),
-                Colors.indigoAccent.withValues(alpha: 0.6),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            borderColor: Colors.transparent,
             borderRadius: BorderRadius.circular(
               MediaQuery.of(context).size.height * 0.015,
             ),
             blur: 45.0,
-            borderWidth: 1.5,
+            borderWidth: 0.0,
             elevation: 3.0,
             shadowColor: Colors.black.withValues(alpha: 0.20),
-            isFrostedGlass: true,
-            frostedOpacity: 0.15,
             child: ValueListenableBuilder(
               valueListenable: editMode,
               builder: (context, value, child) {
@@ -268,7 +247,7 @@ class PlaylistScreen extends EntityScreen {
                                 padding: EdgeInsets.only(bottom: height * 0.02),
                                 sliver: ListComponent(
                                   items: songs,
-                                  itemExtent: height * 0.125,
+                                  itemExtent: height * 0.075,
                                   isSelected: (entity) {
                                     return false;
                                   },
@@ -279,8 +258,8 @@ class PlaylistScreen extends EntityScreen {
                                           context,
                                           listen: false,
                                         );
-                                    audioProvider.setQueue(songs);
-                                    await audioProvider.setCurrentSongAndPlay(
+                                    await audioProvider.setQueueAndPlay(
+                                      songs,
                                       (entity as Song),
                                     );
                                   },

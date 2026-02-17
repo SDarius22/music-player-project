@@ -80,8 +80,10 @@ class ArtistScreen extends EntityScreen {
                     context,
                     listen: false,
                   );
-                  audioProvider.setQueue(artist.songs);
-                  await audioProvider.setCurrentSongAndPlay(artist.songs.first);
+                  await audioProvider.setQueueAndPlay(
+                    artist.songs,
+                    artist.songs.first,
+                  );
                 },
                 icon: Icon(
                   FluentIcons.play,
@@ -102,41 +104,27 @@ class ArtistScreen extends EntityScreen {
             ],
           ),
         ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              SizedBox(height: height * 0.02),
-              Hero(
-                tag: artist.name,
-                child: Container(
-                  height: width * 0.6,
-                  width: width * 0.6,
-                  padding: EdgeInsets.only(bottom: height * 0.01),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      MediaQuery.of(context).size.height * 0.015,
-                    ),
-                    child: ImageWidget(entity: artist),
-                  ),
-                ),
+        Hero(
+          tag: artist.name,
+          child: SizedBox(
+            height: height * 0.25,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(
+                MediaQuery.of(context).size.height * 0.015,
               ),
-              SizedBox(height: height * 0.02),
-              Text(
-                artist.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: boldSize,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: height * 0.02),
-            ],
+              child: ImageWidget(entity: artist),
+            ),
           ),
         ),
+        SizedBox(height: height * 0.01),
+        Text(
+          artist.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: boldSize, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: height * 0.01),
         Expanded(
           child: GlassContainer(
             margin: EdgeInsets.symmetric(horizontal: width * 0.05),
@@ -146,30 +134,21 @@ class ArtistScreen extends EntityScreen {
               bottom: height * 0.01,
             ),
             color: Colors.black.withValues(alpha: 0.4),
-            borderGradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.60),
-                Colors.indigoAccent.withValues(alpha: 0.6),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            borderColor: Colors.transparent,
             borderRadius: BorderRadius.circular(
               MediaQuery.of(context).size.height * 0.015,
             ),
             blur: 45.0,
-            borderWidth: 1.5,
+            borderWidth: 0.0,
             elevation: 3.0,
             shadowColor: Colors.black.withValues(alpha: 0.20),
-            isFrostedGlass: true,
-            frostedOpacity: 0.15,
             child: CustomScrollView(
               slivers: [
                 SliverPadding(
-                  padding: EdgeInsets.symmetric(vertical: height * 0.01),
+                  padding: EdgeInsets.zero,
                   sliver: ListComponent(
                     items: artist.songs,
-                    itemExtent: height * 0.1,
+                    itemExtent: height * 0.075,
                     isSelected: (entity) {
                       return false;
                     },
@@ -179,8 +158,8 @@ class ArtistScreen extends EntityScreen {
                         context,
                         listen: false,
                       );
-                      audioProvider.setQueue(artist.songs);
-                      await audioProvider.setCurrentSongAndPlay(
+                      await audioProvider.setQueueAndPlay(
+                        artist.songs,
                         (entity as Song),
                       );
                     },
@@ -193,7 +172,6 @@ class ArtistScreen extends EntityScreen {
             ),
           ),
         ),
-        SizedBox(height: height * 0.02),
       ],
     );
   }
