@@ -33,6 +33,9 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   AbstractAppStateProvider(this.audioProvider, this.settingsService) {
     appSettings = settingsService.getAppSettings();
     audioProvider.currentSongNotifier.addListener(() {
+      debugPrint(
+        "Current song changed to ${audioProvider.currentSongNotifier.value.path}, extracting colors...",
+      );
       setColors();
       notifyListeners();
     });

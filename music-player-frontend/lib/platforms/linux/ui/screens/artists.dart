@@ -13,10 +13,10 @@ import 'package:music_player_frontend/platforms/linux/ui/screens/artist_screen.d
 import 'package:provider/provider.dart';
 
 class Artists extends MultipleEntitiesScreen<ArtistProvider> {
-  static Route<dynamic> route({required ArtistProvider provider}) {
+  static Route<dynamic> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Artists(provider: provider);
+        return Artists(provider: context.read<ArtistProvider>());
       },
     );
   }

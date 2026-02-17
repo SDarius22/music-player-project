@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/cupertino.dart';
@@ -22,14 +21,17 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   ValueNotifier<double> volumeNotifier = ValueNotifier<double>(0.5);
   ValueNotifier<double> playbackSpeedNotifier = ValueNotifier<double>(1.0);
   ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
-  List<Song> normalQueue = [];
-  List<Song> shuffledQueue = [];
+
+  Song get currentSong => currentSongNotifier.value;
+
+  int get currentIndexInNonShuffled => normalQueue.indexOf(currentSong);
+
+  List<Song> get normalQueue => _audioService.queue;
+
+  AudioSettings get _currentAudioSettings => _audioService.currentAudioSettings;
 
   AudioProvider(this._audioService, this._fileService) {
-    normalQueue = List<Song>.from(_audioService.queue);
-    shuffledQueue = List<Song>.from(normalQueue)..shuffle();
-
-    currentSongNotifier.value = _audioService.getCurrentSong();
+    currentSongNotifier.value = _audioService.currentSong;
     likedNotifier.value = currentSongNotifier.value.likedByUser;
 
     repeatNotifier.value = _currentAudioSettings.repeat;
@@ -43,28 +45,6 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     changeMediaItem();
     notifyListeners();
   }
-
-  Song get currentSong => currentSongNotifier.value;
-
-  List<Song> get _currentQueue =>
-      _audioService.shuffle ? shuffledQueue : normalQueue;
-
-  int get currentIndexInNonShuffled => normalQueue.indexOf(currentSong);
-
-  int get _currentIndex => _currentQueue.indexOf(currentSong);
-
-  Song get _nextSong =>
-      _currentQueue.isNotEmpty
-          ? _currentQueue[(_currentIndex + 1) % _currentQueue.length]
-          : Song();
-
-  Song get _previousSong =>
-      _currentQueue.isNotEmpty
-          ? _currentQueue[(_currentIndex - 1 + _currentQueue.length) %
-              _currentQueue.length]
-          : Song();
-
-  AudioSettings get _currentAudioSettings => _audioService.currentAudioSettings;
 
   @override
   void dispose() {
@@ -81,7 +61,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
         controls: [MediaControl.pause],
       ),
     );
-    await _audioService.play(currentSong);
+    await _audioService.play();
   }
 
   @override
@@ -97,13 +77,8 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   @override
   Future<void> skipToNext() async {
-    debugPrint("Skipping to next song: ${_nextSong.name}");
-    currentSongNotifier.value = _nextSong;
-    likedNotifier.value = _nextSong.likedByUser;
-    changeMediaItem();
-    notifyListeners();
     try {
-      await _audioService.skipToNext(currentSong);
+      await _audioService.skipToNext();
     } catch (e) {
       debugPrint("Error skipping to next: $e");
     }
@@ -115,12 +90,9 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       await seek(Duration.zero);
       return;
     }
-    currentSongNotifier.value = _previousSong;
-    likedNotifier.value = _previousSong.likedByUser;
-    changeMediaItem();
-    notifyListeners();
+
     try {
-      await _audioService.skipToPrevious(currentSong);
+      await _audioService.skipToPrevious();
     } catch (e) {
       debugPrint("Error skipping to previous: $e");
     }
@@ -159,45 +131,20 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<void> setQueue(List<Song> songs) async {
-    normalQueue = List<Song>.from(songs);
-    shuffledQueue = List<Song>.from(songs)..shuffle();
     _audioService.setQueue(songs);
     notifyListeners();
   }
 
   Future<Duration> getDuration() async {
-    if (currentSong.durationInSeconds > 0) {
-      return Duration(seconds: currentSong.durationInSeconds);
-    }
     return await _audioService.getDuration();
   }
 
   void addLastToQueue(List<Song> songs) {
-    for (var song in songs) {
-      if (!normalQueue.contains(song)) {
-        normalQueue.add(song);
-        shuffledQueue.insert(Random().nextInt(shuffledQueue.length + 1), song);
-      }
-    }
     _audioService.addToQueue(songs);
     notifyListeners();
   }
 
   void addNextToQueue(List<Song> songs) {
-    for (Song song in songs.reversed) {
-      if (!normalQueue.contains(song)) {
-        int currentIndex = currentIndexInNonShuffled;
-        int nextIndex = (currentIndex + 1) % normalQueue.length;
-        if (nextIndex == 0) {
-          normalQueue.add(song);
-          shuffledQueue.add(song);
-        } else {
-          normalQueue.insert(nextIndex, song);
-          shuffledQueue.insert(nextIndex, song);
-        }
-        _audioService.addNextToQueue([song]);
-      }
-    }
     _audioService.addNextToQueue(songs);
     notifyListeners();
   }
@@ -243,25 +190,35 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       bufferedPositionNotifier.value = event.inSeconds;
     });
 
+    _audioService.audioPlayer.currentIndexStream.listen((index) {
+      if (index == null) return;
+      final q = _audioService.queue;
+      debugPrint(
+        "First 5 songs in queue: ${q.take(5).map((s) => s.name).toList()}",
+      );
+      if (index < 0 || index >= q.length) return;
+
+      final song = q[index];
+      if (song.path == currentSongNotifier.value.path) return;
+      debugPrint(
+        "Song paths: ${song.path} vs ${currentSongNotifier.value.path}",
+      );
+
+      currentSongNotifier.value = song;
+      likedNotifier.value = song.likedByUser;
+      _audioService.updateCurrentSong(song);
+      changeMediaItem();
+      notifyListeners();
+    });
+
     _audioService.audioPlayer.playbackEventStream.listen((event) {
       var playing = _audioService.audioPlayer.playing;
       playingNotifier.value = playing;
-
-      if (event.processingState == ProcessingState.completed) {
-        if (_currentAudioSettings.repeat) {
-          pause();
-          seek(Duration.zero);
-          play();
-        } else if (_currentAudioSettings.shuffle) {
-          skipToNext();
-        }
-      }
 
       playbackState.add(
         playbackState.value.copyWith(
           controls: [
             MediaControl.skipToPrevious,
-
             playing ? MediaControl.pause : MediaControl.play,
 
             MediaControl.skipToNext,

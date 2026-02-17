@@ -26,6 +26,21 @@ class HomeScreen extends AbstractHomeScreen {
 }
 
 class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
+  bool _didPushInitial = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_didPushInitial) return;
+    _didPushInitial = true;
+
+    final appState = context.read<AbstractAppStateProvider>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      appState.navigatorKey.currentState?.pushReplacement(Tracks.route());
+    });
+  }
+
   @override
   PreferredSizeWidget buildAppBar(BuildContext context) =>
       const LinuxAppBarWidget();
@@ -35,12 +50,20 @@ class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
 
   @override
   EdgeInsetsGeometry buildPadding(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
+    final width = MediaQuery.of(context).size.width;
     return EdgeInsets.only(
       top: width * 0.01 + appWindow.titleBarHeight,
       bottom: width * 0.01,
       left: width * 0.01,
       right: width * 0.01,
+    );
+  }
+
+  Route<dynamic> _buildPlaceholderRoute() {
+    return PageRouteBuilder(
+      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
     );
   }
 
@@ -64,7 +87,7 @@ class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
                 controller: MaterialApp.createMaterialHeroController(),
                 child: Navigator(
                   key: provider.navigatorKey,
-                  onGenerateRoute: (settings) => Tracks.route(),
+                  onGenerateRoute: (_) => _buildPlaceholderRoute(),
                 ),
               ),
             ),

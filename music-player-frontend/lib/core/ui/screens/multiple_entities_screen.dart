@@ -32,7 +32,10 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
                 buildHeader(context),
                 Expanded(
                   child: FutureBuilder(
-                    future: query,
+                    future: Future.delayed(
+                      const Duration(milliseconds: 150),
+                      () => query,
+                    ),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());

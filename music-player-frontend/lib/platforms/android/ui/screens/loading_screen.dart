@@ -31,7 +31,9 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   void _routeUser(BuildContext context) async {
     await Provider.of<SongProvider>(context, listen: false).initialize([]);
-    Navigator.pushReplacement(context, HomeScreen.route());
+    if (context.mounted) {
+      Navigator.pushReplacement(context, HomeScreen.route());
+    }
   }
 
   @override

@@ -15,10 +15,10 @@ import 'package:music_player_frontend/platforms/linux/ui/screens/playlist_screen
 import 'package:provider/provider.dart';
 
 class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
-  static Route<dynamic> route({required PlaylistProvider provider}) {
+  static Route<dynamic> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Playlists(provider: provider);
+        return Playlists(provider: context.read<PlaylistProvider>());
       },
     );
   }
