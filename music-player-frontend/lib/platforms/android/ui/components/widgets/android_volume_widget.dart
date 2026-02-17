@@ -12,7 +12,6 @@ class AndroidVolumeWidget extends VolumeWidget {
 }
 
 class _VolumeWidgetState extends VolumeWidgetState {
-  final ValueNotifier<bool> _visible = ValueNotifier(false);
   late final AudioProvider _audioProvider;
 
   @override
@@ -29,81 +28,62 @@ class _VolumeWidgetState extends VolumeWidgetState {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Visibility(
-          visible: _visible.value,
-          child: MouseRegion(
-            onEnter: (event) {
-              _visible.value = true;
-            },
-            onExit: (event) {
-              _visible.value = false;
-            },
-            child: SizedBox(
-              width: width * 0.1,
-              child: SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 2,
-                  thumbShape: RoundSliderThumbShape(
-                    enabledThumbRadius: height * 0.0075,
-                  ),
-                ),
-                child: ValueListenableBuilder(
-                  valueListenable: _audioProvider.volumeNotifier,
-                  builder: (context, value, child) {
-                    return Slider(
-                      min: 0.0,
-                      max: 1.0,
-                      mouseCursor: SystemMouseCursors.click,
-                      value: value,
-                      activeColor: Colors.white,
-                      thumbColor: Colors.white,
-                      inactiveColor: Colors.white,
-                      onChangeEnd: (double value) {
-                        _audioProvider.setVolume(value);
-                      },
-                      onChanged: (double value) {
-                        _audioProvider.volumeNotifier.value = value;
-                      },
-                    );
-                  },
-                ),
+        SizedBox(
+          width: width * 0.25,
+          child: SliderTheme(
+            data: SliderThemeData(
+              trackHeight: 2,
+              thumbShape: RoundSliderThumbShape(
+                enabledThumbRadius: height * 0.0075,
               ),
+            ),
+            child: ValueListenableBuilder(
+              valueListenable: _audioProvider.volumeNotifier,
+              builder: (context, value, child) {
+                return Slider(
+                  min: 0.0,
+                  max: 1.0,
+                  mouseCursor: SystemMouseCursors.click,
+                  value: value,
+                  activeColor: Colors.white,
+                  thumbColor: Colors.white,
+                  inactiveColor: Colors.white,
+                  onChangeEnd: (double value) {
+                    _audioProvider.setVolume(value);
+                  },
+                  onChanged: (double value) {
+                    _audioProvider.volumeNotifier.value = value;
+                  },
+                );
+              },
             ),
           ),
         ),
-        MouseRegion(
-          onEnter: (event) {
-            _visible.value = true;
+        ValueListenableBuilder(
+          valueListenable: _audioProvider.volumeNotifier,
+          builder: (context, value, child) {
+            return IconButton(
+              icon:
+                  value > 0.0
+                      ? Icon(
+                        FluentIcons.volumeOn,
+                        size: height * 0.0175,
+                        color: Colors.white,
+                      )
+                      : Icon(
+                        FluentIcons.volumeOff,
+                        size: height * 0.0175,
+                        color: Colors.white,
+                      ),
+              onPressed: () {
+                if (value > 0.0) {
+                  _audioProvider.setVolume(0.0);
+                } else {
+                  _audioProvider.setVolume(0.25);
+                }
+              },
+            );
           },
-          onExit: (event) {
-            _visible.value = false;
-          },
-          child: ValueListenableBuilder(
-            valueListenable: _audioProvider.volumeNotifier,
-            builder: (context, value, child) {
-              return IconButton(
-                icon:
-                    value > 0.0
-                        ? Icon(
-                          FluentIcons.volumeOn,
-                          size: height * 0.0175,
-                          color: Colors.white,
-                        )
-                        : Icon(
-                          FluentIcons.volumeOff,
-                          size: height * 0.0175,
-                          color: Colors.white,
-                        ),
-                onPressed: () {
-                  if (value > 0.0) {
-                    _audioProvider.setVolume(0.0);
-                  } else {
-                    _audioProvider.setVolume(0.25);
-                  }
-                },
-              );
-            },
-          ),
         ),
       ],
     );

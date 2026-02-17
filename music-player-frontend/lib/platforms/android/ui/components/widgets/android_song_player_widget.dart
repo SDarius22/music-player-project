@@ -215,7 +215,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
 
     double progressBarOpacity = normalized;
 
-    double topButtonsHeight = lerpDouble(0.0, height * 0.05, normalized)!;
+    double topButtonsHeight = lerpDouble(0.0, height * 0.1, normalized)!;
 
     final sidePanelsOpacity = ((normalizedPercentage - 0.8) / 0.2).clamp(
       0.0,
@@ -259,7 +259,7 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                   opacity: progressBarOpacity,
                   child: Container(
                     height: topButtonsHeight,
-                    padding: EdgeInsets.only(bottom: height * 0.025),
+                    margin: EdgeInsets.symmetric(vertical: height * 0.025),
                     child: Row(
                       children: [
                         IconButton(
