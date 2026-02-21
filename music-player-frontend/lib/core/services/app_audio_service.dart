@@ -85,6 +85,12 @@ class AppAudioService {
     audioPlayer.setSpeed(speed);
   }
 
+  void setPitch(double pitch) {
+    _currentAudioSettings.pitch = pitch;
+    settingsService.updateAudioSettings(_currentAudioSettings);
+    audioPlayer.setPitch(pitch);
+  }
+
   void setRepeat(bool repeat) {
     _currentAudioSettings.repeat = repeat;
     settingsService.updateAudioSettings(_currentAudioSettings);
@@ -197,21 +203,22 @@ class AppAudioService {
 
     await _setAudioSourcesForQueue(currentSong);
 
-    audioPlayer.currentIndexStream.listen((index) {
-      if (index == null) return;
-      final queue =
-          audioPlayer.audioSources
-              .whereType<ProgressiveAudioSource>()
-              .map((source) => source.uri.toFilePath())
-              .map(
-                (path) => _normalQueue.firstWhere((song) => song.path == path),
-              )
-              .toList();
+    audioPlayer.sequenceStateStream.listen((state) {
+      final currentSource = state.currentSource;
+      if (currentSource is! ProgressiveAudioSource) return;
 
-      if (index < 0 || index >= queue.length) return;
+      final path = currentSource.uri.toFilePath();
 
-      final song = queue[index];
-      debugPrint("Current song changed to: ${song.name} at index $index");
+      final song = _normalQueue.firstWhere(
+        (s) => s.path == path,
+        orElse: () {
+          debugPrint("No song found in queue for path: $path");
+          throw Exception("No song found in queue for path: $path");
+        },
+      );
+      if (song.path.isEmpty) return;
+
+      debugPrint("Current song changed to: ${song.name}");
       _updateCurrentSong(song);
     });
   }
@@ -229,14 +236,15 @@ class AppAudioService {
   Future<void> _setAudioSourcesForQueue(Song song) async {
     if (_normalQueue.isEmpty) return;
 
-    int initialIndex = _normalQueue.indexOf(song);
-
     await audioPlayer.setAudioSources(
       queue.map((song) => AudioSource.file(song.path)).toList(),
     );
     if (_currentAudioSettings.shuffle) {
       audioPlayer.setShuffleModeEnabled(true);
     }
+
+    int initialIndex = _getPlayIndex(song);
+
     if (initialIndex != -1) {
       await audioPlayer.seek(
         Duration(seconds: _currentAudioSettings.sliderInSeconds),

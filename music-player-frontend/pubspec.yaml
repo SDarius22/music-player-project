@@ -21,8 +21,9 @@ dependencies:
 
   # audio
   just_audio: ^0.10.5 # default audio player
-  just_audio_media_kit: ^2.1.0 # implementation of just_audio for linux and windows using media_kit
+  just_audio_platform_interface: ^4.6.0
 
+  media_kit: ^1.2.6
   media_kit_libs_linux: any
   media_kit_libs_windows_audio: any
 
@@ -63,6 +64,8 @@ dependencies:
   # utils
   collection: ^1.19.1
   rxdart: ^0.28.0
+  logging: ^1.3.0
+  universal_platform: ^1.1.0
 
 dev_dependencies:
   flutter_test:

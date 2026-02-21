@@ -11,9 +11,9 @@ class AudioSettings {
   bool repeat = false;
   bool shuffle = false;
 
-  double balance = 0;
-  double speed = 1;
-  double volume = 0.5;
+  double pitch = 0.0;
+  double speed = 1.0;
+  double volume = 1.0;
 
   int sliderInSeconds = 0;
 }

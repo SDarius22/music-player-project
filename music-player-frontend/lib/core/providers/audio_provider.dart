@@ -131,7 +131,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
-    _audioService.setQueueAndPlay(songs, song);
+    await _audioService.setQueueAndPlay(songs, song);
     notifyListeners();
   }
 

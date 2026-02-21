@@ -41,27 +41,6 @@ class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
     final audioProvider = Provider.of<AudioProvider>(context, listen: false);
 
     return [
-      // Library Settings
-      {
-        "title": Text(
-          "Library Settings",
-          style: TextStyle(
-            fontSize: normalSize,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        "subtitle": Text(
-          "Manage your music library folders and settings",
-          style: TextStyle(fontSize: smallSize, color: Colors.grey.shade300),
-        ),
-        "trailing": Icon(
-          FluentIcons.right,
-          color: Colors.white,
-          size: height * 0.03,
-        ),
-      },
-
       // Playback Speed
       {
         "title": Text(
@@ -112,38 +91,6 @@ class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
               );
             },
           ),
-        ),
-      },
-
-      // Close To System Tray
-      {
-        "title": Text(
-          "Close To System Tray",
-          style: TextStyle(
-            fontSize: normalSize,
-            fontWeight: FontWeight.normal,
-            color: Colors.white,
-          ),
-        ),
-        "subtitle": Text(
-          "Choose whether the app should close to the system tray",
-          style: TextStyle(fontSize: smallSize, color: Colors.grey.shade300),
-        ),
-        "trailing": Switch(
-          value: !appState.appSettings.fullClose,
-          onChanged: (value) {
-            setState(() {
-              appState.appSettings.fullClose = !value;
-            });
-          },
-          trackColor: WidgetStateProperty.all(MusicPlayerTheme.primaryPurple),
-          thumbColor: WidgetStateProperty.all(Colors.white),
-          thumbIcon: WidgetStateProperty.all(
-            !appState.appSettings.fullClose
-                ? const Icon(Icons.check, color: Colors.black)
-                : const Icon(Icons.close, color: Colors.black),
-          ),
-          activeThumbColor: Colors.white,
         ),
       },
 
