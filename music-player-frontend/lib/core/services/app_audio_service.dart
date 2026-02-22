@@ -217,8 +217,6 @@ class AppAudioService {
         },
       );
       if (song.path.isEmpty) return;
-
-      debugPrint("Current song changed to: ${song.name}");
       _updateCurrentSong(song);
     });
   }
