@@ -61,7 +61,7 @@ class AlbumScreen extends EntityScreen {
                         context,
                         listen: false,
                       );
-                  abstractAppStateProvider.navigatorKey.currentState?.push(
+                  abstractAppStateProvider.innerNavigatorKey.currentState?.push(
                     AddOrExportScreen.route(songs: album.songs),
                   );
                 },

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_single_instance/flutter_single_instance.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:music_player_frontend/core/database/objectBox.dart';
 import 'package:music_player_frontend/local_libs/just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:music_player_frontend/platforms/android/ui/android_app.dart';
@@ -17,7 +16,6 @@ Future<void> main() async {
   JustAudioMediaKit.protocolWhitelist = ["http", "https", "file"];
   JustAudioMediaKit.title = 'Music Player';
   JustAudioMediaKit.ensureInitialized(linux: true, windows: true);
-  JustAudioMediaKit.mpvLogLevel = MPVLogLevel.info;
   switch (Platform.operatingSystem) {
     case 'android':
       await [

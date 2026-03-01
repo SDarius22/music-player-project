@@ -15,9 +15,13 @@ import 'package:provider/provider.dart';
 class ArtistScreen extends EntityScreen {
   static Route<void> route({required Artist artist}) {
     return PageRouteBuilder(
-      settings: const RouteSettings(name: '/artist', arguments: Artist),
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
         return ArtistScreen(entity: artist as BaseEntity);
+      },
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
       },
     );
   }
@@ -61,7 +65,7 @@ class ArtistScreen extends EntityScreen {
                         context,
                         listen: false,
                       );
-                  abstractAppStateProvider.navigatorKey.currentState?.push(
+                  abstractAppStateProvider.innerNavigatorKey.currentState?.push(
                     AddOrExportScreen.route(songs: artist.songs),
                   );
                 },

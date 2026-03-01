@@ -1,9 +1,11 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -68,7 +70,7 @@ class AlbumScreen extends EntityScreen {
                         context,
                         listen: false,
                       );
-                  abstractAppStateProvider.navigatorKey.currentState?.push(
+                  abstractAppStateProvider.innerNavigatorKey.currentState?.push(
                     AddOrExportScreen.route(songs: album.songs),
                   );
                 },
@@ -114,22 +116,32 @@ class AlbumScreen extends EntityScreen {
         Hero(
           tag: album.name,
           child: SizedBox(
-            height: height * 0.25,
+            height: height * 0.3,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(
                 MediaQuery.of(context).size.height * 0.015,
               ),
-              child: ImageWidget(entity: album),
+              child: ImageWidget(
+                entity: album,
+                fadeBottom: true,
+                child: Container(
+                  alignment: Alignment.bottomCenter,
+                  child: AutoSizeText(
+                    entity.name,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: MusicPlayerTheme.getDefaultTheme()
+                        .textTheme
+                        .titleLarge!
+                        .copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-        SizedBox(height: height * 0.01),
-        Text(
-          album.name,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: boldSize, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: height * 0.01),
         Expanded(

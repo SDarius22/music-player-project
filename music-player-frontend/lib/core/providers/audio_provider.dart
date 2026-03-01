@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
+import 'package:music_player_frontend/core/services/worker_service.dart';
 
 class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   final AppAudioService _audioService;
@@ -41,8 +43,8 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     sliderNotifier.value = currentSong.durationInSeconds;
 
     _startListeners();
-
-    changeMediaItem();
+    _setColors();
+    _changeMediaItem();
     notifyListeners();
   }
 
@@ -165,7 +167,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     _audioService.likeCurrentSong();
   }
 
-  Future<void> changeMediaItem() async {
+  Future<void> _changeMediaItem() async {
     File tempFile = await _fileService.createWorkaroundFile(currentSong);
     MediaItem item = MediaItem(
       id: currentSong.id.toString(),
@@ -178,9 +180,22 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     mediaItem.add(item);
   }
 
+  Future<void> _setColors() async {
+    if (currentSong.coverArt == Constants.logoBytes ||
+        currentSong.colors.isNotEmpty) {
+      debugPrint("Skipping color extraction for ${currentSong.name}");
+      return;
+    }
+
+    currentSong.album.target!.colors = await WorkerService.extractColors(
+      currentSong.album.target!.coverArt,
+    );
+  }
+
   void _startListeners() {
     _audioService.currentSongNotifier.addListener(() {
-      changeMediaItem();
+      _setColors();
+      _changeMediaItem();
       notifyListeners();
     });
 

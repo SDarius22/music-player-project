@@ -15,9 +15,13 @@ import 'package:provider/provider.dart';
 class Artists extends MultipleEntitiesScreen<ArtistProvider> {
   static Route<dynamic> route({required ArtistProvider provider}) {
     return PageRouteBuilder(
-      settings: const RouteSettings(name: '/artists'),
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
         return Artists(provider: provider);
+      },
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
       },
     );
   }
@@ -68,7 +72,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             Artist artist = entity as Artist;
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.navigatorKey.currentState!.push(
+            abstractAppStateProvider.innerNavigatorKey.currentState!.push(
               AddOrExportScreen.route(songs: artist.songs),
             );
             break;
@@ -120,7 +124,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
       context,
       listen: false,
     );
-    abstractAppStateProvider.navigatorKey.currentState!.push(
+    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       ArtistScreen.route(artist: entity as Artist),
     );
   }

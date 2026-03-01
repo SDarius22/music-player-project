@@ -79,7 +79,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
               context,
               listen: false,
             );
-            appState.navigatorKey.currentState?.push(
+            appState.innerNavigatorKey.currentState?.push(
               AddOrExportScreen.route(songs: [entity as Song]),
             );
             break;
@@ -109,7 +109,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
               context,
               listen: false,
             );
-            appState.navigatorKey.currentState?.push(
+            appState.innerNavigatorKey.currentState?.push(
               TrackScreen.route(song: entity as Song),
             );
             break;

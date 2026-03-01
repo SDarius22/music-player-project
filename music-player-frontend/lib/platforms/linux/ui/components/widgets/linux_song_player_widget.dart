@@ -465,16 +465,8 @@ class LinuxSongPlayerWidgetState extends SongPlayerWidgetState {
         return IconButton(
           onPressed: () async {
             if (audioProvider.playingNotifier.value) {
-              Provider.of<AbstractAppStateProvider>(
-                context,
-                listen: false,
-              ).gradientController.stop();
               await audioProvider.pause();
             } else {
-              Provider.of<AbstractAppStateProvider>(
-                context,
-                listen: false,
-              ).gradientController.start();
               await audioProvider.play();
             }
           },

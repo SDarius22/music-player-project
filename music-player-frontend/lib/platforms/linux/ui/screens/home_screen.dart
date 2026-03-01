@@ -37,7 +37,7 @@ class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
 
     final appState = context.read<AbstractAppStateProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      appState.navigatorKey.currentState?.pushReplacement(Tracks.route());
+      appState.innerNavigatorKey.currentState?.pushReplacement(Tracks.route());
     });
   }
 
@@ -86,7 +86,7 @@ class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
               child: HeroControllerScope(
                 controller: MaterialApp.createMaterialHeroController(),
                 child: Navigator(
-                  key: provider.navigatorKey,
+                  key: provider.innerNavigatorKey,
                   onGenerateRoute: (_) => _buildPlaceholderRoute(),
                 ),
               ),

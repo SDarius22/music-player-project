@@ -1,0 +1,187 @@
+openapi: 3.0.3
+info:
+  title: Peer-Assisted Music Streaming API
+  description: Backend API for hybrid prefix caching, predictive pre-fetching, and master fallback.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+
+paths:
+  /songs:
+    get:
+      summary: Get all songs
+      description: Retrieves the metadata for all songs to sync with the local ObjectBox database.
+      operationId: getAllSongs
+      tags:
+        - Song Metadata
+      responses:
+        '200':
+          description: A list of songs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SongDto'
+
+  /stream/predictions:
+    get:
+      summary: Get predictive pre-fetch list
+      description: Returns a list of Song IDs that the client should background-download a prefix for.
+      operationId: getPredictivePrefetchList
+      tags:
+        - Streaming & Caching
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of recommended Song IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+
+  /stream/{songId}/prefix:
+    get:
+      summary: Get song prefix
+      description: Streams the first N bytes of the audio file to populate the client's edge cache.
+      operationId: getSongPrefix
+      tags:
+        - Streaming & Caching
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: prefixBytes
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 512000
+      responses:
+        '200':
+          description: Audio byte stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Song or file not found
+
+  /stream/{songId}/full:
+    get:
+      summary: Master fallback full stream
+      description: Streams the entire file natively, supporting HTTP 206 Partial Content and Range headers.
+      operationId: getFullStream
+      tags:
+        - Streaming & Caching
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Audio stream
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Partial audio stream (for seeking)
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Song or file not found
+
+components:
+  schemas:
+    ArtistDto:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+
+    AlbumDto:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+
+    SongDto:
+      type: object
+      required:
+        - name
+        - path
+        - likedByUser
+        - playCount
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        artist:
+          $ref: '#/components/schemas/ArtistDto'
+        album:
+          $ref: '#/components/schemas/AlbumDto'
+        photo:
+          type: string
+          maxLength: 255
+          nullable: true
+        path:
+          type: string
+          maxLength: 500
+        durationInSeconds:
+          type: integer
+          minimum: 0
+          nullable: true
+        trackNumber:
+          type: integer
+          minimum: 1
+          nullable: true
+        discNumber:
+          type: integer
+          minimum: 1
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
+        likedByUser:
+          type: boolean
+          default: false
+        playCount:
+          type: integer
+          minimum: 0
+          default: 0

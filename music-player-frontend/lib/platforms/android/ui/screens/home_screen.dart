@@ -29,6 +29,20 @@ class HomeScreen extends AbstractHomeScreen {
 }
 
 class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
+  late final HeroController _heroController;
+
+  @override
+  void initState() {
+    super.initState();
+    _heroController = MaterialApp.createMaterialHeroController();
+  }
+
+  @override
+  void dispose() {
+    _heroController.dispose();
+    super.dispose();
+  }
+
   @override
   PreferredSizeWidget buildAppBar(BuildContext context) {
     return AppBarWidget(
@@ -40,7 +54,7 @@ class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
           onPressed: () {
             context
                 .read<AbstractAppStateProvider>()
-                .navigatorKey
+                .innerNavigatorKey
                 .currentState
                 ?.push(SettingsScreen.route());
           },
@@ -76,10 +90,10 @@ class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
       ),
       child: Theme(
         data: MusicPlayerTheme.getTheme(context, context.read<Scaler>()),
-        child: HeroControllerScope(
-          controller: MaterialApp.createMaterialHeroController(),
+        child: HeroControllerScope.none(
           child: Navigator(
-            key: provider.navigatorKey,
+            key: provider.innerNavigatorKey,
+            observers: [_heroController],
             onGenerateRoute: (settings) {
               return Tracks.route(provider: context.read<SongProvider>());
             },

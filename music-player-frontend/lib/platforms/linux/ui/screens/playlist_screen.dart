@@ -50,7 +50,7 @@ class PlaylistScreen extends EntityScreen {
             final abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
 
-            abstractAppStateProvider.navigatorKey.currentState?.push(
+            abstractAppStateProvider.innerNavigatorKey.currentState?.push(
               AddOrExportScreen.route(songs: songs),
             );
             return;
@@ -60,7 +60,7 @@ class PlaylistScreen extends EntityScreen {
             debugPrint("Export ${playlist.name}");
             final abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.navigatorKey.currentState?.push(
+            abstractAppStateProvider.innerNavigatorKey.currentState?.push(
               AddOrExportScreen.route(songs: songs, export: true),
             );
             return;
@@ -117,7 +117,7 @@ class PlaylistScreen extends EntityScreen {
               context,
               listen: false,
             );
-            appStateProvider.navigatorKey.currentState?.pop();
+            appStateProvider.innerNavigatorKey.currentState?.pop();
             return;
           }
       }

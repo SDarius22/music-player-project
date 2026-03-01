@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
@@ -55,4 +56,11 @@ class Song implements BaseEntity {
 
   @override
   Uint8List get coverArt => album.target?.coverArt ?? Constants.logoBytes;
+
+  List<Color> get colors {
+    if (album.target != null && album.target!.colors.isNotEmpty) {
+      return album.target!.colors;
+    }
+    return [];
+  }
 }

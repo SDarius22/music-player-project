@@ -64,7 +64,7 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
             album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.navigatorKey.currentState!.push(
+            abstractAppStateProvider.innerNavigatorKey.currentState!.push(
               AddOrExportScreen.route(songs: album.songs),
             );
             break;
@@ -117,7 +117,7 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
       context,
       listen: false,
     );
-    abstractAppStateProvider.navigatorKey.currentState!.push(
+    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       AlbumScreen.route(album: entity as Album),
     );
   }

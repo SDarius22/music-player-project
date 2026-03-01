@@ -262,6 +262,10 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                     margin: EdgeInsets.symmetric(vertical: height * 0.0125),
                     child: Row(
                       children: [
+                        AndroidVolumeWidget(),
+
+                        const Spacer(),
+
                         IconButton(
                           onPressed: () async {
                             Provider.of<AbstractAppStateProvider>(
@@ -284,10 +288,6 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
                             ],
                           ),
                         ),
-
-                        const Spacer(),
-
-                        AndroidVolumeWidget(),
                       ],
                     ),
                   ),
@@ -581,16 +581,8 @@ class AndroidSongPlayerWidgetState extends SongPlayerWidgetState {
         return IconButton(
           onPressed: () async {
             if (audioProvider.playingNotifier.value) {
-              Provider.of<AbstractAppStateProvider>(
-                context,
-                listen: false,
-              ).gradientController.stop();
               await audioProvider.pause();
             } else {
-              Provider.of<AbstractAppStateProvider>(
-                context,
-                listen: false,
-              ).gradientController.start();
               await audioProvider.play();
             }
           },

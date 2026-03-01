@@ -47,7 +47,9 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
           context,
           listen: false,
         );
-        appState.navigatorKey.currentState?.push(CreateOrImportScreen.route());
+        appState.innerNavigatorKey.currentState?.push(
+          CreateOrImportScreen.route(),
+        );
       },
       onLongPress: () {
         debugPrint("Create new playlist long pressed");
@@ -125,7 +127,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
       context,
       listen: false,
     );
-    abstractAppStateProvider.navigatorKey.currentState!.push(
+    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       PlaylistScreen.route(playlist: entity as Playlist),
     );
   }

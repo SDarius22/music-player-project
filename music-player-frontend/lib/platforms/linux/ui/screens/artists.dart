@@ -62,7 +62,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             Artist artist = entity as Artist;
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.navigatorKey.currentState!.push(
+            abstractAppStateProvider.innerNavigatorKey.currentState!.push(
               AddOrExportScreen.route(songs: artist.songs),
             );
             break;
@@ -114,7 +114,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
       context,
       listen: false,
     );
-    abstractAppStateProvider.navigatorKey.currentState!.push(
+    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       ArtistScreen.route(artist: entity as Artist),
     );
   }

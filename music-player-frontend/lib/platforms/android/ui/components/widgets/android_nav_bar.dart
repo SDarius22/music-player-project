@@ -30,7 +30,7 @@ class _AndroidNavigationBarState extends State<AndroidNavigationBar> {
       "index": 0,
       "onTap": (BuildContext context) {
         setState(() => _selected = 0);
-        _appStateProvider.navigatorKey.currentState!.push(
+        _appStateProvider.innerNavigatorKey.currentState!.push(
           Albums.route(provider: context.read<AlbumProvider>()),
         );
       },
@@ -42,7 +42,7 @@ class _AndroidNavigationBarState extends State<AndroidNavigationBar> {
       "index": 1,
       "onTap": (BuildContext context) {
         setState(() => _selected = 1);
-        _appStateProvider.navigatorKey.currentState!.push(
+        _appStateProvider.innerNavigatorKey.currentState!.push(
           Artists.route(provider: context.read<ArtistProvider>()),
         );
       },
@@ -54,7 +54,7 @@ class _AndroidNavigationBarState extends State<AndroidNavigationBar> {
       "index": 2,
       "onTap": (BuildContext context) {
         setState(() => _selected = 2);
-        _appStateProvider.navigatorKey.currentState!.push(
+        _appStateProvider.innerNavigatorKey.currentState!.push(
           Tracks.route(provider: context.read<SongProvider>()),
         );
       },
@@ -66,7 +66,7 @@ class _AndroidNavigationBarState extends State<AndroidNavigationBar> {
       "index": 3,
       "onTap": (BuildContext context) {
         setState(() => _selected = 3);
-        _appStateProvider.navigatorKey.currentState!.push(
+        _appStateProvider.innerNavigatorKey.currentState!.push(
           Playlists.route(provider: context.read<PlaylistProvider>()),
         );
       },

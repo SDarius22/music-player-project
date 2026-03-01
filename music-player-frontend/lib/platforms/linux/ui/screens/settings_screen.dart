@@ -45,7 +45,7 @@ class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
         "trailing": IconButton(
           onPressed: () {
             var appState = context.read<AbstractAppStateProvider>();
-            appState.navigatorKey.currentState?.push(
+            appState.innerNavigatorKey.currentState?.push(
               LibrarySettings.route(abstractAppStateProvider: appState),
             );
           },
@@ -172,7 +172,7 @@ class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
               for (int i = 0; i < lines.length; i++) {
                 lines[i] = lines[i].split("/").last;
               }
-              appState.navigatorKey.currentState?.push(
+              appState.innerNavigatorKey.currentState?.push(
                 CreateOrImportScreen.route(
                   playlistName: playlistName,
                   playlistPaths: lines,

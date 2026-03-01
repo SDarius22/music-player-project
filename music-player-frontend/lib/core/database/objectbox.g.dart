@@ -27,7 +27,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 5434110965985548662),
     name: 'Album',
-    lastPropertyId: const obx_int.IdUid(9, 8887715385877929801),
+    lastPropertyId: const obx_int.IdUid(10, 1694862551234699842),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -162,7 +162,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(4, 125102733176896809),
     name: 'AudioSettings',
-    lastPropertyId: const obx_int.IdUid(12, 5466112058997796915),
+    lastPropertyId: const obx_int.IdUid(13, 165460848049108724),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -184,12 +184,6 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(7, 2306020798377727376),
-        name: 'balance',
-        type: 8,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
         id: const obx_int.IdUid(8, 544190301642256248),
         name: 'speed',
         type: 8,
@@ -205,6 +199,12 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(12, 5466112058997796915),
         name: 'sliderInSeconds',
         type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 165460848049108724),
+        name: 'pitch',
+        type: 8,
         flags: 0,
       ),
     ],
@@ -480,6 +480,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
       6469501960945361817,
       2029307388012352250,
       6040705614023113429,
+      2306020798377727376,
+      1694862551234699842,
     ],
     retiredRelationUids: const [
       1387782578054686999,
@@ -498,21 +500,19 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Album: obx_int.EntityDefinition<Album>(
       model: _entities[0],
       toOneRelations: (Album object) => [object.artist],
-      toManyRelations:
-          (Album object) => {
-            obx_int.RelInfo<Album>.toMany(6, object.id): object.songs,
-          },
+      toManyRelations: (Album object) => {
+        obx_int.RelInfo<Album>.toMany(6, object.id): object.songs,
+      },
       getId: (Album object) => object.id,
       setId: (Album object, int id) {
         object.id = id;
       },
       objectToFB: (Album object, fb.Builder fbb) {
         final nameOffset = fbb.writeString(object.name);
-        final imageBytesOffset =
-            object.imageBytes == null
-                ? null
-                : fbb.writeListInt8(object.imageBytes!);
-        fbb.startTable(10);
+        final imageBytesOffset = object.imageBytes == null
+            ? null
+            : fbb.writeListInt8(object.imageBytes!);
+        fbb.startTable(11);
         fbb.addInt64(0, object.id);
         fbb.addOffset(2, nameOffset);
         fbb.addInt64(7, object.artist.targetId);
@@ -524,17 +524,16 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object =
-            Album()
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..name = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 8, '')
-              ..imageBytes =
-                  const fb.Uint8ListReader(
-                        lazy: false,
-                      ).vTableGetNullable(buffer, rootOffset, 20)
-                      as Uint8List?;
+        final object = Album()
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..name = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 8, '')
+          ..imageBytes =
+              const fb.Uint8ListReader(
+                    lazy: false,
+                  ).vTableGetNullable(buffer, rootOffset, 20)
+                  as Uint8List?;
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -582,44 +581,43 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object =
-            AppSettings()
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..firstTime = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                10,
-                false,
-              )
-              ..systemTray = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                12,
-                false,
-              )
-              ..fullClose = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                14,
-                false,
-              )
-              ..mainSongPlace = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 16, '')
-              ..songPlaces = const fb.ListReader<String>(
-                fb.StringReader(asciiOptimization: true),
-                lazy: false,
-              ).vTableGet(buffer, rootOffset, 18, [])
-              ..songPlaceIncludeSubfolders = const fb.ListReader<int>(
-                fb.Int64Reader(),
-                lazy: false,
-              ).vTableGet(buffer, rootOffset, 20, [])
-              ..drawerOpen = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                22,
-                false,
-              );
+        final object = AppSettings()
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..firstTime = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            10,
+            false,
+          )
+          ..systemTray = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            12,
+            false,
+          )
+          ..fullClose = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            14,
+            false,
+          )
+          ..mainSongPlace = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 16, '')
+          ..songPlaces = const fb.ListReader<String>(
+            fb.StringReader(asciiOptimization: true),
+            lazy: false,
+          ).vTableGet(buffer, rootOffset, 18, [])
+          ..songPlaceIncludeSubfolders = const fb.ListReader<int>(
+            fb.Int64Reader(),
+            lazy: false,
+          ).vTableGet(buffer, rootOffset, 20, [])
+          ..drawerOpen = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            22,
+            false,
+          );
 
         return object;
       },
@@ -627,16 +625,14 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Artist: obx_int.EntityDefinition<Artist>(
       model: _entities[2],
       toOneRelations: (Artist object) => [],
-      toManyRelations:
-          (Artist object) => {
-            obx_int.RelInfo<Artist>.toMany(7, object.id): object.songs,
-            obx_int.RelInfo<Album>.toOneBacklink(
-                  8,
-                  object.id,
-                  (Album srcObject) => srcObject.artist,
-                ):
-                object.albums,
-          },
+      toManyRelations: (Artist object) => {
+        obx_int.RelInfo<Artist>.toMany(7, object.id): object.songs,
+        obx_int.RelInfo<Album>.toOneBacklink(
+          8,
+          object.id,
+          (Album srcObject) => srcObject.artist,
+        ): object.albums,
+      },
       getId: (Artist object) => object.id,
       setId: (Artist object, int id) {
         object.id = id;
@@ -653,12 +649,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object =
-            Artist()
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..name = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 8, '');
+        final object = Artist()
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..name = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 8, '');
         obx_int.InternalToManyAccess.setRelInfo<Artist>(
           object.songs,
           store,
@@ -685,14 +680,14 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (AudioSettings object, fb.Builder fbb) {
-        fbb.startTable(13);
+        fbb.startTable(14);
         fbb.addInt64(0, object.id);
         fbb.addBool(4, object.repeat);
         fbb.addBool(5, object.shuffle);
-        fbb.addFloat64(6, object.pitch);
         fbb.addFloat64(7, object.speed);
         fbb.addFloat64(8, object.volume);
         fbb.addInt64(11, object.sliderInSeconds);
+        fbb.addFloat64(12, object.pitch);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -700,45 +695,44 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object =
-            AudioSettings()
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..repeat = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                12,
-                false,
-              )
-              ..shuffle = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                14,
-                false,
-              )
-              ..pitch = const fb.Float64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                16,
-                0,
-              )
-              ..speed = const fb.Float64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                18,
-                0,
-              )
-              ..volume = const fb.Float64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                20,
-                0,
-              )
-              ..sliderInSeconds = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                26,
-                0,
-              );
+        final object = AudioSettings()
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..repeat = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            12,
+            false,
+          )
+          ..shuffle = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            14,
+            false,
+          )
+          ..speed = const fb.Float64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            18,
+            0,
+          )
+          ..volume = const fb.Float64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            20,
+            0,
+          )
+          ..sliderInSeconds = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            26,
+            0,
+          )
+          ..pitch = const fb.Float64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            28,
+            0,
+          );
 
         return object;
       },
@@ -746,10 +740,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Playlist: obx_int.EntityDefinition<Playlist>(
       model: _entities[4],
       toOneRelations: (Playlist object) => [],
-      toManyRelations:
-          (Playlist object) => {
-            obx_int.RelInfo<Playlist>.toMany(9, object.id): object.songs,
-          },
+      toManyRelations: (Playlist object) => {
+        obx_int.RelInfo<Playlist>.toMany(9, object.id): object.songs,
+      },
       getId: (Playlist object) => object.id,
       setId: (Playlist object, int id) {
         object.id = id;
@@ -774,33 +767,32 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object =
-            Playlist()
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..indestructible = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                6,
-                false,
-              )
-              ..nextAdded = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 10, '')
-              ..createdAt = DateTime.fromMillisecondsSinceEpoch(
-                const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
-              )
-              ..name = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 20, '')
-              ..imageBytes =
-                  const fb.Uint8ListReader(
-                        lazy: false,
-                      ).vTableGet(buffer, rootOffset, 24, Uint8List(0))
-                      as Uint8List
-              ..songsIds = const fb.ListReader<int>(
-                fb.Int64Reader(),
-                lazy: false,
-              ).vTableGet(buffer, rootOffset, 26, []);
+        final object = Playlist()
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..indestructible = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            6,
+            false,
+          )
+          ..nextAdded = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 10, '')
+          ..createdAt = DateTime.fromMillisecondsSinceEpoch(
+            const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+          )
+          ..name = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 20, '')
+          ..imageBytes =
+              const fb.Uint8ListReader(
+                    lazy: false,
+                  ).vTableGet(buffer, rootOffset, 24, Uint8List(0))
+                  as Uint8List
+          ..songsIds = const fb.ListReader<int>(
+            fb.Int64Reader(),
+            lazy: false,
+          ).vTableGet(buffer, rootOffset, 26, []);
         obx_int.InternalToManyAccess.setRelInfo<Playlist>(
           object.songs,
           store,
@@ -850,63 +842,56 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           44,
         );
-        final object =
-            Song()
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..path = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 6, '')
-              ..trackNumber = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                20,
-                0,
-              )
-              ..discNumber = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                22,
-                0,
-              )
-              ..year = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                24,
-                0,
-              )
-              ..fullyLoaded = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                32,
-                false,
-              )
-              ..name = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 34, '')
-              ..durationInSeconds = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                40,
-                0,
-              )
-              ..likedByUser = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                42,
-                false,
-              )
-              ..lastPlayed =
-                  lastPlayedValue == null
-                      ? null
-                      : DateTime.fromMicrosecondsSinceEpoch(
-                        (lastPlayedValue / 1000).round(),
-                      )
-              ..playCount = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                46,
-                0,
-              );
+        final object = Song()
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..path = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 6, '')
+          ..trackNumber = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            20,
+            0,
+          )
+          ..discNumber = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            22,
+            0,
+          )
+          ..year = const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0)
+          ..fullyLoaded = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            32,
+            false,
+          )
+          ..name = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 34, '')
+          ..durationInSeconds = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            40,
+            0,
+          )
+          ..likedByUser = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            42,
+            false,
+          )
+          ..lastPlayed = lastPlayedValue == null
+              ? null
+              : DateTime.fromMicrosecondsSinceEpoch(
+                  (lastPlayedValue / 1000).round(),
+                )
+          ..playCount = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            46,
+            0,
+          );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1035,23 +1020,23 @@ class AudioSettings_ {
     _entities[3].properties[2],
   );
 
-  /// See [AudioSettings.pitch].
-  static final balance = obx.QueryDoubleProperty<AudioSettings>(
-    _entities[3].properties[3],
-  );
-
   /// See [AudioSettings.speed].
   static final speed = obx.QueryDoubleProperty<AudioSettings>(
-    _entities[3].properties[4],
+    _entities[3].properties[3],
   );
 
   /// See [AudioSettings.volume].
   static final volume = obx.QueryDoubleProperty<AudioSettings>(
-    _entities[3].properties[5],
+    _entities[3].properties[4],
   );
 
   /// See [AudioSettings.sliderInSeconds].
   static final sliderInSeconds = obx.QueryIntegerProperty<AudioSettings>(
+    _entities[3].properties[5],
+  );
+
+  /// See [AudioSettings.pitch].
+  static final pitch = obx.QueryDoubleProperty<AudioSettings>(
     _entities[3].properties[6],
   );
 }

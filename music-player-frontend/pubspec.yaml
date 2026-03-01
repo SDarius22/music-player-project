@@ -52,6 +52,7 @@ dependencies:
   cached_network_image: ^3.2.3
   scaffold_gradient_background: ^1.0.3+1
   sliding_up_panel: ^2.0.0+1
+  auto_size_text: ^3.0.0
 
   # desktop
   desktop_drop: ^0.7.0

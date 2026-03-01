@@ -36,7 +36,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 1,
       "onTap": (BuildContext context) {
         setState(() => _selected = 1);
-        _appStateProvider.navigatorKey.currentState!.push(Albums.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(Albums.route());
       },
     },
     {
@@ -46,7 +46,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 2,
       "onTap": (BuildContext context) {
         setState(() => _selected = 2);
-        _appStateProvider.navigatorKey.currentState!.push(Artists.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(Artists.route());
       },
     },
     {
@@ -56,7 +56,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 3,
       "onTap": (BuildContext context) {
         setState(() => _selected = 3);
-        _appStateProvider.navigatorKey.currentState!.push(Tracks.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(Tracks.route());
       },
     },
     {
@@ -66,7 +66,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 4,
       "onTap": (BuildContext context) {
         setState(() => _selected = 4);
-        _appStateProvider.navigatorKey.currentState!.push(Playlists.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(
+          Playlists.route(),
+        );
       },
     },
     {
@@ -76,7 +78,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 5,
       "onTap": (BuildContext context) {
         setState(() => _selected = 5);
-        _appStateProvider.navigatorKey.currentState!.push(
+        _appStateProvider.innerNavigatorKey.currentState!.push(
           SettingsScreen.route(),
         );
       },

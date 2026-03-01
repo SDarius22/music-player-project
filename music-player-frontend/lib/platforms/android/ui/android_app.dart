@@ -151,12 +151,19 @@ class AndroidApp extends StatelessWidget {
               ),
         ),
       ],
-      child: MaterialApp(
-        builder: BotToastInit(),
-        debugShowCheckedModeBanner: false,
-        checkerboardOffscreenLayers: true,
-        theme: MusicPlayerTheme.getDefaultTheme(),
-        home: const SafeArea(child: LoadingScreen()),
+      child: Builder(
+        builder: (context) {
+          final appState = context.read<AbstractAppStateProvider>();
+
+          return MaterialApp(
+            navigatorKey: appState.outerNavigatorKey,
+            builder: BotToastInit(),
+            debugShowCheckedModeBanner: false,
+            checkerboardOffscreenLayers: true,
+            theme: MusicPlayerTheme.getDefaultTheme(),
+            home: const SafeArea(child: LoadingScreen()),
+          );
+        },
       ),
     );
   }

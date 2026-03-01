@@ -20,7 +20,6 @@ class MusicPlayerTheme {
       Color(0xFF2A1B55),
       Color(0xFF000000),
       Color(0xFF000000),
-      Color(0xFF000000),
       Color(0xFF2A1B55),
     ],
     stops: [0.0, 0.35, 0.5, 0.65, 1.0],

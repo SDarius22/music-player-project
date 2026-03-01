@@ -15,7 +15,6 @@ import 'package:provider/provider.dart';
 class Albums extends MultipleEntitiesScreen<AlbumProvider> {
   static Route<dynamic> route({required AlbumProvider provider}) {
     return PageRouteBuilder(
-      settings: const RouteSettings(name: '/albums'),
       pageBuilder: (context, animation, secondaryAnimation) {
         return Albums(provider: provider);
       },
@@ -70,7 +69,7 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
             album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.navigatorKey.currentState!.push(
+            abstractAppStateProvider.innerNavigatorKey.currentState!.push(
               AddOrExportScreen.route(songs: album.songs),
             );
             break;
@@ -123,7 +122,7 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
       context,
       listen: false,
     );
-    abstractAppStateProvider.navigatorKey.currentState!.push(
+    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       AlbumScreen.route(album: entity as Album),
     );
   }

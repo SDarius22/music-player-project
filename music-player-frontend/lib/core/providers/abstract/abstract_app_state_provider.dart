@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
-import 'package:music_player_frontend/core/services/worker_service.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 
@@ -12,7 +10,8 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   final AudioProvider audioProvider;
   final SettingsService settingsService;
 
-  final navigatorKey = GlobalKey<NavigatorState>();
+  final innerNavigatorKey = GlobalKey<NavigatorState>();
+  final outerNavigatorKey = GlobalKey<NavigatorState>();
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final gradientController = AnimatedMeshGradientController();
   final miniPlayerController = MiniPlayerController();
@@ -20,12 +19,12 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   AppSettings appSettings = AppSettings();
 
   List<String> appActions = [];
-  List<Color> colors = [
-    Color(0xFF2A1B55),
-    Color(0xFF000000),
-    Color(0xFF000000),
-    Color(0xFF2A1B55),
-  ];
+
+  List<Color> get colors =>
+      audioProvider.currentSong.colors.isNotEmpty &&
+              audioProvider.currentSong.colors.length == 4
+          ? audioProvider.currentSong.colors
+          : MusicPlayerTheme.primaryGradient.colors;
 
   ValueNotifier<bool> isPanelOpen = ValueNotifier(false);
   ValueNotifier<double> opacityNotifier = ValueNotifier(1.0);
@@ -33,11 +32,15 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   AbstractAppStateProvider(this.audioProvider, this.settingsService) {
     appSettings = settingsService.getAppSettings();
     audioProvider.currentSongNotifier.addListener(() {
-      debugPrint(
-        "Current song changed to ${audioProvider.currentSongNotifier.value.path}, extracting colors...",
-      );
-      setColors();
       notifyListeners();
+    });
+
+    audioProvider.playingNotifier.addListener(() {
+      if (audioProvider.playingNotifier.value) {
+        gradientController.start();
+      } else {
+        gradientController.stop();
+      }
     });
   }
 
@@ -57,15 +60,5 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
     appSettings.drawerOpen = isOpen;
     updateAppSettings();
     notifyListeners();
-  }
-
-  Future<void> setColors() async {
-    if (audioProvider.currentSong.coverArt == Constants.logoBytes) {
-      colors = MusicPlayerTheme.primaryGradient.colors;
-      return;
-    }
-    colors = await WorkerService.extractColors(
-      audioProvider.currentSong.coverArt,
-    );
   }
 }

@@ -28,8 +28,34 @@ class _VolumeWidgetState extends VolumeWidgetState {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        ValueListenableBuilder(
+          valueListenable: _audioProvider.volumeNotifier,
+          builder: (context, value, child) {
+            return IconButton(
+              icon:
+                  value > 0.0
+                      ? Icon(
+                        FluentIcons.volumeOn,
+                        size: height * 0.0175,
+                        color: Colors.white,
+                      )
+                      : Icon(
+                        FluentIcons.volumeOff,
+                        size: height * 0.0175,
+                        color: Colors.white,
+                      ),
+              onPressed: () {
+                if (value > 0.0) {
+                  _audioProvider.setVolume(0.0);
+                } else {
+                  _audioProvider.setVolume(0.25);
+                }
+              },
+            );
+          },
+        ),
         SizedBox(
-          width: width * 0.25,
+          width: width * 0.35,
           child: SliderTheme(
             data: SliderThemeData(
               trackHeight: 2,
@@ -58,32 +84,6 @@ class _VolumeWidgetState extends VolumeWidgetState {
               },
             ),
           ),
-        ),
-        ValueListenableBuilder(
-          valueListenable: _audioProvider.volumeNotifier,
-          builder: (context, value, child) {
-            return IconButton(
-              icon:
-                  value > 0.0
-                      ? Icon(
-                        FluentIcons.volumeOn,
-                        size: height * 0.0175,
-                        color: Colors.white,
-                      )
-                      : Icon(
-                        FluentIcons.volumeOff,
-                        size: height * 0.0175,
-                        color: Colors.white,
-                      ),
-              onPressed: () {
-                if (value > 0.0) {
-                  _audioProvider.setVolume(0.0);
-                } else {
-                  _audioProvider.setVolume(0.25);
-                }
-              },
-            );
-          },
         ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
@@ -16,6 +17,9 @@ class Album with AbstractCollection implements BaseEntity {
 
   @Property(type: PropertyType.byteVector)
   Uint8List? imageBytes;
+
+  @Transient()
+  List<Color> colors = [];
 
   @Backlink('album')
   final _songs = ToMany<Song>();
