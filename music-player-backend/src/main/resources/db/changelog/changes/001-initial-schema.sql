@@ -1,19 +1,21 @@
 -- liquibase formatted sql
 -- changeset Sala Darius:1
 
-CREATE TABLE artists
+CREATE SCHEMA IF NOT EXISTS music_library;
+
+CREATE TABLE music_library.artists
 (
     id   INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE albums
+CREATE TABLE music_library.albums
 (
     id   INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE songs
+CREATE TABLE music_library.songs
 (
     id                  INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name                VARCHAR(255) NOT NULL,
@@ -28,6 +30,6 @@ CREATE TABLE songs
     last_played         TIMESTAMP WITH TIME ZONE,
     liked_by_user       BOOLEAN      NOT NULL DEFAULT FALSE,
     play_count          INT          NOT NULL DEFAULT 0,
-    CONSTRAINT fk_songs_artist_id FOREIGN KEY (artist_id) REFERENCES artists (id) ON DELETE SET NULL,
-    CONSTRAINT fk_songs_album_id FOREIGN KEY (album_id) REFERENCES albums (id) ON DELETE SET NULL
+    CONSTRAINT fk_songs_artist_id FOREIGN KEY (artist_id) REFERENCES music_library.artists (id) ON DELETE SET NULL,
+    CONSTRAINT fk_songs_album_id FOREIGN KEY (album_id) REFERENCES music_library.albums (id) ON DELETE SET NULL
 );

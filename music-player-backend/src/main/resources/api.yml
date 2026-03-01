@@ -194,7 +194,7 @@ components:
           nullable: true
         lastPlayed:
           type: string
-          format: date-time
+          format: timestamp
           nullable: true
         likedByUser:
           type: boolean

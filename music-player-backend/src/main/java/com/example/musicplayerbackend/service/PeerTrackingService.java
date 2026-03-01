@@ -14,7 +14,7 @@ public class PeerTrackingService {
     private final Map<Integer, Set<String>> songCacheRegistry = new ConcurrentHashMap<>();
 
     public void registerPeerCache(Integer songId, String peerId) {
-        songCacheRegistry.computeIfAbsent(songId, k -> new CopyOnWriteArraySet<>()).add(peerId);
+        songCacheRegistry.computeIfAbsent(songId, _ -> new CopyOnWriteArraySet<>()).add(peerId);
     }
 
     public void unregisterPeer(String peerId) {
