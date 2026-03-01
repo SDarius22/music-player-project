@@ -107,6 +107,24 @@ paths:
                 format: binary
         '404':
           description: Song or file not found
+  /sync:
+    post:
+      summary: Sync offline data
+      description: Applies conflict resolution to sync offline mobile data with the master database.
+      operationId: syncOfflineData
+      tags:
+        - Data Sync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/SongSyncDto'
+      responses:
+        '200':
+          description: Sync completed successfully
 
 components:
   schemas:
@@ -185,3 +203,22 @@ components:
           type: integer
           minimum: 0
           default: 0
+    SongSyncDto:
+      type: object
+      required:
+        - songId
+        - playCountDelta
+        - likedByUser
+      properties:
+        songId:
+          type: integer
+        playCountDelta:
+          type: integer
+          minimum: 0
+          description: The number of new plays since the last successful sync.
+        likedByUser:
+          type: boolean
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
