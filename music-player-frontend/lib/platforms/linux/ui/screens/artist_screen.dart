@@ -3,14 +3,13 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:provider/provider.dart';
@@ -61,7 +60,7 @@ class ArtistScreen extends EntityScreen {
                         context,
                         listen: false,
                       );
-                  abstractAppStateProvider.navigatorKey.currentState?.push(
+                  abstractAppStateProvider.innerNavigatorKey.currentState?.push(
                     AddOrExportScreen.route(songs: artist.songs),
                   );
                 },
@@ -76,13 +75,14 @@ class ArtistScreen extends EntityScreen {
                 padding: EdgeInsets.all(height * 0.005),
                 onPressed: () async {
                   debugPrint("Play ${artist.name}");
-                  var audioProvider = Provider.of<AbstractAudioProvider>(
+                  var audioProvider = Provider.of<AudioProvider>(
                     context,
                     listen: false,
                   );
-                  audioProvider.setQueue(artist.songs);
-                  await audioProvider.setCurrentSong(artist.songs.first);
-                  audioProvider.play();
+                  await audioProvider.setQueueAndPlay(
+                    artist.songs,
+                    artist.songs.first,
+                  );
                 },
                 icon: Icon(
                   FluentIcons.play,
@@ -158,7 +158,7 @@ class ArtistScreen extends EntityScreen {
                   blur: 45.0,
                   borderWidth: 0.0,
                   elevation: 3.0,
-                  shadowColor: Colors.black.withOpacity(0.20),
+                  shadowColor: Colors.black.withValues(alpha: 0.20),
                   child: CustomScrollView(
                     slivers: [
                       SliverPadding(
@@ -174,13 +174,13 @@ class ArtistScreen extends EntityScreen {
                           },
                           onTap: (entity) async {
                             debugPrint("Tapped on ${entity.name}");
-                            var audioProvider = Provider.of<LinuxAudioProvider>(
+                            var audioProvider = Provider.of<AudioProvider>(
                               context,
                               listen: false,
                             );
-                            audioProvider.setQueue(artist.songs);
-                            await audioProvider.setCurrentSong(
-                              (entity as Song),
+                            await audioProvider.setQueueAndPlay(
+                              artist.songs,
+                              entity as Song,
                             );
                           },
                           onLongPress: (entity) {

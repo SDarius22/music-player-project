@@ -64,7 +64,7 @@ abstract class AbstractAddOrExportScreenState<
     final fileService = Provider.of<FileService>(context, listen: false);
 
     for (final playlist in selected.value) {
-      final songPaths = playlist.songsInOrder.map((e) => e.path).toList();
+      final songPaths = playlist.songsList.map((e) => e.path).toList();
       final fileName =
           "${appStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
       fileService.exportPlaylist(fileName, songPaths);

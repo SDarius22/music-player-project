@@ -10,9 +10,6 @@ class AppSettings {
   bool fullClose = false;
   bool drawerOpen = true;
 
-  @Transient()
-  bool initialScanComplete = false;
-
   String mainSongPlace = '';
 
   List<String> songPlaces = [];

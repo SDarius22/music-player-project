@@ -3,20 +3,20 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/platforms/linux/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artist_screen.dart';
 import 'package:provider/provider.dart';
 
 class Artists extends MultipleEntitiesScreen<ArtistProvider> {
-  static Route<dynamic> route({required ArtistProvider provider}) {
+  static Route<dynamic> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Artists(provider: provider);
+        return Artists(provider: context.read<ArtistProvider>());
       },
     );
   }
@@ -35,12 +35,8 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
           return;
         }
         Artist artist = entity;
-        var audioProvider = Provider.of<LinuxAudioProvider>(
-          context,
-          listen: false,
-        );
-        audioProvider.setQueue(artist.songs);
-        await audioProvider.setCurrentSong(artist.songs.first);
+        var audioProvider = Provider.of<AudioProvider>(context, listen: false);
+        await audioProvider.setQueueAndPlay(artist.songs, artist.songs.first);
       },
     );
   }
@@ -66,17 +62,17 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             Artist artist = entity as Artist;
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.navigatorKey.currentState!.push(
+            abstractAppStateProvider.innerNavigatorKey.currentState!.push(
               AddOrExportScreen.route(songs: artist.songs),
             );
             break;
           case 'playNext':
             Artist artist = entity as Artist;
-            var audioProvider = Provider.of<LinuxAudioProvider>(
+            var audioProvider = Provider.of<AudioProvider>(
               context,
               listen: false,
             );
-            audioProvider.addMultipleNextToQueue(artist.songs);
+            audioProvider.addNextToQueue(artist.songs);
             break;
           case 'select':
             var selectionProvider = Provider.of<SelectionProvider>(
@@ -118,7 +114,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
       context,
       listen: false,
     );
-    abstractAppStateProvider.navigatorKey.currentState!.push(
+    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       ArtistScreen.route(artist: entity as Artist),
     );
   }

@@ -3,7 +3,7 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
@@ -15,10 +15,10 @@ import 'package:music_player_frontend/platforms/linux/ui/screens/track_screen.da
 import 'package:provider/provider.dart';
 
 class Tracks extends MultipleEntitiesScreen<SongProvider> {
-  static Route<dynamic> route({required SongProvider provider}) {
+  static Route<dynamic> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Tracks(provider: provider);
+        return Tracks(provider: context.read<SongProvider>());
       },
     );
   }
@@ -44,8 +44,8 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
 
   @override
   Widget buildMainAction(BaseEntity entity, BuildContext context) {
-    return Consumer<AbstractAudioProvider>(
-      builder: (_, audioProvider, __) {
+    return Consumer<AudioProvider>(
+      builder: (_, audioProvider, _) {
         Song song = entity as Song;
         return ValueListenableBuilder(
           valueListenable: audioProvider.playingNotifier,
@@ -79,16 +79,16 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
               context,
               listen: false,
             );
-            appState.navigatorKey.currentState?.push(
+            appState.innerNavigatorKey.currentState?.push(
               AddOrExportScreen.route(songs: [entity as Song]),
             );
             break;
           case 'playNext':
-            var audioProvider = Provider.of<AbstractAudioProvider>(
+            var audioProvider = Provider.of<AudioProvider>(
               context,
               listen: false,
             );
-            audioProvider.addNextToQueue((entity as Song));
+            audioProvider.addNextToQueue([(entity as Song)]);
             break;
           case 'select':
             debugPrint("Select ${entity.name}");
@@ -109,7 +109,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
               context,
               listen: false,
             );
-            appState.navigatorKey.currentState?.push(
+            appState.innerNavigatorKey.currentState?.push(
               TrackScreen.route(song: entity as Song),
             );
             break;
@@ -142,16 +142,11 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
     BuildContext context,
   ) async {
     var song = entity as Song;
-    var audioProvider = Provider.of<AbstractAudioProvider>(
-      context,
-      listen: false,
-    );
+    var audioProvider = Provider.of<AudioProvider>(context, listen: false);
     try {
       if (audioProvider.currentSong.path != song.path) {
         List<Song> songs = snapshot.data as List<Song>;
-        audioProvider.setQueue(songs);
-        await audioProvider.setCurrentSong(song);
-        await audioProvider.play();
+        await audioProvider.setQueueAndPlay(songs, song);
       } else {
         if (audioProvider.playingNotifier.value == true) {
           debugPrint("Pausing song");
@@ -164,9 +159,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
     } catch (e) {
       debugPrint(e.toString());
       List<Song> songs = snapshot.data as List<Song>;
-      audioProvider.setQueue(songs);
-      await audioProvider.setCurrentSong(song);
-      await audioProvider.play();
+      await audioProvider.setQueueAndPlay(songs, song);
     }
   }
 

@@ -9,6 +9,8 @@ abstract class QueryableProvider {
 
   void setQuery(String query);
 
+  Future<void> refresh();
+
   Future get query;
 
   Map<String, dynamic> get sortFields;

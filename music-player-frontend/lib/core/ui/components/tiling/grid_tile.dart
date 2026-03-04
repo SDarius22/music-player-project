@@ -6,7 +6,7 @@ import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
@@ -42,7 +42,7 @@ class CustomGridTile extends StatelessWidget {
     } else if (entity is Artist) {
       return "${entity.songs.length} Songs";
     } else if (entity is Playlist) {
-      return "${entity.playlistSongs.length} Songs";
+      return "${entity.songsIds.length} Songs";
     }
     return "";
   }
@@ -109,11 +109,11 @@ class CustomGridTile extends StatelessWidget {
                     ),
                     child:
                         entity is Song
-                            ? Selector<AbstractAudioProvider, Song>(
+                            ? Selector<AudioProvider, Song>(
                               selector:
                                   (_, audioProvider) =>
                                       audioProvider.currentSong,
-                              builder: (_, song, __) {
+                              builder: (_, song, _) {
                                 return CustomTextScroll(
                                   text: entity.name,
                                   style: MusicPlayerTheme.getTheme(
@@ -176,11 +176,11 @@ class CustomGridTile extends StatelessWidget {
                         ),
                         child:
                             entity is Song
-                                ? Selector<AbstractAudioProvider, Song>(
+                                ? Selector<AudioProvider, Song>(
                                   selector:
                                       (_, audioProvider) =>
                                           audioProvider.currentSong,
-                                  builder: (_, song, __) {
+                                  builder: (_, song, _) {
                                     return Text(
                                       entity.name,
                                       overflow: TextOverflow.ellipsis,

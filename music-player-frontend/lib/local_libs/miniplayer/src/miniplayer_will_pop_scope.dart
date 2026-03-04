@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 class MiniplayerWillPopScope extends StatefulWidget {
   const MiniplayerWillPopScope({
-    Key? key,
+    super.key,
     required this.child,
     required this.onWillPop,
-  }) : super(key: key);
+  });
 
   final Widget child;
-  final WillPopCallback onWillPop;
+  final Future<bool> Function() onWillPop;
 
   @override
   _MiniplayerWillPopScopeState createState() => _MiniplayerWillPopScopeState();
@@ -19,13 +19,10 @@ class MiniplayerWillPopScope extends StatefulWidget {
 }
 
 class _MiniplayerWillPopScopeState extends State<MiniplayerWillPopScope> {
-  ModalRoute<dynamic>? _route;
-
   _MiniplayerWillPopScopeState? _descendant;
 
-  set descendant(state) {
+  set descendant(_MiniplayerWillPopScopeState? state) {
     _descendant = state;
-    updateRouteCallback();
   }
 
   Future<bool> onWillPop() async {
@@ -39,12 +36,6 @@ class _MiniplayerWillPopScopeState extends State<MiniplayerWillPopScope> {
     return willPop;
   }
 
-  void updateRouteCallback() {
-    _route?.removeScopedWillPopCallback(onWillPop);
-    _route = ModalRoute.of(context);
-    _route?.addScopedWillPopCallback(onWillPop);
-  }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -52,15 +43,22 @@ class _MiniplayerWillPopScopeState extends State<MiniplayerWillPopScope> {
     if (parentGuard != null) {
       parentGuard.descendant = this;
     }
-    updateRouteCallback();
   }
 
   @override
-  void dispose() {
-    _route?.removeScopedWillPopCallback(onWillPop);
-    super.dispose();
-  }
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        if (didPop) return;
 
-  @override
-  Widget build(BuildContext context) => widget.child;
+        final NavigatorState navigator = Navigator.of(context);
+        final bool shouldPop = await onWillPop();
+        if (shouldPop && mounted) {
+          navigator.pop(result);
+        }
+      },
+      child: widget.child,
+    );
+  }
 }

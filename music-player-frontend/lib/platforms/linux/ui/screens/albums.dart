@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/platforms/android/ui/components/widgets/linux_search_header.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_search_header.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/album_screen.dart';
 import 'package:provider/provider.dart';
 
 class Albums extends MultipleEntitiesScreen<AlbumProvider> {
-  static Route<dynamic> route({required AlbumProvider provider}) {
+  static Route<dynamic> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Albums(provider: provider);
+        return Albums(provider: context.read<AlbumProvider>());
       },
     );
   }
@@ -36,13 +36,8 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
         }
         Album album = entity;
         album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
-        var audioProvider = Provider.of<AbstractAudioProvider>(
-          context,
-          listen: false,
-        );
-        audioProvider.setQueue(album.songs);
-        await audioProvider.setCurrentSong(album.songs.first);
-        audioProvider.play();
+        var audioProvider = Provider.of<AudioProvider>(context, listen: false);
+        await audioProvider.setQueueAndPlay(album.songs, album.songs.first);
       },
     );
   }
@@ -69,18 +64,18 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
             album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.navigatorKey.currentState!.push(
+            abstractAppStateProvider.innerNavigatorKey.currentState!.push(
               AddOrExportScreen.route(songs: album.songs),
             );
             break;
           case 'playNext':
             Album album = entity as Album;
             album.songs.sort((a, b) => b.trackNumber.compareTo(a.trackNumber));
-            var audioProvider = Provider.of<AbstractAudioProvider>(
+            var audioProvider = Provider.of<AudioProvider>(
               context,
               listen: false,
             );
-            audioProvider.addMultipleNextToQueue(album.songs);
+            audioProvider.addNextToQueue(album.songs);
             break;
           case 'select':
             var selectionProvider = Provider.of<SelectionProvider>(
@@ -122,7 +117,7 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
       context,
       listen: false,
     );
-    abstractAppStateProvider.navigatorKey.currentState!.push(
+    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       AlbumScreen.route(album: entity as Album),
     );
   }

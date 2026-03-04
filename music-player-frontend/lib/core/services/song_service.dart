@@ -1,24 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
-import 'package:music_player_frontend/core/services/settings_service.dart';
 
 class SongService {
   final SongRepository _songRepository;
-  final SettingsService _settingsService;
 
-  SongService(this._songRepository, this._settingsService);
+  SongService(this._songRepository);
 
-  get sortFields => _songRepository.sortFields;
-
-  bool isInitialScanComplete() {
-    return _settingsService.currentAppSettings.initialScanComplete;
-  }
-
-  void markInitialScanComplete() {
-    _settingsService.currentAppSettings.initialScanComplete = true;
-    _settingsService.updateAppSettings();
-  }
+  Map<String, dynamic> get sortFields => _songRepository.sortFields;
 
   Song addSongEntity(Song song) {
     return _songRepository.saveSong(song);
@@ -30,7 +19,7 @@ class SongService {
 
   List<Song> addSongsEntitiesBatch(List<Song> songs) {
     debugPrint("Adding batch of ${songs.length} songs to the database");
-    return _songRepository.saveSongsBatch(songs);
+    return _songRepository.saveSongs(songs);
   }
 
   void addSongsBatch(List<Song> songs) {
@@ -78,7 +67,7 @@ class SongService {
   }
 
   void updateSongsBatch(List<Song> songs) {
-    _songRepository.updateSongsBatch(songs);
+    _songRepository.updateSongs(songs);
   }
 
   void deleteSong(Song song) {

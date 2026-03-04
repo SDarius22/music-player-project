@@ -76,7 +76,7 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
                 size: height * 0.025,
               ),
               suffixIcon:
-                  searchNode.hasFocus
+                  _controller.text.isNotEmpty
                       ? IconButton(
                         icon: Icon(
                           Icons.clear,
@@ -153,11 +153,6 @@ class _LinuxSearchHeaderState extends State<LinuxSearchHeader> {
                 ...widget.provider.sortFields.keys.map(
                   (field) => _buildSortMenuItem(context, field),
                 ),
-                // _buildSortMenuItem(context, "Title"),
-                // // _buildSortMenuItem(context, "Artist", "artist"),
-                // // _buildSortMenuItem(context, "Album", "album"),
-                // _buildSortMenuItem(context, "Duration"),
-                // _buildSortMenuItem(context, "Date Added"),
                 const PopupMenuDivider(),
                 PopupMenuItem(
                   child: Row(

@@ -1,19 +1,17 @@
 import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
+import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/repository/album_repo.dart';
 import 'package:music_player_frontend/core/repository/artist_repo.dart';
-import 'package:music_player_frontend/core/repository/played_song_repo.dart';
 import 'package:music_player_frontend/core/repository/playlist_repo.dart';
-import 'package:music_player_frontend/core/repository/playlist_song_repo.dart';
 import 'package:music_player_frontend/core/repository/settings_repo.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
@@ -27,13 +25,13 @@ import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/platforms/android/audio_player/concrete_audio_player.dart';
 import 'package:music_player_frontend/platforms/android/providers/app_state_provider.dart';
-import 'package:music_player_frontend/platforms/android/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/android/services/android_file_service.dart';
 import 'package:music_player_frontend/platforms/android/services/android_music_scanner_service.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/loading_screen.dart';
 import 'package:provider/provider.dart';
+
+import 'components/android_scaler.dart';
 
 class AndroidApp extends StatelessWidget {
   const AndroidApp({super.key});
@@ -42,20 +40,11 @@ class AndroidApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<AbstractAudioPlayer>(
-          create: (context) => ConcreteAudioPlayer(),
-        ),
+        Provider<Scaler>(create: (_) => AndroidScaler()),
 
         Provider<AlbumRepository>(create: (_) => AlbumRepository()),
         Provider<ArtistRepository>(create: (_) => ArtistRepository()),
-        Provider<PlayedSongRepository>(create: (_) => PlayedSongRepository()),
         Provider<PlaylistRepository>(create: (_) => PlaylistRepository()),
-        Provider<PlaylistSongRepository>(
-          create: (_) => PlaylistSongRepository(),
-        ),
-        Provider<PlaylistSongRepository>(
-          create: (_) => PlaylistSongRepository(),
-        ),
         Provider<SettingsRepository>(create: (_) => SettingsRepository()),
         Provider<SongRepository>(create: (_) => SongRepository()),
 
@@ -72,8 +61,7 @@ class AndroidApp extends StatelessWidget {
           create:
               (context) => PlaylistService(
                 context.read<PlaylistRepository>(),
-                context.read<PlaylistSongRepository>(),
-                context.read<PlayedSongRepository>(),
+                context.read<SongRepository>(),
               ),
         ),
         Provider<SettingsService>(
@@ -81,11 +69,7 @@ class AndroidApp extends StatelessWidget {
               (context) => SettingsService(context.read<SettingsRepository>()),
         ),
         Provider<SongService>(
-          create:
-              (context) => SongService(
-                context.read<SongRepository>(),
-                context.read<SettingsService>(),
-              ),
+          create: (context) => SongService(context.read<SongRepository>()),
         ),
         Provider<AbstractMusicScannerService>(
           create:
@@ -99,11 +83,9 @@ class AndroidApp extends StatelessWidget {
         Provider<AppAudioService>(
           create:
               (context) => AppAudioService(
-                context.read<PlayedSongRepository>(),
-                context.read<PlaylistSongRepository>(),
-                context.read<AbstractAudioPlayer>(),
                 context.read<SongService>(),
                 context.read<SettingsService>(),
+                context.read<PlaylistService>(),
               ),
         ),
 
@@ -128,9 +110,12 @@ class AndroidApp extends StatelessWidget {
               ),
           lazy: false,
         ),
-        ChangeNotifierProvider<AbstractAudioProvider>(
+        ChangeNotifierProvider<SelectionProvider>(
+          create: (context) => SelectionProvider(),
+        ),
+        ChangeNotifierProvider<AudioProvider>(
           create: (context) {
-            var audioProvider = AndroidAudioProvider(
+            var audioProvider = AudioProvider(
               context.read<AppAudioService>(),
               context.read<FileService>(),
             );
@@ -138,7 +123,8 @@ class AndroidApp extends StatelessWidget {
               platform_service.AudioService.init(
                 builder: () => audioProvider,
                 config: const platform_service.AudioServiceConfig(
-                  androidNotificationChannelId: 'com.example.musicplayer',
+                  androidNotificationChannelId:
+                      'com.example.music_player_frontend.channel.audio',
                   androidNotificationChannelName: 'Music Player',
                   androidNotificationOngoing: true,
                 ),
@@ -152,7 +138,7 @@ class AndroidApp extends StatelessWidget {
         ChangeNotifierProvider<LyricsProvider>(
           create:
               (context) => LyricsProvider(
-                context.read<AbstractAudioProvider>(),
+                context.read<AudioProvider>(),
                 context.read<FileService>(),
               ),
           lazy: false,
@@ -160,17 +146,24 @@ class AndroidApp extends StatelessWidget {
         ChangeNotifierProvider<AbstractAppStateProvider>(
           create:
               (context) => AppStateProvider(
-                context.read<AbstractAudioProvider>(),
+                context.read<AudioProvider>(),
                 context.read<SettingsService>(),
               ),
         ),
       ],
-      child: MaterialApp(
-        builder: BotToastInit(),
-        debugShowCheckedModeBanner: false,
-        checkerboardOffscreenLayers: true,
-        theme: MusicPlayerTheme.getTheme(context, context.read<Scaler>()),
-        home: const SafeArea(child: LoadingScreen()),
+      child: Builder(
+        builder: (context) {
+          final appState = context.read<AbstractAppStateProvider>();
+
+          return MaterialApp(
+            navigatorKey: appState.outerNavigatorKey,
+            builder: BotToastInit(),
+            debugShowCheckedModeBanner: false,
+            checkerboardOffscreenLayers: true,
+            theme: MusicPlayerTheme.getDefaultTheme(),
+            home: const SafeArea(child: LoadingScreen()),
+          );
+        },
       ),
     );
   }

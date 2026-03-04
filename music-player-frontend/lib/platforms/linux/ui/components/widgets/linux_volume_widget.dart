@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/volume_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
@@ -12,13 +12,12 @@ class LinuxVolumeWidget extends VolumeWidget {
 }
 
 class _VolumeWidgetState extends VolumeWidgetState {
-  final ValueNotifier<bool> _visible = ValueNotifier(false);
-  late final AbstractAudioProvider _audioProvider;
+  late final AudioProvider _audioProvider;
 
   @override
   void initState() {
     super.initState();
-    _audioProvider = Provider.of<AbstractAudioProvider>(context, listen: false);
+    _audioProvider = Provider.of<AudioProvider>(context, listen: false);
   }
 
   @override
@@ -29,54 +28,12 @@ class _VolumeWidgetState extends VolumeWidgetState {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Visibility(
-          visible: _visible.value,
-          child: MouseRegion(
-            onEnter: (event) {
-              _visible.value = true;
-            },
-            onExit: (event) {
-              _visible.value = false;
-            },
-            child: SizedBox(
-              width: width * 0.1,
-              child: SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 2,
-                  thumbShape: RoundSliderThumbShape(
-                    enabledThumbRadius: height * 0.0075,
-                  ),
-                ),
-                child: ValueListenableBuilder(
-                  valueListenable: _audioProvider.volumeNotifier,
-                  builder: (context, value, child) {
-                    return Slider(
-                      min: 0.0,
-                      max: 1.0,
-                      mouseCursor: SystemMouseCursors.click,
-                      value: value,
-                      activeColor: Colors.white,
-                      thumbColor: Colors.white,
-                      inactiveColor: Colors.white,
-                      onChangeEnd: (double value) {
-                        _audioProvider.setVolume(value);
-                      },
-                      onChanged: (double value) {
-                        _audioProvider.volumeNotifier.value = value;
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),
         MouseRegion(
           onEnter: (event) {
-            _visible.value = true;
+            visible.value = true;
           },
           onExit: (event) {
-            _visible.value = false;
+            visible.value = false;
           },
           child: ValueListenableBuilder(
             valueListenable: _audioProvider.volumeNotifier,
@@ -86,12 +43,12 @@ class _VolumeWidgetState extends VolumeWidgetState {
                     value > 0.0
                         ? Icon(
                           FluentIcons.volumeOn,
-                          size: height * 0.0175,
+                          size: height * 0.0225,
                           color: Colors.white,
                         )
                         : Icon(
                           FluentIcons.volumeOff,
-                          size: height * 0.0175,
+                          size: height * 0.0225,
                           color: Colors.white,
                         ),
                 onPressed: () {
@@ -103,6 +60,56 @@ class _VolumeWidgetState extends VolumeWidgetState {
                 },
               );
             },
+          ),
+        ),
+        MouseRegion(
+          onEnter: (event) {
+            visible.value = true;
+          },
+          onExit: (event) {
+            visible.value = false;
+          },
+          // Animate the width of the slider area specifically
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            width: visible.value ? width * 0.1 : 0.0,
+            // Use SingleChildScrollView to prevent overflow warnings as width shrinks
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              child: SizedBox(
+                width: width * 0.1,
+                child: SliderTheme(
+                  data: SliderThemeData(
+                    trackHeight: 2,
+                    thumbShape: RoundSliderThumbShape(
+                      enabledThumbRadius: height * 0.0075,
+                    ),
+                  ),
+                  child: ValueListenableBuilder(
+                    valueListenable: _audioProvider.volumeNotifier,
+                    builder: (context, value, child) {
+                      return Slider(
+                        min: 0.0,
+                        max: 1.0,
+                        mouseCursor: SystemMouseCursors.click,
+                        value: value,
+                        activeColor: Colors.white,
+                        thumbColor: Colors.white,
+                        inactiveColor: Colors.white,
+                        onChangeEnd: (double value) {
+                          _audioProvider.setVolume(value);
+                        },
+                        onChanged: (double value) {
+                          _audioProvider.volumeNotifier.value = value;
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ],

@@ -5,7 +5,6 @@ import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/animated_background.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_top_bar_widget.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/home_screen.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 class LoadingScreen extends StatefulWidget {
@@ -13,7 +12,6 @@ class LoadingScreen extends StatefulWidget {
 
   static Route<void> route() {
     return PageRouteBuilder(
-      settings: const RouteSettings(name: '/loading'),
       pageBuilder: (context, animation, secondaryAnimation) {
         return const LoadingScreen();
       },
@@ -32,13 +30,10 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   void _routeUser(BuildContext context) async {
-    await [
-      Permission.mediaLibrary,
-      Permission.audio,
-      Permission.storage,
-    ].request();
     await Provider.of<SongProvider>(context, listen: false).initialize([]);
-    Navigator.pushReplacement(context, HomeScreen.route());
+    if (context.mounted) {
+      Navigator.pushReplacement(context, HomeScreen.route());
+    }
   }
 
   @override

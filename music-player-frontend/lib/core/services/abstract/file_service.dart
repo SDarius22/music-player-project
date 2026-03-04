@@ -9,7 +9,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:watcher/watcher.dart';
 
 abstract class FileService {
-  get supportedAudioExtensions;
+  List<String> get supportedAudioExtensions;
 
   bool isSupportedAudioFile(String filePath) {
     final extension = filePath.split('.').last.toLowerCase();

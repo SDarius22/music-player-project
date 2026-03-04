@@ -3,7 +3,8 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -11,6 +12,8 @@ import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart'
 import 'package:music_player_frontend/platforms/linux/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/add_or_export_screen.dart';
 import 'package:provider/provider.dart';
+
+enum _PlaylistAction { add, export, editToggle, delete }
 
 class PlaylistScreen extends EntityScreen {
   static Route<void> route({required Playlist playlist}) {
@@ -30,14 +33,200 @@ class PlaylistScreen extends EntityScreen {
 
   @override
   Widget buildBody(BuildContext context, double width, double height) {
-    var playlist = entity as Playlist;
-    List<Song> songs = playlist.songsInOrder;
-    ValueNotifier<bool> editMode = ValueNotifier<bool>(false);
-    ValueNotifier<bool> orderChanged = ValueNotifier<bool>(false);
+    final playlist = entity as Playlist;
+    final List<Song> songs = playlist.songsList;
 
-    var normalSize = height * 0.02;
-    var boldSize = height * 0.025;
-    var smallSize = height * 0.0175;
+    final ValueNotifier<bool> editMode = ValueNotifier<bool>(false);
+    final ValueNotifier<bool> orderChanged = ValueNotifier<bool>(false);
+
+    final normalSize = height * 0.02;
+    final boldSize = height * 0.025;
+    final smallSize = height * 0.0175;
+
+    Future<void> handleAction(_PlaylistAction action) async {
+      switch (action) {
+        case _PlaylistAction.add:
+          {
+            final abstractAppStateProvider =
+                Provider.of<AbstractAppStateProvider>(context, listen: false);
+
+            abstractAppStateProvider.innerNavigatorKey.currentState?.push(
+              AddOrExportScreen.route(songs: songs),
+            );
+            return;
+          }
+        case _PlaylistAction.export:
+          {
+            debugPrint("Export ${playlist.name}");
+            final abstractAppStateProvider =
+                Provider.of<AbstractAppStateProvider>(context, listen: false);
+            abstractAppStateProvider.innerNavigatorKey.currentState?.push(
+              AddOrExportScreen.route(songs: songs, export: true),
+            );
+            return;
+          }
+        case _PlaylistAction.editToggle:
+          {
+            editMode.value = !editMode.value;
+            return;
+          }
+        case _PlaylistAction.delete:
+          {
+            final bool? confirmed = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) {
+                return AlertDialog(
+                  title: const Text("Delete playlist?"),
+                  content: Text(
+                    "This will delete \"${playlist.name}\".\nThis action can’t be undone.",
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(FluentIcons.trash, size: 18),
+                          SizedBox(width: 8),
+                          Text("Delete"),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+
+            if (confirmed != true) return;
+
+            debugPrint("Confirmed delete ${playlist.name}");
+            var playlistProvider = Provider.of<PlaylistProvider>(
+              context,
+              listen: false,
+            );
+            playlistProvider.deletePlaylist(playlist);
+            var appStateProvider = Provider.of<AbstractAppStateProvider>(
+              context,
+              listen: false,
+            );
+            appStateProvider.innerNavigatorKey.currentState?.pop();
+            return;
+          }
+      }
+    }
+
+    Widget actionsMenuButton() {
+      final bool canModify = playlist.indestructible == false;
+
+      return ValueListenableBuilder<bool>(
+        valueListenable: editMode,
+        builder: (context, isEditing, child) {
+          if (isEditing) {
+            return SizedBox(
+              height: height * 0.045,
+              child: ElevatedButton.icon(
+                onPressed: () => handleAction(_PlaylistAction.editToggle),
+                icon: Icon(
+                  FluentIcons.check,
+                  size: height * 0.02,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  "Done",
+                  style: TextStyle(color: Colors.white, fontSize: normalSize),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+                ),
+              ),
+            );
+          }
+
+          return PopupMenuButton<_PlaylistAction>(
+            tooltip: "Actions",
+            onSelected: handleAction,
+            itemBuilder: (context) {
+              final items = <PopupMenuEntry<_PlaylistAction>>[];
+
+              items.add(
+                PopupMenuItem<_PlaylistAction>(
+                  value: _PlaylistAction.add,
+                  child: const Row(
+                    children: [
+                      Icon(FluentIcons.add, size: 18),
+                      SizedBox(width: 10),
+                      Text("Add"),
+                    ],
+                  ),
+                ),
+              );
+
+              items.add(
+                PopupMenuItem<_PlaylistAction>(
+                  value: _PlaylistAction.export,
+                  child: const Row(
+                    children: [
+                      Icon(FluentIcons.export, size: 18),
+                      SizedBox(width: 10),
+                      Text("Export"),
+                    ],
+                  ),
+                ),
+              );
+
+              if (canModify) {
+                items.add(const PopupMenuDivider());
+
+                items.add(
+                  PopupMenuItem<_PlaylistAction>(
+                    value: _PlaylistAction.editToggle,
+                    child: const Row(
+                      children: [
+                        Icon(FluentIcons.editOn, size: 18),
+                        SizedBox(width: 10),
+                        Text("Edit"),
+                      ],
+                    ),
+                  ),
+                );
+
+                items.add(
+                  PopupMenuItem<_PlaylistAction>(
+                    value: _PlaylistAction.delete,
+                    child: const Row(
+                      children: [
+                        Icon(FluentIcons.trash, size: 18, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text("Delete", style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return items;
+            },
+            child: Padding(
+              padding: EdgeInsets.all(height * 0.005),
+              child: Icon(
+                FluentIcons.moreVertical,
+                color: Colors.white,
+                size: height * 0.025,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -61,35 +250,14 @@ class PlaylistScreen extends EntityScreen {
               ),
               const Spacer(),
               IconButton(
-                tooltip: "Add",
-                padding: EdgeInsets.all(height * 0.005),
-                onPressed: () {
-                  var abstractAppStateProvider =
-                      Provider.of<AbstractAppStateProvider>(
-                        context,
-                        listen: false,
-                      );
-                  abstractAppStateProvider.navigatorKey.currentState?.push(
-                    AddOrExportScreen.route(songs: songs),
-                  );
-                },
-                icon: Icon(
-                  FluentIcons.add,
-                  color: Colors.white,
-                  size: height * 0.025,
-                ),
-              ),
-              IconButton(
                 tooltip: "Play",
                 padding: EdgeInsets.all(height * 0.005),
                 onPressed: () async {
-                  var audioProvider = Provider.of<AbstractAudioProvider>(
+                  final audioProvider = Provider.of<AudioProvider>(
                     context,
                     listen: false,
                   );
-                  audioProvider.setQueue(songs);
-                  await audioProvider.setCurrentSong(songs.first);
-                  audioProvider.play();
+                  await audioProvider.setQueueAndPlay(songs, songs.first);
                 },
                 icon: Icon(
                   FluentIcons.play,
@@ -107,38 +275,7 @@ class PlaylistScreen extends EntityScreen {
                   size: height * 0.025,
                 ),
               ),
-              if (playlist.indestructible == false)
-                SizedBox(
-                  width: width * 0.06,
-                  child: ValueListenableBuilder(
-                    valueListenable: editMode,
-                    builder: (context, value, child) {
-                      return ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: width * 0.01,
-                          ),
-                        ),
-                        onPressed: () {
-                          debugPrint("Edit ${playlist.name}");
-                          if (editMode.value == false) {
-                            editMode.value = true;
-                          } else {
-                            editMode.value = false;
-                            // DataController.playlistBox.put(playlist);
-                          }
-                        },
-                        child: Text(
-                          value ? "Done" : "Edit",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: normalSize,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+              actionsMenuButton(),
             ],
           ),
         ),
@@ -162,7 +299,6 @@ class PlaylistScreen extends EntityScreen {
                               height: height * 0.5,
                               width: height * 0.5,
                               padding: EdgeInsets.only(bottom: height * 0.01),
-                              //color: Colors.red,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(
                                   width * 0.01,
@@ -228,22 +364,6 @@ class PlaylistScreen extends EntityScreen {
                           );
                         },
                       ),
-
-                      //TODO: Artists
-
-                      // SizedBox(
-                      //   height: height * 0.005,
-                      // ),
-                      // Text(
-                      //   playlist.,
-                      //   maxLines: 2,
-                      //   overflow: TextOverflow.ellipsis,
-                      //   textAlign: TextAlign.center,
-                      //   style: TextStyle(
-                      //     fontSize: normalSize,
-                      //     fontWeight: FontWeight.bold,
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -282,26 +402,25 @@ class PlaylistScreen extends EntityScreen {
                                       sliver: LinuxListComponent(
                                         items: songs,
                                         itemExtent: height * 0.125,
-                                        isSelected: (entity) {
-                                          return false;
-                                        },
+                                        isSelected: (entity) => false,
                                         onTap: (entity) async {
                                           debugPrint(
                                             "Tapped on ${entity.name}",
                                           );
-                                          var audioProvider = Provider.of<
-                                            AbstractAudioProvider
-                                          >(context, listen: false);
-                                          audioProvider.setQueue(songs);
-                                          await audioProvider.setCurrentSong(
-                                            (entity as Song),
+                                          final audioProvider =
+                                              Provider.of<AudioProvider>(
+                                                context,
+                                                listen: false,
+                                              );
+                                          await audioProvider.setQueueAndPlay(
+                                            songs,
+                                            entity as Song,
                                           );
                                         },
                                         onLongPress: (entity) {
                                           debugPrint(
                                             "Long pressed on ${entity.name}",
                                           );
-                                          // Show context menu or options
                                         },
                                       ),
                                     ),
@@ -316,8 +435,7 @@ class PlaylistScreen extends EntityScreen {
                                         right: width * 0.01,
                                       ),
                                       itemBuilder: (context, int index) {
-                                        //debugPrint("Building ${playlist. songs.value[playlist.order[index]].title}");
-                                        Song song = songs[index];
+                                        final Song song = songs[index];
                                         return AnimatedContainer(
                                           key: Key('$index'),
                                           duration: const Duration(
@@ -350,12 +468,6 @@ class PlaylistScreen extends EntityScreen {
                                                     entity: song,
                                                     hoveredChild: IconButton(
                                                       onPressed: () {
-                                                        // widget
-                                                        //     .playlist
-                                                        //     .pathsInOrder
-                                                        //     .removeAt(
-                                                        //       index,
-                                                        //     );
                                                         orderChanged.value =
                                                             !orderChanged.value;
                                                       },
@@ -407,9 +519,9 @@ class PlaylistScreen extends EntityScreen {
                                                 ),
                                                 const Spacer(),
                                                 Text(
-                                                  song.duration == 0
+                                                  song.durationInSeconds == 0
                                                       ? "??:??"
-                                                      : "${song.duration ~/ 60}:${(song.duration % 60).toString().padLeft(2, '0')}",
+                                                      : "${song.durationInSeconds ~/ 60}:${(song.durationInSeconds % 60).toString().padLeft(2, '0')}",
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize: normalSize,
@@ -421,15 +533,8 @@ class PlaylistScreen extends EntityScreen {
                                         );
                                       },
                                       itemCount: songs.length,
-                                      onReorder: (int oldIndex, int newIndex) {
-                                        // if (oldIndex < newIndex) {
-                                        //   newIndex -= 1;
-                                        // }
-                                        // var temp = playlist.pathsInOrder.removeAt(oldIndex);
-                                        // playlist.pathsInOrder.insert(newIndex, temp);
-                                        // DataController.playlistBox.put(playlist);
-                                        // orderChanged.value = !orderChanged.value;
-                                      },
+                                      onReorder:
+                                          (int oldIndex, int newIndex) {},
                                     );
                                   },
                                 ),

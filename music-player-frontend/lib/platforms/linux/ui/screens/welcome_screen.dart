@@ -1,9 +1,11 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/welcome_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/library_settings.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
+import 'package:provider/provider.dart';
 
 class WelcomeScreen extends AbstractWelcomeScreen {
   static Route<dynamic> route() {
@@ -35,341 +37,64 @@ class _WelcomeScreenState extends AbstractWelcomeScreenState<WelcomeScreen> {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
     double boldSize = height * 0.035;
-    double normalSize = height * 0.025;
-    return Column(
-      children: [
-        SizedBox(height: height * 0.25),
-        Text(
-          "Welcome to Music Player!",
-          style: TextStyle(
-            fontSize: boldSize,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: height * 0.025),
-        if (abstractAppStateProvider.appSettings.songPlaces.isEmpty)
-          Text(
-            "Add music to your library by choosing a folder below:",
-            style: TextStyle(
-              fontSize: normalSize,
-              fontWeight: FontWeight.normal,
-              color: Colors.white,
-            ),
-          ),
-        if (abstractAppStateProvider.appSettings.songPlaces.isEmpty)
-          SizedBox(height: height * 0.025),
-        if (abstractAppStateProvider.appSettings.songPlaces.isEmpty)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 500),
-            width: width * 0.1,
-            height: height * 0.06,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(0),
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.grey.shade900,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    MediaQuery.of(context).size.height * 0.015,
-                  ),
-                ),
-              ),
-              onPressed: () async {
-                String chosen =
-                    await FilePicker.platform.getDirectoryPath() ?? "";
-                if (chosen != "") {
-                  //debugPrint(chosen);
-                  abstractAppStateProvider.appSettings.songPlaces = [chosen];
-                  abstractAppStateProvider.appSettings.mainSongPlace = chosen;
-                  abstractAppStateProvider
-                      .appSettings
-                      .songPlaceIncludeSubfolders = [1];
-                  setState(() {});
-                }
-              },
-              child: Icon(
-                FluentIcons.folder,
+    return Consumer<AbstractAppStateProvider>(
+      builder: (context, appState, child) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              "Welcome to Music Player!",
+              style: TextStyle(
+                fontSize: boldSize,
                 color: Colors.white,
-                size: height * 0.03,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          )
-        else
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 500),
-            child: DataTable(
-              columns: [
-                DataColumn(
-                  label: Text(
-                    "Folder",
-                    style: TextStyle(
-                      fontSize: normalSize,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    "Main",
-                    style: TextStyle(
-                      fontSize: normalSize,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  headingRowAlignment: MainAxisAlignment.center,
-                  label: Text(
-                    "Include subfolders",
-                    style: TextStyle(
-                      fontSize: normalSize,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    "",
-                    style: TextStyle(
-                      fontSize: normalSize,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-              rows: List<DataRow>.generate(
-                abstractAppStateProvider.appSettings.songPlaces.length + 1,
-                (index) {
-                  return index <
-                          abstractAppStateProvider.appSettings.songPlaces.length
-                      ? DataRow(
-                        cells: [
-                          DataCell(
-                            Text(
-                              abstractAppStateProvider
-                                  .appSettings
-                                  .songPlaces[index],
-                              style: TextStyle(
-                                fontSize: normalSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          DataCell(
-                            IconButton(
-                              icon: Icon(
-                                abstractAppStateProvider
-                                            .appSettings
-                                            .mainSongPlace ==
-                                        abstractAppStateProvider
-                                            .appSettings
-                                            .songPlaces[index]
-                                    ? FluentIcons.checkCircleOn
-                                    : FluentIcons.checkCircleOff,
-                                color: Colors.white,
-                                size: height * 0.03,
-                              ),
-                              onPressed:
-                                  abstractAppStateProvider
-                                              .appSettings
-                                              .songPlaces
-                                              .length <=
-                                          1
-                                      ? null
-                                      : () {
-                                        setState(() {
-                                          abstractAppStateProvider
-                                                  .appSettings
-                                                  .mainSongPlace =
-                                              abstractAppStateProvider
-                                                  .appSettings
-                                                  .songPlaces[index];
-                                        });
-                                      },
-                            ),
-                          ),
-                          DataCell(
-                            IconButton(
-                              icon: Icon(
-                                abstractAppStateProvider
-                                            .appSettings
-                                            .songPlaceIncludeSubfolders[index] ==
-                                        1
-                                    ? FluentIcons.checkCircleOn
-                                    : FluentIcons.checkCircleOff,
-                                color: Colors.white,
-                                size: height * 0.03,
-                              ),
-                              onPressed: () {
-                                if (abstractAppStateProvider
-                                        .appSettings
-                                        .songPlaceIncludeSubfolders[index] ==
-                                    1) {
-                                  debugPrint("Setting to 0");
-                                  final updatedList = List<int>.from(
-                                    abstractAppStateProvider
-                                        .appSettings
-                                        .songPlaceIncludeSubfolders,
-                                  );
-                                  updatedList[index] = 0;
-                                  abstractAppStateProvider
-                                      .appSettings
-                                      .songPlaceIncludeSubfolders = updatedList;
-                                } else {
-                                  debugPrint("Setting to 1");
-                                  final updatedList = List<int>.from(
-                                    abstractAppStateProvider
-                                        .appSettings
-                                        .songPlaceIncludeSubfolders,
-                                  );
-                                  updatedList[index] = 1;
-                                  abstractAppStateProvider
-                                      .appSettings
-                                      .songPlaceIncludeSubfolders = updatedList;
-                                }
-                                setState(() {});
-                              },
-                            ),
-                          ),
-                          DataCell(
-                            IconButton(
-                              icon: Icon(
-                                FluentIcons.trash,
-                                color: Colors.red,
-                                size: height * 0.03,
-                              ),
-                              onPressed: () {
-                                String current =
-                                    abstractAppStateProvider
-                                        .appSettings
-                                        .songPlaces[index];
-                                abstractAppStateProvider
-                                    .appSettings
-                                    .songPlaces = List<String>.from(
-                                  abstractAppStateProvider
-                                      .appSettings
-                                      .songPlaces,
-                                )..removeAt(index);
-                                abstractAppStateProvider
-                                        .appSettings
-                                        .songPlaceIncludeSubfolders =
-                                    List<int>.from(
-                                      abstractAppStateProvider
-                                          .appSettings
-                                          .songPlaceIncludeSubfolders,
-                                    )..removeAt(index);
-                                if (abstractAppStateProvider
-                                        .appSettings
-                                        .mainSongPlace ==
-                                    current) {
-                                  try {
-                                    abstractAppStateProvider
-                                            .appSettings
-                                            .mainSongPlace =
-                                        abstractAppStateProvider
-                                            .appSettings
-                                            .songPlaces[0];
-                                  } catch (e) {
-                                    abstractAppStateProvider
-                                        .appSettings
-                                        .mainSongPlace = "";
-                                  }
-                                }
-                                setState(() {});
-                              },
-                            ),
-                          ),
-                        ],
-                      )
-                      : DataRow(
-                        cells: [
-                          const DataCell(Text("")),
-                          const DataCell(Text("")),
-                          const DataCell(Text("")),
-                          DataCell(
-                            IconButton(
-                              onPressed: () async {
-                                String chosen =
-                                    await FilePicker.platform
-                                        .getDirectoryPath() ??
-                                    "";
-                                if (chosen != "") {
-                                  //debugPrint(chosen);
-                                  abstractAppStateProvider
-                                      .appSettings
-                                      .songPlaces = List<String>.from(
-                                    abstractAppStateProvider
-                                        .appSettings
-                                        .songPlaces,
-                                  )..add(chosen);
-                                  abstractAppStateProvider
-                                          .appSettings
-                                          .songPlaceIncludeSubfolders =
-                                      List<int>.from(
-                                        abstractAppStateProvider
-                                            .appSettings
-                                            .songPlaceIncludeSubfolders,
-                                      )..add(1);
-                                  setState(() {});
-                                }
-                              },
-                              tooltip: "Add Another Folder",
-                              icon: Icon(
-                                FluentIcons.folderAdd,
-                                color: Colors.white,
-                                size: height * 0.03,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                },
+            SizedBox(height: height * 0.025),
+            SizedBox(
+              width: width * 0.75,
+              height: height * 0.5,
+              child: LibrarySettings(
+                abstractAppStateProvider: appState,
+                backButton: false,
               ),
             ),
-          ),
-        SizedBox(height: height * 0.1),
-        Container(
-          width: width,
-          padding: EdgeInsets.only(right: width * 0.075),
-          alignment: Alignment.centerRight,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.all(0),
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.grey.shade900,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  MediaQuery.of(context).size.height * 0.015,
+            SizedBox(height: height * 0.025),
+            Container(
+              width: width,
+              padding: EdgeInsets.only(right: width * 0.075),
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(0),
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.grey.shade900,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      MediaQuery.of(context).size.height * 0.015,
+                    ),
+                  ),
+                ),
+                onPressed:
+                    appState.appSettings.songPlaces.isEmpty
+                        ? null
+                        : () async {
+                          debugPrint("Pressed");
+                          appState.appSettings.firstTime = false;
+                          appState.updateAppSettings();
+                          Navigator.push(context, LoadingScreen.route());
+                        },
+                child: Icon(
+                  FluentIcons.forward,
+                  color: Colors.white,
+                  size: height * 0.03,
                 ),
               ),
             ),
-            onPressed:
-                abstractAppStateProvider.appSettings.songPlaces.isEmpty
-                    ? null
-                    : () async {
-                      debugPrint("Pressed");
-                      abstractAppStateProvider.appSettings.firstTime = false;
-                      debugPrint(
-                        abstractAppStateProvider.appSettings.firstTime
-                            .toString(),
-                      );
-                      abstractAppStateProvider.updateAppSettings();
-                      Navigator.push(context, LoadingScreen.route());
-                    },
-            child: Icon(
-              FluentIcons.forward,
-              color: Colors.white,
-              size: height * 0.03,
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

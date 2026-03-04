@@ -7,7 +7,6 @@ import 'package:music_player_frontend/core/services/song_service.dart';
 class SongProvider with ChangeNotifier implements QueryableProvider {
   final SongService _songService;
   final AbstractMusicScannerService _scannerService;
-
   bool _isAscending = true;
   String _query = '';
   String _sortField = 'Title';
@@ -26,29 +25,15 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   @override
   Future get query => _songsFuture;
 
-  get totalSongsCount => _songService.getSongCount();
-
-  get initialScanComplete => _songService.isInitialScanComplete();
+  int get totalSongsCount => _songService.getSongCount();
 
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
 
-    debugPrint("Initializing SongProvider...");
+    debugPrint("Performing initial quick scan...");
 
-    // Check if this is the first scan
-    if (!_songService.isInitialScanComplete()) {
-      debugPrint("Performing initial quick scan...");
+    await _scannerService.performQuickScan();
 
-      // Perform quick scan - adds songs with basic info (just filenames)
-      await _scannerService.performQuickScan();
-
-      // Mark scan as complete
-      _songService.markInitialScanComplete();
-    } else {
-      debugPrint("Initial scan already complete, loading from database");
-    }
-
-    // Load songs from database
     Future.delayed(const Duration(milliseconds: 500), () {
       refreshSongs();
     });
@@ -132,5 +117,13 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   List<Song> getAllSongs() {
     return _songService.getAllSongs();
+  }
+
+  @override
+  Future<void> refresh() async {
+    _songsFuture = Future(
+      () => _songService.getSongs(_query, _sortField, _isAscending),
+    );
+    notifyListeners();
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
@@ -17,6 +18,9 @@ class Album with AbstractCollection implements BaseEntity {
   @Property(type: PropertyType.byteVector)
   Uint8List? imageBytes;
 
+  @Transient()
+  List<Color> colors = [];
+
   @Backlink('album')
   final _songs = ToMany<Song>();
   final artist = ToOne<Artist>();
@@ -33,11 +37,17 @@ class Album with AbstractCollection implements BaseEntity {
   @override
   Uint8List get coverArt => imageBytes ?? Constants.logoBytes;
 
-  get duration {
+  int _duration = -1;
+
+  int get durationInSeconds {
+    if (_duration != -1) {
+      return _duration;
+    }
     int total = 0;
     for (var song in _songs) {
-      total += song.duration;
+      total += song.durationInSeconds;
     }
+    _duration = total;
     return total;
   }
 

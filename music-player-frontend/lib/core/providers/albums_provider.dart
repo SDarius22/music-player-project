@@ -16,7 +16,7 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
   AlbumProvider(this._albumService) {
     _albumsFuture = Future(() => _albumService.getAllAlbums());
 
-    albumsStream.throttleTime(const Duration(seconds: 2)).listen((_) {
+    albumsStream.throttleTime(const Duration(seconds: 10)).listen((_) {
       debugPrint("Albums stream updated");
       _albumsFuture = Future(
         () => _albumService.getAlbums(_query, _sortField, _isAscending),
@@ -80,5 +80,11 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
 
   List<Album> getAllAlbums() {
     return _albumService.getAllAlbums();
+  }
+
+  @override
+  Future<void> refresh() async {
+    _albumsFuture = Future(() => _albumService.getAllAlbums());
+    notifyListeners();
   }
 }

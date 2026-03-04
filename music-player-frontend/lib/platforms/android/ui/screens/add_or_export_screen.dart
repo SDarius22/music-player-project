@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
@@ -105,7 +105,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                       for (int i = 0; i < selected.value.length; i++) {
                         Playlist playlist = selected.value[i];
                         var songPaths =
-                            playlist.songsInOrder.map((e) => e.path).toList();
+                            playlist.songsList.map((e) => e.path).toList();
                         var fileName =
                             "${abstractAppStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
                         final fileService = Provider.of<FileService>(
@@ -119,11 +119,11 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                       Playlist playlist = selected.value[i];
                       if (playlist.indestructible &&
                           playlist.name == 'Current Queue') {
-                        var audioProvider = Provider.of<AbstractAudioProvider>(
+                        var audioProvider = Provider.of<AudioProvider>(
                           context,
                           listen: false,
                         );
-                        audioProvider.addMultipleToQueue(widget.songs);
+                        audioProvider.addLastToQueue(widget.songs);
                       } else {
                         var playlistProvider = Provider.of<PlaylistProvider>(
                           context,
@@ -146,7 +146,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
             ),
             Expanded(
               child: Consumer<PlaylistProvider>(
-                builder: (_, playlistProvider, __) {
+                builder: (_, playlistProvider, _) {
                   return FutureBuilder(
                     future: Future(
                       () =>

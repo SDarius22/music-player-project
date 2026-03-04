@@ -32,7 +32,10 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
                 buildHeader(context),
                 Expanded(
                   child: FutureBuilder(
-                    future: query,
+                    future: Future.delayed(
+                      const Duration(milliseconds: 150),
+                      () => query,
+                    ),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -44,16 +47,22 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
                         );
                       }
                       customLogic(snapshot);
-                      return CustomScrollView(
-                        slivers: [
-                          SliverPadding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.01,
-                              right: width * 0.01,
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          await provider.refresh();
+                        },
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            SliverPadding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.01,
+                                right: width * 0.01,
+                              ),
+                              sliver: buildGridComponent(context, snapshot),
                             ),
-                            sliver: buildGridComponent(context, snapshot),
-                          ),
-                        ],
+                          ],
+                        ),
                       );
                     },
                   ),

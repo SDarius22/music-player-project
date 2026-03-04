@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:provider/provider.dart';
 
@@ -80,13 +80,13 @@ class SongPlayerWidgetState extends State<SongPlayerWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AbstractAudioProvider>(
-      builder: (_, audioProvider, __) {
+    return Consumer<AudioProvider>(
+      builder: (_, audioProvider, _) {
         debugPrint(
           "Building SongPlayerWidget, current song: ${audioProvider.currentSong.name}",
         );
-        if (audioProvider.currentQueue.isEmpty) {
-          debugPrint("Queue is empty, not showing player");
+        if (audioProvider.currentSong == Song()) {
+          debugPrint("Not showing player");
           return const SizedBox.shrink();
         }
         _getCoverArtImage(audioProvider.currentSong);

@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_audio_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_tile.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -92,8 +92,8 @@ class CustomListTile extends AbstractCustomListTile {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     entity is Song
-                        ? Consumer<AbstractAudioProvider>(
-                          builder: (_, audioProvider, __) {
+                        ? Consumer<AudioProvider>(
+                          builder: (_, audioProvider, _) {
                             return CustomTextScroll(
                               text: entity.name,
                               style: TextStyle(
@@ -131,8 +131,8 @@ class CustomListTile extends AbstractCustomListTile {
                           ),
                         ),
                     if (entity is Song)
-                      Consumer<AbstractAudioProvider>(
-                        builder: (_, audioProvider, __) {
+                      Consumer<AudioProvider>(
+                        builder: (_, audioProvider, _) {
                           return CustomTextScroll(
                             text: (entity as Song).artist.target.toString(),
                             style: TextStyle(
@@ -159,10 +159,10 @@ class CustomListTile extends AbstractCustomListTile {
               ),
               const Spacer(),
               if (entity is Song)
-                Consumer<AbstractAudioProvider>(
-                  builder: (_, audioProvider, __) {
+                Consumer<AudioProvider>(
+                  builder: (_, audioProvider, _) {
                     return Text(
-                      "${(entity as Song).duration ~/ 60}:${((entity as Song).duration % 60).toString().padLeft(2, '0')}",
+                      "${(entity as Song).durationInSeconds ~/ 60}:${((entity as Song).durationInSeconds % 60).toString().padLeft(2, '0')}",
                       style: TextStyle(
                         color:
                             audioProvider.currentSong.path ==

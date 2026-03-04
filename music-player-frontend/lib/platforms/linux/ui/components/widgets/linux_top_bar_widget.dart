@@ -75,10 +75,7 @@ class LinuxAppBarWidget extends AbstractAppBarWidget {
               animate: true,
               onPressed: () {
                 var appStateProvider = context.read<AbstractAppStateProvider>();
-                if (appStateProvider
-                    .settingsService
-                    .currentAppSettings
-                    .fullClose) {
+                if (appStateProvider.appSettings.fullClose) {
                   appWindow.close();
                 } else {
                   appWindow.hide();

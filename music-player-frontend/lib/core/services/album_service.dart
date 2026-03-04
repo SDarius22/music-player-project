@@ -11,7 +11,7 @@ class AlbumService {
 
   Stream watchAlbums() => _albumRepository.watchAlbums();
 
-  get sortFields => _albumRepository.sortFields;
+  Map<String, dynamic> get sortFields => _albumRepository.sortFields;
 
   Album getAlbum(int albumId) {
     try {

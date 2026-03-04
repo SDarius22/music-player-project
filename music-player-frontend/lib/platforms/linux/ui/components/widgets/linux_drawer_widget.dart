@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/albums_provider.dart';
-import 'package:music_player_frontend/core/providers/artist_provider.dart';
-import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
@@ -39,9 +36,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 1,
       "onTap": (BuildContext context) {
         setState(() => _selected = 1);
-        _appStateProvider.navigatorKey.currentState!.push(
-          Albums.route(provider: context.read<AlbumProvider>()),
-        );
+        _appStateProvider.innerNavigatorKey.currentState!.push(Albums.route());
       },
     },
     {
@@ -51,9 +46,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 2,
       "onTap": (BuildContext context) {
         setState(() => _selected = 2);
-        _appStateProvider.navigatorKey.currentState!.push(
-          Artists.route(provider: context.read<ArtistProvider>()),
-        );
+        _appStateProvider.innerNavigatorKey.currentState!.push(Artists.route());
       },
     },
     {
@@ -63,9 +56,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 3,
       "onTap": (BuildContext context) {
         setState(() => _selected = 3);
-        _appStateProvider.navigatorKey.currentState!.push(
-          Tracks.route(provider: context.read<SongProvider>()),
-        );
+        _appStateProvider.innerNavigatorKey.currentState!.push(Tracks.route());
       },
     },
     {
@@ -75,8 +66,8 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 4,
       "onTap": (BuildContext context) {
         setState(() => _selected = 4);
-        _appStateProvider.navigatorKey.currentState!.push(
-          Playlists.route(provider: context.read<PlaylistProvider>()),
+        _appStateProvider.innerNavigatorKey.currentState!.push(
+          Playlists.route(),
         );
       },
     },
@@ -87,7 +78,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
       "index": 5,
       "onTap": (BuildContext context) {
         setState(() => _selected = 5);
-        _appStateProvider.navigatorKey.currentState!.push(
+        _appStateProvider.innerNavigatorKey.currentState!.push(
           SettingsScreen.route(),
         );
       },

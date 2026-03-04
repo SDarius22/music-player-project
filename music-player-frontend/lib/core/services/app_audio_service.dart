@@ -1,274 +1,283 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/audio_player/abstract_audio_player.dart';
-import 'package:music_player_frontend/core/entities/played_song.dart';
-import 'package:music_player_frontend/core/entities/playlist_song.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:music_player_frontend/core/entities/audio_settings.dart';
+import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/repository/played_song_repo.dart';
-import 'package:music_player_frontend/core/repository/playlist_song_repo.dart';
+import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
+import 'package:music_player_frontend/local_libs/extensions.dart';
 
 class AppAudioService {
-  final PlaylistSongRepository playlistSongRepository;
-  final PlayedSongRepository playedSongRepository;
-  final AbstractAudioPlayer audioPlayer;
+  final AudioPlayer audioPlayer = AudioPlayer();
   final SongService songService;
   final SettingsService settingsService;
+  final PlaylistService playlistService;
 
-  AppAudioService(
-    this.playedSongRepository,
-    this.playlistSongRepository,
-    this.audioPlayer,
-    this.songService,
-    this.settingsService,
-  ) {
-    PlayedSong? lastPlayed = playedSongRepository.getMostRecentPlayedSong();
-    if (lastPlayed != null && lastPlayed.song.target != null) {
-      debugPrint(
-        "Last played song: ${lastPlayed.song.target!.name}, duration: ${lastPlayed.duration}",
-      );
-      currentPlayedSong = lastPlayed;
-    }
-  }
+  ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
+  ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
 
-  PlayedSong currentPlayedSong = PlayedSong();
+  bool _initialized = false;
+  List<Song> _normalQueue = [];
+  Playlist _queuePlaylist = Playlist();
+  AudioSettings _currentAudioSettings = AudioSettings();
 
-  List<PlaylistSong> get queueSongs =>
-      playlistSongRepository.getPlaylistSongs(1);
+  AudioSettings get currentAudioSettings => _currentAudioSettings;
 
-  List<Song> get queue =>
-      queueSongs.map((e) => e.song.target).whereType<Song>().toList();
+  List<Song> get queue => _normalQueue;
 
-  List<Song> get shuffledQueue {
-    List<Song> shuffled = List.from(queue);
-    shuffled.shuffle();
-    return shuffled;
-  }
-
-  List<Song> get currentQueue =>
-      settingsService.currentAudioSettings.shuffle ? shuffledQueue : queue;
-
-  int get currentIndexInNonShuffled =>
-      currentQueue.isNotEmpty
-          ? queue.indexOf(
-            currentQueue[settingsService.currentAudioSettings.index],
-          )
-          : -1;
-
-  Song get currentSong =>
-      currentPlayedSong.song.target ??
-      (currentQueue.isNotEmpty
-          ? currentQueue[settingsService.currentAudioSettings.index]
-          : Song());
-
-  Song get nextSong =>
-      currentQueue.isNotEmpty
-          ? currentQueue[(settingsService.currentAudioSettings.index + 1) %
-              currentQueue.length]
-          : Song();
+  Song get currentSong => currentSongNotifier.value;
 
   set currentSong(Song song) {
-    int newIndex = currentQueue.indexOf(song);
-    if (newIndex != -1) {
-      settingsService.currentAudioSettings.index = newIndex;
-      settingsService.updateAudioSettings();
-    }
-    if (song.id != currentPlayedSong.song.target?.id) {
-      currentPlayedSong = PlayedSong();
-    }
-    currentPlayedSong.song.target = song;
-    currentPlayedSong.playedAt = DateTime.now();
-    playedSongRepository.savePlayedSong(currentPlayedSong);
+    currentSongNotifier.value = song;
+    likedNotifier.value = song.likedByUser;
   }
 
-  Song get previousSong =>
-      currentQueue.isNotEmpty
-          ? currentQueue[(settingsService.currentAudioSettings.index -
-                  1 +
-                  currentQueue.length) %
-              currentQueue.length]
-          : Song();
+  AppAudioService(
+    this.songService,
+    this.settingsService,
+    this.playlistService,
+  ) {
+    _currentAudioSettings = settingsService.getAudioSettings();
+    currentSong = playlistService.getMostRecentPlayedSong() ?? Song();
+    _queuePlaylist = playlistService.getQueuePlaylist();
+    _normalQueue = _queuePlaylist.songsList;
+    _initPlayer();
+  }
 
-  Future<void> play() async {
-    debugPrint("play");
+  Future<void> play() => audioPlayer.play();
+
+  Future<void> pause() => audioPlayer.pause();
+
+  Future<void> skipToNext() async {
+    await audioPlayer.seekToNext();
     await audioPlayer.play();
   }
 
-  Future<void> pause() async {
-    debugPrint("pause");
-    await audioPlayer.pause();
-  }
-
-  Future<void> skipToNext() async {
-    if (settingsService.currentAudioSettings.repeat) {
-      audioPlayer.setSource(currentSong.path);
-      seek(Duration.zero);
-      play();
-      return;
-    }
-    await playNext();
-  }
-
-  Future<void> playNext() async {
-    if (queue.isEmpty) {
-      return;
-    }
-    await setCurrentSong(nextSong);
-    play();
-  }
-
   Future<void> skipToPrevious() async {
-    await setCurrentSong(previousSong);
-    play();
+    await audioPlayer.seekToPrevious();
+    await audioPlayer.play();
   }
 
-  Future<void> setCurrentSong(Song song) async {
+  Future<void> setCurrentSongAndPlay(Song song) async {
     currentSong = song;
-    audioPlayer.setSource(currentSong.path);
+    try {
+      await audioPlayer.seek(Duration.zero, index: _getPlayIndex(song));
+      await audioPlayer.play();
+    } catch (e) {
+      debugPrint("Error setting current song and playing: $e");
+    }
   }
 
-  Future<void> seek(Duration position) async {
-    debugPrint("seek to $position");
-    setSlider(position.inMilliseconds);
-    audioPlayer.seek(position);
-  }
+  Future<void> seek(Duration position) => audioPlayer.seek(position);
 
-  Future<void> stop() async {
-    debugPrint("stop");
-    await audioPlayer.stop();
-  }
+  Future<void> stop() => audioPlayer.stop();
 
   void setVolume(double volume) {
-    settingsService.currentAudioSettings.volume = volume;
-    settingsService.updateAudioSettings();
+    _currentAudioSettings.volume = volume;
+    settingsService.updateAudioSettings(_currentAudioSettings);
     audioPlayer.setVolume(volume);
   }
 
   void setPlaybackSpeed(double speed) {
-    audioPlayer.setPlaybackSpeed(speed);
+    _currentAudioSettings.speed = speed;
+    settingsService.updateAudioSettings(_currentAudioSettings);
+    audioPlayer.setSpeed(speed);
   }
 
-  void setBalance(double balance) {
-    settingsService.currentAudioSettings.balance = balance;
-    settingsService.updateAudioSettings();
-    audioPlayer.setBalance(balance);
+  void setPitch(double pitch) {
+    _currentAudioSettings.pitch = pitch;
+    settingsService.updateAudioSettings(_currentAudioSettings);
+    audioPlayer.setPitch(pitch);
   }
 
   void setRepeat(bool repeat) {
-    settingsService.currentAudioSettings.repeat = repeat;
-    settingsService.updateAudioSettings();
+    _currentAudioSettings.repeat = repeat;
+    settingsService.updateAudioSettings(_currentAudioSettings);
+    audioPlayer.setLoopMode(repeat ? LoopMode.one : LoopMode.all);
   }
 
-  void setShuffle(bool shuffle) {
-    settingsService.currentAudioSettings.shuffle = shuffle;
-    settingsService.currentAudioSettings.index = currentQueue.indexOf(
-      currentSong,
-    );
-    settingsService.updateAudioSettings();
-  }
+  Future<void> setShuffle(bool shuffle) async {
+    if (shuffle == _currentAudioSettings.shuffle) return;
 
-  void setSlider(int slider) {
-    if (currentPlayedSong.song.target == null) {
-      currentPlayedSong.song.target = currentSong;
-    }
-    currentPlayedSong.duration = slider;
-    playedSongRepository.savePlayedSong(currentPlayedSong);
-  }
+    _currentAudioSettings.shuffle = shuffle;
+    settingsService.updateAudioSettings(_currentAudioSettings);
 
-  Future<void> initSettings() async {
-    try {
-      await audioPlayer.setSource(currentSong.path);
-      await audioPlayer.seek(
-        Duration(milliseconds: currentPlayedSong.duration),
-      );
-    } catch (e) {
-      debugPrint("Error initializing audio player: $e");
-    }
+    await audioPlayer.setShuffleModeEnabled(shuffle);
   }
 
   Future<Duration> getDuration() async {
-    var duration = await audioPlayer.getDuration();
-    debugPrint("Duration: $duration");
-    if (duration == null) {
-      return currentSong.duration > 0
-          ? Duration(seconds: currentSong.duration)
-          : Duration.zero;
+    final duration = audioPlayer.duration;
+    if (duration == null || duration.inSeconds <= 0) {
+      return Duration(seconds: currentSong.durationInSeconds);
     }
-    if (currentSong.duration <= 0) {
-      currentSong.duration = duration.inSeconds;
+    if (currentSong.durationInSeconds <= 0) {
+      currentSong.durationInSeconds = duration.inSeconds;
       songService.updateSong(currentSong);
     }
     return duration;
   }
 
-  void addToQueue(Song song) {
-    if (!queue.contains(song)) {
-      PlaylistSong queueSong = PlaylistSong();
-      queueSong.song.target = song;
-      queueSong.position = 0.0 + queue.length;
-      playlistSongRepository.savePlaylistSong(queueSong);
-    }
+  Future<void> addToQueue(List<Song> songs) async {
+    final existingPaths = _normalQueue.map((s) => s.path).toSet();
+    final toAdd =
+        songs
+            .where((s) => s.path.isNotEmpty && !existingPaths.contains(s.path))
+            .toList();
+    if (toAdd.isEmpty) return;
+
+    _normalQueue.addAll(toAdd);
+    playlistService.addToPlaylist(_queuePlaylist, toAdd);
+
+    await audioPlayer.addAudioSources(
+      toAdd.map((song) => AudioSource.file(song.path)).toList(),
+    );
   }
 
-  void addMultipleToQueue(List<Song> songs) {
-    for (var song in songs) {
-      if (!queue.contains(song)) {
-        PlaylistSong queueSong = PlaylistSong();
-        queueSong.song.target = song;
-        queueSong.position = 0.0 + queue.length;
-        playlistSongRepository.savePlaylistSong(queueSong);
-      }
+  Future<void> addNextToQueue(List<Song> songs) async {
+    if (songs.isEmpty) return;
+
+    final currentIndexNormal = _normalQueue.indexOf(currentSong);
+    var insertAt =
+        currentIndexNormal >= 0 ? currentIndexNormal + 1 : _normalQueue.length;
+
+    for (final song in songs.reversed) {
+      if (song.path.isEmpty || _normalQueue.contains(song)) continue;
+      _normalQueue.insert(insertAt, song);
+
+      _queuePlaylist.songs.add(song);
+      _queuePlaylist.songsIds.insert(insertAt, song.id);
     }
+
+    playlistService.updatePlaylist(_queuePlaylist);
+
+    await audioPlayer.insertAudioSources(
+      insertAt,
+      songs.map((song) => AudioSource.file(song.path)).toList(),
+    );
   }
 
-  void addNextToQueue(Song song) {
-    if (!queue.contains(song)) {
-      int currentIndex = settingsService.currentAudioSettings.index;
-      int nextIndex = (currentIndex + 1) % queue.length;
-      if (nextIndex == 0) {
-        nextIndex = queue.length;
-        PlaylistSong queueSong = PlaylistSong();
-        queueSong.song.target = song;
-        queueSong.position = 0.0 + nextIndex;
-        playlistSongRepository.savePlaylistSong(queueSong);
-      } else {
-        PlaylistSong currentQueueSong = queueSongs[currentIndex];
-        PlaylistSong nextQueueSong = queueSongs[nextIndex];
-        PlaylistSong queueSong = PlaylistSong();
-        queueSong.song.target = song;
-        queueSong.position =
-            (currentQueueSong.position + nextQueueSong.position) / 2;
-        playlistSongRepository.savePlaylistSong(queueSong);
-      }
-    }
+  Future<void> removeFromQueue(Song song) async {
+    if (!_normalQueue.contains(song)) return;
+
+    _normalQueue.remove(song);
+
+    playlistService.deleteFromPlaylist(song, _queuePlaylist);
+
+    var audioSources = audioPlayer.audioSources;
+    await audioPlayer.removeAudioSourceAt(
+      audioSources.indexWhere((source) {
+        if (source is ProgressiveAudioSource) {
+          debugPrint("Comparing ${source.uri.toFilePath()} with ${song.path}");
+          return source.uri.toFilePath() == song.path;
+        }
+        return false;
+      }),
+    );
   }
 
-  void addMultipleNextToQueue(List<Song> songs) {
-    for (Song song in songs.reversed) {
-      addNextToQueue(song);
-    }
-  }
-
-  void removeFromQueue(Song song) {
-    if (queue.contains(song)) {
-      playlistSongRepository.deletePlaylistSong(song, 1);
-    }
-  }
-
-  void setQueue(List<Song> songs) async {
-    if (queue.equals(songs)) {
+  Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
+    if (songs.isEmpty || songs.equals(_normalQueue)) {
+      await setCurrentSongAndPlay(song);
       return;
     }
-    playlistSongRepository.deleteAllSongsFromPlaylist(1);
-    playlistSongRepository.saveAllSongsToPlaylist(songs, 1);
+
+    _normalQueue = List.from(songs);
+
+    _queuePlaylist.songs.clear();
+    _queuePlaylist.songsIds.clear();
+    playlistService.addToPlaylist(_queuePlaylist, songs);
+
+    await _setAudioSourcesForQueue(song);
+    await setCurrentSongAndPlay(song);
   }
 
-  Future<List<Song>> getQueue() async {
-    return queue;
+  Future<void> _initPlayer() async {
+    if (_initialized) return;
+    _initialized = true;
+    await audioPlayer.setVolume(_currentAudioSettings.volume);
+    await audioPlayer.setSpeed(_currentAudioSettings.speed);
+    await audioPlayer.setLoopMode(
+      _currentAudioSettings.repeat ? LoopMode.one : LoopMode.all,
+    );
+
+    await _setAudioSourcesForQueue(currentSong);
+
+    audioPlayer.sequenceStateStream.listen((state) {
+      final currentSource = state.currentSource;
+      if (currentSource is! ProgressiveAudioSource) return;
+
+      final path = currentSource.uri.toFilePath();
+
+      final song = _normalQueue.firstWhere(
+        (s) => s.path == path,
+        orElse: () {
+          debugPrint("No song found in queue for path: $path");
+          throw Exception("No song found in queue for path: $path");
+        },
+      );
+      if (song.path.isEmpty) return;
+      _updateCurrentSong(song);
+    });
+  }
+
+  int _getPlayIndex(Song song) {
+    final playIndex = audioPlayer.audioSources.indexWhere((source) {
+      if (source is ProgressiveAudioSource) {
+        return source.uri.toFilePath() == song.path;
+      }
+      return false;
+    });
+    return playIndex != -1 ? playIndex : 0;
+  }
+
+  Future<void> _setAudioSourcesForQueue(Song song) async {
+    if (_normalQueue.isEmpty) return;
+
+    await audioPlayer.setAudioSources(
+      queue.map((song) => AudioSource.file(song.path)).toList(),
+    );
+    if (_currentAudioSettings.shuffle) {
+      audioPlayer.setShuffleModeEnabled(true);
+    }
+
+    int initialIndex = _getPlayIndex(song);
+
+    if (initialIndex != -1) {
+      await audioPlayer.seek(
+        Duration(seconds: _currentAudioSettings.sliderInSeconds),
+        index: initialIndex,
+      );
+    }
   }
 
   void likeCurrentSong() {
-    // Implement liking functionality here
+    currentSongNotifier.value.likedByUser =
+        !currentSongNotifier.value.likedByUser;
+    likedNotifier.value = currentSongNotifier.value.likedByUser;
+    songService.updateSong(currentSongNotifier.value);
+    playlistService.updateFavoritesPlaylist();
+  }
+
+  void _updateCurrentSong(Song updated) {
+    if (updated.path == currentSong.path) return;
+
+    currentSong = updated;
+
+    currentSongNotifier.value.lastPlayed = DateTime.now();
+    currentSongNotifier.value.playCount += 1;
+
+    songService.updateSong(currentSong);
+    playlistService.updateMostPlayedPlaylist();
+    playlistService.updateRecentlyPlayedPlaylist();
+  }
+
+  void updateSliderInSeconds(int seconds) {
+    _currentAudioSettings.sliderInSeconds = seconds;
+    settingsService.updateAudioSettings(_currentAudioSettings);
+  }
+
+  Future<void> dispose() async {
+    await audioPlayer.dispose();
   }
 }

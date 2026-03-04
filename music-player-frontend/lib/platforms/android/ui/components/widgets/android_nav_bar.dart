@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/albums_provider.dart';
+import 'package:music_player_frontend/core/providers/artist_provider.dart';
+import 'package:music_player_frontend/core/providers/playlist_provider.dart';
+import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/albums.dart';
 import 'package:music_player_frontend/platforms/android/ui/screens/artists.dart';
@@ -26,7 +30,9 @@ class _AndroidNavigationBarState extends State<AndroidNavigationBar> {
       "index": 0,
       "onTap": (BuildContext context) {
         setState(() => _selected = 0);
-        _appStateProvider.navigatorKey.currentState!.push(Albums.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(
+          Albums.route(provider: context.read<AlbumProvider>()),
+        );
       },
     },
     {
@@ -36,7 +42,9 @@ class _AndroidNavigationBarState extends State<AndroidNavigationBar> {
       "index": 1,
       "onTap": (BuildContext context) {
         setState(() => _selected = 1);
-        _appStateProvider.navigatorKey.currentState!.push(Artists.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(
+          Artists.route(provider: context.read<ArtistProvider>()),
+        );
       },
     },
     {
@@ -46,7 +54,9 @@ class _AndroidNavigationBarState extends State<AndroidNavigationBar> {
       "index": 2,
       "onTap": (BuildContext context) {
         setState(() => _selected = 2);
-        _appStateProvider.navigatorKey.currentState!.push(Tracks.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(
+          Tracks.route(provider: context.read<SongProvider>()),
+        );
       },
     },
     {
@@ -56,7 +66,9 @@ class _AndroidNavigationBarState extends State<AndroidNavigationBar> {
       "index": 3,
       "onTap": (BuildContext context) {
         setState(() => _selected = 3);
-        _appStateProvider.navigatorKey.currentState!.push(Playlists.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(
+          Playlists.route(provider: context.read<PlaylistProvider>()),
+        );
       },
     },
   ];

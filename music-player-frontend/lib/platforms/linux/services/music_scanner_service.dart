@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
@@ -26,10 +27,11 @@ class MusicScannerService implements AbstractMusicScannerService {
 
   bool _isEnrichmentDone = false;
 
+  AppSettings get _currentSettings => _settingsService.getAppSettings();
+
   @override
   Future<void> performQuickScan() async {
-    List<String> musicDirectories =
-        _settingsService.currentAppSettings.songPlaces;
+    List<String> musicDirectories = _currentSettings.songPlaces;
     debugPrint("Starting quick scan for directories: $musicDirectories");
 
     final files = await _fileService.getAudioFiles(musicDirectories);
@@ -72,10 +74,7 @@ class MusicScannerService implements AbstractMusicScannerService {
       yield 2.0;
       return;
     }
-    while (!_settingsService.currentAppSettings.initialScanComplete) {
-      debugPrint("Waiting for initial scan to complete...");
-      await Future.delayed(const Duration(seconds: 3));
-    }
+
     final songs =
         _songService.getAllSongs().where((song) => !song.fullyLoaded).toList();
 
@@ -89,7 +88,7 @@ class MusicScannerService implements AbstractMusicScannerService {
 
     int processedCount = 0;
     DateTime lastEmit = DateTime.now();
-    const emitInterval = Duration(seconds: 5);
+    const emitInterval = Duration(seconds: 10);
 
     List<Song> songsToUpdate = [];
 
@@ -134,12 +133,11 @@ class MusicScannerService implements AbstractMusicScannerService {
         processedCount++;
       }
 
-      // Emit progress every 2 seconds
       if (DateTime.now().difference(lastEmit) >= emitInterval) {
         debugPrint("Progress: $processedCount/${songs.length} songs enriched");
         yield processedCount / songs.length;
         _songService.updateSongsBatch(songsToUpdate);
-        songsToUpdate.forEach((s) {});
+        // songsToUpdate.forEach((s) {});
         songsToUpdate.clear();
         lastEmit = DateTime.now();
       }

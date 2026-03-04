@@ -11,7 +11,7 @@ abstract class AbstractSettingsScreenState<T extends AbstractSettingsScreen>
     extends State<T> {
   String dropDownValue = "Off";
 
-  List<Map<String, Widget>> get settingsMap;
+  List<Map<String, dynamic>> get settingsMap;
 
   @override
   Widget build(BuildContext context) {
@@ -20,15 +20,15 @@ abstract class AbstractSettingsScreenState<T extends AbstractSettingsScreen>
       body: Padding(
         padding: buildPadding(context),
         child: Consumer<AbstractAppStateProvider>(
-          builder: (_, appState, __) {
+          builder: (_, appState, _) {
             return ListView.builder(
               itemCount: settingsMap.length,
               itemBuilder: (context, index) {
                 var setting = settingsMap[index];
                 return ListTile(
-                  title: setting['title'],
-                  subtitle: setting['subtitle'],
-                  trailing: setting['trailing'],
+                  title: setting['title'] as Widget?,
+                  subtitle: setting['subtitle'] as Widget?,
+                  trailing: setting['trailing'] as Widget?,
                 );
               },
             );
