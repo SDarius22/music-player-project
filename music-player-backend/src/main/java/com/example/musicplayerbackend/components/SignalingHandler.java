@@ -2,6 +2,7 @@ package com.example.musicplayerbackend.components;
 
 import com.example.musicplayerbackend.dto.WebRTCMessage;
 import com.example.musicplayerbackend.service.PeerTrackingService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,29 +22,40 @@ public class SignalingHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final PeerTrackingService peerTrackingService;
 
-    // Tracks active WebSocket connections by their session ID
+    // Maps the persistent Flutter UUID to the current active WebSocket
     private final Map<String, WebSocketSession> activeSessions = new ConcurrentHashMap<>();
 
-    @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
-        activeSessions.put(session.getId(), session);
-    }
+    // Reverse lookup to clean up memory when a socket drops
+    private final Map<String, String> sessionIdToPeerId = new ConcurrentHashMap<>();
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        activeSessions.remove(session.getId());
-        peerTrackingService.unregisterPeer(session.getId());
+        String peerId = sessionIdToPeerId.remove(session.getId());
+        if (peerId != null) {
+            activeSessions.remove(peerId);
+            peerTrackingService.unregisterPeer(peerId);
+        }
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         WebRTCMessage signal = objectMapper.readValue(message.getPayload(), WebRTCMessage.class);
 
-        // Java 25 enhanced switch expression
-        switch (signal.type()) {
-            case "REGISTER_CACHE" -> peerTrackingService.registerPeerCache(signal.songId(), session.getId());
+        // Always bind the transient socket to the persistent Flutter UUID
+        if (signal.senderId() != null) {
+            activeSessions.put(signal.senderId(), session);
+            sessionIdToPeerId.put(session.getId(), signal.senderId());
+        }
 
-            case "DISCOVER_PEERS" -> sendAvailablePeers(session, signal.songId());
+        switch (signal.type()) {
+            case "REGISTER_CACHE" -> {
+                Set<Integer> chunkIndices = objectMapper.convertValue(signal.payload(), new TypeReference<Set<Integer>>() {
+                });
+                // Track by the explicit Flutter UUID, not the Tomcat Session ID
+                peerTrackingService.registerPeerChunks(signal.songId(), signal.senderId(), chunkIndices);
+            }
+
+            case "DISCOVER_PEERS" -> sendBufferMaps(session, signal.songId(), signal.senderId());
 
             case "OFFER", "ANSWER", "ICE_CANDIDATE" -> routeToTarget(signal);
 
@@ -51,18 +63,20 @@ public class SignalingHandler extends TextWebSocketHandler {
         }
     }
 
-    private void sendAvailablePeers(WebSocketSession session, Integer songId) throws Exception {
-        Set<String> peers = peerTrackingService.getAvailablePeersForSong(songId);
+    private void sendBufferMaps(WebSocketSession session, Integer songId, String requestingPeerId) throws Exception {
+        Map<String, Set<Integer>> peerBufferMaps = new ConcurrentHashMap<>(
+                peerTrackingService.getPeerBufferMapsForSong(songId)
+        );
 
-        // Remove the requesting peer's own ID from the list if they are in it
-        peers.remove(session.getId());
+        // Remove the requesting peer using their explicit UUID
+        peerBufferMaps.remove(requestingPeerId);
 
         WebRTCMessage response = new WebRTCMessage(
-                "PEER_LIST",
+                "PEER_BUFFER_MAP",
                 "SERVER",
-                session.getId(),
+                requestingPeerId,
                 songId,
-                peers
+                peerBufferMaps
         );
 
         session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
@@ -72,7 +86,6 @@ public class SignalingHandler extends TextWebSocketHandler {
         WebSocketSession targetSession = activeSessions.get(signal.targetId());
 
         if (targetSession != null && targetSession.isOpen()) {
-            // Forward the exact message to the target peer
             targetSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(signal)));
         }
     }

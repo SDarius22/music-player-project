@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.controller;
 
+import com.example.musicplayerbackend.domain.ChunkManifestDto;
 import com.example.musicplayerbackend.service.StreamingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
@@ -50,5 +51,20 @@ public class StreamingCachingController implements StreamApi {
                 .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
+    }
+
+    @Override
+    public ResponseEntity<ChunkManifestDto> getSongManifest(Integer songId) {
+        return ResponseEntity.ok(streamingService.getSongManifest(songId));
+    }
+
+    @Override
+    public ResponseEntity<Resource> getSongChunk(Integer songId, Integer chunkIndex) {
+        Resource chunk = streamingService.getSongChunk(songId, chunkIndex);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"song_" + songId + "_chunk_" + chunkIndex + "\"")
+                .body(chunk);
     }
 }

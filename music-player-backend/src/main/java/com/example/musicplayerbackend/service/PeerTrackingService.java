@@ -10,21 +10,23 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @Service
 public class PeerTrackingService {
 
-    // Maps a Song ID to a Set of active WebSocket Session IDs (Peers) that have the song cached
-    private final Map<Integer, Set<String>> songCacheRegistry = new ConcurrentHashMap<>();
+    private final Map<Integer, Map<String, Set<Integer>>> songChunkRegistry = new ConcurrentHashMap<>();
 
-    public void registerPeerCache(Integer songId, String peerId) {
-        songCacheRegistry.computeIfAbsent(songId, _ -> new CopyOnWriteArraySet<>()).add(peerId);
+    public void registerPeerChunks(Integer songId, String peerId, Set<Integer> chunkIndices) {
+        songChunkRegistry
+                .computeIfAbsent(songId, k -> new ConcurrentHashMap<>())
+                .merge(peerId, new CopyOnWriteArraySet<>(chunkIndices), (existing, newChunks) -> {
+                    existing.addAll(newChunks);
+                    return existing;
+                });
     }
 
     public void unregisterPeer(String peerId) {
-        // Remove the disconnected peer from all song registries
-        songCacheRegistry.values().forEach(peers -> peers.remove(peerId));
-        // Cleanup empty sets to prevent memory leaks
-        songCacheRegistry.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        songChunkRegistry.values().forEach(peerMap -> peerMap.remove(peerId));
+        songChunkRegistry.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
-    public Set<String> getAvailablePeersForSong(Integer songId) {
-        return songCacheRegistry.getOrDefault(songId, Set.of());
+    public Map<String, Set<Integer>> getPeerBufferMapsForSong(Integer songId) {
+        return songChunkRegistry.getOrDefault(songId, Map.of());
     }
 }

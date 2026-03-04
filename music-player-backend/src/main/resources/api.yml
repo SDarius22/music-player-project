@@ -107,6 +107,53 @@ paths:
                 format: binary
         '404':
           description: Song or file not found
+  /stream/{songId}/manifest:
+    get:
+      summary: Get chunk cryptographic manifest
+      description: Returns fixed-size chunk hashes for P2P integrity verification.
+      operationId: getSongManifest
+      tags:
+        - Streaming & Caching
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Chunk manifest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChunkManifestDto'
+
+  /stream/{songId}/chunk/{chunkIndex}:
+    get:
+      summary: Master fallback for a specific chunk
+      description: Returns the exact binary data for a specific chunk index.
+      operationId: getSongChunk
+      tags:
+        - Streaming & Caching
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chunkIndex
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Binary chunk data
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
   /sync:
     post:
       summary: Sync offline data
@@ -222,3 +269,23 @@ components:
           type: string
           format: date-time
           nullable: true
+    ChunkManifestDto:
+      type: object
+      required:
+        - songId
+        - chunkSize
+        - totalChunks
+        - hashes
+      properties:
+        songId:
+          type: integer
+        chunkSize:
+          type: integer
+          description: The fixed byte size of each chunk (except potentially the last one).
+        totalChunks:
+          type: integer
+        hashes:
+          type: array
+          description: SHA-256 checksums for each chunk in sequential order.
+          items:
+            type: string
