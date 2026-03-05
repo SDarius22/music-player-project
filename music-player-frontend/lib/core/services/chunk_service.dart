@@ -17,8 +17,7 @@ class ChunkService {
 
   bool get isReady => manifest != null;
 
-  int get totalBytes =>
-      isReady ? manifest!.totalChunks * manifest!.chunkSize : 0;
+  int get totalBytes => isReady ? manifest!.totalBytes : 0;
 
   final Map<int, Completer<Uint8List>> _pendingPeerRequests = {};
 

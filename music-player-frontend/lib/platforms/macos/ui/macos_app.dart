@@ -93,7 +93,7 @@ class MacosApplication extends StatelessWidget {
         Provider<SyncRestService>(
           create:
               (context) =>
-                  SyncRestService(baseUrl: 'http://localhost:9000/api/v1'),
+                  SyncRestService(baseUrl: 'http://192.168.0.116:9000/api/v1'),
         ),
 
         Provider<WebRTCService>(
@@ -101,7 +101,7 @@ class MacosApplication extends StatelessWidget {
             final router = context.read<ActiveChunkRouter>();
 
             final socket = WebSocketChannel.connect(
-              Uri.parse('ws://localhost:9000/ws/signaling'),
+              Uri.parse('ws://192.168.0.116:9000/ws/signaling'),
             );
 
             return WebRTCService(

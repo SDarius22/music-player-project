@@ -11,65 +11,98 @@ class P2PChunkedAudioSource extends StreamAudioSource {
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
-    final int requestStart = start ?? 0;
-    final int requestEnd = end ?? (chunkManager.totalBytes - 1);
-    final int requestLength = (requestEnd - requestStart) + 1;
+    final int total = chunkManager.totalBytes;
+    if (total <= 0) {
+      throw StateError('totalBytes is missing or invalid');
+    }
+    if (chunkManager.manifest == null) {
+      await chunkManager.loadManifest();
+    }
 
-    final int startChunk = requestStart ~/ chunkManager.manifest!.chunkSize;
-    final int endChunk = requestEnd ~/ chunkManager.manifest!.chunkSize;
+    // Treat end as exclusive to match just_audio proxy range behavior.
+    final int reqStart = (start ?? 0).clamp(0, total);
+    final int reqEndEx = (end ?? total).clamp(reqStart, total);
+    final int contentLen = reqEndEx - reqStart;
+
+    if (contentLen == 0) {
+      return StreamAudioResponse(
+        rangeRequestsSupported: true,
+        sourceLength: total,
+        contentLength: 0,
+        offset: reqStart,
+        stream: const Stream.empty(),
+        contentType: 'audio/flac',
+      );
+    }
+
+    final int chunkSize = chunkManager.manifest!.chunkSize;
+
+    // Chunk indexes are floor-based.
+    final int startChunk = reqStart ~/ chunkSize;
+    final int endChunk = (reqEndEx - 1) ~/ chunkSize;
 
     return StreamAudioResponse(
-      sourceLength: chunkManager.totalBytes,
-      contentLength: requestLength,
-      offset: requestStart,
-      stream: _createByteStream(requestStart, requestEnd, startChunk, endChunk),
-      contentType: 'audio/mpeg',
+      rangeRequestsSupported: true,
+      sourceLength: total,
+      contentLength: contentLen,
+      offset: reqStart,
+      stream: _createByteStream(
+        reqStart: reqStart,
+        reqEndEx: reqEndEx,
+        startChunk: startChunk,
+        endChunk: endChunk,
+        contentLen: contentLen,
+      ),
+      contentType: 'audio/flac',
     );
   }
 
-  Stream<List<int>> _createByteStream(
-    int reqStart,
-    int reqEnd,
-    int startChunk,
-    int endChunk,
-  ) async* {
-    int currentOffset = reqStart;
+  Stream<List<int>> _createByteStream({
+    required int reqStart,
+    required int reqEndEx,
+    required int startChunk,
+    required int endChunk,
+    required int contentLen,
+  }) async* {
+    final int chunkSize = chunkManager.manifest!.chunkSize;
 
-    // PRE-FETCHING: Start downloading the very next chunk immediately in the background
+    int currentOffset = reqStart;
+    int remaining = contentLen;
+
     Future<Uint8List>? nextChunkFuture;
     if (startChunk < endChunk) {
       nextChunkFuture = chunkManager.getChunk(startChunk + 1);
     }
 
-    for (int i = startChunk; i <= endChunk; i++) {
-      // If it's the first loop, fetch normally. Otherwise, await the background future we already started.
-      final chunkBytes =
+    for (int i = startChunk; i <= endChunk && remaining > 0; i++) {
+      final Uint8List chunkBytes =
           await (i == startChunk ? chunkManager.getChunk(i) : nextChunkFuture!);
 
-      // PRE-FETCHING: While we are busy yielding the current chunk to the audio player,
-      // fire off the request for the *next* chunk so it's ready for the next loop iteration.
       if (i + 1 <= endChunk) {
         nextChunkFuture = chunkManager.getChunk(i + 1);
       }
 
-      int chunkStartByte = i * chunkManager.manifest!.chunkSize;
-      int sliceStart =
-          (currentOffset > chunkStartByte)
-              ? (currentOffset - chunkStartByte)
-              : 0;
-      int sliceEnd = chunkBytes.length;
+      final int chunkStartByte = i * chunkSize;
 
-      if (i == endChunk) {
-        int overflow = (chunkStartByte + chunkBytes.length) - (reqEnd + 1);
-        if (overflow > 0) sliceEnd -= overflow;
-      }
+      int sliceStart = currentOffset - chunkStartByte;
+      if (sliceStart < 0) sliceStart = 0;
+      if (sliceStart >= chunkBytes.length) continue;
 
-      final slicedBytes = chunkBytes.sublist(sliceStart, sliceEnd);
+      // End limit within this chunk (exclusive).
+      int sliceEndEx = chunkBytes.length;
+      final int wantedEndInChunk = reqEndEx - chunkStartByte;
+      if (sliceEndEx > wantedEndInChunk) sliceEndEx = wantedEndInChunk;
+      if (sliceEndEx > chunkBytes.length) sliceEndEx = chunkBytes.length;
+      if (sliceEndEx <= sliceStart) continue;
 
-      // Yield the bytes to the native player
-      yield slicedBytes;
+      final int available = sliceEndEx - sliceStart;
+      final int take = available > remaining ? remaining : available;
+      if (take <= 0) break;
 
-      currentOffset += slicedBytes.length;
+      yield chunkBytes.sublist(sliceStart, sliceStart + take);
+
+      currentOffset += take;
+      remaining -= take;
     }
   }
 }

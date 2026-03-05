@@ -101,7 +101,10 @@ class SongRepository {
     if (flag == true) {
       builderQuery =
           _songBox
-              .query(Song_.name.contains(query, caseSensitive: false))
+              .query(
+                Song_.name.contains(query, caseSensitive: false) &
+                    Song_.serverId.lessOrEqual(0),
+              )
               .order(
                 sortFields.containsKey(sortField)
                     ? sortFields[sortField]
@@ -111,7 +114,10 @@ class SongRepository {
     } else {
       builderQuery =
           _songBox
-              .query(Song_.name.contains(query, caseSensitive: false))
+              .query(
+                Song_.name.contains(query, caseSensitive: false) &
+                    Song_.serverId.lessOrEqual(0),
+              )
               .order(
                 sortFields.containsKey(sortField)
                     ? sortFields[sortField]
@@ -124,7 +130,11 @@ class SongRepository {
   }
 
   List<Song> getAllSongs() {
-    return _songBox.query().order(Song_.name).build().find();
+    return _songBox
+        .query(Song_.serverId.lessOrEqual(0))
+        .order(Song_.name)
+        .build()
+        .find();
   }
 
   List<Song> getUnsyncedSongs() {

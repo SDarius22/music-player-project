@@ -230,6 +230,9 @@ class AppAudioService {
 
   Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
     if (songs.isEmpty || songs.equals(_normalQueue)) {
+      debugPrint(
+        "Queue is the same as current. Just playing the selected song.",
+      );
       await setCurrentSongAndPlay(song);
       return;
     }
@@ -264,6 +267,10 @@ class AppAudioService {
       if (song != null && song.id != currentSong.id) {
         _updateCurrentSong(song);
       }
+    });
+
+    audioPlayer.errorStream.listen((error) {
+      debugPrint("Audio Player Error: $error");
     });
   }
 

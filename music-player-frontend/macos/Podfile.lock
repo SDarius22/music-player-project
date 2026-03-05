@@ -1,6 +1,4 @@
 PODS:
-  - appkit_ui_element_colors (1.0.0):
-    - FlutterMacOS
   - audio_service (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -21,10 +19,6 @@ PODS:
   - just_audio (0.0.1):
     - Flutter
     - FlutterMacOS
-  - macos_ui (0.1.0):
-    - FlutterMacOS
-  - macos_window_utils (1.0.0):
-    - FlutterMacOS
   - ObjectBox (5.2.0)
   - objectbox_flutter_libs (0.0.1):
     - FlutterMacOS
@@ -44,7 +38,6 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
-  - appkit_ui_element_colors (from `Flutter/ephemeral/.symlinks/plugins/appkit_ui_element_colors/macos`)
   - audio_service (from `Flutter/ephemeral/.symlinks/plugins/audio_service/darwin`)
   - audio_session (from `Flutter/ephemeral/.symlinks/plugins/audio_session/macos`)
   - bitsdojo_window_macos (from `Flutter/ephemeral/.symlinks/plugins/bitsdojo_window_macos/macos`)
@@ -54,8 +47,6 @@ DEPENDENCIES:
   - flutter_webrtc (from `Flutter/ephemeral/.symlinks/plugins/flutter_webrtc/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - just_audio (from `Flutter/ephemeral/.symlinks/plugins/just_audio/darwin`)
-  - macos_ui (from `Flutter/ephemeral/.symlinks/plugins/macos_ui/macos`)
-  - macos_window_utils (from `Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos`)
   - objectbox_flutter_libs (from `Flutter/ephemeral/.symlinks/plugins/objectbox_flutter_libs/macos`)
   - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
   - screen_retriever_macos (from `Flutter/ephemeral/.symlinks/plugins/screen_retriever_macos/macos`)
@@ -69,8 +60,6 @@ SPEC REPOS:
     - WebRTC-SDK
 
 EXTERNAL SOURCES:
-  appkit_ui_element_colors:
-    :path: Flutter/ephemeral/.symlinks/plugins/appkit_ui_element_colors/macos
   audio_service:
     :path: Flutter/ephemeral/.symlinks/plugins/audio_service/darwin
   audio_session:
@@ -89,10 +78,6 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral
   just_audio:
     :path: Flutter/ephemeral/.symlinks/plugins/just_audio/darwin
-  macos_ui:
-    :path: Flutter/ephemeral/.symlinks/plugins/macos_ui/macos
-  macos_window_utils:
-    :path: Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos
   objectbox_flutter_libs:
     :path: Flutter/ephemeral/.symlinks/plugins/objectbox_flutter_libs/macos
   path_provider_foundation:
@@ -107,7 +92,6 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/window_manager/macos
 
 SPEC CHECKSUMS:
-  appkit_ui_element_colors: c8e13c23cbd781e0f5d9b75cad686e6a4bb958da
   audio_service: aa99a6ba2ae7565996015322b0bb024e1d25c6fd
   audio_session: eaca2512cf2b39212d724f35d11f46180ad3a33e
   bitsdojo_window_macos: 7959fb0ca65a3ccda30095c181ecb856fae48ea9
@@ -117,8 +101,6 @@ SPEC CHECKSUMS:
   flutter_webrtc: 7cda18a9cd917db2f8bfcde8011804f6018a12df
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
-  macos_ui: ff29104a215c2e1b76f37aacdcbba648abb25faa
-  macos_window_utils: 23f54331a0fd51eea9e0ed347253bf48fd379d1d
   ObjectBox: 946c1e8586aaa61e21b6661bab4948d06fdd51c4
   objectbox_flutter_libs: 52ffb4ad42870c47886c2c6a7528e76b770af6d9
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880

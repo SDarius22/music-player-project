@@ -7,7 +7,7 @@ class ChunkCacheRepository {
   Future<Uint8List?> readChunk(int songId, int chunkIndex) async {
     final dir = await getApplicationDocumentsDirectory();
     String filePath =
-        '${dir.path}/MusicPlayer${kDebugMode ? '-Debug' : ''}/song_${songId}_chunk_$chunkIndex.bin';
+        '${dir.path}/MusicPlayer${kDebugMode ? '_Debug' : ''}/song_${songId}_chunk_$chunkIndex.bin';
     final file = File(filePath);
     if (await file.exists()) {
       return await file.readAsBytes();
@@ -18,7 +18,7 @@ class ChunkCacheRepository {
   Future<void> saveChunk(int songId, int chunkIndex, Uint8List data) async {
     final dir = await getApplicationDocumentsDirectory();
     String filePath =
-        '${dir.path}/MusicPlayer${kDebugMode ? '-Debug' : ''}/song_${songId}_chunk_$chunkIndex.bin';
+        '${dir.path}/MusicPlayer${kDebugMode ? '_Debug' : ''}/song_${songId}_chunk_$chunkIndex.bin';
     final file = File(filePath);
     await file.writeAsBytes(data);
   }

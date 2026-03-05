@@ -21,6 +21,7 @@ class SyncRestService {
       );
       return response.statusCode == 200;
     } catch (e) {
+      debugPrint("Error pushing deltas: $e");
       return false;
     }
   }
@@ -35,6 +36,9 @@ class SyncRestService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
+    debugPrint(
+      "Failed to fetch manifest. Status code: ${response.statusCode}, Body: ${response.body}",
+    );
     throw Exception(
       "Failed to fetch manifest with status code ${response.statusCode}",
     );
@@ -47,6 +51,9 @@ class SyncRestService {
     if (response.statusCode == 200) {
       return response.bodyBytes;
     }
+    debugPrint(
+      "Failed to download chunk from master fallback. Status code: ${response.statusCode}, Body: ${response.body}",
+    );
     throw Exception("Master fallback failed for chunk $chunkIndex");
   }
 }
