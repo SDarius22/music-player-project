@@ -39,6 +39,7 @@ public class SignalingHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        System.out.println("[SIGNALING] " + session.getId() + " sent: " + message.getPayload());
         WebRTCMessage signal = objectMapper.readValue(message.getPayload(), WebRTCMessage.class);
 
         // Always bind the transient socket to the persistent Flutter UUID

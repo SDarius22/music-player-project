@@ -105,7 +105,7 @@ class LinuxApp extends StatelessWidget {
             );
 
             return WebRTCService(
-              myDeviceId: 'device-${DateTime.now().millisecondsSinceEpoch}',
+              myDeviceId: 'linux-client-002',
               signalingSocket: socket,
               onChunkReceived: router.routeChunk,
               onChunkRequested: router.getLocalChunk,

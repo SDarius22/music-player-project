@@ -284,6 +284,9 @@ components:
           description: The fixed byte size of each chunk (except potentially the last one).
         totalChunks:
           type: integer
+        totalBytes:
+          type: long
+          description: The total size of the audio file in bytes.
         hashes:
           type: array
           description: SHA-256 checksums for each chunk in sequential order.

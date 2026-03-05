@@ -55,11 +55,13 @@ public class StreamingCachingController implements StreamApi {
 
     @Override
     public ResponseEntity<ChunkManifestDto> getSongManifest(Integer songId) {
+        System.out.println("[MASTER SERVER] Received request for manifest of song ID: " + songId);
         return ResponseEntity.ok(streamingService.getSongManifest(songId));
     }
 
     @Override
     public ResponseEntity<Resource> getSongChunk(Integer songId, Integer chunkIndex) {
+        System.out.println("[MASTER SERVER] Received request for chunk " + chunkIndex + " of song ID: " + songId);
         Resource chunk = streamingService.getSongChunk(songId, chunkIndex);
 
         return ResponseEntity.ok()

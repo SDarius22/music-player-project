@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class StreamingService {
 
-    private static final int CHUNK_SIZE = 262144;
+    private static final int CHUNK_SIZE = 65536;
 
     // In-memory cache so we only calculate the SHA-256 hashes once per song
     private final Map<Integer, ChunkManifestDto> manifestCache = new ConcurrentHashMap<>();
@@ -113,6 +113,7 @@ public class StreamingService {
             manifest.setChunkSize(CHUNK_SIZE);
             manifest.setTotalChunks(hashes.size());
             manifest.setHashes(hashes);
+            manifest.setTotalBytes(audioFile.length());
 
             return manifest;
 
