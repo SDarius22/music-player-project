@@ -181,6 +181,11 @@ music-player-frontend/**/ios/Flutter/flutter_export_environment.sh
 music-player-frontend/**/ios/ServiceDefinitions.json
 music-player-frontend/**/ios/Runner/GeneratedPluginRegistrant.*
 
+# macOS related
+music-player-frontend/**/macos/Pods/
+music-player-frontend/**/macos/.symlinks/
+music-player-frontend/**/macos/Flutter/ephemeral/
+
 # Exceptions to above rules
 !music-player-frontend/**/ios/**/default.mode1v3
 !music-player-frontend/**/ios/**/default.mode2v3

@@ -2,16 +2,17 @@ import 'dart:io';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_fullscreen/flutter_fullscreen.dart';
 import 'package:flutter_single_instance/flutter_single_instance.dart';
 import 'package:music_player_frontend/core/database/objectBox.dart';
 import 'package:music_player_frontend/local_libs/just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:music_player_frontend/platforms/android/ui/android_app.dart';
 import 'package:music_player_frontend/platforms/linux/ui/linux_app.dart';
+import 'package:music_player_frontend/platforms/macos/ui/macos_app.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await ObjectBox.initialize();
 
   JustAudioMediaKit.protocolWhitelist = ["http", "https", "file"];
   JustAudioMediaKit.title = 'Music Player';
@@ -23,6 +24,7 @@ Future<void> main() async {
         Permission.audio,
         Permission.storage,
       ].request();
+      await ObjectBox.initialize();
       debugPrint('Running on Android');
       runApp(const AndroidApp());
       break;
@@ -32,12 +34,19 @@ Future<void> main() async {
     case 'linux':
       debugPrint('Running on Linux');
       if (await FlutterSingleInstance().isFirstInstance()) {
+        await ObjectBox.initialize();
         appWindow.maximize();
         runApp(const LinuxApp());
       }
       break;
     case 'macos':
       debugPrint('Running on macOS');
+      if (await FlutterSingleInstance().isFirstInstance()) {
+        await ObjectBox.initialize();
+        await FullScreen.ensureInitialized();
+        appWindow.maximize();
+        runApp(const MacosApplication());
+      }
       break;
     default:
       debugPrint('Unsupported platform');

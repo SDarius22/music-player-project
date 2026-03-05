@@ -20,6 +20,8 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
 
   List<String> appActions = [];
 
+  bool isFullScreen = false;
+
   List<Color> get colors =>
       audioProvider.currentSong.colors.isNotEmpty &&
               audioProvider.currentSong.colors.length == 4
