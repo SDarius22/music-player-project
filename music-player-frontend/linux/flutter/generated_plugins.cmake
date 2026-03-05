@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_linux
   desktop_drop
   file_saver
+  flutter_webrtc
   media_kit_libs_linux
   objectbox_flutter_libs
   screen_retriever_linux

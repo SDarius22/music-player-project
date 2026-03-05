@@ -3,6 +3,8 @@ import 'package:just_audio/just_audio.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/services/chunk_service.dart';
+import 'package:music_player_frontend/core/services/p2p_chunked_source.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
@@ -13,6 +15,8 @@ class AppAudioService {
   final SongService songService;
   final SettingsService settingsService;
   final PlaylistService playlistService;
+
+  final Future<ChunkService> Function(int songId) createChunkManager;
 
   ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
@@ -37,12 +41,65 @@ class AppAudioService {
     this.songService,
     this.settingsService,
     this.playlistService,
+    this.createChunkManager,
   ) {
     _currentAudioSettings = settingsService.getAudioSettings();
     currentSong = playlistService.getMostRecentPlayedSong() ?? Song();
     _queuePlaylist = playlistService.getQueuePlaylist();
     _normalQueue = _queuePlaylist.songsList;
     _initPlayer();
+  }
+
+  Future<AudioSource> _buildAudioSource(Song song) async {
+    bool isServerTrack = song.serverId > 0;
+
+    if (isServerTrack) {
+      final chunkManager = await createChunkManager(song.serverId);
+      return P2PChunkedAudioSource(chunkManager: chunkManager, tag: song);
+    } else {
+      return AudioSource.uri(Uri.file(song.path), tag: song);
+    }
+  }
+
+  /// Silently downloads Chunk 0 for the upcoming songs in the queue so they start instantly
+  Future<void> _proactivelyCachePrefixes() async {
+    final currentIndex = _normalQueue.indexOf(currentSong);
+    if (currentIndex == -1) return;
+
+    // Look ahead at the next 2 songs in the queue
+    final int lookaheadCount = 2;
+    final int endIndex = (currentIndex + 1 + lookaheadCount).clamp(
+      0,
+      _normalQueue.length,
+    );
+
+    final upcomingSongs = _normalQueue.sublist(currentIndex + 1, endIndex);
+
+    for (final song in upcomingSongs) {
+      // Only prefix-cache songs that are hosted on the server
+      if (song.serverId > 0) {
+        try {
+          // Temporarily spin up a ChunkManager just to fetch and save Chunk 0
+          final manager = await createChunkManager(song.serverId);
+
+          // Check if the prefix is already on disk to avoid redundant API calls
+          final existingChunk = await manager.cacheRepo.readChunk(
+            song.serverId,
+            0,
+          );
+
+          if (existingChunk == null) {
+            debugPrint("Proactively Prefix Caching Song ID ${song.serverId}");
+            // This triggers the Fast-Path we wrote above, instantly saving it to disk
+            await manager.getChunk(0);
+          }
+        } catch (e) {
+          debugPrint(
+            "Failed to prefix cache upcoming song ${song.serverId}: $e",
+          );
+        }
+      }
+    }
   }
 
   Future<void> play() => audioPlayer.play();
@@ -119,19 +176,15 @@ class AppAudioService {
   }
 
   Future<void> addToQueue(List<Song> songs) async {
-    final existingPaths = _normalQueue.map((s) => s.path).toSet();
-    final toAdd =
-        songs
-            .where((s) => s.path.isNotEmpty && !existingPaths.contains(s.path))
-            .toList();
+    final existingIds = _normalQueue.map((s) => s.id).toSet();
+    final toAdd = songs.where((s) => !existingIds.contains(s.id)).toList();
     if (toAdd.isEmpty) return;
 
     _normalQueue.addAll(toAdd);
     playlistService.addToPlaylist(_queuePlaylist, toAdd);
 
-    await audioPlayer.addAudioSources(
-      toAdd.map((song) => AudioSource.file(song.path)).toList(),
-    );
+    final sources = await Future.wait(toAdd.map((s) => _buildAudioSource(s)));
+    await audioPlayer.addAudioSources(sources);
   }
 
   Future<void> addNextToQueue(List<Song> songs) async {
@@ -141,35 +194,34 @@ class AppAudioService {
     var insertAt =
         currentIndexNormal >= 0 ? currentIndexNormal + 1 : _normalQueue.length;
 
+    List<AudioSource> sourcesToInsert = [];
+
     for (final song in songs.reversed) {
-      if (song.path.isEmpty || _normalQueue.contains(song)) continue;
+      if (_normalQueue.contains(song)) continue;
       _normalQueue.insert(insertAt, song);
 
       _queuePlaylist.songs.add(song);
       _queuePlaylist.songsIds.insert(insertAt, song.id);
+
+      sourcesToInsert.add(await _buildAudioSource(song));
     }
 
     playlistService.updatePlaylist(_queuePlaylist);
-
-    await audioPlayer.insertAudioSources(
-      insertAt,
-      songs.map((song) => AudioSource.file(song.path)).toList(),
-    );
+    await audioPlayer.insertAudioSources(insertAt, sourcesToInsert);
   }
 
   Future<void> removeFromQueue(Song song) async {
     if (!_normalQueue.contains(song)) return;
 
     _normalQueue.remove(song);
-
     playlistService.deleteFromPlaylist(song, _queuePlaylist);
 
     var audioSources = audioPlayer.audioSources;
     await audioPlayer.removeAudioSourceAt(
       audioSources.indexWhere((source) {
-        if (source is ProgressiveAudioSource) {
-          debugPrint("Comparing ${source.uri.toFilePath()} with ${song.path}");
-          return source.uri.toFilePath() == song.path;
+        if (source is IndexedAudioSource) {
+          final taggedSong = source.tag as Song?;
+          return taggedSong?.id == song.id;
         }
         return false;
       }),
@@ -205,26 +257,21 @@ class AppAudioService {
 
     audioPlayer.sequenceStateStream.listen((state) {
       final currentSource = state.currentSource;
-      if (currentSource is! ProgressiveAudioSource) return;
+      if (currentSource == null) return;
 
-      final path = currentSource.uri.toFilePath();
+      final song = currentSource.tag as Song?;
 
-      final song = _normalQueue.firstWhere(
-        (s) => s.path == path,
-        orElse: () {
-          debugPrint("No song found in queue for path: $path");
-          throw Exception("No song found in queue for path: $path");
-        },
-      );
-      if (song.path.isEmpty) return;
-      _updateCurrentSong(song);
+      if (song != null && song.id != currentSong.id) {
+        _updateCurrentSong(song);
+      }
     });
   }
 
   int _getPlayIndex(Song song) {
     final playIndex = audioPlayer.audioSources.indexWhere((source) {
-      if (source is ProgressiveAudioSource) {
-        return source.uri.toFilePath() == song.path;
+      if (source is IndexedAudioSource) {
+        final taggedSong = source.tag as Song?;
+        return taggedSong?.id == song.id;
       }
       return false;
     });
@@ -234,9 +281,10 @@ class AppAudioService {
   Future<void> _setAudioSourcesForQueue(Song song) async {
     if (_normalQueue.isEmpty) return;
 
-    await audioPlayer.setAudioSources(
-      queue.map((song) => AudioSource.file(song.path)).toList(),
-    );
+    final sources = await Future.wait(queue.map((s) => _buildAudioSource(s)));
+
+    await audioPlayer.setAudioSources(sources);
+
     if (_currentAudioSettings.shuffle) {
       audioPlayer.setShuffleModeEnabled(true);
     }
@@ -270,6 +318,8 @@ class AppAudioService {
     songService.updateSong(currentSong);
     playlistService.updateMostPlayedPlaylist();
     playlistService.updateRecentlyPlayedPlaylist();
+
+    _proactivelyCachePrefixes();
   }
 
   void updateSliderInSeconds(int seconds) {

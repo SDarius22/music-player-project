@@ -12,6 +12,10 @@ class Song implements BaseEntity {
   @Id(assignable: true)
   int id = 0;
 
+  @Index()
+  int serverId = -1;
+  bool requiresSync = false;
+
   @Unique()
   String path = "";
 
@@ -53,6 +57,13 @@ class Song implements BaseEntity {
     discNumber = json['discNumber'] ?? 0;
     year = json['year'] ?? 0;
   }
+
+  Map<String, dynamic> toJson() => {
+    'songId': id,
+    'playCountDelta': playCount,
+    'likedByUser': likedByUser,
+    'lastPlayed': lastPlayed,
+  };
 
   @override
   Uint8List get coverArt => album.target?.coverArt ?? Constants.logoBytes;

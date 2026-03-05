@@ -127,6 +127,21 @@ class SongRepository {
     return _songBox.query().order(Song_.name).build().find();
   }
 
+  List<Song> getUnsyncedSongs() {
+    return _songBox.query(Song_.requiresSync.equals(true)).build().find();
+  }
+
+  void markSongsAsSynced(List<int> serverIds) {
+    for (int serverId in serverIds) {
+      var song =
+          _songBox.query(Song_.serverId.equals(serverId)).build().findFirst();
+      if (song != null) {
+        song.requiresSync = false;
+        _songBox.put(song);
+      }
+    }
+  }
+
   void deleteSong(Song song) {
     _songBox.remove(song.id);
   }

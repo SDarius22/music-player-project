@@ -211,7 +211,7 @@
     },
     {
       "id": "6:5328859898643810358",
-      "lastPropertyId": "22:5586868054717929816",
+      "lastPropertyId": "24:3835940553080101764",
       "name": "Song",
       "properties": [
         {
@@ -287,13 +287,25 @@
           "id": "22:5586868054717929816",
           "name": "playCount",
           "type": 6
+        },
+        {
+          "id": "23:8997306184455754979",
+          "name": "serverId",
+          "indexId": "17:358579570990390237",
+          "type": 6,
+          "flags": 8
+        },
+        {
+          "id": "24:3835940553080101764",
+          "name": "requiresSync",
+          "type": 1
         }
       ],
       "relations": []
     }
   ],
   "lastEntityId": "13:9001332223065747901",
-  "lastIndexId": "16:9075972739914124463",
+  "lastIndexId": "17:358579570990390237",
   "lastRelationId": "9:7632131054866366746",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

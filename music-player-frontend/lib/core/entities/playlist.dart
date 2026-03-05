@@ -41,9 +41,13 @@ class Playlist with AbstractCollection implements BaseEntity {
   List<int> songsIds = [];
 
   List<Song> get songsList {
-    return songsIds
-        .map((id) => songs.firstWhere((song) => song.id == id))
-        .toList();
+    try {
+      return songsIds
+          .map((id) => songs.firstWhere((song) => song.id == id))
+          .toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   int _duration = -1;

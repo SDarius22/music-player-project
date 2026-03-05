@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +13,7 @@ import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/repository/album_repo.dart';
 import 'package:music_player_frontend/core/repository/artist_repo.dart';
+import 'package:music_player_frontend/core/repository/chunk_cache_repo.dart';
 import 'package:music_player_frontend/core/repository/playlist_repo.dart';
 import 'package:music_player_frontend/core/repository/settings_repo.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
@@ -19,10 +22,13 @@ import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
+import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
+import 'package:music_player_frontend/core/services/sync_rest_service.dart';
+import 'package:music_player_frontend/core/services/webrtc_service.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
@@ -31,6 +37,7 @@ import 'package:music_player_frontend/platforms/linux/services/music_scanner_ser
 import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class LinuxApp extends StatelessWidget {
   const LinuxApp({super.key});
@@ -46,6 +53,7 @@ class LinuxApp extends StatelessWidget {
         Provider<PlaylistRepository>(create: (_) => PlaylistRepository()),
         Provider<SettingsRepository>(create: (_) => SettingsRepository()),
         Provider<SongRepository>(create: (_) => SongRepository()),
+        Provider<ChunkCacheRepository>(create: (_) => ChunkCacheRepository()),
 
         Provider<FileService>(create: (context) => LinuxFileService()),
 
@@ -80,12 +88,52 @@ class LinuxApp extends StatelessWidget {
                 context.read<SettingsService>(),
               ),
         ),
+
+        Provider<ActiveChunkRouter>(create: (_) => ActiveChunkRouter()),
+        Provider<SyncRestService>(
+          create:
+              (context) =>
+                  SyncRestService(baseUrl: 'http://localhost:9000/api/v1'),
+        ),
+
+        Provider<WebRTCService>(
+          create: (context) {
+            final router = context.read<ActiveChunkRouter>();
+
+            final socket = WebSocketChannel.connect(
+              Uri.parse('ws://localhost:9000/ws/signaling'),
+            );
+
+            return WebRTCService(
+              myDeviceId: 'device-${DateTime.now().millisecondsSinceEpoch}',
+              signalingSocket: socket,
+              onChunkReceived: router.routeChunk,
+            );
+          },
+          lazy: false,
+        ),
+
         Provider<AppAudioService>(
           create:
               (context) => AppAudioService(
                 context.read<SongService>(),
                 context.read<SettingsService>(),
                 context.read<PlaylistService>(),
+                (int songId) async {
+                  final manager = ChunkService(
+                    songId: songId,
+                    cacheRepo: context.read<ChunkCacheRepository>(),
+                    restClient: context.read<SyncRestService>(),
+                    webrtcManager: context.read<WebRTCService>(),
+                  );
+
+                  // Tell the global router to send future P2P chunks to THIS specific manager
+                  context.read<ActiveChunkRouter>().activeChunkManager =
+                      manager;
+
+                  await manager.loadManifest();
+                  return manager;
+                },
               ),
         ),
 
@@ -159,5 +207,20 @@ class LinuxApp extends StatelessWidget {
         home: const LoadingScreen(),
       ),
     );
+  }
+}
+
+class ActiveChunkRouter {
+  // Holds the reference to whichever song is currently playing
+  dynamic activeChunkManager;
+
+  void routeChunk(int chunkIndex, Uint8List data) {
+    if (activeChunkManager != null) {
+      activeChunkManager!.resolvePeerRequest(chunkIndex, data);
+    } else {
+      debugPrint(
+        "Received a P2P chunk, but no ChunkManager is active. Dropping.",
+      );
+    }
   }
 }

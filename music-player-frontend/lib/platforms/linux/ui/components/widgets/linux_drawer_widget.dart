@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
@@ -81,6 +83,18 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
         _appStateProvider.innerNavigatorKey.currentState!.push(
           SettingsScreen.route(),
         );
+      },
+    },
+    {
+      "text": "TEST STREAM",
+      "tooltip": "TEST STREAM",
+      "icon": FluentIcons.play,
+      "index": 6,
+      "onTap": (BuildContext context) {
+        final testSong = Song();
+        testSong.id = 199999;
+        testSong.serverId = 1;
+        context.read<AudioProvider>().setQueueAndPlay([testSong], testSong);
       },
     },
   ];
