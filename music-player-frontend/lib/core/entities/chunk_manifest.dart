@@ -1,5 +1,3 @@
-import 'package:flutter/cupertino.dart';
-
 class ChunkManifest {
   final int songId;
   final int chunkSize;
@@ -16,7 +14,6 @@ class ChunkManifest {
   });
 
   factory ChunkManifest.fromJson(Map<String, dynamic> json) {
-    debugPrint("Parsing manifest JSON: $json");
     return ChunkManifest(
       songId: json['songId'],
       chunkSize: json['chunkSize'],

@@ -32,6 +32,8 @@ class ChunkService {
     if (isReady) return;
     final data = await restClient.fetchManifest(songId);
     manifest = ChunkManifest.fromJson(data);
+
+    webrtcManager?.discoverPeers(songId);
   }
 
   Future<Uint8List> getChunk(int chunkIndex) async {
@@ -71,6 +73,7 @@ class ChunkService {
     // 4. Verification
     if (_verifyIntegrity(chunkIndex, data)) {
       await cacheRepo.saveChunk(songId, chunkIndex, data);
+      webrtcManager?.registerCache(songId, [chunkIndex]);
       return data;
     } else {
       data = await restClient.downloadChunkFallback(songId, chunkIndex);
@@ -85,7 +88,7 @@ class ChunkService {
   Future<Uint8List> _requestFromPeer(int chunkIndex) {
     final completer = Completer<Uint8List>();
     _pendingPeerRequests[chunkIndex] = completer;
-    webrtcManager!.requestChunk(chunkIndex);
+    webrtcManager!.requestChunk(songId, chunkIndex);
     return completer.future;
   }
 

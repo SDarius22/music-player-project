@@ -108,6 +108,7 @@ class LinuxApp extends StatelessWidget {
               myDeviceId: 'device-${DateTime.now().millisecondsSinceEpoch}',
               signalingSocket: socket,
               onChunkReceived: router.routeChunk,
+              onChunkRequested: router.getLocalChunk,
             );
           },
           lazy: false,
@@ -222,5 +223,12 @@ class ActiveChunkRouter {
         "Received a P2P chunk, but no ChunkManager is active. Dropping.",
       );
     }
+  }
+
+  Future<Uint8List?> getLocalChunk(int songId, int chunkIndex) async {
+    if (activeChunkManager != null) {
+      return await activeChunkManager!.cacheRepo.readChunk(songId, chunkIndex);
+    }
+    return null;
   }
 }

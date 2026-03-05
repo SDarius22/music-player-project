@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -8,6 +9,8 @@ class WebRTCService {
   final String myDeviceId;
   final WebSocketChannel signalingSocket;
   final Function(int chunkIndex, Uint8List data) onChunkReceived;
+  final Future<Uint8List?> Function(int songId, int chunkIndex)
+  onChunkRequested;
 
   RTCPeerConnection? _peerConnection;
   RTCDataChannel? _dataChannel;
@@ -26,6 +29,7 @@ class WebRTCService {
     required this.myDeviceId,
     required this.signalingSocket,
     required this.onChunkReceived,
+    required this.onChunkRequested,
   }) {
     _listenToSignaling();
   }
@@ -56,18 +60,66 @@ class WebRTCService {
 
   /// Binds listeners to process incoming binary chunks or string commands
   void _bindDataChannelListeners() {
-    _dataChannel?.onMessage = (RTCDataChannelMessage message) {
+    _dataChannel?.onMessage = (RTCDataChannelMessage message) async {
       if (message.isBinary) {
-        // In a real implementation, you'd prefix the binary payload with the chunkIndex (e.g., first 4 bytes)
-        // For this example, we assume the manager tracks the requested index.
-        print("Received binary chunk of size: ${message.binary.length} bytes");
-        // Pass it up to your StreamAudioSource
-        onChunkReceived(-1, message.binary);
+        // THE FIX: Read the first 4 bytes to extract the exact chunkIndex
+        final byteData = ByteData.sublistView(message.binary);
+        final int chunkIndex = byteData.getUint32(0, Endian.big);
+        final Uint8List actualAudioData = message.binary.sublist(4);
+
+        debugPrint(
+          "Received P2P binary payload for Chunk $chunkIndex (${actualAudioData.length} bytes)",
+        );
+        onChunkReceived(chunkIndex, actualAudioData);
       } else {
-        // Handle string commands (e.g., Peer A asking Peer B for Chunk 5)
-        print("Received text command: ${message.text}");
+        final text = message.text;
+        debugPrint("Received P2P command: $text");
+
+        // THE FIX: Parse the request and send the binary data back!
+        if (text.startsWith('REQUEST_CHUNK:')) {
+          final parts = text.split(':');
+          if (parts.length == 3) {
+            final songId = int.parse(parts[1]);
+            final chunkIndex = int.parse(parts[2]);
+
+            // Ask the local disk for the file
+            final chunkData = await onChunkRequested(songId, chunkIndex);
+
+            if (chunkData != null) {
+              sendChunkToPeer(chunkIndex, chunkData);
+            } else {
+              debugPrint(
+                "Peer asked for Chunk $chunkIndex but we don't have it cached!",
+              );
+            }
+          }
+        }
       }
     };
+  }
+
+  /// PEER A: Requests a chunk over the open P2P channel (Updated with Song ID)
+  void requestChunk(int songId, int chunkIndex) {
+    if (_dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
+      _dataChannel!.send(
+        RTCDataChannelMessage('REQUEST_CHUNK:$songId:$chunkIndex'),
+      );
+    }
+  }
+
+  /// PEER B: Frames the binary data with the chunkIndex and blasts it over UDP
+  void sendChunkToPeer(int chunkIndex, Uint8List chunkData) {
+    if (_dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
+      // Allocate 4 extra bytes for the integer header
+      final ByteData header = ByteData(4 + chunkData.length);
+      header.setUint32(0, chunkIndex, Endian.big); // Write the index
+
+      // Copy the raw audio bytes directly after the 4-byte header
+      final Uint8List framedPacket = header.buffer.asUint8List();
+      framedPacket.setAll(4, chunkData);
+
+      _dataChannel!.send(RTCDataChannelMessage.fromBinary(framedPacket));
+    }
   }
 
   /// Helper to send JSON messages through your established Spring Boot WebSocket
@@ -115,10 +167,13 @@ class WebRTCService {
     signalingSocket.stream.listen((message) async {
       final signal = jsonDecode(message);
       final type = signal['type'];
-      final senderId = signal['senderId']; // This is the remote peer's ID
+      final senderId = signal['senderId'];
       final payload = signal['payload'];
 
       switch (type) {
+        case 'PEER_BUFFER_MAP': // <-- ADD THIS CASE
+          _handlePeerBufferMap(payload);
+          break;
         case 'OFFER':
           await _handleReceiveOffer(senderId, payload);
           break;
@@ -130,6 +185,25 @@ class WebRTCService {
           break;
       }
     });
+  }
+
+  /// Parses the active swarm and initiates the direct connection to the seeder
+  void _handlePeerBufferMap(Map<String, dynamic> payload) {
+    if (payload.isEmpty) {
+      debugPrint(
+        "Swarm is empty. Proceeding with Master Server HTTP fallback.",
+      );
+      return;
+    }
+
+    // For your thesis prototype, we aggressively grab the very first peer in the swarm.
+    // In a production environment, you would run an algorithm to find the peer with the most chunks.
+    String targetPeerId = payload.keys.first;
+    debugPrint(
+      "Discovered peer in swarm: $targetPeerId. Initiating WebRTC Handshake...",
+    );
+
+    initiateCall(targetPeerId);
   }
 
   /// PEER B (The Seeder): Receives the Offer and generates an Answer
@@ -177,22 +251,29 @@ class WebRTCService {
     await _peerConnection?.addCandidate(candidate);
   }
 
-  /// PEER A: Requests a chunk over the open P2P channel
-  void requestChunk(int chunkIndex) {
-    if (_dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
-      // Send a text command asking for the chunk
-      _dataChannel!.send(RTCDataChannelMessage('REQUEST_CHUNK:$chunkIndex'));
-    } else {
-      print("DataChannel is not open yet!");
-      // Fallback to your Spring Boot HTTP endpoint here if needed immediately
-    }
+  /// Tells the backend: "I just downloaded these chunks, add me to the registry."
+  void registerCache(int songId, List<int> chunkIndices) {
+    signalingSocket.sink.add(
+      jsonEncode({
+        'type': 'REGISTER_CACHE',
+        'senderId': myDeviceId,
+        'targetId': 'SERVER',
+        'songId': songId,
+        'payload': chunkIndices,
+      }),
+    );
   }
 
-  /// PEER B: Reads from local disk and sends binary data
-  void sendChunkToPeer(Uint8List chunkData) {
-    if (_dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
-      // Blast the raw bytes over the UDP channel
-      _dataChannel!.send(RTCDataChannelMessage.fromBinary(chunkData));
-    }
+  /// Asks the backend: "Who currently has the chunks for this song?"
+  void discoverPeers(int songId) {
+    signalingSocket.sink.add(
+      jsonEncode({
+        'type': 'DISCOVER_PEERS',
+        'senderId': myDeviceId,
+        'targetId': 'SERVER',
+        'songId': songId,
+        'payload': {},
+      }),
+    );
   }
 }
