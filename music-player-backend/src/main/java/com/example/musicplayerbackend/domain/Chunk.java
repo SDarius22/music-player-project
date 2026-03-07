@@ -4,18 +4,24 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "albums")
+@Table(name = "chunks")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Album {
+public class Chunk {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, length = 64)
+    private String contentHash;
+
     @Column(nullable = false)
-    private String name;
+    private Integer size;
+
+    @Column(nullable = false)
+    private String storagePath;
 }

@@ -1,8 +1,8 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.SongRepository;
-import com.example.musicplayerbackend.domain.Song;
-import com.example.musicplayerbackend.domain.SongSyncDto;
+import com.example.musicplayerbackend.data.UserLibraryRepository;
+import com.example.musicplayerbackend.domain.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,61 +18,57 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DataSyncService {
 
+    private final UserLibraryRepository userLibraryRepository;
     private final SongRepository songRepository;
 
     @Transactional
-    public void syncOfflineData(List<SongSyncDto> syncRequests) {
+    public void syncUserLibrary(User user, List<SongSyncDto> syncRequests) {
         if (syncRequests == null || syncRequests.isEmpty()) {
             return;
         }
 
-        // 1. Extract all requested IDs
-        List<Integer> songIds = syncRequests.stream()
-                .map(SongSyncDto::getSongId)
-                .toList();
-
-        // 2. Fetch all matching songs from the database in a single query
-        Map<Integer, Song> databaseSongs = songRepository.findAllById(songIds).stream()
+        List<Long> songIds = syncRequests.stream().map(SongSyncDto::getSongId).toList();
+        Map<Long, Song> songs = songRepository.findAllById(songIds).stream()
                 .collect(Collectors.toMap(Song::getId, Function.identity()));
 
-        // 3. Apply conflict resolution rules
         for (SongSyncDto request : syncRequests) {
-            Song dbSong = databaseSongs.get(request.getSongId());
+            Song song = songs.get(request.getSongId());
+            if (song == null) continue;
 
-            if (dbSong == null) {
-                // If the song doesn't exist on the master server anymore, drop the sync request.
-                continue;
-            }
+            UserLibraryID id = new UserLibraryID(user.getId(), request.getSongId());
 
-            // Convert OpenAPI OffsetDateTime to our database Instant
-            Instant requestLastPlayed = mapToInstant(request.getLastPlayed());
-            Instant dbLastPlayed = dbSong.getLastPlayed();
+            UserLibrary libEntry = userLibraryRepository.findById(id)
+                    .orElseGet(() -> UserLibrary.builder()
+                            .id(id)
+                            .song(song)
+                            .user(user)
+                            .addedAt(Instant.now())
+                            .playCount(0L)
+                            .liked(false)
+                            .build());
 
-            // RULE A: Additive Play Count (Deltas prevent lost offline plays)
-            if (request.getPlayCountDelta() != null && request.getPlayCountDelta() > 0) {
-                dbSong.setPlayCount(dbSong.getPlayCount() + request.getPlayCountDelta());
-            }
+            resolveConflicts(libEntry, request);
+            userLibraryRepository.save(libEntry);
+        }
+    }
 
-            // RULE B: Last-Write-Wins (LWW) for State & Timestamps
-            // We only apply the client's 'likedByUser' state if the client's action is strictly newer
-            // than what the backend already knows about.
-            if (requestLastPlayed != null) {
-                if (dbLastPlayed == null || requestLastPlayed.isAfter(dbLastPlayed)) {
-                    dbSong.setLastPlayed(requestLastPlayed);
-                    dbSong.setLikedByUser(request.getLikedByUser());
-                }
-            }
+    private void resolveConflicts(UserLibrary dbEntry, SongSyncDto request) {
+        Instant requestLastPlayed = mapToInstant(request.getLastPlayed());
+        Instant dbLastPlayed = dbEntry.getLastPlayed();
+
+        if (request.getPlayCountDelta() != null && request.getPlayCountDelta() > 0) {
+            dbEntry.setPlayCount(dbEntry.getPlayCount() + request.getPlayCountDelta());
         }
 
-        // 4. Save the resolved entities back to the database
-        // Spring Data JPA optimizes this into a batch update via Hibernate
-        songRepository.saveAll(databaseSongs.values());
+        if (requestLastPlayed != null) {
+            if (dbLastPlayed == null || requestLastPlayed.isAfter(dbLastPlayed)) {
+                dbEntry.setLastPlayed(requestLastPlayed);
+                dbEntry.setLiked(request.getLikedByUser());
+            }
+        }
     }
 
     private Instant mapToInstant(OffsetDateTime offsetDateTime) {
-        if (offsetDateTime == null) {
-            return null;
-        }
-        return offsetDateTime.toInstant();
+        return offsetDateTime == null ? null : offsetDateTime.toInstant();
     }
 }

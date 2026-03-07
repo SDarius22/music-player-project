@@ -1,151 +1,134 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.SongRepository;
+import com.example.musicplayerbackend.domain.Chunk;
 import com.example.musicplayerbackend.domain.ChunkManifestDto;
 import com.example.musicplayerbackend.domain.Song;
+import com.example.musicplayerbackend.domain.SongChunk;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.security.MessageDigest;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Vector;
 
 @Service
 @RequiredArgsConstructor
 public class StreamingService {
 
-    private static final int CHUNK_SIZE = 65536;
-
-    // In-memory cache so we only calculate the SHA-256 hashes once per song
-    private final Map<Integer, ChunkManifestDto> manifestCache = new ConcurrentHashMap<>();
-
     private final SongRepository songRepository;
 
-    @Transactional(readOnly = true)
-    public ChunkManifestDto getSongManifest(Integer songId) {
-        return manifestCache.computeIfAbsent(songId, this::generateManifest);
-    }
+    private static byte[] getFullBuffer(Song song, int bytesNeeded) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    @Transactional(readOnly = true)
-    public List<Integer> getPredictivePrefetchList(String userId) {
-        // Fetch the top 10 most played songs across the network
-        return songRepository.findTopPlayedSongIds(PageRequest.of(0, 10));
-    }
-
-    @Transactional(readOnly = true)
-    public Resource getSongPrefix(Integer songId, Integer prefixBytes) {
-        Song song = songRepository.findById(songId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song metadata not found"));
-
-        File audioFile = new File(song.getPath());
-        if (!audioFile.exists()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Audio file missing from disk");
-        }
-
-        int bytesToRead = (prefixBytes != null && prefixBytes > 0) ? prefixBytes : 512000;
-        bytesToRead = (int) Math.min(bytesToRead, audioFile.length());
-
-        byte[] buffer = new byte[bytesToRead];
-
-        try (RandomAccessFile raf = new RandomAccessFile(audioFile, "r")) {
-            raf.readFully(buffer);
-            return new ByteArrayResource(buffer);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read audio file prefix");
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public Resource getFullStream(Integer songId) {
-        Song song = songRepository.findById(songId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song metadata not found"));
-
-        File audioFile = new File(song.getPath());
-        if (!audioFile.exists()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Audio file missing from disk");
-        }
-
-        return new FileSystemResource(audioFile);
-    }
-
-    private ChunkManifestDto generateManifest(Integer songId) {
-        Song song = songRepository.findById(songId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
-
-        File audioFile = new File(song.getPath());
-        if (!audioFile.exists()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File missing from disk");
-        }
-
-        try (FileInputStream fis = new FileInputStream(audioFile)) {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            List<String> hashes = new ArrayList<>();
-            byte[] buffer = new byte[CHUNK_SIZE];
-            int bytesRead;
-
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                digest.update(buffer, 0, bytesRead);
-                byte[] hashBytes = digest.digest();
-
-                // Convert byte array to Hex string
-                StringBuilder hexString = new StringBuilder();
-                for (byte b : hashBytes) {
-                    hexString.append(String.format("%02x", b));
+        try {
+            for (SongChunk sc : song.getChunks()) {
+                File file = new File(sc.getChunk().getStoragePath());
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    fis.transferTo(outputStream);
                 }
-                hashes.add(hexString.toString());
+
+                if (outputStream.size() >= bytesNeeded) {
+                    break;
+                }
             }
-
-            ChunkManifestDto manifest = new ChunkManifestDto();
-            manifest.setSongId(songId);
-            manifest.setChunkSize(CHUNK_SIZE);
-            manifest.setTotalChunks(hashes.size());
-            manifest.setHashes(hashes);
-            manifest.setTotalBytes(audioFile.length());
-
-            return manifest;
-
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate chunk hashes");
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read prefix");
         }
+
+        return outputStream.toByteArray();
     }
 
     @Transactional(readOnly = true)
-    public Resource getSongChunk(Integer songId, Integer chunkIndex) {
-        Song song = songRepository.findById(songId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
+    public ChunkManifestDto getSongManifest(Long songId) {
+        Song song = getSongOrThrow(songId);
 
-        File audioFile = new File(song.getPath());
-        if (!audioFile.exists()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File missing from disk");
+        List<String> hashes = new ArrayList<>();
+        long totalBytes = 0;
+
+        for (SongChunk sc : song.getChunks()) {
+            hashes.add(sc.getChunk().getContentHash());
+            totalBytes += sc.getChunk().getSize();
         }
 
-        try (RandomAccessFile raf = new RandomAccessFile(audioFile, "r")) {
-            long startPosition = (long) chunkIndex * CHUNK_SIZE;
-            if (startPosition >= raf.length()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chunk index out of bounds");
+        ChunkManifestDto manifest = new ChunkManifestDto();
+        manifest.setSongId(songId);
+        manifest.setChunkSize(65536);
+        manifest.setTotalChunks(hashes.size());
+        manifest.setHashes(hashes);
+        manifest.setTotalBytes(totalBytes);
+
+        return manifest;
+    }
+
+    @Transactional(readOnly = true)
+    public Resource getSongChunk(Long songId, Integer chunkIndex) {
+        Song song = getSongOrThrow(songId);
+
+        if (chunkIndex < 0 || chunkIndex >= song.getChunks().size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chunk index out of bounds");
+        }
+
+        SongChunk songChunk = song.getChunks().get(chunkIndex);
+        Chunk physicalChunk = songChunk.getChunk();
+
+        return readBytesFromDisk(physicalChunk.getStoragePath());
+    }
+
+    @Transactional(readOnly = true)
+    public Resource getSongPrefix(Long songId, Integer prefixBytes) {
+        Song song = getSongOrThrow(songId);
+        if (song.getChunks().isEmpty()) return new ByteArrayResource(new byte[0]);
+
+        int bytesNeeded = (prefixBytes != null && prefixBytes > 0) ? prefixBytes : 512000;
+        byte[] fullBuffer = getFullBuffer(song, bytesNeeded);
+        if (fullBuffer.length > bytesNeeded) {
+            return new ByteArrayResource(fullBuffer) {
+                @Override
+                public String getFilename() {
+                    return "prefix.mp3";
+                }
+            };
+        }
+
+        return new ByteArrayResource(fullBuffer);
+    }
+
+    @Transactional(readOnly = true)
+    public Resource getFullStream(Long songId) {
+        Song song = getSongOrThrow(songId);
+
+        Vector<InputStream> streams = new Vector<>();
+        try {
+            for (SongChunk sc : song.getChunks()) {
+                streams.add(new FileInputStream(sc.getChunk().getStoragePath()));
             }
-
-            raf.seek(startPosition);
-            int bytesToRead = (int) Math.min(CHUNK_SIZE, raf.length() - startPosition);
-            byte[] buffer = new byte[bytesToRead];
-            raf.readFully(buffer);
-
-            return new ByteArrayResource(buffer);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read chunk");
+        } catch (FileNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Chunk file missing");
         }
+
+        SequenceInputStream sequenceInputStream = new SequenceInputStream(streams.elements());
+        return new InputStreamResource(sequenceInputStream);
+    }
+
+    private Song getSongOrThrow(Long songId) {
+        return songRepository.findById(songId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
+    }
+
+    private Resource readBytesFromDisk(String path) {
+        File file = new File(path);
+        if (!file.exists()) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Physical chunk missing: " + path);
+        }
+        return new FileSystemResource(file);
     }
 }

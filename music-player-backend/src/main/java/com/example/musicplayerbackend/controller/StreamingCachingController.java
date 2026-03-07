@@ -12,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -22,15 +20,9 @@ public class StreamingCachingController implements StreamApi {
     private final StreamingService streamingService;
 
     @Override
-    public ResponseEntity<List<Integer>> getPredictivePrefetchList(String userId) {
-        return ResponseEntity.ok(streamingService.getPredictivePrefetchList(userId));
-    }
-
-    @Override
-    public ResponseEntity<Resource> getSongPrefix(Integer songId, Integer prefixBytes) {
+    public ResponseEntity<Resource> getSongPrefix(Long songId, Integer prefixBytes) {
         Resource resource = streamingService.getSongPrefix(songId, prefixBytes);
 
-        // We know from the service implementation that getSongPrefix returns a ByteArrayResource
         int contentLength = ((ByteArrayResource) resource).getByteArray().length;
 
         return ResponseEntity.ok()
@@ -41,7 +33,7 @@ public class StreamingCachingController implements StreamApi {
     }
 
     @Override
-    public ResponseEntity<Resource> getFullStream(Integer songId) {
+    public ResponseEntity<Resource> getFullStream(Long songId) {
         Resource resource = streamingService.getFullStream(songId);
 
         MediaType mediaType = MediaTypeFactory.getMediaType(resource)
@@ -54,13 +46,13 @@ public class StreamingCachingController implements StreamApi {
     }
 
     @Override
-    public ResponseEntity<ChunkManifestDto> getSongManifest(Integer songId) {
+    public ResponseEntity<ChunkManifestDto> getSongManifest(Long songId) {
         System.out.println("[MASTER SERVER] Received request for manifest of song ID: " + songId);
         return ResponseEntity.ok(streamingService.getSongManifest(songId));
     }
 
     @Override
-    public ResponseEntity<Resource> getSongChunk(Integer songId, Integer chunkIndex) {
+    public ResponseEntity<Resource> getSongChunk(Long songId, Integer chunkIndex) {
         System.out.println("[MASTER SERVER] Received request for chunk " + chunkIndex + " of song ID: " + songId);
         Resource chunk = streamingService.getSongChunk(songId, chunkIndex);
 

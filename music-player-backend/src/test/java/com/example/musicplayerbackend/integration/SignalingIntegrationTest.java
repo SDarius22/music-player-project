@@ -1,6 +1,6 @@
 package com.example.musicplayerbackend.integration;
 
-import com.example.musicplayerbackend.dto.WebRTCMessage;
+import com.example.musicplayerbackend.domain.WebRTCMessage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;

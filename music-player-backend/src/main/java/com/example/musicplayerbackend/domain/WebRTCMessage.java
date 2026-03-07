@@ -1,4 +1,4 @@
-package com.example.musicplayerbackend.dto;
+package com.example.musicplayerbackend.domain;
 
 public record WebRTCMessage(
         String type,

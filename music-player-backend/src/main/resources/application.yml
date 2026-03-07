@@ -35,6 +35,18 @@ spring:
         default_schema: music_library
   liquibase:
     change-log: classpath:db/changelog/changelog.yml
+  mail:
+    host: mail.bt-app.com
+    port: 587
+    username: darius.sala
+    password: RO84s#h6x%Wpzy4
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 logging:
   level:

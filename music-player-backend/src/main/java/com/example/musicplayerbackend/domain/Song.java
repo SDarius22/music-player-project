@@ -3,7 +3,8 @@ package com.example.musicplayerbackend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "songs")
@@ -16,10 +17,7 @@ public class Song {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-
-    @Column(nullable = false)
-    private String name;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "artist_id", referencedColumnName = "id")
@@ -29,30 +27,24 @@ public class Song {
     @JoinColumn(name = "album_id", referencedColumnName = "id")
     private Album album;
 
-    @Column(name = "photo")
+    @Column(nullable = false)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SongType songType;
+
+    private Integer ownerId; // null for streamable songs, user ID for user-uploaded songs
+
     private String photo;
-
-    @Column(name = "path", nullable = false)
-    private String path;
-
-    @Column(name = "duration_in_seconds")
     private Integer durationInSeconds;
-
-    @Column(name = "track_number")
     private Integer trackNumber;
-
-    @Column(name = "disc_number")
     private Integer discNumber;
 
     @Column(name = "release_year")
     private Integer year;
 
-    @Column(name = "last_played")
-    private Instant lastPlayed;
-
-    @Column(name = "liked_by_user", nullable = false)
-    private Boolean likedByUser;
-
-    @Column(name = "play_count", nullable = false)
-    private Integer playCount;
+    @OneToMany(mappedBy = "song", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
+    private List<SongChunk> chunks = new ArrayList<>();
 }

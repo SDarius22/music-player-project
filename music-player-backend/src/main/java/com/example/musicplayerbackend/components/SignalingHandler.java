@@ -1,6 +1,6 @@
 package com.example.musicplayerbackend.components;
 
-import com.example.musicplayerbackend.dto.WebRTCMessage;
+import com.example.musicplayerbackend.domain.WebRTCMessage;
 import com.example.musicplayerbackend.service.PeerTrackingService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,10 +22,8 @@ public class SignalingHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final PeerTrackingService peerTrackingService;
 
-    // Maps the persistent Flutter UUID to the current active WebSocket
     private final Map<String, WebSocketSession> activeSessions = new ConcurrentHashMap<>();
 
-    // Reverse lookup to clean up memory when a socket drops
     private final Map<String, String> sessionIdToPeerId = new ConcurrentHashMap<>();
 
     @Override
@@ -42,7 +40,6 @@ public class SignalingHandler extends TextWebSocketHandler {
         System.out.println("[SIGNALING] " + session.getId() + " sent: " + message.getPayload());
         WebRTCMessage signal = objectMapper.readValue(message.getPayload(), WebRTCMessage.class);
 
-        // Always bind the transient socket to the persistent Flutter UUID
         if (signal.senderId() != null) {
             activeSessions.put(signal.senderId(), session);
             sessionIdToPeerId.put(session.getId(), signal.senderId());
@@ -52,7 +49,6 @@ public class SignalingHandler extends TextWebSocketHandler {
             case "REGISTER_CACHE" -> {
                 Set<Integer> chunkIndices = objectMapper.convertValue(signal.payload(), new TypeReference<Set<Integer>>() {
                 });
-                // Track by the explicit Flutter UUID, not the Tomcat Session ID
                 peerTrackingService.registerPeerChunks(signal.songId(), signal.senderId(), chunkIndices);
             }
 
@@ -69,7 +65,6 @@ public class SignalingHandler extends TextWebSocketHandler {
                 peerTrackingService.getPeerBufferMapsForSong(songId)
         );
 
-        // Remove the requesting peer using their explicit UUID
         peerBufferMaps.remove(requestingPeerId);
 
         WebRTCMessage response = new WebRTCMessage(
