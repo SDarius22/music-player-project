@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-public class StreamingCachingController implements StreamApi {
+public class StreamingController implements StreamApi {
 
     private final StreamingService streamingService;
 

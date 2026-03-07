@@ -55,6 +55,7 @@ public class DataSyncService {
     private void resolveConflicts(UserLibrary dbEntry, SongSyncDto request) {
         Instant requestLastPlayed = mapToInstant(request.getLastPlayed());
         Instant dbLastPlayed = dbEntry.getLastPlayed();
+        Boolean requestLiked = request.getLikedByUser();
 
         if (request.getPlayCountDelta() != null && request.getPlayCountDelta() > 0) {
             dbEntry.setPlayCount(dbEntry.getPlayCount() + request.getPlayCountDelta());
@@ -63,9 +64,13 @@ public class DataSyncService {
         if (requestLastPlayed != null) {
             if (dbLastPlayed == null || requestLastPlayed.isAfter(dbLastPlayed)) {
                 dbEntry.setLastPlayed(requestLastPlayed);
-                dbEntry.setLiked(request.getLikedByUser());
             }
         }
+
+        if (requestLiked != null) {
+            dbEntry.setLiked(requestLiked);
+        }
+
     }
 
     private Instant mapToInstant(OffsetDateTime offsetDateTime) {

@@ -34,7 +34,7 @@ public class Song {
     @Column(nullable = false)
     private SongType songType;
 
-    private Integer ownerId; // null for streamable songs, user ID for user-uploaded songs
+    private Long ownerId; // null for streamable songs, user ID for user-uploaded songs
     private String photo;
     private Integer durationInSeconds;
     private Integer trackNumber;

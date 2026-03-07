@@ -42,6 +42,29 @@ paths:
         '400':
           description: Invalid input
 
+  /songs/negotiate:
+    post:
+      summary: Negotiate a user upload
+      description: Client sends metadata and chunk hashes. Server returns ID and list of missing chunk indices.
+      operationId: negotiateUserUpload
+      tags:
+        - Songs
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NegotiationRequestDto'
+      responses:
+        '200':
+          description: Negotiation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NegotiationResponseDto'
+
   /songs/{songId}:
     get:
       summary: Get song metadata
@@ -65,6 +88,49 @@ paths:
                 $ref: '#/components/schemas/SongDto'
         '404':
           description: Song not found
+
+  /songs/{songId}/chunks/{chunkIndex}:
+    post:
+      summary: Upload a missing chunk
+      description: Uploads a specific 64KB binary chunk to fill a gap in a user song.
+      operationId: uploadMissingChunk
+      tags:
+        - Songs
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: chunkIndex
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - chunkData
+                - contentHash
+              properties:
+                chunkData:
+                  type: string
+                  format: binary
+                contentHash:
+                  type: string
+                  description: The SHA-256 hash of this chunk for verification.
+      responses:
+        '201':
+          description: Chunk accepted and linked
+        '400':
+          description: Hash mismatch or invalid index
 
   /stream/{songId}/prefix:
     get:
@@ -314,6 +380,11 @@ components:
           type: integer
         releaseYear:
           type: integer
+        discNumber:
+          type: integer
+        photo:
+          type: string
+          description: Base64-encoded album art image
 
 
     ChunkManifestDto:
@@ -353,6 +424,50 @@ components:
       properties:
         token:
           type: string
+
+    NegotiationRequestDto:
+      type: object
+      required:
+        - name
+        - hashes
+      properties:
+        name:
+          type: string
+        artistName:
+          type: string
+        albumName:
+          type: string
+        durationInSeconds:
+          type: integer
+        discNumber:
+          type: integer
+        trackNumber:
+          type: integer
+        releaseYear:
+          type: integer
+        photo:
+          type: string
+          description: Base64-encoded album art image
+        hashes:
+          type: array
+          description: The sequential list of SHA-256 hashes for the file chunks.
+          items:
+            type: string
+
+    NegotiationResponseDto:
+      type: object
+      required:
+        - songId
+        - missingIndices
+      properties:
+        songId:
+          type: integer
+          format: int64
+        missingIndices:
+          type: array
+          description: The indices (0-based) of the chunks the server DOES NOT have.
+          items:
+            type: integer
 
   securitySchemes:
     bearerAuth:

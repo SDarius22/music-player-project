@@ -36,10 +36,10 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/changelog.yml
   mail:
-    host: mail.bt-app.com
+    host: ${MAIL_HOST}
     port: 587
-    username: darius.sala
-    password: RO84s#h6x%Wpzy4
+    username: ${MAIL_USER}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -47,6 +47,10 @@ spring:
           starttls:
             enable: true
             required: true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 110MB
 
 logging:
   level:

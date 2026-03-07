@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/changelog/changes/004-create-user-library.sql
   - include:
       file: db/changelog/changes/005-change-id-to-bigint.sql
+  - include:
+      file: db/changelog/changes/006-long-owner-id.sql
