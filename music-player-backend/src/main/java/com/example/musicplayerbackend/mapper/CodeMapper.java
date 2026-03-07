@@ -2,7 +2,6 @@ package com.example.musicplayerbackend.mapper;
 
 import com.example.musicplayerbackend.domain.AuthResponse;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
 
@@ -11,6 +10,5 @@ import org.mapstruct.ReportingPolicy;
         unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface CodeMapper {
-    @Mapping(target = "token", source = "code")
-    AuthResponse toAuthResponse(String code);
+    AuthResponse toAuthResponse(String token);
 }

@@ -10,10 +10,10 @@ paths:
   /songs:
     get:
       summary: Get all songs
-      description: Retrieves the metadata for all songs to sync with the local ObjectBox database.
+      description: Retrieves the metadata for all songs.
       operationId: getAllSongs
       tags:
-        - Song Metadata
+        - Songs
       responses:
         '200':
           description: A list of songs
@@ -23,19 +23,62 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SongDto'
-  /stream/{songId}/prefix:
-    get:
-      summary: Get song prefix
-      description: Streams the first N bytes of the audio file to populate the client's edge cache.
-      operationId: getSongPrefix
+    post:
+      summary: Upload a new song
+      description: Ingests a raw audio file (MP3/FLAC), deduplicates chunks, and stores metadata.
+      operationId: uploadSong
       tags:
-        - Streaming & Caching
+        - Songs
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SongUploadDto'
+
+      responses:
+        '201':
+          description: Song created and chunks processed
+        '400':
+          description: Invalid input
+
+  /songs/{songId}:
+    get:
+      summary: Get song metadata
+      description: Retrieves metadata for a specific song by ID.
+      operationId: getSongById
+      tags:
+        - Songs
       parameters:
         - name: songId
           in: path
           required: true
           schema:
-            type: long
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Song metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SongDto'
+        '404':
+          description: Song not found
+
+  /stream/{songId}/prefix:
+    get:
+      summary: Get song prefix
+      operationId: getSongPrefix
+      tags:
+        - Streaming
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
         - name: prefixBytes
           in: query
           required: false
@@ -52,19 +95,20 @@ paths:
                 format: binary
         '404':
           description: Song or file not found
+
   /stream/{songId}/full:
     get:
       summary: Master fallback full stream
-      description: Streams the entire file natively, supporting HTTP 206 Partial Content and Range headers.
       operationId: getFullStream
       tags:
-        - Streaming & Caching
+        - Streaming
       parameters:
         - name: songId
           in: path
           required: true
           schema:
-            type: long
+            type: integer
+            format: int64
       responses:
         '200':
           description: Audio stream
@@ -74,27 +118,26 @@ paths:
                 type: string
                 format: binary
         '206':
-          description: Partial audio stream (for seeking)
+          description: Partial content
           content:
             audio/mpeg:
               schema:
                 type: string
                 format: binary
-        '404':
-          description: Song or file not found
+
   /stream/{songId}/manifest:
     get:
-      summary: Get chunk cryptographic manifest
-      description: Returns fixed-size chunk hashes for P2P integrity verification.
+      summary: Get chunk manifest
       operationId: getSongManifest
       tags:
-        - Streaming & Caching
+        - Streaming
       parameters:
         - name: songId
           in: path
           required: true
           schema:
-            type: long
+            type: integer
+            format: int64
       responses:
         '200':
           description: Chunk manifest
@@ -102,19 +145,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChunkManifestDto'
+
   /stream/{songId}/chunk/{chunkIndex}:
     get:
-      summary: Master fallback for a specific chunk
-      description: Returns the exact binary data for a specific chunk index.
+      summary: Get specific chunk
       operationId: getSongChunk
       tags:
-        - Streaming & Caching
+        - Streaming
       parameters:
         - name: songId
           in: path
           required: true
           schema:
-            type: long
+            type: integer
+            format: int64
         - name: chunkIndex
           in: path
           required: true
@@ -128,17 +172,15 @@ paths:
               schema:
                 type: string
                 format: binary
+
   /sync:
     post:
       summary: Sync offline data
-      description: Applies conflict resolution to sync offline mobile data with the master database.
       operationId: syncOfflineData
       tags:
-        - Data Sync
-
+        - Sync
       security:
         - bearerAuth: [ ]
-
       requestBody:
         required: true
         content:
@@ -150,10 +192,10 @@ paths:
       responses:
         '200':
           description: Sync completed successfully
+
   /auth/send-code:
     post:
       summary: Send verification code
-      description: Sends a verification code to the user's email for authentication.
       operationId: sendVerificationCode
       tags:
         - Authentication
@@ -165,11 +207,11 @@ paths:
               $ref: '#/components/schemas/EmailRequest'
       responses:
         '200':
-          description: Verification code sent successfully
+          description: Code sent
+
   /auth/verify:
     post:
       summary: Verify authentication code
-      description: Verifies the code sent to the user's email and returns an authentication token.
       operationId: verifyAuthenticationCode
       tags:
         - Authentication
@@ -181,75 +223,55 @@ paths:
               $ref: '#/components/schemas/VerificationRequest'
       responses:
         '200':
-          description: Authentication successful, token returned
+          description: Token returned
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
-        '400':
-          description: Invalid verification code or email
 
 components:
   schemas:
     ArtistDto:
       type: object
-      required:
-        - name
       properties:
         id:
-          type: long
-          readOnly: true
+          type: integer
+          format: int64
         name:
           type: string
-          maxLength: 255
 
     AlbumDto:
       type: object
-      required:
-        - name
       properties:
         id:
-          type: long
-          readOnly: true
+          type: integer
+          format: int64
         name:
           type: string
-          maxLength: 255
 
     SongDto:
       type: object
-      required:
-        - id
-        - name
       properties:
         id:
-          type: long
-          readOnly: true
+          type: integer
+          format: int64
         name:
           type: string
-          maxLength: 255
         artist:
           $ref: '#/components/schemas/ArtistDto'
         album:
           $ref: '#/components/schemas/AlbumDto'
         photo:
           type: string
-          maxLength: 255
-          nullable: true
         durationInSeconds:
           type: integer
-          minimum: 0
-          nullable: true
         trackNumber:
           type: integer
-          minimum: 1
-          nullable: true
         discNumber:
           type: integer
-          minimum: 1
-          nullable: true
         year:
           type: integer
-          nullable: true
+
     SongSyncDto:
       type: object
       required:
@@ -258,66 +280,80 @@ components:
         - likedByUser
       properties:
         songId:
-          type: long
+          type: integer
+          format: int64
         playCountDelta:
           type: integer
-          minimum: 0
-          description: The number of new plays since the last successful sync.
         likedByUser:
           type: boolean
         lastPlayed:
           type: string
           format: date-time
-          nullable: true
-    ChunkManifestDto:
+
+    SongUploadDto:
       type: object
       required:
-        - songId
-        - chunkSize
-        - totalChunks
-        - hashes
+        - file
+        - name
+        - artistName
+        - albumName
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The audio file (MP3, FLAC, WAV)
+        name:
+          type: string
+        artistName:
+          type: string
+        albumName:
+          type: string
+        durationInSeconds:
+          type: integer
+        trackNumber:
+          type: integer
+        releaseYear:
+          type: integer
+
+
+    ChunkManifestDto:
+      type: object
       properties:
         songId:
-          type: long
+          type: integer
+          format: int64
         chunkSize:
           type: integer
-          description: The fixed byte size of each chunk (except potentially the last one).
         totalChunks:
           type: integer
         totalBytes:
-          type: long
-          description: The total size of the audio file in bytes.
+          type: integer
+          format: int64
         hashes:
           type: array
-          description: SHA-256 checksums for each chunk in sequential order.
           items:
             type: string
+
     EmailRequest:
       type: object
-      required:
-        - email
       properties:
         email:
           type: string
-          format: email
+
     VerificationRequest:
       type: object
-      required:
-        - email
-        - code
       properties:
         email:
           type: string
-          format: email
         code:
           type: string
-          maxLength: 6
+
     AuthResponse:
       type: object
       properties:
         token:
           type: string
-          description: JWT authentication token
+
   securitySchemes:
     bearerAuth:
       type: http
