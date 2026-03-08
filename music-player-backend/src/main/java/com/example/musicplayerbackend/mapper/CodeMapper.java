@@ -10,5 +10,5 @@ import org.mapstruct.ReportingPolicy;
         unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface CodeMapper {
-    AuthResponse toAuthResponse(String token);
+    AuthResponse toAuthResponse(String accessToken, String refreshToken);
 }

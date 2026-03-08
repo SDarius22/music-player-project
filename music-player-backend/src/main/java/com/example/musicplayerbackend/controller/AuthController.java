@@ -1,8 +1,6 @@
 package com.example.musicplayerbackend.controller;
 
-import com.example.musicplayerbackend.domain.AuthResponse;
-import com.example.musicplayerbackend.domain.EmailRequest;
-import com.example.musicplayerbackend.domain.VerificationRequest;
+import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,5 +23,15 @@ public class AuthController implements AuthApi {
     @Override
     public ResponseEntity<AuthResponse> verifyAuthenticationCode(VerificationRequest verificationRequest) {
         return ResponseEntity.ok(authService.verifyCodeAndGenerateResponse(verificationRequest.getEmail(), verificationRequest.getCode()));
+    }
+
+    @Override
+    public ResponseEntity<AuthResponse> googleOAuthLogin(GoogleOAuthLoginRequest googleOAuthLoginRequest) {
+        return ResponseEntity.ok(authService.loginWithGoogle(googleOAuthLoginRequest.getIdToken()));
+    }
+
+    @Override
+    public ResponseEntity<AuthResponse> refreshAccessToken(RefreshAccessTokenRequest refreshAccessTokenRequest) {
+        return ResponseEntity.ok(authService.refreshToken(refreshAccessTokenRequest.getRefreshToken()));
     }
 }

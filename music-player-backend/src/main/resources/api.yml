@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.1
 info:
   title: Peer-Assisted Music Streaming API
   description: Backend API for hybrid prefix caching, predictive pre-fetching, and master fallback.
@@ -241,8 +241,13 @@ paths:
 
   /sync:
     post:
-      summary: Sync offline data
-      operationId: syncOfflineData
+      summary: Delta sync for user library
+      description: |
+        Performs a bi-directional delta sync. 
+        1. Client sends its 'lastSyncTimestamp' and a list of local changes (adds/updates/soft-deletes).
+        2. Server applies valid local changes.
+        3. Server returns a 'newSyncTimestamp' and a list of changes from OTHER devices that happened since the client's last sync.
+      operationId: syncUserLibrary
       tags:
         - Sync
       security:
@@ -252,12 +257,18 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SongSyncDto'
+              $ref: '#/components/schemas/SyncRequestDto'
       responses:
         '200':
-          description: Sync completed successfully
+          description: Sync successful. Returns server updates and new anchor timestamp.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponseDto'
+        '400':
+          description: Invalid timestamp format or malformed DTOs.
+        '401':
+          description: Unauthorized.
 
   /auth/send-code:
     post:
@@ -294,6 +305,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      operationId: refreshAccessToken
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: New access token returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired refresh token
+
+  /auth/google:
+    post:
+      summary: Google OAuth login
+      operationId: googleOAuthLogin
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idToken
+              properties:
+                idToken:
+                  type: string
+                  description: The ID token obtained from Google's OAuth flow on the client side.
+      responses:
+        '200':
+          description: Token returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid Google ID token
 
 components:
   schemas:
@@ -340,21 +405,35 @@ components:
 
     SongSyncDto:
       type: object
+      description: Represents a change to a specific song in the user's library.
       required:
         - songId
-        - playCountDelta
-        - likedByUser
       properties:
         songId:
           type: integer
           format: int64
+
         playCountDelta:
           type: integer
+          default: 0
+
         likedByUser:
           type: boolean
+          nullable: true
+
         lastPlayed:
           type: string
           format: date-time
+          nullable: true
+
+        addedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+        isDeleted:
+          type: boolean
+          default: false
 
     SongUploadDto:
       type: object
@@ -422,8 +501,12 @@ components:
     AuthResponse:
       type: object
       properties:
-        token:
+        accessToken:
           type: string
+          description: JWT access token for authenticated requests
+        refreshToken:
+          type: string
+          description: JWT refresh token for obtaining new access tokens
 
     NegotiationRequestDto:
       type: object
@@ -469,6 +552,32 @@ components:
           items:
             type: integer
 
+    SyncRequestDto:
+      type: object
+      required:
+        - lastSyncTime
+        - localChanges
+      properties:
+        lastSyncTime:
+          type: string
+          format: date-time
+        localChanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/SongSyncDto'
+
+    SyncResponseDto:
+      type: object
+      properties:
+        serverChanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/SongSyncDto'
+        newSyncTime:
+          type: string
+          format: date-time
+  
+  
   securitySchemes:
     bearerAuth:
       type: http

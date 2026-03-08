@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.components;
 
+import com.example.musicplayerbackend.domain.ClientConnection;
 import com.example.musicplayerbackend.domain.WebRTCMessage;
 import com.example.musicplayerbackend.service.PeerTrackingService;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -11,6 +12,8 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,39 +25,103 @@ public class SignalingHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final PeerTrackingService peerTrackingService;
 
-    private final Map<String, WebSocketSession> activeSessions = new ConcurrentHashMap<>();
+    private final Map<String, ClientConnection> registry = new ConcurrentHashMap<>();
+    private final Map<Long, Set<String>> userIndex = new ConcurrentHashMap<>();
+    private final Map<String, String> peerIndex = new ConcurrentHashMap<>();
 
-    private final Map<String, String> sessionIdToPeerId = new ConcurrentHashMap<>();
+    public void sendSyncTrigger(Long userId) {
+        Set<String> sessionIds = userIndex.getOrDefault(userId, Collections.emptySet());
+
+        String triggerMessage = """
+                    {
+                        "type": "SYNC_TRIGGER",
+                        "senderId": "SERVER",
+                        "targetId": "BROADCAST"
+                    }
+                """;
+
+        for (String sessionId : sessionIds) {
+            ClientConnection client = registry.get(sessionId);
+            if (client != null && client.session().isOpen()) {
+                try {
+                    System.out.println("[SIGNALING] Sending SYNC_TRIGGER to User " + userId);
+                    client.session().sendMessage(new TextMessage(triggerMessage));
+                } catch (IOException e) {
+                    System.err.println("Failed to send sync trigger: " + e.getMessage());
+                }
+            }
+        }
+    }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        String peerId = sessionIdToPeerId.remove(session.getId());
-        if (peerId != null) {
-            activeSessions.remove(peerId);
-            peerTrackingService.unregisterPeer(peerId);
+        ClientConnection client = registry.remove(session.getId());
+
+        if (client != null) {
+            if (client.userId() != null) {
+                Set<String> userSessions = userIndex.get(client.userId());
+                if (userSessions != null) {
+                    userSessions.remove(session.getId());
+                    if (userSessions.isEmpty()) {
+                        userIndex.remove(client.userId());
+                    }
+                }
+            }
+
+            if (client.peerId() != null) {
+                peerIndex.remove(client.peerId());
+                peerTrackingService.unregisterPeer(client.peerId());
+            }
         }
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        System.out.println("[SIGNALING] " + session.getId() + " sent: " + message.getPayload());
-        WebRTCMessage signal = objectMapper.readValue(message.getPayload(), WebRTCMessage.class);
+        Map<String, Object> payloadMap = objectMapper.readValue(message.getPayload(), new TypeReference<>() {
+        });
 
-        if (signal.senderId() != null) {
-            activeSessions.put(signal.senderId(), session);
-            sessionIdToPeerId.put(session.getId(), signal.senderId());
+        String type = (String) payloadMap.get("type");
+        String senderId = (String) payloadMap.get("senderId");
+
+        Long userId = null;
+        if (payloadMap.get("userId") != null) {
+            userId = ((Number) payloadMap.get("userId")).longValue();
         }
 
-        switch (signal.type()) {
+        if (senderId != null) {
+            ClientConnection connection = new ClientConnection(session, senderId, userId);
+            registry.put(session.getId(), connection);
+            peerIndex.put(senderId, session.getId());
+
+            if (userId != null) {
+                userIndex.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet()).add(session.getId());
+            }
+        }
+
+        switch (type) {
             case "REGISTER_CACHE" -> {
-                Set<Integer> chunkIndices = objectMapper.convertValue(signal.payload(), new TypeReference<Set<Integer>>() {
+                Object rawPayload = payloadMap.get("payload");
+                Set<Integer> chunkIndices = objectMapper.convertValue(rawPayload, new TypeReference<>() {
                 });
-                peerTrackingService.registerPeerChunks(signal.songId(), signal.senderId(), chunkIndices);
+
+                Integer songId = payloadMap.get("songId") != null ? ((Number) payloadMap.get("songId")).intValue() : null;
+
+                if (songId != null && senderId != null) {
+                    peerTrackingService.registerPeerChunks(songId, senderId, chunkIndices);
+                }
             }
 
-            case "DISCOVER_PEERS" -> sendBufferMaps(session, signal.songId(), signal.senderId());
+            case "DISCOVER_PEERS" -> {
+                Integer songId = ((Number) payloadMap.get("songId")).intValue();
+                sendBufferMaps(session, songId, senderId);
+            }
 
-            case "OFFER", "ANSWER", "ICE_CANDIDATE" -> routeToTarget(signal);
+            case "OFFER", "ANSWER", "ICE_CANDIDATE" -> {
+                WebRTCMessage signal = objectMapper.convertValue(payloadMap, WebRTCMessage.class);
+                routeToTarget(signal);
+            }
+
+            case "SYNC_TRIGGER" -> { /* Ignore echo */ }
 
             default -> session.close(CloseStatus.BAD_DATA.withReason("Unknown signal type"));
         }
@@ -79,10 +146,14 @@ public class SignalingHandler extends TextWebSocketHandler {
     }
 
     private void routeToTarget(WebRTCMessage signal) throws Exception {
-        WebSocketSession targetSession = activeSessions.get(signal.targetId());
+        String targetSessionId = peerIndex.get(signal.targetId());
 
-        if (targetSession != null && targetSession.isOpen()) {
-            targetSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(signal)));
+        if (targetSessionId != null) {
+            ClientConnection targetClient = registry.get(targetSessionId);
+
+            if (targetClient != null && targetClient.session().isOpen()) {
+                targetClient.session().sendMessage(new TextMessage(objectMapper.writeValueAsString(signal)));
+            }
         }
     }
 }

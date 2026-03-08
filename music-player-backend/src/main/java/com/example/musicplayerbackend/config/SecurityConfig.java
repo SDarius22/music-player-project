@@ -4,6 +4,7 @@ import com.example.musicplayerbackend.components.JWTAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -32,6 +33,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/ws/signaling/**").permitAll()
 
@@ -41,11 +43,15 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/api/v1/songs").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/songs").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/songs").hasRole("ADMIN")
+
                         .requestMatchers("/api/v1/**").authenticated()
 
                         .anyRequest().authenticated()
                 )
-
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

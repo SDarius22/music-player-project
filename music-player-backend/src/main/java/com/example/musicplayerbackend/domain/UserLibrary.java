@@ -35,4 +35,10 @@ public class UserLibrary {
     private Instant lastPlayed;
     private Instant addedAt;
     private Boolean isDownloadedLocally = false;
+
+    @Column(nullable = false)
+    private Instant lastUpdated;
+
+    @Column(nullable = false)
+    private Boolean isDeleted = false;
 }
