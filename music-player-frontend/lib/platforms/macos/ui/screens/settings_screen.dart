@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/core/ui/screens/settings_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/user_settings_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/macos/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/platforms/macos/ui/screens/library_settings.dart';
 import 'package:provider/provider.dart';
 
-class SettingsScreen extends AbstractSettingsScreen {
+class SettingsScreen extends AbstractUserSettingsScreen {
   static Route<void> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
@@ -23,10 +23,11 @@ class SettingsScreen extends AbstractSettingsScreen {
   const SettingsScreen({super.key});
 
   @override
-  AbstractSettingsScreenState createState() => _SettingsScreenState();
+  AbstractUserSettingsScreenState createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
+class _SettingsScreenState
+    extends AbstractUserSettingsScreenState<SettingsScreen> {
   @override
   List<Map<String, Widget>> get settingsMap {
     var height = MediaQuery.of(context).size.height;

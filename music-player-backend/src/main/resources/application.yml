@@ -7,6 +7,9 @@ server:
   servlet:
     session:
       timeout: 30m
+  tomcat:
+    max-http-form-post-size: 100MB
+    max-swallow-size: 100MB
 
 spring:
   application:
@@ -51,7 +54,6 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 110MB
-
 logging:
   level:
     root: INFO

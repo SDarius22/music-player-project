@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -16,9 +16,7 @@ class Song implements BaseEntity {
   int serverId = -1;
   bool requiresSync = false;
 
-  @Unique()
   String path = "";
-
   String _name = "Unknown song";
 
   final artist = ToOne<Artist>();
@@ -43,11 +41,33 @@ class Song implements BaseEntity {
   set name(String value) => _name = value;
 
   @override
-  bool operator ==(Object other) =>
-      other is Song && other.runtimeType == runtimeType && other.path == path;
+  bool operator ==(Object other) {
+    if (path.isEmpty) {
+      return other is Song && other.serverId == serverId && serverId != -1;
+    }
+    return other is Song && other.path == path;
+  }
 
   @override
-  int get hashCode => path.hashCode;
+  int get hashCode => path.isEmpty ? serverId.hashCode : path.hashCode;
+
+  Song();
+
+  factory Song.fromJson(Map<String, dynamic> json) {
+    Song song = Song();
+    song.id = 0;
+    song.serverId = json['id'] ?? -1;
+    song.name = json['name'] ?? "Unknown Song";
+    song.path = "";
+    song.durationInSeconds = json['durationInSeconds'] ?? 0;
+    song.trackNumber = json['trackNumber'] ?? 0;
+    song.discNumber = json['discNumber'] ?? 0;
+    song.year = json['year'] ?? 0;
+    song.artist.target = Artist.fromJson(json['artist']);
+    song.album.target = Album.fromJson(json['album']);
+
+    return song;
+  }
 
   void fromJson(Map<String, dynamic> json) {
     path = json['path'] ?? "";

@@ -1,107 +1,160 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:music_player_frontend/core/entities/chunk_manifest.dart';
+import 'package:flutter/foundation.dart';
+import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/repository/chunk_cache_repo.dart';
-import 'package:music_player_frontend/core/services/sync_rest_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
 
 class ChunkService {
   final int songId;
   final ChunkCacheRepository cacheRepo;
-  final SyncRestService restClient;
-  final WebRTCService? webrtcManager;
+  final StreamingRestService _streamingClient;
+  final WebRTCService _webrtcManager;
 
-  ChunkManifest? manifest;
+  ChunkManifestDto? manifest;
+
+  final Map<int, Future<Uint8List>> _activeRequests = {};
+
+  final Map<int, Completer<Uint8List>> _p2pCompleters = {};
+
+  final Map<int, Uint8List> _hotRamCache = {};
 
   bool get isReady => manifest != null;
 
-  int get totalBytes => isReady ? manifest!.totalBytes : 0;
+  int get totalBytes => manifest?.totalBytes ?? 0;
 
-  final Map<int, Completer<Uint8List>> _pendingPeerRequests = {};
+  int get totalChunks => manifest?.totalChunks ?? 0;
 
   ChunkService({
     required this.songId,
     required this.cacheRepo,
-    required this.restClient,
-    this.webrtcManager,
-  });
+    required StreamingRestService streamingClient,
+    required WebRTCService webrtcManager,
+  }) : _streamingClient = streamingClient,
+       _webrtcManager = webrtcManager;
 
   Future<void> loadManifest() async {
     if (isReady) return;
-    final data = await restClient.fetchManifest(songId);
-    manifest = ChunkManifest.fromJson(data);
+    try {
+      manifest = await _streamingClient.fetchManifest(songId);
 
-    webrtcManager?.discoverPeers(songId);
+      _webrtcManager.discoverPeers(songId);
+
+      var indices = await cacheRepo.getAvailableChunkIndices(songId);
+      if (indices.isNotEmpty) {
+        _webrtcManager.registerCache(songId, indices);
+      }
+    } catch (e) {
+      debugPrint("Failed to load manifest for $songId: $e");
+      rethrow;
+    }
   }
 
-  Future<Uint8List> getChunk(int chunkIndex) async {
+  Future<Uint8List> getChunk(int index) async {
     if (!isReady) await loadManifest();
 
-    // 1. Mobile Edge Cache (Check local disk first, always)
-    Uint8List? data = await cacheRepo.readChunk(songId, chunkIndex);
-    if (data != null) return data;
+    if (_hotRamCache.containsKey(index)) return _hotRamCache[index]!;
 
-    // --- PREFIX CACHING ENFORCEMENT ---
-    // If this is the very first chunk of the song, NEVER wait for the WebRTC swarm.
-    // Pull it directly from the Master Server to guarantee zero-latency playback startup.
-    if (chunkIndex == 0) {
-      data = await restClient.downloadChunkFallback(songId, 0);
-      if (_verifyIntegrity(0, data)) {
-        await cacheRepo.saveChunk(songId, 0, data);
-        return data;
-      }
-      throw Exception("Master server integrity failed on Prefix Cache.");
-    }
-    // ----------------------------------
+    if (_activeRequests.containsKey(index)) return _activeRequests[index]!;
 
-    // 2. WebRTC P2P Swarm (Only for Chunk 1 and beyond)
-    if (webrtcManager != null && webrtcManager!.isConnected) {
-      try {
-        data = await _requestFromPeer(
-          chunkIndex,
-        ).timeout(const Duration(milliseconds: 500));
-      } catch (_) {
-        data = await restClient.downloadChunkFallback(songId, chunkIndex);
-      }
-    } else {
-      // 3. Master Server Fallback
-      data = await restClient.downloadChunkFallback(songId, chunkIndex);
+    final cachedData = await cacheRepo.readChunk(songId, index);
+    if (cachedData != null) {
+      _addToHotCache(index, cachedData);
+      return cachedData;
     }
 
-    // 4. Verification
-    if (_verifyIntegrity(chunkIndex, data)) {
-      await cacheRepo.saveChunk(songId, chunkIndex, data);
-      webrtcManager?.registerCache(songId, [chunkIndex]);
+    if (index + 1 < totalChunks) {
+      _preloadChunk(index + 1);
+    }
+
+    final future = _fetchChunkLogic(index);
+    _activeRequests[index] = future;
+
+    try {
+      final data = await future;
+      _activeRequests.remove(index);
       return data;
-    } else {
-      data = await restClient.downloadChunkFallback(songId, chunkIndex);
-      if (_verifyIntegrity(chunkIndex, data)) {
-        await cacheRepo.saveChunk(songId, chunkIndex, data);
-        return data;
-      }
-      throw Exception("Master server integrity failed.");
+    } catch (e) {
+      _activeRequests.remove(index);
+      rethrow;
     }
   }
 
-  Future<Uint8List> _requestFromPeer(int chunkIndex) {
+  void _preloadChunk(int index) {
+    if (_activeRequests.containsKey(index) || _hotRamCache.containsKey(index)) {
+      return;
+    }
+    getChunk(index).catchError((_) => Uint8List(0));
+  }
+
+  Future<Uint8List> _fetchChunkLogic(int index) async {
+    Uint8List data;
+
+    if (index == 0) {
+      data = await _streamingClient.downloadChunkFallback(songId, 0);
+    } else if (_webrtcManager.hasPeersForSong(songId)) {
+      try {
+        data = await _requestFromPeer(
+          index,
+        ).timeout(const Duration(milliseconds: 200));
+      } catch (_) {
+        data = await _streamingClient.downloadChunkFallback(songId, index);
+      }
+    } else {
+      data = await _streamingClient.downloadChunkFallback(songId, index);
+    }
+
+    if (_verifyIntegrity(index, data)) {
+      _saveToCache(index, data);
+      return data;
+    } else {
+      if (index != 0) {
+        final serverData = await _streamingClient.downloadChunkFallback(
+          songId,
+          index,
+        );
+        if (_verifyIntegrity(index, serverData)) {
+          _saveToCache(index, serverData);
+          return serverData;
+        }
+      }
+      throw Exception("Integrity failed for chunk $index");
+    }
+  }
+
+  Future<Uint8List> _requestFromPeer(int index) {
     final completer = Completer<Uint8List>();
-    _pendingPeerRequests[chunkIndex] = completer;
-    webrtcManager!.requestChunk(songId, chunkIndex);
+    _p2pCompleters[index] = completer;
+    _webrtcManager.requestChunk(songId, index);
     return completer.future;
   }
 
   void resolvePeerRequest(int chunkIndex, Uint8List data) {
-    if (_pendingPeerRequests.containsKey(chunkIndex)) {
-      _pendingPeerRequests[chunkIndex]!.complete(data);
-      _pendingPeerRequests.remove(chunkIndex);
+    if (_p2pCompleters.containsKey(chunkIndex)) {
+      _p2pCompleters[chunkIndex]!.complete(data);
+      _p2pCompleters.remove(chunkIndex);
     }
   }
 
-  bool _verifyIntegrity(int chunkIndex, Uint8List data) {
-    if (chunkIndex >= manifest!.hashes.length) return false;
-    final digest = sha256.convert(data);
-    return digest.toString() == manifest!.hashes[chunkIndex];
+  bool _verifyIntegrity(int index, Uint8List data) {
+    if (manifest == null || index >= manifest!.hashes.length) return false;
+    final digest = sha256.convert(data).toString();
+    return digest == manifest!.hashes[index];
+  }
+
+  void _saveToCache(int index, Uint8List data) {
+    _addToHotCache(index, data);
+    cacheRepo.saveChunk(songId, index, data).then((_) {
+      _webrtcManager.registerCache(songId, [index]);
+    });
+  }
+
+  void _addToHotCache(int index, Uint8List data) {
+    if (_hotRamCache.length > 15) {
+      _hotRamCache.remove(_hotRamCache.keys.first);
+    }
+    _hotRamCache[index] = data;
   }
 }

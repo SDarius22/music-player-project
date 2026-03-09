@@ -50,58 +50,6 @@ class AppAudioService {
     _initPlayer();
   }
 
-  Future<AudioSource> _buildAudioSource(Song song) async {
-    bool isServerTrack = song.serverId > 0;
-
-    if (isServerTrack) {
-      final chunkManager = await createChunkManager(song.serverId);
-      return P2PChunkedAudioSource(chunkManager: chunkManager, tag: song);
-    } else {
-      return AudioSource.uri(Uri.file(song.path), tag: song);
-    }
-  }
-
-  /// Silently downloads Chunk 0 for the upcoming songs in the queue so they start instantly
-  Future<void> _proactivelyCachePrefixes() async {
-    final currentIndex = _normalQueue.indexOf(currentSong);
-    if (currentIndex == -1) return;
-
-    // Look ahead at the next 2 songs in the queue
-    final int lookaheadCount = 2;
-    final int endIndex = (currentIndex + 1 + lookaheadCount).clamp(
-      0,
-      _normalQueue.length,
-    );
-
-    final upcomingSongs = _normalQueue.sublist(currentIndex + 1, endIndex);
-
-    for (final song in upcomingSongs) {
-      // Only prefix-cache songs that are hosted on the server
-      if (song.serverId > 0) {
-        try {
-          // Temporarily spin up a ChunkManager just to fetch and save Chunk 0
-          final manager = await createChunkManager(song.serverId);
-
-          // Check if the prefix is already on disk to avoid redundant API calls
-          final existingChunk = await manager.cacheRepo.readChunk(
-            song.serverId,
-            0,
-          );
-
-          if (existingChunk == null) {
-            debugPrint("Proactively Prefix Caching Song ID ${song.serverId}");
-            // This triggers the Fast-Path we wrote above, instantly saving it to disk
-            await manager.getChunk(0);
-          }
-        } catch (e) {
-          debugPrint(
-            "Failed to prefix cache upcoming song ${song.serverId}: $e",
-          );
-        }
-      }
-    }
-  }
-
   Future<void> play() => audioPlayer.play();
 
   Future<void> pause() => audioPlayer.pause();
@@ -220,7 +168,8 @@ class AppAudioService {
     await audioPlayer.removeAudioSourceAt(
       audioSources.indexWhere((source) {
         if (source is IndexedAudioSource) {
-          final taggedSong = source.tag as Song?;
+          final songMap = source.tag as Map<String, dynamic>?;
+          final taggedSong = songMap?["song"] as Song?;
           return taggedSong?.id == song.id;
         }
         return false;
@@ -262,7 +211,8 @@ class AppAudioService {
       final currentSource = state.currentSource;
       if (currentSource == null) return;
 
-      final song = currentSource.tag as Song?;
+      final songMap = currentSource.tag as Map<String, dynamic>?;
+      final song = songMap?["song"] as Song?;
 
       if (song != null && song.id != currentSong.id) {
         _updateCurrentSong(song);
@@ -277,8 +227,11 @@ class AppAudioService {
   int _getPlayIndex(Song song) {
     final playIndex = audioPlayer.audioSources.indexWhere((source) {
       if (source is IndexedAudioSource) {
-        final taggedSong = source.tag as Song?;
-        return taggedSong?.id == song.id;
+        final taggedSong = source.tag as Map<String, dynamic>?;
+        return (taggedSong!["path"].toString().isNotEmpty &&
+                taggedSong["path"] == song.path) ||
+            (taggedSong["serverId"] != null &&
+                taggedSong["serverId"] == song.serverId);
       }
       return false;
     });
@@ -306,6 +259,70 @@ class AppAudioService {
     }
   }
 
+  Future<AudioSource> _buildAudioSource(Song song) async {
+    bool isServerTrack = song.serverId > 0 && song.path.isEmpty;
+    debugPrint(
+      "Building audio source for song '${song.name}' (ID: ${song.id}, Server ID: ${song.serverId}). Is server track: $isServerTrack",
+    );
+
+    if (isServerTrack) {
+      final chunkManager = await createChunkManager(song.serverId);
+      return P2PChunkedAudioSource(
+        chunkManager: chunkManager,
+        tag: Map<String, dynamic>.from({
+          "path": song.path,
+          "serverId": song.serverId,
+          "song": song,
+        }),
+      );
+    } else {
+      return AudioSource.uri(
+        Uri.file(song.path),
+        tag: Map<String, dynamic>.from({
+          "path": song.path,
+          "serverId": song.serverId,
+          "song": song,
+        }),
+      );
+    }
+  }
+
+  Future<void> _proactivelyCachePrefixes() async {
+    final currentIndex = _normalQueue.indexOf(currentSong);
+    if (currentIndex == -1) return;
+
+    final int lookaheadCount = 2;
+    final int endIndex = (currentIndex + 1 + lookaheadCount).clamp(
+      0,
+      _normalQueue.length,
+    );
+
+    final upcomingSongs = _normalQueue.sublist(currentIndex + 1, endIndex);
+
+    for (final song in upcomingSongs) {
+      if (song.serverId > 0) {
+        try {
+          final manager = await createChunkManager(song.serverId);
+
+          final existingChunk = await manager.cacheRepo.readChunk(
+            song.serverId,
+            0,
+          );
+
+          if (existingChunk == null) {
+            debugPrint("Proactively Prefix Caching Song ID ${song.serverId}");
+            // This triggers the Fast-Path we wrote above, instantly saving it to disk
+            await manager.getChunk(0);
+          }
+        } catch (e) {
+          debugPrint(
+            "Failed to prefix cache upcoming song ${song.serverId}: $e",
+          );
+        }
+      }
+    }
+  }
+
   void likeCurrentSong() {
     currentSongNotifier.value.likedByUser =
         !currentSongNotifier.value.likedByUser;
@@ -326,7 +343,7 @@ class AppAudioService {
     playlistService.updateMostPlayedPlaylist();
     playlistService.updateRecentlyPlayedPlaylist();
 
-    _proactivelyCachePrefixes();
+    // _proactivelyCachePrefixes();
   }
 
   void updateSliderInSeconds(int seconds) {

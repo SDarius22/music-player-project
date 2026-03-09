@@ -3,6 +3,8 @@ package com.example.musicplayerbackend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "albums")
 @Getter
@@ -18,4 +20,13 @@ public class Album {
 
     @Column(nullable = false)
     private String name;
+
+    private String coverImage; // base64 encoded image
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "artist_id")
+    private Artist artist;
+
+    @OneToMany(mappedBy = "album")
+    private List<Song> songs;
 }

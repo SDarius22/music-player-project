@@ -57,7 +57,11 @@ public class SongService {
                 .orElseGet(() -> artistRepository.save(Artist.builder().name(artistName).build()));
 
         Album album = albumRepository.findByName(albumName)
-                .orElseGet(() -> albumRepository.save(Album.builder().name(albumName).build()));
+                .orElseGet(() -> albumRepository.save(
+                        Album.builder()
+                                .name(albumName)
+                                .coverImage(photo)
+                                .build()));
 
         Song song = Song.builder()
                 .name(name)
@@ -67,7 +71,6 @@ public class SongService {
                 .durationInSeconds(duration)
                 .ownerId(null)
                 .discNumber(disc)
-                .photo(photo)
                 .trackNumber(track)
                 .releaseYear(year)
                 .build();
@@ -95,7 +98,6 @@ public class SongService {
                 .trackNumber(request.getTrackNumber())
                 .discNumber(request.getDiscNumber())
                 .releaseYear(request.getReleaseYear())
-                .photo(request.getPhoto())
                 .build();
 
         song = songRepository.save(song);

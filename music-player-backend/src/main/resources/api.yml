@@ -379,6 +379,9 @@ components:
           format: int64
         name:
           type: string
+        photo:
+          type: string
+
 
     SongDto:
       type: object
@@ -392,8 +395,6 @@ components:
           $ref: '#/components/schemas/ArtistDto'
         album:
           $ref: '#/components/schemas/AlbumDto'
-        photo:
-          type: string
         durationInSeconds:
           type: integer
         trackNumber:

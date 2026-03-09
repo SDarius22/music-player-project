@@ -3,11 +3,13 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
-abstract class AbstractSettingsScreen extends StatefulWidget {
-  const AbstractSettingsScreen({super.key});
+abstract class AbstractUserSettingsScreen extends StatefulWidget {
+  const AbstractUserSettingsScreen({super.key});
 }
 
-abstract class AbstractSettingsScreenState<T extends AbstractSettingsScreen>
+abstract class AbstractUserSettingsScreenState<
+  T extends AbstractUserSettingsScreen
+>
     extends State<T> {
   String dropDownValue = "Off";
 

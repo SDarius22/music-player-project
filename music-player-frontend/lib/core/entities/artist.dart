@@ -12,6 +12,10 @@ class Artist with AbstractCollection implements BaseEntity {
   @Id()
   int id = 0;
 
+  @Index()
+  int serverId = -1;
+  bool requiresSync = false;
+
   @Unique()
   String _name = "Unknown artist";
 
@@ -26,6 +30,16 @@ class Artist with AbstractCollection implements BaseEntity {
 
   @override
   set name(String value) => _name = value;
+
+  Artist();
+
+  factory Artist.fromJson(Map<String, dynamic> json) {
+    Artist artist = Artist();
+    artist.id = 0;
+    artist.name = json['name'] ?? "Unknown Artist";
+    artist.serverId = json['id'] ?? -1;
+    return artist;
+  }
 
   @override
   ToMany<Song> get songs => _songs;

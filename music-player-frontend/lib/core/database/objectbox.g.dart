@@ -27,7 +27,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 5434110965985548662),
     name: 'Album',
-    lastPropertyId: const obx_int.IdUid(10, 1694862551234699842),
+    lastPropertyId: const obx_int.IdUid(12, 5063639271441214345),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -55,6 +55,19 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(9, 8887715385877929801),
         name: 'imageBytes',
         type: 23,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 3924521693914475052),
+        name: 'serverId',
+        type: 6,
+        flags: 8,
+        indexId: const obx_int.IdUid(18, 2189184110949834609),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 5063639271441214345),
+        name: 'requiresSync',
+        type: 1,
         flags: 0,
       ),
     ],
@@ -128,7 +141,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(3, 286855446892723846),
     name: 'Artist',
-    lastPropertyId: const obx_int.IdUid(3, 5416451551965956234),
+    lastPropertyId: const obx_int.IdUid(5, 2380292327961155992),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -141,6 +154,19 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(3, 5416451551965956234),
         name: 'name',
         type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 8568210031913555152),
+        name: 'serverId',
+        type: 6,
+        flags: 8,
+        indexId: const obx_int.IdUid(19, 6323886865723491998),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 2380292327961155992),
+        name: 'requiresSync',
+        type: 1,
         flags: 0,
       ),
     ],
@@ -285,8 +311,7 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(2, 5064592112988109331),
         name: 'path',
         type: 9,
-        flags: 2080,
-        indexId: const obx_int.IdUid(3, 5875477887538721059),
+        flags: 0,
       ),
       obx_int.ModelProperty(
         id: const obx_int.IdUid(9, 4990231509912090547),
@@ -423,7 +448,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
     lastEntityId: const obx_int.IdUid(13, 9001332223065747901),
-    lastIndexId: const obx_int.IdUid(17, 358579570990390237),
+    lastIndexId: const obx_int.IdUid(19, 6323886865723491998),
     lastRelationId: const obx_int.IdUid(9, 7632131054866366746),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -435,7 +460,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
       4825632188467975262,
       9001332223065747901,
     ],
-    retiredIndexUids: const [3299821873480654513, 5495534843995516530],
+    retiredIndexUids: const [
+      3299821873480654513,
+      5495534843995516530,
+      5875477887538721059,
+    ],
     retiredPropertyUids: const [
       1158660851052252113,
       7149598354745784686,
@@ -525,11 +554,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final imageBytesOffset = object.imageBytes == null
             ? null
             : fbb.writeListInt8(object.imageBytes!);
-        fbb.startTable(11);
+        fbb.startTable(13);
         fbb.addInt64(0, object.id);
         fbb.addOffset(2, nameOffset);
         fbb.addInt64(7, object.artist.targetId);
         fbb.addOffset(8, imageBytesOffset);
+        fbb.addInt64(10, object.serverId);
+        fbb.addBool(11, object.requiresSync);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -546,7 +577,19 @@ obx_int.ModelDefinition getObjectBoxModel() {
               const fb.Uint8ListReader(
                     lazy: false,
                   ).vTableGetNullable(buffer, rootOffset, 20)
-                  as Uint8List?;
+                  as Uint8List?
+          ..serverId = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            24,
+            0,
+          )
+          ..requiresSync = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            26,
+            false,
+          );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -652,9 +695,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
       },
       objectToFB: (Artist object, fb.Builder fbb) {
         final nameOffset = fbb.writeString(object.name);
-        fbb.startTable(4);
+        fbb.startTable(6);
         fbb.addInt64(0, object.id);
         fbb.addOffset(2, nameOffset);
+        fbb.addInt64(3, object.serverId);
+        fbb.addBool(4, object.requiresSync);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -666,7 +711,19 @@ obx_int.ModelDefinition getObjectBoxModel() {
           ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
           ..name = const fb.StringReader(
             asciiOptimization: true,
-          ).vTableGet(buffer, rootOffset, 8, '');
+          ).vTableGet(buffer, rootOffset, 8, '')
+          ..serverId = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            10,
+            0,
+          )
+          ..requiresSync = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            12,
+            false,
+          );
         obx_int.InternalToManyAccess.setRelInfo<Artist>(
           object.songs,
           store,
@@ -961,6 +1018,16 @@ class Album_ {
     _entities[0].properties[3],
   );
 
+  /// See [Album.serverId].
+  static final serverId = obx.QueryIntegerProperty<Album>(
+    _entities[0].properties[4],
+  );
+
+  /// See [Album.requiresSync].
+  static final requiresSync = obx.QueryBooleanProperty<Album>(
+    _entities[0].properties[5],
+  );
+
   /// see [Album.songs]
   static final songs = obx.QueryRelationToMany<Album, Song>(
     _entities[0].relations[0],
@@ -1019,6 +1086,16 @@ class Artist_ {
   /// See [Artist.name].
   static final name = obx.QueryStringProperty<Artist>(
     _entities[2].properties[1],
+  );
+
+  /// See [Artist.serverId].
+  static final serverId = obx.QueryIntegerProperty<Artist>(
+    _entities[2].properties[2],
+  );
+
+  /// See [Artist.requiresSync].
+  static final requiresSync = obx.QueryBooleanProperty<Artist>(
+    _entities[2].properties[3],
   );
 
   /// see [Artist.songs]

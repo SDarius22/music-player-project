@@ -35,7 +35,7 @@ public class Song {
     private SongType songType;
 
     private Long ownerId; // null for streamable songs, user ID for user-uploaded songs
-    private String photo;
+
     private Integer durationInSeconds;
     private Integer trackNumber;
     private Integer discNumber;

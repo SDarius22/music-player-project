@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/song_repo.dart';
+import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
 
 class SongService {
   final SongRepository _songRepository;
+  final SongRestService _songRestService;
 
-  SongService(this._songRepository);
+  SongService(this._songRepository, this._songRestService);
 
   Map<String, dynamic> get sortFields => _songRepository.sortFields;
 
@@ -62,6 +64,10 @@ class SongService {
     return _songRepository.getAllSongs();
   }
 
+  Future<List<Song>> getServerSongs() async {
+    return await _songRestService.getAllSongs();
+  }
+
   void updateSong(Song song) {
     _songRepository.updateSong(song);
   }
@@ -86,5 +92,19 @@ class SongService {
       }
     }
     return songs;
+  }
+
+  void linkToServerId(int localId, int serverId) {
+    final song = _songRepository.getSong(localId);
+    song.serverId = serverId;
+    _songRepository.updateSong(song);
+  }
+
+  void recordPlay(int songId) {
+    final song = _songRepository.getSong(songId);
+    song.playCount++;
+    song.lastPlayed = DateTime.now();
+    song.requiresSync = true;
+    _songRepository.updateSong(song);
   }
 }

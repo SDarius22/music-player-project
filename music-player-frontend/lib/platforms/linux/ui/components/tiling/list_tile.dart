@@ -59,8 +59,6 @@ class LinuxCustomListTile extends AbstractCustomListTile {
                   ),
                   child: ImageWidget(
                     entity: entity,
-                    // path: _pathForImageWidget(entity),
-                    // type: _getImageWidgetType(entity),
                     hoveredChild: leadingAction,
                     child:
                         isSelected
@@ -98,8 +96,8 @@ class LinuxCustomListTile extends AbstractCustomListTile {
                               text: entity.name,
                               style: TextStyle(
                                 color:
-                                    audioProvider.currentSong.path ==
-                                            (entity as Song).path
+                                    audioProvider.currentSong ==
+                                            (entity as Song)
                                         ? Colors.blue
                                         : Colors.white,
                                 fontSize: normalSize,
@@ -137,8 +135,7 @@ class LinuxCustomListTile extends AbstractCustomListTile {
                             text: (entity as Song).artist.target.toString(),
                             style: TextStyle(
                               color:
-                                  audioProvider.currentSong.path ==
-                                          (entity as Song).path
+                                  audioProvider.currentSong == (entity as Song)
                                       ? Colors.blue
                                       : Colors.white,
                               fontSize: smallSize,
@@ -165,8 +162,7 @@ class LinuxCustomListTile extends AbstractCustomListTile {
                       "${(entity as Song).durationInSeconds ~/ 60}:${((entity as Song).durationInSeconds % 60).toString().padLeft(2, '0')}",
                       style: TextStyle(
                         color:
-                            audioProvider.currentSong.path ==
-                                    (entity as Song).path
+                            audioProvider.currentSong == (entity as Song)
                                 ? Colors.blue
                                 : Colors.white,
                         fontSize: normalSize,

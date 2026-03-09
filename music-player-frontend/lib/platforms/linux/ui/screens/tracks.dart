@@ -51,7 +51,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
           valueListenable: audioProvider.playingNotifier,
           builder: (context, isPlaying, child) {
             return Icon(
-              audioProvider.currentSong.path == song.path &&
+              audioProvider.currentSong == song &&
                       audioProvider.playingNotifier.value == true
                   ? FluentIcons.pause
                   : FluentIcons.play,
@@ -144,8 +144,9 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
     var song = entity as Song;
     var audioProvider = Provider.of<AudioProvider>(context, listen: false);
     try {
-      if (audioProvider.currentSong.path != song.path) {
+      if (audioProvider.currentSong != song) {
         List<Song> songs = snapshot.data as List<Song>;
+        debugPrint("Playing new song: ${song.name}");
         await audioProvider.setQueueAndPlay(songs, song);
       } else {
         if (audioProvider.playingNotifier.value == true) {

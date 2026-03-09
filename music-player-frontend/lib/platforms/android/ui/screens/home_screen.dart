@@ -3,7 +3,7 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/main_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_nav_bar.dart';
 import 'package:music_player_frontend/platforms/android/ui/components/widgets/android_song_player_widget.dart';
@@ -12,7 +12,7 @@ import 'package:music_player_frontend/platforms/android/ui/screens/settings_scre
 import 'package:music_player_frontend/platforms/android/ui/screens/tracks.dart';
 import 'package:provider/provider.dart';
 
-class HomeScreen extends AbstractHomeScreen {
+class HomeScreen extends AbstractMainScaffold {
   const HomeScreen({super.key});
 
   static Route<dynamic> route() {
@@ -25,10 +25,10 @@ class HomeScreen extends AbstractHomeScreen {
   }
 
   @override
-  AbstractHomeScreenState createState() => _HomeScreenState();
+  AbstractMainScaffoldState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends AbstractHomeScreenState<HomeScreen> {
+class _HomeScreenState extends AbstractMainScaffoldState<HomeScreen> {
   late final HeroController _heroController;
 
   @override

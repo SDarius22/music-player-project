@@ -1,22 +1,23 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebRTCService {
   final String myDeviceId;
+  final AuthService authService;
   final WebSocketChannel signalingSocket;
-  final Function(int chunkIndex, Uint8List data) onChunkReceived;
+  final Function(int songId, int chunkIndex, Uint8List data) onChunkReceived;
   final Future<Uint8List?> Function(int songId, int chunkIndex)
   onChunkRequested;
 
-  RTCPeerConnection? _peerConnection;
-  RTCDataChannel? _dataChannel;
+  int? _userId;
 
-  bool get isConnected =>
-      _dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen;
+  final Map<String, RTCPeerConnection> _peerConnections = {};
+  final Map<String, RTCDataChannel> _dataChannels = {};
 
   final Map<String, dynamic> _iceServers = {
     'iceServers': [
@@ -27,21 +28,103 @@ class WebRTCService {
 
   WebRTCService({
     required this.myDeviceId,
+    required this.authService,
     required this.signalingSocket,
     required this.onChunkReceived,
     required this.onChunkRequested,
   }) {
-    _listenToSignaling();
+    _init();
   }
 
-  Future<void> _initializePeerConnection(String targetPeerId) async {
-    _peerConnection = await createPeerConnection(_iceServers);
+  Future<void> _init() async {
+    final token = await authService.accessToken;
+    if (token != null) {
+      _userId = _parseUserIdFromJwt(token);
+      _listenToSignaling();
+    }
+  }
 
-    _peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
+  int _parseUserIdFromJwt(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return 0;
+
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final resp = utf8.decode(base64Url.decode(normalized));
+      final payloadMap = jsonDecode(resp);
+
+      if (payloadMap['id'] is int) return payloadMap['id'];
+      if (payloadMap['sub'] is String) {
+        return int.tryParse(payloadMap['sub']) ?? 0;
+      }
+
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  bool get isConnected => _dataChannels.isNotEmpty;
+
+  bool hasPeersForSong(int songId) {
+    return _dataChannels.isNotEmpty;
+  }
+
+  void requestChunk(int songId, int chunkIndex) {
+    final requestMsg = 'REQUEST_CHUNK:$songId:$chunkIndex';
+
+    for (final channel in _dataChannels.values) {
+      if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
+        channel.send(RTCDataChannelMessage(requestMsg));
+      }
+    }
+  }
+
+  void registerCache(int songId, List<int> chunkIndices) {
+    if (_userId == null) return;
+
+    signalingSocket.sink.add(
+      jsonEncode({
+        'type': 'REGISTER_CACHE',
+        'senderId': myDeviceId,
+        'userId': _userId,
+        'targetId': 'SERVER',
+        'songId': songId,
+        'payload': chunkIndices,
+      }),
+    );
+  }
+
+  void discoverPeers(int songId) {
+    if (_userId == null) return;
+
+    signalingSocket.sink.add(
+      jsonEncode({
+        'type': 'DISCOVER_PEERS',
+        'senderId': myDeviceId,
+        'userId': _userId,
+        'targetId': 'SERVER',
+        'songId': songId,
+        'payload': {},
+      }),
+    );
+  }
+
+  Future<void> _createPeerConnection(
+    String remotePeerId,
+    bool initiator,
+  ) async {
+    if (_peerConnections.containsKey(remotePeerId)) return;
+
+    final pc = await createPeerConnection(_iceServers);
+    _peerConnections[remotePeerId] = pc;
+
+    pc.onIceCandidate = (candidate) {
       if (candidate.candidate != null) {
         _sendSignal(
           type: 'ICE_CANDIDATE',
-          targetId: targetPeerId,
+          targetId: remotePeerId,
           payload: {
             'candidate': candidate.candidate,
             'sdpMid': candidate.sdpMid,
@@ -51,118 +134,115 @@ class WebRTCService {
       }
     };
 
-    // 2. Listen for the remote peer opening a DataChannel
-    _peerConnection!.onDataChannel = (RTCDataChannel channel) {
-      _dataChannel = channel;
-      _bindDataChannelListeners();
+    pc.onConnectionState = (state) {
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+          state == RTCPeerConnectionState.RTCPeerConnectionStateClosed ||
+          state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        _closePeer(remotePeerId);
+      }
     };
+
+    if (initiator) {
+      final dcInit = RTCDataChannelInit()..ordered = true;
+      final dc = await pc.createDataChannel('chunk_transfer', dcInit);
+      _setupDataChannel(remotePeerId, dc);
+
+      final offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      _sendSignal(
+        type: 'OFFER',
+        targetId: remotePeerId,
+        payload: {'sdp': offer.sdp, 'type': offer.type},
+      );
+    } else {
+      pc.onDataChannel = (channel) {
+        _setupDataChannel(remotePeerId, channel);
+      };
+    }
   }
 
-  /// Binds listeners to process incoming binary chunks or string commands
-  void _bindDataChannelListeners() {
-    _dataChannel?.onMessage = (RTCDataChannelMessage message) async {
+  void _setupDataChannel(String remotePeerId, RTCDataChannel channel) {
+    _dataChannels[remotePeerId] = channel;
+
+    channel.onMessage = (message) async {
       if (message.isBinary) {
-        // THE FIX: Read the first 4 bytes to extract the exact chunkIndex
-        final byteData = ByteData.sublistView(message.binary);
-        final int chunkIndex = byteData.getUint32(0, Endian.big);
-        final Uint8List actualAudioData = message.binary.sublist(4);
-
-        debugPrint(
-          "Received P2P binary payload for Chunk $chunkIndex (${actualAudioData.length} bytes)",
-        );
-        onChunkReceived(chunkIndex, actualAudioData);
+        _handleBinaryMessage(message.binary);
       } else {
-        final text = message.text;
-        debugPrint("Received P2P command: $text");
-
-        // THE FIX: Parse the request and send the binary data back!
-        if (text.startsWith('REQUEST_CHUNK:')) {
-          final parts = text.split(':');
-          if (parts.length == 3) {
-            final songId = int.parse(parts[1]);
-            final chunkIndex = int.parse(parts[2]);
-
-            // Ask the local disk for the file
-            final chunkData = await onChunkRequested(songId, chunkIndex);
-
-            if (chunkData != null) {
-              sendChunkToPeer(chunkIndex, chunkData);
-            } else {
-              debugPrint(
-                "Peer asked for Chunk $chunkIndex but we don't have it cached!",
-              );
-            }
-          }
-        }
+        await _handleTextMessage(remotePeerId, message.text);
       }
     };
   }
 
-  /// PEER A: Requests a chunk over the open P2P channel (Updated with Song ID)
-  void requestChunk(int songId, int chunkIndex) {
-    if (_dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
-      _dataChannel!.send(
-        RTCDataChannelMessage('REQUEST_CHUNK:$songId:$chunkIndex'),
-      );
+  void _handleBinaryMessage(Uint8List binary) {
+    try {
+      final byteData = ByteData.sublistView(binary);
+
+      final songId = byteData.getUint32(0, Endian.big);
+      final chunkIndex = byteData.getUint32(4, Endian.big);
+
+      final audioData = binary.sublist(8);
+
+      onChunkReceived(songId, chunkIndex, audioData);
+    } catch (e) {
+      debugPrint("Error parsing binary P2P message: $e");
     }
   }
 
-  /// PEER B: Frames the binary data with the chunkIndex and blasts it over UDP
-  void sendChunkToPeer(int chunkIndex, Uint8List chunkData) {
-    if (_dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
-      // Allocate 4 extra bytes for the integer header
-      final ByteData header = ByteData(4 + chunkData.length);
-      header.setUint32(0, chunkIndex, Endian.big); // Write the index
+  Future<void> _handleTextMessage(String remotePeerId, String text) async {
+    if (text.startsWith('REQUEST_CHUNK:')) {
+      final parts = text.split(':');
+      if (parts.length == 3) {
+        final songId = int.parse(parts[1]);
+        final chunkIndex = int.parse(parts[2]);
 
-      // Copy the raw audio bytes directly after the 4-byte header
-      final Uint8List framedPacket = header.buffer.asUint8List();
-      framedPacket.setAll(4, chunkData);
-
-      _dataChannel!.send(RTCDataChannelMessage.fromBinary(framedPacket));
+        final data = await onChunkRequested(songId, chunkIndex);
+        if (data != null) {
+          _sendChunkToPeer(remotePeerId, songId, chunkIndex, data);
+        }
+      }
     }
   }
 
-  /// Helper to send JSON messages through your established Spring Boot WebSocket
+  void _sendChunkToPeer(
+    String targetPeerId,
+    int songId,
+    int chunkIndex,
+    Uint8List data,
+  ) {
+    final channel = _dataChannels[targetPeerId];
+    if (channel != null &&
+        channel.state == RTCDataChannelState.RTCDataChannelOpen) {
+      final header = ByteData(8);
+      header.setUint32(0, songId, Endian.big);
+      header.setUint32(4, chunkIndex, Endian.big);
+
+      final packet = Uint8List(8 + data.length);
+      packet.setAll(0, header.buffer.asUint8List());
+      packet.setAll(8, data);
+
+      channel.send(RTCDataChannelMessage.fromBinary(packet));
+    }
+  }
+
   void _sendSignal({
     required String type,
     required String targetId,
     required Map<String, dynamic> payload,
   }) {
-    final signal = {
-      'type': type,
-      'senderId': myDeviceId,
-      'targetId': targetId,
-      'songId': 1, // Dynamically set this in production
-      'payload': payload,
-    };
-    signalingSocket.sink.add(jsonEncode(signal));
-  }
+    if (_userId == null) return;
 
-  /// PEER A (The Leecher): Initiates the connection to request chunks
-  Future<void> initiateCall(String targetPeerId) async {
-    await _initializePeerConnection(targetPeerId);
-
-    // The caller MUST create the DataChannel before creating the offer
-    RTCDataChannelInit dataChannelDict = RTCDataChannelInit()..ordered = true;
-    _dataChannel = await _peerConnection!.createDataChannel(
-      'chunk_transfer',
-      dataChannelDict,
-    );
-    _bindDataChannelListeners();
-
-    // Create the SDP Offer
-    RTCSessionDescription offer = await _peerConnection!.createOffer();
-    await _peerConnection!.setLocalDescription(offer);
-
-    // Send the Offer through Spring Boot
-    _sendSignal(
-      type: 'OFFER',
-      targetId: targetPeerId,
-      payload: {'sdp': offer.sdp, 'type': offer.type},
+    signalingSocket.sink.add(
+      jsonEncode({
+        'type': type,
+        'senderId': myDeviceId,
+        'userId': _userId,
+        'targetId': targetId,
+        'payload': payload,
+      }),
     );
   }
 
-  /// Master WebSocket Listener: Routes incoming signals from Spring Boot
   void _listenToSignaling() {
     signalingSocket.stream.listen((message) async {
       final signal = jsonDecode(message);
@@ -170,110 +250,74 @@ class WebRTCService {
       final senderId = signal['senderId'];
       final payload = signal['payload'];
 
+      if (senderId == myDeviceId) return;
+
       switch (type) {
-        case 'PEER_BUFFER_MAP': // <-- ADD THIS CASE
-          _handlePeerBufferMap(payload);
+        case 'PEER_BUFFER_MAP':
+          Map<String, dynamic> map = payload;
+          for (String peerId in map.keys) {
+            if (!_peerConnections.containsKey(peerId)) {
+              _createPeerConnection(peerId, true);
+            }
+          }
           break;
+
         case 'OFFER':
-          await _handleReceiveOffer(senderId, payload);
+          await _createPeerConnection(senderId, false);
+          final pc = _peerConnections[senderId];
+          if (pc != null) {
+            await pc.setRemoteDescription(
+              RTCSessionDescription(payload['sdp'], payload['type']),
+            );
+            final answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            _sendSignal(
+              type: 'ANSWER',
+              targetId: senderId,
+              payload: {'sdp': answer.sdp, 'type': answer.type},
+            );
+          }
           break;
+
         case 'ANSWER':
-          await _handleReceiveAnswer(payload);
+          final pc = _peerConnections[senderId];
+          if (pc != null) {
+            await pc.setRemoteDescription(
+              RTCSessionDescription(payload['sdp'], payload['type']),
+            );
+          }
           break;
+
         case 'ICE_CANDIDATE':
-          await _handleReceiveIceCandidate(payload);
+          final pc = _peerConnections[senderId];
+          if (pc != null) {
+            await pc.addCandidate(
+              RTCIceCandidate(
+                payload['candidate'],
+                payload['sdpMid'],
+                payload['sdpMLineIndex'],
+              ),
+            );
+          }
           break;
       }
     });
   }
 
-  /// Parses the active swarm and initiates the direct connection to the seeder
-  void _handlePeerBufferMap(Map<String, dynamic> payload) {
-    if (payload.isEmpty) {
-      debugPrint(
-        "Swarm is empty. Proceeding with Master Server HTTP fallback.",
-      );
-      return;
+  void _closePeer(String peerId) {
+    _dataChannels[peerId]?.close();
+    _peerConnections[peerId]?.close();
+    _dataChannels.remove(peerId);
+    _peerConnections.remove(peerId);
+  }
+
+  void dispose() {
+    for (var element in _dataChannels.values) {
+      element.close();
     }
-
-    // For your thesis prototype, we aggressively grab the very first peer in the swarm.
-    // In a production environment, you would run an algorithm to find the peer with the most chunks.
-    String targetPeerId = payload.keys.first;
-    debugPrint(
-      "Discovered peer in swarm: $targetPeerId. Initiating WebRTC Handshake...",
-    );
-
-    initiateCall(targetPeerId);
-  }
-
-  /// PEER B (The Seeder): Receives the Offer and generates an Answer
-  Future<void> _handleReceiveOffer(
-    String remotePeerId,
-    Map<String, dynamic> payload,
-  ) async {
-    await _initializePeerConnection(remotePeerId);
-
-    // Apply the remote peer's SDP
-    RTCSessionDescription remoteDesc = RTCSessionDescription(
-      payload['sdp'],
-      payload['type'],
-    );
-    await _peerConnection!.setRemoteDescription(remoteDesc);
-
-    // Generate the SDP Answer
-    RTCSessionDescription answer = await _peerConnection!.createAnswer();
-    await _peerConnection!.setLocalDescription(answer);
-
-    // Send the Answer back through Spring Boot
-    _sendSignal(
-      type: 'ANSWER',
-      targetId: remotePeerId,
-      payload: {'sdp': answer.sdp, 'type': answer.type},
-    );
-  }
-
-  /// PEER A: Receives the Answer and finalizes the connection
-  Future<void> _handleReceiveAnswer(Map<String, dynamic> payload) async {
-    RTCSessionDescription remoteDesc = RTCSessionDescription(
-      payload['sdp'],
-      payload['type'],
-    );
-    await _peerConnection!.setRemoteDescription(remoteDesc);
-  }
-
-  /// BOTH PEERS: Adds discovered network routes to punch through the NAT
-  Future<void> _handleReceiveIceCandidate(Map<String, dynamic> payload) async {
-    RTCIceCandidate candidate = RTCIceCandidate(
-      payload['candidate'],
-      payload['sdpMid'],
-      payload['sdpMLineIndex'],
-    );
-    await _peerConnection?.addCandidate(candidate);
-  }
-
-  /// Tells the backend: "I just downloaded these chunks, add me to the registry."
-  void registerCache(int songId, List<int> chunkIndices) {
-    signalingSocket.sink.add(
-      jsonEncode({
-        'type': 'REGISTER_CACHE',
-        'senderId': myDeviceId,
-        'targetId': 'SERVER',
-        'songId': songId,
-        'payload': chunkIndices,
-      }),
-    );
-  }
-
-  /// Asks the backend: "Who currently has the chunks for this song?"
-  void discoverPeers(int songId) {
-    signalingSocket.sink.add(
-      jsonEncode({
-        'type': 'DISCOVER_PEERS',
-        'senderId': myDeviceId,
-        'targetId': 'SERVER',
-        'songId': songId,
-        'payload': {},
-      }),
-    );
+    for (var element in _peerConnections.values) {
+      element.close();
+    }
+    signalingSocket.sink.close();
   }
 }

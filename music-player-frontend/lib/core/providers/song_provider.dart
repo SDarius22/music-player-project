@@ -16,7 +16,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   late Future _songsFuture;
 
   SongProvider(this._songService, this._scannerService) {
-    _songsFuture = Future(() => _songService.getAllSongs());
+    _songsFuture = Future(() => _songService.getServerSongs());
   }
 
   @override
@@ -45,9 +45,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     debugPrint(
       "Refreshing songs with query '$_query', sortField '$_sortField', isAscending '$_isAscending'",
     );
-    _songsFuture = Future(
-      () => _songService.getSongs(_query, _sortField, _isAscending),
-    );
+    _songsFuture = Future(() => _songService.getServerSongs());
     notifyListeners();
   }
 
@@ -121,9 +119,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   @override
   Future<void> refresh() async {
-    _songsFuture = Future(
-      () => _songService.getSongs(_query, _sortField, _isAscending),
-    );
+    _songsFuture = Future(() => _songService.getServerSongs());
     notifyListeners();
   }
 }

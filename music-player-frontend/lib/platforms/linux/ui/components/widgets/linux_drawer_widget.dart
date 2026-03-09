@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/entities/user.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
@@ -14,8 +16,9 @@ import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler
 import 'package:music_player_frontend/platforms/linux/ui/screens/albums.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/artists.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/playlists.dart';
-import 'package:music_player_frontend/platforms/linux/ui/screens/settings_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/tracks.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/upload_songs_screen.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/user_settings_screen.dart';
 import 'package:provider/provider.dart';
 
 class LinuxDrawerWidget extends DrawerWidget {
@@ -73,18 +76,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
         );
       },
     },
-    {
-      "text": "Settings",
-      "tooltip": "Settings",
-      "icon": FluentIcons.settings,
-      "index": 5,
-      "onTap": (BuildContext context) {
-        setState(() => _selected = 5);
-        _appStateProvider.innerNavigatorKey.currentState!.push(
-          SettingsScreen.route(),
-        );
-      },
-    },
+  ];
+
+  List<Map<String, dynamic>> get adminMenuItems => [
     {
       "text": "TEST STREAM",
       "tooltip": "TEST STREAM",
@@ -95,6 +89,19 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
         testSong.id = 199999;
         testSong.serverId = 1;
         context.read<AudioProvider>().setQueueAndPlay([testSong], testSong);
+      },
+    },
+    {
+      "text": "Upload songs",
+      "tooltip": "Upload songs",
+      "icon": FluentIcons.download,
+      "index": 7,
+      "onTap": (BuildContext context) {
+        context
+            .read<AbstractAppStateProvider>()
+            .innerNavigatorKey
+            .currentState!
+            .push(LinuxUploadSongsScreen.route());
       },
     },
   ];
@@ -267,6 +274,33 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                   ),
                 ),
 
+                Selector<UserProvider, User?>(
+                  selector: (_, userProvider) => userProvider.currentUser,
+                  builder: (context, currentUser, child) {
+                    if (currentUser == null || !currentUser.isAdmin) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      children: [
+                        const Divider(
+                          color: Colors.white24,
+                          thickness: 1,
+                          indent: 8,
+                          endIndent: 8,
+                        ),
+                        ...adminMenuItems.map(
+                          (item) => _buildMenuItem(
+                            item: item,
+                            width: width,
+                            height: height,
+                            isDrawerOpen: isDrawerOpen,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
                 StreamBuilder(
                   stream:
                       context
@@ -351,14 +385,16 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                   child: MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
-                      onTap:
-                          _selected == 6
-                              ? null
-                              : () => setState(() => _selected = 6),
+                      onTap: () {
+                        setState(() => _selected = 5);
+                        _appStateProvider.innerNavigatorKey.currentState!.push(
+                          UserSettingsScreen.route(),
+                        );
+                      },
                       child: HoverContainer(
                         hoverColor: Colors.indigo.withValues(alpha: 0.2),
                         normalColor:
-                            _selected == 6
+                            _selected == 5
                                 ? Colors.white.withValues(alpha: 0.15)
                                 : Colors.transparent,
                         padding: EdgeInsets.symmetric(
@@ -377,7 +413,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                   alpha: 0.3,
                                 ),
                                 child: Icon(
-                                  FluentIcons.circlePerson,
+                                  FluentIcons.settings,
                                   size: LinuxScaler().scale(context, 24),
                                   color: Colors.white,
                                 ),
@@ -395,7 +431,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        "User Name",
+                                        "User Settings",
                                         style:
                                             MusicPlayerTheme.getTheme(
                                               context,
@@ -403,17 +439,24 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                             ).textTheme.bodyLarge,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      Text(
-                                        "user@email.com",
-                                        style: MusicPlayerTheme.getTheme(
-                                          context,
-                                          context.read<Scaler>(),
-                                        ).textTheme.bodyMedium?.copyWith(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.7,
-                                          ),
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
+                                      Selector<UserProvider, User?>(
+                                        selector:
+                                            (_, userProvider) =>
+                                                userProvider.currentUser,
+                                        builder: (context, user, child) {
+                                          return Text(
+                                            user?.email ?? "Not logged in",
+                                            style: MusicPlayerTheme.getTheme(
+                                              context,
+                                              context.read<Scaler>(),
+                                            ).textTheme.bodyMedium!.copyWith(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.7,
+                                              ),
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),

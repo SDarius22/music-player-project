@@ -4,29 +4,32 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/core/ui/screens/settings_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/user_settings_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/library_settings.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/login_register_screen.dart';
 import 'package:provider/provider.dart';
 
-class SettingsScreen extends AbstractSettingsScreen {
+class UserSettingsScreen extends AbstractUserSettingsScreen {
   static Route<void> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
-        return const SettingsScreen();
+        return const UserSettingsScreen();
       },
     );
   }
 
-  const SettingsScreen({super.key});
+  const UserSettingsScreen({super.key});
 
   @override
-  AbstractSettingsScreenState createState() => _SettingsScreenState();
+  AbstractUserSettingsScreenState createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
+class _SettingsScreenState
+    extends AbstractUserSettingsScreenState<UserSettingsScreen> {
   @override
   List<Map<String, Widget>> get settingsMap {
     var height = MediaQuery.of(context).size.height;
@@ -39,6 +42,43 @@ class _SettingsScreenState extends AbstractSettingsScreenState<SettingsScreen> {
     );
     final audioProvider = Provider.of<AudioProvider>(context, listen: false);
     return [
+      {
+        "title": const Text("Account"),
+        "subtitle": Consumer<UserProvider>(
+          builder: (context, userProvider, _) {
+            return Text(
+              userProvider.isAuthenticated
+                  ? "You are signed in\. Tap logout to sign out\."
+                  : "Sign in or create an account\.",
+            );
+          },
+        ),
+        "trailing": Consumer<UserProvider>(
+          builder: (context, userProvider, _) {
+            if (userProvider.isAuthenticated) {
+              return FilledButton(
+                onPressed: () async {
+                  await context.read<UserProvider>().logout();
+                },
+                child: const Text("Logout"),
+              );
+            }
+
+            return ElevatedButton(
+              onPressed: () {
+                final appState = context.read<AbstractAppStateProvider>();
+                appState.innerNavigatorKey.currentState?.push(
+                  LinuxLoginRegisterScreen.route(),
+                );
+              },
+              child: Text(
+                "Login / Register",
+                style: TextStyle(color: Colors.white, fontSize: normalSize),
+              ),
+            );
+          },
+        ),
+      },
       {
         "title": const Text("Library Settings"),
         "subtitle": const Text("Manage your music library settings"),

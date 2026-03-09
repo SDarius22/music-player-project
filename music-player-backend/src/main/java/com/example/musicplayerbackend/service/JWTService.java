@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.service;
 
+import com.example.musicplayerbackend.domain.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -35,12 +36,14 @@ public class JWTService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateAccessToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails, jwtExpiration);
+    public String generateAccessToken(User user) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("role", user.getRole());
+        return generateToken(extraClaims, user, jwtExpiration);
     }
 
-    public String generateRefreshToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails, refreshExpiration);
+    public String generateRefreshToken(User user) {
+        return generateToken(new HashMap<>(), user, refreshExpiration);
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
@@ -48,10 +51,10 @@ public class JWTService {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    private String generateToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
+    private String generateToken(Map<String, Object> extraClaims, User user, long expiration) {
         return Jwts.builder()
                 .claims(extraClaims)
-                .subject(userDetails.getUsername())
+                .subject(user.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey())

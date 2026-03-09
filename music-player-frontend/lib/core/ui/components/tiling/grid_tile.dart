@@ -121,7 +121,7 @@ class CustomGridTile extends StatelessWidget {
                                     context.read<Scaler>(),
                                   ).textTheme.titleSmall!.copyWith(
                                     color:
-                                        song.path == (entity as Song).path
+                                        song == (entity as Song)
                                             ? Colors.blue
                                             : Colors.white,
                                   ),
@@ -190,7 +190,7 @@ class CustomGridTile extends StatelessWidget {
                                         context.read<Scaler>(),
                                       ).textTheme.titleSmall!.copyWith(
                                         color:
-                                            song.path == (entity as Song).path
+                                            song == (entity as Song)
                                                 ? Colors.blue
                                                 : Colors.white,
                                       ),

@@ -91,6 +91,8 @@ public class AuthService {
                     User newUser = User.builder()
                             .email(email)
                             .createdAt(Instant.now())
+                            .role(Role.USER)
+                            .provider(AuthProvider.LOCAL)
                             .build();
                     return userRepository.save(newUser);
                 });

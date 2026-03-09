@@ -4,28 +4,29 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/main_scaffold.dart';
-import 'package:music_player_frontend/platforms/macos/ui/components/widgets/macos_drawer_widget.dart';
-import 'package:music_player_frontend/platforms/macos/ui/components/widgets/macos_song_player_widget.dart';
-import 'package:music_player_frontend/platforms/macos/ui/components/widgets/macos_top_bar_widget.dart';
-import 'package:music_player_frontend/platforms/macos/ui/screens/tracks.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_drawer_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_song_player_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/tracks.dart';
 import 'package:provider/provider.dart';
 
-class HomeScreen extends AbstractMainScaffold {
-  const HomeScreen({super.key});
+class LinuxMainScaffold extends AbstractMainScaffold {
+  const LinuxMainScaffold({super.key});
 
   static Route<dynamic> route() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) {
-        return const HomeScreen();
+        return const LinuxMainScaffold();
       },
     );
   }
 
   @override
-  AbstractMainScaffoldState createState() => _HomeScreenState();
+  AbstractMainScaffoldState createState() => _LinuxMainScaffoldState();
 }
 
-class _HomeScreenState extends AbstractMainScaffoldState<HomeScreen> {
+class _LinuxMainScaffoldState
+    extends AbstractMainScaffoldState<LinuxMainScaffold> {
   bool _didPushInitial = false;
 
   @override
@@ -43,10 +44,10 @@ class _HomeScreenState extends AbstractMainScaffoldState<HomeScreen> {
 
   @override
   PreferredSizeWidget buildAppBar(BuildContext context) =>
-      const MacosAppBarWidget();
+      const LinuxAppBarWidget();
 
   @override
-  Widget buildSongPlayer() => const MacosSongPlayerWidget();
+  Widget buildSongPlayer() => const LinuxSongPlayerWidget();
 
   @override
   EdgeInsetsGeometry buildPadding(BuildContext context) {
@@ -78,7 +79,7 @@ class _HomeScreenState extends AbstractMainScaffoldState<HomeScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MacosDrawerWidget(),
+          const LinuxDrawerWidget(),
           SizedBox(width: width * 0.01),
           Theme(
             data: MusicPlayerTheme.getTheme(context, context.read<Scaler>()),

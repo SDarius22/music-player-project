@@ -2,9 +2,10 @@ import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/widgets/linux_top_bar_widget.dart';
-import 'package:music_player_frontend/platforms/linux/ui/screens/home_screen.dart';
+import 'package:music_player_frontend/platforms/linux/ui/screens/main_scaffold.dart';
 import 'package:music_player_frontend/platforms/linux/ui/screens/welcome_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -40,7 +41,10 @@ class _LoadingScreenState extends LoadingScreenState<LoadingScreen>
         abstractAppStateProvider.appSettings.songPlaces,
       );
       if (context.mounted) {
-        Navigator.pushReplacement(context, HomeScreen.route());
+        final userProvider = context.read<UserProvider>();
+        await userProvider.tryAutoLogin();
+        if (!context.mounted) return;
+        Navigator.pushReplacement(context, LinuxMainScaffold.route());
       }
     }
   }
