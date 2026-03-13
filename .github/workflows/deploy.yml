@@ -51,7 +51,7 @@ jobs:
               --name music-backend \
               --network music-net \
               --restart unless-stopped \
-              -p 8080:8080 \
+              -p 9000:9000 \
               -v /opt/music-data:/app/STORAGE_ROOT \
               -e DB_HOST=music-postgres \
               -e DB_PORT=5432 \
