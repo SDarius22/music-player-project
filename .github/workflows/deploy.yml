@@ -33,7 +33,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - working-directory: ./music_player_backend
+      - working-directory: ./music-player-backend
         run: docker build -t ghcr.io/sdarius22/music-player-project/music-player-backend:latest .
   
       - run: docker push ghcr.io/sdarius22/music-player-project/music-player-backend:latest
