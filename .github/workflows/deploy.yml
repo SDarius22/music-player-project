@@ -33,17 +33,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: docker build -t ghcr.io/${{ github.repository }}/music-player-backend:latest .
-
-      - run: docker push ghcr.io/${{ github.repository }}/music-player-backend:latest
-
+      - working-directory: ./music_player_backend
+        run: docker build -t ghcr.io/sdarius22/music-player-project/music-player-backend:latest .
+  
+      - run: docker push ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+  
       - uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            docker pull ghcr.io/${{ github.repository }}/music-player-backend:latest
+            docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
             docker stop music-backend || true
             docker rm music-backend || true
             docker run -d \
@@ -51,5 +52,4 @@ jobs:
               --restart unless-stopped \
               -p 8080:8080 \
               -v /opt/music-data:/app/STORAGE_ROOT \
-              ghcr.io/${{ github.repository }}/music-player-backend:latest
-
+              ghcr.io/sdarius22/music-player-project/music-player-backend:latest
