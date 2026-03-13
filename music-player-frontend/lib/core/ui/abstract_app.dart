@@ -38,6 +38,16 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 abstract class AbstractApp extends StatelessWidget {
   const AbstractApp({super.key});
 
+  static const String _apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:9000/api/v1',
+  );
+
+  static const String _wsBaseUrl = String.fromEnvironment(
+    'WS_BASE_URL',
+    defaultValue: 'ws://localhost:9000/ws/signaling',
+  );
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -65,14 +75,13 @@ abstract class AbstractApp extends StatelessWidget {
       ),
 
       Provider<AuthService>(
-        create:
-            (context) => AuthService(baseUrl: 'http://localhost:9000/api/v1'),
+        create: (context) => AuthService(baseUrl: _apiBaseUrl),
       ),
 
       Provider<DataSyncService>(
         create:
             (context) => DataSyncService(
-              baseUrl: 'http://localhost:9000/api/v1',
+              baseUrl: _apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
@@ -80,7 +89,7 @@ abstract class AbstractApp extends StatelessWidget {
       Provider<SongRestService>(
         create:
             (context) => SongRestService(
-              baseUrl: 'http://localhost:9000/api/v1',
+              baseUrl: _apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
@@ -88,7 +97,7 @@ abstract class AbstractApp extends StatelessWidget {
       Provider<StreamingRestService>(
         create:
             (context) => StreamingRestService(
-              baseUrl: 'http://localhost:9000/api/v1',
+              baseUrl: _apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
@@ -233,9 +242,7 @@ abstract class AbstractApp extends StatelessWidget {
   WebRTCService createWebRTCService(BuildContext context) {
     final router = context.read<ActiveChunkRouter>();
 
-    final socket = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:9000/ws/signaling'),
-    );
+    final socket = WebSocketChannel.connect(Uri.parse(_wsBaseUrl));
 
     return WebRTCService(
       myDeviceId: 'linux-client-002',
