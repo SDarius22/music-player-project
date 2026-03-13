@@ -163,6 +163,9 @@ public class SongService {
             Files.createDirectories(Paths.get(STORAGE_ROOT));
             try (FileOutputStream fos = new FileOutputStream(path)) {
                 fos.write(bytes);
+            } catch (Exception e) {
+                System.out.println("Error writing chunk to disk: " + e.getMessage());
+                throw new RuntimeException("Failed to save chunk to disk");
             }
 
             try {
