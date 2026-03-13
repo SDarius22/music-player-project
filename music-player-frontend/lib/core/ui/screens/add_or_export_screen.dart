@@ -61,7 +61,10 @@ abstract class AbstractAddOrExportScreenState<
       context,
       listen: false,
     );
-    final fileService = Provider.of<FileService>(context, listen: false);
+    final fileService = Provider.of<AbstractFileService>(
+      context,
+      listen: false,
+    );
 
     for (final playlist in selected.value) {
       final songPaths = playlist.songsList.map((e) => e.path).toList();

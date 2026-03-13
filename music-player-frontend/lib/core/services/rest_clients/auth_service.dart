@@ -11,6 +11,8 @@ class AuthService {
 
   AuthService({required this.baseUrl});
 
+  bool get isLoggedIn => _cachedAccessToken != null;
+
   Future<String?> get accessToken async {
     _cachedAccessToken ??= await _storage.read(key: 'access_token');
     return _cachedAccessToken;

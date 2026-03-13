@@ -14,7 +14,7 @@ class Song implements BaseEntity {
 
   @Index()
   int serverId = -1;
-  bool requiresSync = false;
+  bool requiresSync = true;
 
   String path = "";
   String _name = "Unknown song";
@@ -40,12 +40,14 @@ class Song implements BaseEntity {
   @override
   set name(String value) => _name = value;
 
+  bool get isLocal => path.isNotEmpty;
+
   @override
   bool operator ==(Object other) {
-    if (path.isEmpty) {
-      return other is Song && other.serverId == serverId && serverId != -1;
+    if (isLocal) {
+      return other is Song && other.path == path;
     }
-    return other is Song && other.path == path;
+    return other is Song && other.serverId == serverId && serverId != -1;
   }
 
   @override

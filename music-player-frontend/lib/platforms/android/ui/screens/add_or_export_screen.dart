@@ -108,7 +108,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                             playlist.songsList.map((e) => e.path).toList();
                         var fileName =
                             "${abstractAppStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
-                        final fileService = Provider.of<FileService>(
+                        final fileService = Provider.of<AbstractFileService>(
                           context,
                           listen: false,
                         );

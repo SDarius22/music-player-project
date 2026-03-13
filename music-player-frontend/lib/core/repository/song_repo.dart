@@ -37,15 +37,19 @@ class SongRepository {
     try {
       return _songBox.query(Song_.path.equals(path)).build().findUnique()!;
     } catch (e) {
-      throw Exception("Song with path $path not found");
+      throw Exception('Song with path $path not found');
     }
+  }
+
+  Song? getSongByServerId(int serverId) {
+    return _songBox.query(Song_.serverId.equals(serverId)).build().findFirst();
   }
 
   Song getSong(int id) {
     try {
       return _songBox.get(id)!;
     } catch (e) {
-      throw Exception("Song with id $id not found");
+      throw Exception('Song with id $id not found');
     }
   }
 
@@ -56,7 +60,7 @@ class SongRepository {
           .build()
           .findFirst()!;
     } catch (e) {
-      throw Exception("Song containing $query not found");
+      throw Exception('Song containing $query not found');
     }
   }
 
@@ -101,10 +105,7 @@ class SongRepository {
     if (flag == true) {
       builderQuery =
           _songBox
-              .query(
-                Song_.name.contains(query, caseSensitive: false) &
-                    Song_.serverId.lessOrEqual(0),
-              )
+              .query(Song_.name.contains(query, caseSensitive: false))
               .order(
                 sortFields.containsKey(sortField)
                     ? sortFields[sortField]
@@ -114,10 +115,7 @@ class SongRepository {
     } else {
       builderQuery =
           _songBox
-              .query(
-                Song_.name.contains(query, caseSensitive: false) &
-                    Song_.serverId.lessOrEqual(0),
-              )
+              .query(Song_.name.contains(query, caseSensitive: false))
               .order(
                 sortFields.containsKey(sortField)
                     ? sortFields[sortField]
@@ -130,11 +128,7 @@ class SongRepository {
   }
 
   List<Song> getAllSongs() {
-    return _songBox
-        .query(Song_.serverId.lessOrEqual(0))
-        .order(Song_.name)
-        .build()
-        .find();
+    return _songBox.query().order(Song_.name).build().find();
   }
 
   List<Song> getUnsyncedSongs() {

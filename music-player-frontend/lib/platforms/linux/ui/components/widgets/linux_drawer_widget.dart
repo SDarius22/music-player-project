@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/entities/user.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
@@ -80,23 +78,12 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
 
   List<Map<String, dynamic>> get adminMenuItems => [
     {
-      "text": "TEST STREAM",
-      "tooltip": "TEST STREAM",
-      "icon": FluentIcons.play,
-      "index": 6,
-      "onTap": (BuildContext context) {
-        final testSong = Song();
-        testSong.id = 199999;
-        testSong.serverId = 1;
-        context.read<AudioProvider>().setQueueAndPlay([testSong], testSong);
-      },
-    },
-    {
       "text": "Upload songs",
       "tooltip": "Upload songs",
       "icon": FluentIcons.download,
-      "index": 7,
+      "index": 6,
       "onTap": (BuildContext context) {
+        setState(() => _selected = 6);
         context
             .read<AbstractAppStateProvider>()
             .innerNavigatorKey
@@ -301,18 +288,18 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                   },
                 ),
 
-                StreamBuilder(
+                StreamBuilder<double>(
                   stream:
                       context
                           .read<AbstractMusicScannerService>()
-                          .enrichMetadata(),
+                          .progressStream,
+                  initialData: 2.0,
                   builder: (context, snapshot) {
-                    debugPrint(
-                      "Metadata enrichment progress: ${snapshot.data}",
-                    );
-                    final toBeShown = snapshot.hasData && snapshot.data! < 2.0;
-                    debugPrint("toBeShown: $toBeShown");
-                    final isFinished = snapshot.hasData && snapshot.data == 1.0;
+                    final progress = snapshot.data ?? 2.0;
+
+                    final toBeShown = progress >= 0.0 && progress <= 1.0;
+                    final isFinished = progress == 1.0;
+
                     if (isFinished) {
                       debugPrint("Refresh after metadata enrichment finished.");
                       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -340,7 +327,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                       child: CircularProgressIndicator(
                                         color: Colors.white,
                                         strokeWidth: 2.5,
-                                        value: snapshot.data,
+                                        value: progress > 0 ? progress : null,
                                       ),
                                     ),
                                   ),
@@ -356,7 +343,9 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                                           milliseconds: 300,
                                         ),
                                         child: Text(
-                                          "Scanning...",
+                                          isFinished
+                                              ? "Complete"
+                                              : "Scanning...",
                                           style: MusicPlayerTheme.getTheme(
                                             context,
                                             context.read<Scaler>(),
@@ -378,7 +367,7 @@ class _LinuxDrawerWidgetState extends DrawerWidgetState {
                 ),
 
                 const Spacer(),
-                // User section at bottom
+
                 AnimatedContainer(
                   height: height * 0.07,
                   duration: const Duration(milliseconds: 300),

@@ -48,8 +48,11 @@ public class StreamingService {
     }
 
     @Transactional(readOnly = true)
-    public ChunkManifestDto getSongManifest(Long songId) {
+    public ChunkManifestDto getSongManifest(Long songId, Long userId) {
         Song song = getSongOrThrow(songId);
+        if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
+        }
 
         List<String> hashes = new ArrayList<>();
         long totalBytes = 0;
@@ -70,8 +73,12 @@ public class StreamingService {
     }
 
     @Transactional(readOnly = true)
-    public Resource getSongChunk(Long songId, Integer chunkIndex) {
+    public Resource getSongChunk(Long songId, Integer chunkIndex, Long userId) {
         Song song = getSongOrThrow(songId);
+
+        if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
+        }
 
         if (chunkIndex < 0 || chunkIndex >= song.getChunks().size()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chunk index out of bounds");
@@ -84,8 +91,11 @@ public class StreamingService {
     }
 
     @Transactional(readOnly = true)
-    public Resource getSongPrefix(Long songId, Integer prefixBytes) {
+    public Resource getSongPrefix(Long songId, Integer prefixBytes, Long userId) {
         Song song = getSongOrThrow(songId);
+        if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
+        }
         if (song.getChunks().isEmpty()) return new ByteArrayResource(new byte[0]);
 
         int bytesNeeded = (prefixBytes != null && prefixBytes > 0) ? prefixBytes : 512000;
@@ -103,8 +113,12 @@ public class StreamingService {
     }
 
     @Transactional(readOnly = true)
-    public Resource getFullStream(Long songId) {
+    public Resource getFullStream(Long songId, Long userId) {
         Song song = getSongOrThrow(songId);
+
+        if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
+        }
 
         Vector<InputStream> streams = new Vector<>();
         try {

@@ -23,6 +23,10 @@ public class DataSyncController implements SyncApi {
     public ResponseEntity<SyncResponseDto> syncUserLibrary(SyncRequestDto syncRequestDto) {
         User user = (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
 
+        System.out.println("Received sync request from user: " + user.getUsername());
+        System.out.println("Last sync time: " + syncRequestDto.getLastSyncTime());
+        System.out.println("Local changes count: " + (syncRequestDto.getLocalChanges() != null ? syncRequestDto.getLocalChanges().size() : 0));
+
         SyncResponseDto response = dataSyncService.performSync(user.getId(), syncRequestDto);
 
         return ResponseEntity.ok(response);

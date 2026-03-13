@@ -14,7 +14,7 @@ CREATE TABLE music_library.albums
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        VARCHAR(255) NOT NULL,
     artist_id   BIGINT,
-    cover_image BYTEA DEFAULT NULL,
+    cover_image TEXT,
     CONSTRAINT fk_album_artist FOREIGN KEY (artist_id) REFERENCES music_library.artists (id)
 );
 
@@ -55,6 +55,7 @@ CREATE TABLE music_library.songs
     release_year        INT,
     song_type           VARCHAR(50)  NOT NULL DEFAULT 'STREAMABLE',
     owner_id            BIGINT,
+    file_hash           VARCHAR(255) NOT NULL,
     CONSTRAINT fk_songs_artist_id FOREIGN KEY (artist_id) REFERENCES music_library.artists (id) ON DELETE SET NULL,
     CONSTRAINT fk_songs_album_id FOREIGN KEY (album_id) REFERENCES music_library.albums (id) ON DELETE SET NULL
 );

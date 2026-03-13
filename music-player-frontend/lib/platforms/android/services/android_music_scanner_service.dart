@@ -9,13 +9,13 @@ import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:on_audio_query_forked/on_audio_query.dart';
 
-class MusicScannerService implements AbstractMusicScannerService {
+class AndroidMusicScannerService implements AbstractMusicScannerService {
   final SongService _songService;
   final ArtistService _artistService;
   final AlbumService _albumService;
-  final FileService _fileService;
+  final AbstractFileService _fileService;
 
-  MusicScannerService(
+  AndroidMusicScannerService(
     this._songService,
     this._artistService,
     this._albumService,
@@ -73,7 +73,5 @@ class MusicScannerService implements AbstractMusicScannerService {
   }
 
   @override
-  Stream<double> enrichMetadata() {
-    return const Stream.empty();
-  }
+  Stream<double> get progressStream => Stream.empty();
 }

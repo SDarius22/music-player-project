@@ -35,8 +35,6 @@ class AlbumScreen extends EntityScreen {
   @override
   Widget buildBody(BuildContext context, double width, double height) {
     var album = entity as Album;
-    var boldSize = height * 0.025;
-    var normalSize = height * 0.02;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,

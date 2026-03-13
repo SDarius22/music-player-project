@@ -267,18 +267,18 @@ class _MacosDrawerWidgetState extends DrawerWidgetState {
                   ),
                 ),
 
-                StreamBuilder(
+                StreamBuilder<double>(
                   stream:
                       context
                           .read<AbstractMusicScannerService>()
-                          .enrichMetadata(),
+                          .progressStream,
+                  initialData: 2.0,
                   builder: (context, snapshot) {
-                    debugPrint(
-                      "Metadata enrichment progress: ${snapshot.data}",
-                    );
-                    final toBeShown = snapshot.hasData && snapshot.data! < 2.0;
-                    debugPrint("toBeShown: $toBeShown");
-                    final isFinished = snapshot.hasData && snapshot.data == 1.0;
+                    final progress = snapshot.data ?? 2.0;
+
+                    final toBeShown = progress >= 0.0 && progress <= 1.0;
+                    final isFinished = progress == 1.0;
+
                     if (isFinished) {
                       debugPrint("Refresh after metadata enrichment finished.");
                       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -306,7 +306,7 @@ class _MacosDrawerWidgetState extends DrawerWidgetState {
                                       child: CircularProgressIndicator(
                                         color: Colors.white,
                                         strokeWidth: 2.5,
-                                        value: snapshot.data,
+                                        value: progress > 0 ? progress : null,
                                       ),
                                     ),
                                   ),
@@ -322,7 +322,9 @@ class _MacosDrawerWidgetState extends DrawerWidgetState {
                                           milliseconds: 300,
                                         ),
                                         child: Text(
-                                          "Scanning...",
+                                          isFinished
+                                              ? "Complete"
+                                              : "Scanning...",
                                           style: MusicPlayerTheme.getTheme(
                                             context,
                                             context.read<Scaler>(),

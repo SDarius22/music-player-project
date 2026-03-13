@@ -36,14 +36,15 @@ class _LoadingScreenState extends LoadingScreenState<LoadingScreen>
         abstractAppStateProvider.appSettings.mainSongPlace.isEmpty) {
       Navigator.pushReplacement(context, WelcomeScreen.route());
     } else {
-      var songProvider = Provider.of<SongProvider>(context, listen: false);
-      await songProvider.initialize(
-        abstractAppStateProvider.appSettings.songPlaces,
-      );
-      if (context.mounted) {
-        final userProvider = context.read<UserProvider>();
-        await userProvider.tryAutoLogin();
+      final userProvider = context.read<UserProvider>();
+      await userProvider.tryAutoLogin().then((_) async {
         if (!context.mounted) return;
+        await context.read<SongProvider>().initialize(
+          abstractAppStateProvider.appSettings.songPlaces,
+        );
+      });
+
+      if (context.mounted) {
         Navigator.pushReplacement(context, LinuxMainScaffold.route());
       }
     }

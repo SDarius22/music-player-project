@@ -6,7 +6,7 @@ import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_mode
 
 class LyricsProvider with ChangeNotifier {
   final AudioProvider _audioProvider;
-  final FileService _fileService;
+  final AbstractFileService _fileService;
   LyricsReaderModel lyricsModelBuilder = LyricsReaderModel();
   String unsyncedLyrics = '';
   bool _hasBeenInitialized = false;

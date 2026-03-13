@@ -82,36 +82,47 @@ public class SongService {
 
     @Transactional
     public NegotiationResponseDto initiateNegotiation(NegotiationRequestDto request, Long userId) {
-        Artist artist = artistRepository.findByName(request.getArtistName())
-                .orElseGet(() -> artistRepository.save(Artist.builder().name(request.getArtistName()).build()));
+        Optional<Song> existingSongOpt = songRepository.findByFileHash(request.getFileHash());
+        Song song;
 
-        Album album = albumRepository.findByName(request.getAlbumName())
-                .orElseGet(() -> albumRepository.save(Album.builder().name(request.getAlbumName()).build()));
+        if (existingSongOpt.isPresent()) {
+            song = existingSongOpt.get();
+        } else {
+            Artist artist = artistRepository.findByName(request.getArtistName())
+                    .orElseGet(() -> artistRepository.save(Artist.builder().name(request.getArtistName()).build()));
 
-        Song song = Song.builder()
-                .name(request.getName())
-                .artist(artist)
-                .album(album)
-                .songType(SongType.USER_UPLOAD)
-                .ownerId(userId)
-                .durationInSeconds(request.getDurationInSeconds())
-                .trackNumber(request.getTrackNumber())
-                .discNumber(request.getDiscNumber())
-                .releaseYear(request.getReleaseYear())
-                .build();
+            Album album = albumRepository.findByName(request.getAlbumName())
+                    .orElseGet(() -> albumRepository.save(Album.builder().name(request.getAlbumName()).build()));
 
-        song = songRepository.save(song);
+            song = songRepository.save(Song.builder()
+                    .name(request.getName())
+                    .artist(artist)
+                    .album(album)
+                    .fileHash(request.getFileHash())
+                    .songType(SongType.USER_UPLOAD)
+                    .ownerId(userId)
+                    .durationInSeconds(request.getDurationInSeconds())
+                    .trackNumber(request.getTrackNumber())
+                    .discNumber(request.getDiscNumber())
+                    .releaseYear(request.getReleaseYear())
+                    .build());
+        }
 
         List<Integer> missingIndices = new ArrayList<>();
-        List<SongChunk> existingLinks = new ArrayList<>();
+        List<SongChunk> newLinks = new ArrayList<>();
+        List<String> requestHashes = request.getHashes();
 
-        List<String> hashes = request.getHashes();
-        for (int i = 0; i < hashes.size(); i++) {
-            String hash = hashes.get(i);
+        for (int i = 0; i < requestHashes.size(); i++) {
+            String hash = requestHashes.get(i);
+
+            if (songChunkRepository.existsBySongAndOrderIndex(song, i)) {
+                continue;
+            }
+
             Optional<Chunk> existingChunk = chunkRepository.findByContentHash(hash);
 
             if (existingChunk.isPresent()) {
-                existingLinks.add(SongChunk.builder()
+                newLinks.add(SongChunk.builder()
                         .song(song)
                         .chunk(existingChunk.get())
                         .orderIndex(i)
@@ -121,7 +132,9 @@ public class SongService {
             }
         }
 
-        songChunkRepository.saveAll(existingLinks);
+        if (!newLinks.isEmpty()) {
+            songChunkRepository.saveAll(newLinks);
+        }
 
         return negotiationMapper.toNegotiationResponseDto(song.getId(), missingIndices);
     }
@@ -143,25 +156,31 @@ public class SongService {
             throw new RuntimeException("Integrity Error: Client hash does not match server calculation.");
         }
 
-        Chunk chunk = chunkRepository.findByContentHash(calculatedHash)
-                .orElseGet(() -> {
-                    try {
-                        String path = STORAGE_ROOT + "/" + calculatedHash;
-                        Files.createDirectories(Paths.get(STORAGE_ROOT));
-                        try (FileOutputStream fos = new FileOutputStream(path)) {
-                            fos.write(bytes);
-                        }
-                        return chunkRepository.save(Chunk.builder()
-                                .contentHash(calculatedHash)
-                                .size(bytes.length)
-                                .storagePath(path)
-                                .build());
-                    } catch (Exception e) {
-                        throw new RuntimeException("Storage failed", e);
-                    }
-                });
+        Chunk chunk = chunkRepository.findByContentHash(calculatedHash).orElse(null);
 
-        boolean linkExists = song.getChunks().stream().anyMatch(sc -> sc.getOrderIndex().equals(chunkIndex));
+        if (chunk == null) {
+            String path = STORAGE_ROOT + "/" + calculatedHash;
+            Files.createDirectories(Paths.get(STORAGE_ROOT));
+            try (FileOutputStream fos = new FileOutputStream(path)) {
+                fos.write(bytes);
+            }
+
+            try {
+                chunk = chunkRepository.save(Chunk.builder()
+                        .contentHash(calculatedHash)
+                        .size(bytes.length)
+                        .storagePath(path)
+                        .build());
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                chunk = chunkRepository.findByContentHash(calculatedHash)
+                        .orElseThrow(() -> new RuntimeException("Concurrency recovery failed"));
+            }
+        }
+
+        System.out.println("Received chunk for song ID: " + songId + " at index: " + chunkIndex);
+
+        boolean linkExists = songChunkRepository.existsBySongAndOrderIndex(song, chunkIndex);
+
         if (!linkExists) {
             SongChunk link = SongChunk.builder()
                     .song(song)

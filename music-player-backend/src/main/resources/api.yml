@@ -432,9 +432,17 @@ components:
           format: date-time
           nullable: true
 
+        modifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+
         isDeleted:
           type: boolean
           default: false
+        
+        songMetadata:
+          $ref: '#/components/schemas/SongDto'
 
     SongUploadDto:
       type: object
@@ -532,6 +540,9 @@ components:
         photo:
           type: string
           description: Base64-encoded album art image
+        fileHash:
+          type: string
+          description: The SHA-256 hash of the entire file for quick server-side duplicate detection.
         hashes:
           type: array
           description: The sequential list of SHA-256 hashes for the file chunks.
@@ -556,12 +567,18 @@ components:
     SyncRequestDto:
       type: object
       required:
-        - lastSyncTime
         - localChanges
       properties:
         lastSyncTime:
           type: string
           format: date-time
+          nullable: true
+        page:
+          type: integer
+          default: 0
+        limit:
+          type: integer
+          default: 500
         localChanges:
           type: array
           items:
@@ -569,6 +586,10 @@ components:
 
     SyncResponseDto:
       type: object
+      required:
+        - serverChanges
+        - newSyncTime
+        - hasMore
       properties:
         serverChanges:
           type: array
@@ -577,6 +598,8 @@ components:
         newSyncTime:
           type: string
           format: date-time
+        hasMore:
+          type: boolean
   
   
   securitySchemes:

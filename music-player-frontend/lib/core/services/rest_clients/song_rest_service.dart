@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
@@ -25,11 +26,11 @@ class SongRestService extends AbstractRestService {
         return NegotiationResponseDto.fromJson(jsonDecode(response.body));
       } else {
         debugPrint(
-          "Negotiation failed: ${response.statusCode} ${response.body}",
+          'Negotiation failed: ${response.statusCode} ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint("Error negotiating upload: $e");
+      debugPrint('Error negotiating upload: $e');
     }
     return null;
   }
@@ -58,13 +59,28 @@ class SongRestService extends AbstractRestService {
         return true;
       } else {
         debugPrint(
-          "Chunk upload failed: ${response.statusCode} ${response.body}",
+          'Chunk upload failed: ${response.statusCode} ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint("Error uploading chunk: $e");
+      debugPrint('Error uploading chunk: $e');
     }
     return false;
+  }
+
+  Future<Song?> finalizeSong(int songId) async {
+    try {
+      final response = await post('/songs/$songId/finalize', {});
+
+      if (response.statusCode == 200) {
+        return Song.fromJson(jsonDecode(response.body));
+      } else {
+        debugPrint('Finalize failed: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error finalizing song: $e');
+    }
+    return null;
   }
 
   Future<Uint8List?> fetchCoverArt(int songId) async {
@@ -75,7 +91,7 @@ class SongRestService extends AbstractRestService {
         return response.bodyBytes;
       }
     } catch (e) {
-      debugPrint("Error fetching cover art: $e");
+      debugPrint('Error fetching cover art: $e');
     }
     return null;
   }
@@ -90,6 +106,7 @@ class SongRestService extends AbstractRestService {
     required int discNumber,
     required int releaseYear,
     required Uint8List? coverArtBytes,
+    required void Function(int sentBytes, int totalBytes) onProgress,
   }) async {
     try {
       final fields = {
@@ -103,24 +120,26 @@ class SongRestService extends AbstractRestService {
         'photo': coverArtBytes != null ? base64Encode(coverArtBytes) : '',
       };
 
-      final files = [await http.MultipartFile.fromPath('file', audioFilePath)];
+      final file = File(audioFilePath);
 
-      final streamedResponse = await multipartRequest(
+      final streamedResponse = await multipartRequestWithProgress(
         'POST',
         '/songs',
-        fields: fields,
-        files: files,
+        file,
+        fields,
+        onProgress,
       );
 
       if (streamedResponse.statusCode == 201) {
+        onProgress(1, 1); // Mark as complete
         return true;
       } else {
         debugPrint(
-          "Full song upload failed: ${streamedResponse.statusCode} ${streamedResponse.body}",
+          'Full song upload failed: ${streamedResponse.statusCode} ${streamedResponse.body}',
         );
       }
     } catch (e) {
-      debugPrint("Error uploading full song: $e");
+      debugPrint('Error uploading full song: $e');
     }
     return false;
   }
@@ -133,13 +152,13 @@ class SongRestService extends AbstractRestService {
         return Song.fromJson(jsonDecode(response.body));
       } else {
         debugPrint(
-          "Failed to fetch song: ${response.statusCode} ${response.body}",
+          'Failed to fetch song: ${response.statusCode} ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint("Error fetching song: $e");
+      debugPrint('Error fetching song: $e');
     }
-    throw Exception("Failed to fetch song with ID $songId");
+    throw Exception('Failed to fetch song with ID $songId');
   }
 
   Future<List<Song>> getAllSongs() async {
@@ -151,11 +170,11 @@ class SongRestService extends AbstractRestService {
         return jsonList.map((json) => Song.fromJson(json)).toList();
       } else {
         debugPrint(
-          "Failed to fetch songs: ${response.statusCode} ${response.body}",
+          'Failed to fetch songs: ${response.statusCode} ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint("Error fetching songs: $e");
+      debugPrint('Error fetching songs: $e');
     }
     return [];
   }

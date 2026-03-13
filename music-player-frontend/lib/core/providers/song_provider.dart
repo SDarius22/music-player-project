@@ -16,7 +16,11 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   late Future _songsFuture;
 
   SongProvider(this._songService, this._scannerService) {
-    _songsFuture = Future(() => _songService.getServerSongs());
+    _songsFuture = Future(() => _songService.getAllSongs());
+    _scannerService.progressStream.listen((progress) {
+      debugPrint("Music scan progress: $progress");
+      refreshSongs();
+    });
   }
 
   @override
@@ -33,19 +37,18 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     debugPrint("Performing initial quick scan...");
 
     await _scannerService.performQuickScan();
+    runSync();
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      refreshSongs();
-    });
     _isInitialized = true;
   }
 
-  // Refresh songs from database with current filters
   void refreshSongs() {
     debugPrint(
       "Refreshing songs with query '$_query', sortField '$_sortField', isAscending '$_isAscending'",
     );
-    _songsFuture = Future(() => _songService.getServerSongs());
+    _songsFuture = Future(
+      () => _songService.getSongs(_query, _sortField, _isAscending),
+    );
     notifyListeners();
   }
 
@@ -119,7 +122,14 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   @override
   Future<void> refresh() async {
-    _songsFuture = Future(() => _songService.getServerSongs());
+    _songsFuture = Future(
+      () => _songService.getSongs(_query, _sortField, _isAscending),
+    );
     notifyListeners();
+  }
+
+  void runSync() async {
+    _songService.runSync();
+    refreshSongs();
   }
 }

@@ -10,14 +10,14 @@ import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
-class MusicScannerService implements AbstractMusicScannerService {
+class MacosMusicScannerService implements AbstractMusicScannerService {
   final SongService _songService;
   final ArtistService _artistService;
   final AlbumService _albumService;
-  final FileService _fileService;
+  final AbstractFileService _fileService;
   final SettingsService _settingsService;
 
-  MusicScannerService(
+  MacosMusicScannerService(
     this._songService,
     this._artistService,
     this._albumService,
@@ -25,7 +25,14 @@ class MusicScannerService implements AbstractMusicScannerService {
     this._settingsService,
   );
 
+  final StreamController<double> _progressController =
+      StreamController<double>.broadcast();
+
+  bool _isEnrichmentRunning = false;
   bool _isEnrichmentDone = false;
+
+  @override
+  Stream<double> get progressStream => _progressController.stream;
 
   AppSettings get _currentSettings => _settingsService.getAppSettings();
 
@@ -65,37 +72,40 @@ class MusicScannerService implements AbstractMusicScannerService {
     debugPrint(
       "Quick scan complete: $addedCount new songs added (${files.length} total files found)",
     );
+
+    _startBackgroundEnrichment();
   }
 
-  @override
-  Stream<double> enrichMetadata() async* {
-    if (_isEnrichmentDone) {
-      debugPrint("Metadata enrichment already completed");
-      yield 2.0;
-      return;
-    }
+  void _startBackgroundEnrichment() async {
+    if (_isEnrichmentRunning || _isEnrichmentDone) return;
+
+    _isEnrichmentRunning = true;
+    _progressController.add(0.0); // Signal start
 
     final songs =
         _songService.getAllSongs().where((song) => !song.fullyLoaded).toList();
 
     if (songs.isEmpty) {
       debugPrint("No songs need metadata enrichment");
-      yield 2.0;
+      _isEnrichmentDone = true;
+      _isEnrichmentRunning = false;
+      _progressController.add(2.0); // Signal done (hidden state)
       return;
     }
 
-    debugPrint("Enriching metadata for ${songs.length} songs...");
+    debugPrint("Enriching metadata for ${songs.length} songs in background...");
 
     int processedCount = 0;
     DateTime lastEmit = DateTime.now();
-    const emitInterval = Duration(seconds: 10);
+    const emitInterval = Duration(seconds: 2); // Faster UI updates
 
     List<Song> songsToUpdate = [];
 
     for (int i = 0; i < songs.length; i++) {
-      if (i % 100 == 0) {
-        await Future.delayed(const Duration(milliseconds: 250));
+      if (i % 50 == 0) {
+        await Future.delayed(const Duration(milliseconds: 1));
       }
+
       final song = songs[i];
       try {
         final metadata = await _fileService.retrieveSong(
@@ -134,22 +144,28 @@ class MusicScannerService implements AbstractMusicScannerService {
       }
 
       if (DateTime.now().difference(lastEmit) >= emitInterval) {
-        debugPrint("Progress: $processedCount/${songs.length} songs enriched");
-        yield processedCount / songs.length;
-        _songService.updateSongsBatch(songsToUpdate);
-        // songsToUpdate.forEach((s) {});
-        songsToUpdate.clear();
+        if (songsToUpdate.isNotEmpty) {
+          _songService.updateSongsBatch(songsToUpdate);
+          songsToUpdate.clear();
+        }
+
+        double progress = processedCount / songs.length;
+        _progressController.add(progress);
         lastEmit = DateTime.now();
       }
     }
 
-    // Emit final count
-    debugPrint("Metadata enrichment complete! Total: $processedCount songs");
     if (songsToUpdate.isNotEmpty) {
       _songService.updateSongsBatch(songsToUpdate);
     }
+
     _isEnrichmentDone = true;
-    yield 1.0;
+    _isEnrichmentRunning = false;
+    _progressController.add(1.0);
+
+    Future.delayed(const Duration(seconds: 1), () {
+      _progressController.add(2.0);
+    });
   }
 
   String _getFileNameWithoutExtension(String path) {

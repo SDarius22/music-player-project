@@ -260,10 +260,7 @@ class AppAudioService {
   }
 
   Future<AudioSource> _buildAudioSource(Song song) async {
-    bool isServerTrack = song.serverId > 0 && song.path.isEmpty;
-    debugPrint(
-      "Building audio source for song '${song.name}' (ID: ${song.id}, Server ID: ${song.serverId}). Is server track: $isServerTrack",
-    );
+    bool isServerTrack = !song.isLocal;
 
     if (isServerTrack) {
       final chunkManager = await createChunkManager(song.serverId);

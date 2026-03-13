@@ -48,7 +48,7 @@ abstract class AbstractUploadSongsScreenState<
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  FileService get fileService => context.read<FileService>();
+  AbstractFileService get fileService => context.read<AbstractFileService>();
 
   SongRestService get songRestService => context.read<SongRestService>();
 
@@ -79,6 +79,8 @@ abstract class AbstractUploadSongsScreenState<
 
           final alreadyAdded = items.any((e) => e['path'] == path);
           if (!alreadyAdded) {
+            data['progress'] = 0.0;
+            data['uploading'] = false;
             items.add(data);
           }
         } catch (_) {
@@ -100,7 +102,13 @@ abstract class AbstractUploadSongsScreenState<
     try {
       int okCount = 0;
 
-      for (final item in items) {
+      for (var i = 0; i < items.length; i++) {
+        final item = items[i];
+        setState(() {
+          item['uploading'] = true;
+          item['progress'] = 0.0;
+        });
+
         final ok = await songRestService.uploadFullSong(
           audioFilePath: item['path'],
           name: item['title'],
@@ -111,8 +119,14 @@ abstract class AbstractUploadSongsScreenState<
           discNumber: item['discNumber'],
           releaseYear: item['year'],
           coverArtBytes: item['image'],
+          onProgress: (sent, total) {
+            if (!mounted) return;
+            final p = total == 0 ? 0.0 : (sent / total).clamp(0.0, 1.0);
+            setState(() => item['progress'] = p);
+          },
         );
 
+        setState(() => item['uploading'] = false);
         if (ok) okCount += 1;
       }
 
@@ -142,6 +156,8 @@ abstract class AbstractUploadSongsScreenState<
         }
 
         final item = items[index];
+        final progress = (item['progress'] as double?) ?? 0.0;
+        final uploading = (item['uploading'] as bool?) ?? false;
 
         return ListTile(
           leading:
@@ -157,9 +173,21 @@ abstract class AbstractUploadSongsScreenState<
                   )
                   : const SizedBox(width: 44, height: 44),
           title: Text(item['title'] ?? ''),
-          subtitle: Text('${item['artist'] ?? ''} - ${item['album'] ?? ''}'),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${item['artist'] ?? ''} - ${item['album'] ?? ''}'),
+              if (uploading) ...[
+                const SizedBox(height: 6),
+                LinearProgressIndicator(value: progress),
+                const SizedBox(height: 4),
+                Text('${(progress * 100).toStringAsFixed(0)}%'),
+              ],
+            ],
+          ),
           trailing: IconButton(
-            onPressed: () => setState(() => items.removeAt(index)),
+            onPressed:
+                uploading ? null : () => setState(() => items.removeAt(index)),
             icon: const Icon(Icons.close),
             tooltip: 'Remove',
           ),

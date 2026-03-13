@@ -7,7 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
-class MacosFileService extends FileService {
+class MacosFileService extends AbstractFileService {
   @override
   Future<List<File>> getAudioFiles(List<String>? songPlaces) async {
     if (songPlaces == null || songPlaces.isEmpty) {

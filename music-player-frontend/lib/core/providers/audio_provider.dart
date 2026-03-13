@@ -12,7 +12,7 @@ import 'package:music_player_frontend/core/services/worker_service.dart';
 
 class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   final AppAudioService _audioService;
-  final FileService _fileService;
+  final AbstractFileService _fileService;
 
   ValueNotifier<bool> playingNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> repeatNotifier = ValueNotifier<bool>(false);

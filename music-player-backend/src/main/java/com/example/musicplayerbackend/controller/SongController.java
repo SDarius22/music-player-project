@@ -36,7 +36,8 @@ public class SongController implements SongsApi {
     @Override
     public ResponseEntity<NegotiationResponseDto> negotiateUserUpload(NegotiationRequestDto negotiationRequestDto) {
         User user = (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        return ResponseEntity.ok(songService.initiateNegotiation(negotiationRequestDto, Objects.requireNonNull(user).getId()));
+        var response = songService.initiateNegotiation(negotiationRequestDto, Objects.requireNonNull(user).getId());
+        return ResponseEntity.ok(response);
     }
 
     @Override

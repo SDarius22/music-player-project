@@ -7,7 +7,7 @@ import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:on_audio_query_forked/on_audio_query.dart';
 
-class AndroidFileService extends FileService {
+class AndroidFileService extends AbstractFileService {
   final OnAudioQuery audioQuery = OnAudioQuery();
 
   @override
