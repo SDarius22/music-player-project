@@ -3,7 +3,7 @@ name: Deploy Backend
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'music-player-backend/**'
       - '.github/workflows/**'
