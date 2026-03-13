@@ -44,13 +44,21 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u sdarius22 --password-stdin
             docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
             docker stop music-backend || true
             docker rm music-backend || true
             docker run -d \
               --name music-backend \
+              --network music-net \
               --restart unless-stopped \
               -p 8080:8080 \
               -v /opt/music-data:/app/STORAGE_ROOT \
+              -e DB_HOST=music-postgres \
+              -e DB_PORT=5432 \
+              -e DB_NAME=music_db \
+              -e DB_USER=music_admin \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e MAIL_HOST=${{ secrets.MAIL_HOST }} \
+              -e MAIL_USER=${{ secrets.MAIL_USER }} \
+              -e MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} \
               ghcr.io/sdarius22/music-player-project/music-player-backend:latest
