@@ -57,8 +57,8 @@ jobs:
               -e DB_PORT=5432 \
               -e DB_NAME=music_db \
               -e DB_USER=music_admin \
-              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              -e MAIL_HOST=${{ secrets.MAIL_HOST }} \
-              -e MAIL_USER=${{ secrets.MAIL_USER }} \
-              -e MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e MAIL_HOST="${{ secrets.MAIL_HOST }}" \
+              -e MAIL_USER="${{ secrets.MAIL_USER }}" \
+              -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" \
               ghcr.io/sdarius22/music-player-project/music-player-backend:latest
