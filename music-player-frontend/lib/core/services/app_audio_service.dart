@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
@@ -276,6 +276,19 @@ class AppAudioService {
     bool isServerTrack = !song.isLocal;
 
     if (isServerTrack) {
+      if (kIsWeb) {
+        return AudioSource.uri(
+          Uri.parse(
+            '${String.fromEnvironment('API_BASE_URL')}/stream/${song.serverId}/full',
+          ),
+          tag: Map<String, dynamic>.from({
+            "path": song.path,
+            "serverId": song.serverId,
+            "song": song,
+          }),
+        );
+      }
+
       return P2PChunkedAudioSource(
         songId: song.serverId,
         chunkManagerFactory: createChunkManager,

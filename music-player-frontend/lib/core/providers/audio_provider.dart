@@ -168,16 +168,20 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<void> _changeMediaItem() async {
-    File tempFile = await _fileService.createWorkaroundFile(currentSong);
-    MediaItem item = MediaItem(
-      id: currentSong.id.toString(),
-      album: currentSong.album.target?.name ?? 'Unknown Album',
-      title: currentSong.name,
-      artist: currentSong.artist.target?.name ?? 'Unknown Artist',
-      duration: Duration(seconds: currentSong.durationInSeconds),
-      artUri: tempFile.uri,
-    );
-    mediaItem.add(item);
+    try {
+      File tempFile = await _fileService.createWorkaroundFile(currentSong);
+      MediaItem item = MediaItem(
+        id: currentSong.id.toString(),
+        album: currentSong.album.target?.name ?? 'Unknown Album',
+        title: currentSong.name,
+        artist: currentSong.artist.target?.name ?? 'Unknown Artist',
+        duration: Duration(seconds: currentSong.durationInSeconds),
+        artUri: tempFile.uri,
+      );
+      mediaItem.add(item);
+    } catch (e) {
+      debugPrint("Error creating media item: $e");
+    }
   }
 
   Future<void> _setColors() async {
