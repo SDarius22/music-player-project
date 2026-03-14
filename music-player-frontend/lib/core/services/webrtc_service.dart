@@ -18,6 +18,8 @@ class WebRTCService {
 
   final Map<String, RTCPeerConnection> _peerConnections = {};
   final Map<String, RTCDataChannel> _dataChannels = {};
+  final Map<String, List<RTCIceCandidate>> _iceQueues = {};
+  final Map<String, Set<int>> _peerLibraries = {};
 
   final Map<String, dynamic> _iceServers = {
     'iceServers': [
@@ -68,15 +70,26 @@ class WebRTCService {
   bool get isConnected => _dataChannels.isNotEmpty;
 
   bool hasPeersForSong(int songId) {
-    return _dataChannels.isNotEmpty;
+    for (final peerSongs in _peerLibraries.values) {
+      if (peerSongs.contains(songId)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   void requestChunk(int songId, int chunkIndex) {
     final requestMsg = 'REQUEST_CHUNK:$songId:$chunkIndex';
 
-    for (final channel in _dataChannels.values) {
+    for (final entry in _dataChannels.entries) {
+      final peerId = entry.key;
+      final channel = entry.value;
+
       if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
-        channel.send(RTCDataChannelMessage(requestMsg));
+        if (_peerLibraries[peerId]?.contains(songId) == true) {
+          channel.send(RTCDataChannelMessage(requestMsg));
+          return;
+        }
       }
     }
   }
@@ -116,6 +129,8 @@ class WebRTCService {
     bool initiator,
   ) async {
     if (_peerConnections.containsKey(remotePeerId)) return;
+
+    _iceQueues[remotePeerId] = [];
 
     final pc = await createPeerConnection(_iceServers);
     _peerConnections[remotePeerId] = pc;
@@ -256,6 +271,13 @@ class WebRTCService {
         case 'PEER_BUFFER_MAP':
           Map<String, dynamic> map = payload;
           for (String peerId in map.keys) {
+            _peerLibraries.putIfAbsent(peerId, () => {});
+
+            final songList = map[peerId] as List<dynamic>? ?? [];
+            for (var songId in songList) {
+              _peerLibraries[peerId]!.add(int.parse(songId.toString()));
+            }
+
             if (!_peerConnections.containsKey(peerId)) {
               _createPeerConnection(peerId, true);
             }
@@ -269,6 +291,9 @@ class WebRTCService {
             await pc.setRemoteDescription(
               RTCSessionDescription(payload['sdp'], payload['type']),
             );
+
+            _drainIceQueue(senderId, pc);
+
             final answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             _sendSignal(
@@ -285,23 +310,38 @@ class WebRTCService {
             await pc.setRemoteDescription(
               RTCSessionDescription(payload['sdp'], payload['type']),
             );
+            _drainIceQueue(senderId, pc);
           }
           break;
 
         case 'ICE_CANDIDATE':
           final pc = _peerConnections[senderId];
-          if (pc != null) {
-            await pc.addCandidate(
-              RTCIceCandidate(
-                payload['candidate'],
-                payload['sdpMid'],
-                payload['sdpMLineIndex'],
-              ),
-            );
+          final candidate = RTCIceCandidate(
+            payload['candidate'],
+            payload['sdpMid'],
+            payload['sdpMLineIndex'],
+          );
+
+          if (pc != null && (await pc.getRemoteDescription() != null)) {
+            await pc.addCandidate(candidate);
+          } else {
+            _iceQueues[senderId]?.add(candidate);
           }
           break;
       }
     });
+  }
+
+  void _drainIceQueue(String peerId, RTCPeerConnection pc) {
+    final queue = _iceQueues[peerId];
+    if (queue != null) {
+      for (final candidate in queue) {
+        pc.addCandidate(candidate).catchError((e) {
+          debugPrint("Error adding queued ICE candidate: $e");
+        });
+      }
+      queue.clear();
+    }
   }
 
   void _closePeer(String peerId) {
@@ -309,6 +349,8 @@ class WebRTCService {
     _peerConnections[peerId]?.close();
     _dataChannels.remove(peerId);
     _peerConnections.remove(peerId);
+    _iceQueues.remove(peerId);
+    _peerLibraries.remove(peerId);
   }
 
   void dispose() {
