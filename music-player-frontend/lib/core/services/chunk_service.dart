@@ -92,8 +92,8 @@ class ChunkService {
   Future<Uint8List> _fetchChunkLogic(int index) async {
     Uint8List data;
 
-    if (index == 0) {
-      data = await _streamingClient.downloadChunkFallback(songId, 0);
+    if (index < 8) {
+      data = await _streamingClient.downloadChunkFallback(songId, index);
     } else if (_webrtcManager.hasPeersForSong(songId)) {
       try {
         data = await _requestFromPeer(
@@ -110,7 +110,7 @@ class ChunkService {
       _saveToCache(index, data);
       return data;
     } else {
-      if (index != 0) {
+      if (index >= 8) {
         final serverData = await _streamingClient.downloadChunkFallback(
           songId,
           index,
