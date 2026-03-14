@@ -23,6 +23,7 @@ public class StreamingController implements StreamApi {
 
     @Override
     public ResponseEntity<Resource> getSongPrefix(Long songId, Integer prefixBytes) {
+        System.out.println("Requesting prefix of " + prefixBytes + " bytes for song " + songId + " by user " + currentUserId());
         Resource resource = streamingService.getSongPrefix(songId, prefixBytes, currentUserId());
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -32,6 +33,7 @@ public class StreamingController implements StreamApi {
 
     @Override
     public ResponseEntity<Resource> getFullStream(Long songId) {
+        System.out.println("Requesting full stream for song " + songId + " by user " + currentUserId());
         Resource resource = streamingService.getFullStream(songId, currentUserId());
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -41,11 +43,13 @@ public class StreamingController implements StreamApi {
 
     @Override
     public ResponseEntity<ChunkManifestDto> getSongManifest(Long songId) {
+        System.out.println("Requesting manifest for song " + songId + " by user " + currentUserId());
         return ResponseEntity.ok(streamingService.getSongManifest(songId, currentUserId()));
     }
 
     @Override
     public ResponseEntity<Resource> getSongChunk(Long songId, Integer chunkIndex) {
+        System.out.println("Requesting chunk " + chunkIndex + " for song " + songId + " by user " + currentUserId());
         Resource chunk = streamingService.getSongChunk(songId, chunkIndex, currentUserId());
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)

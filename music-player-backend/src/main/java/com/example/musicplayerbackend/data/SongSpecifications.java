@@ -37,10 +37,7 @@ public final class SongSpecifications {
             return cb.or(streamable, ownedUpload);
         };
     }
-
-    /**
-     * Case-insensitive substring search across song name, artist name, and album name.
-     */
+    
     public static Specification<Song> matchesQuery(String q) {
         if (q == null || q.isBlank()) {
             return (_, _, cb) -> cb.conjunction();
