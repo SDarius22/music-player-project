@@ -2,6 +2,18 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_album_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_artist_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_playlist_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_settings_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_song_repository.dart';
+import 'package:music_player_frontend/core/repository/storage/io_chunk_cache_repo.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
@@ -20,6 +32,22 @@ import 'package:provider/provider.dart';
 
 class MacosApplication extends AbstractApp {
   const MacosApplication({super.key});
+
+  @override
+  List<InheritedProvider> platformProviders(BuildContext context) {
+    return [
+      Provider<AlbumRepository>(create: (_) => ObjectBoxAlbumRepository()),
+      Provider<ArtistRepository>(create: (_) => ObjectBoxArtistRepository()),
+      Provider<PlaylistRepository>(
+        create: (_) => ObjectBoxPlaylistRepository(),
+      ),
+      Provider<SongRepository>(create: (_) => ObjectBoxSongRepository()),
+      Provider<ChunkCacheRepository>(create: (_) => IOChunkCacheRepository()),
+      Provider<SettingsRepository>(
+        create: (_) => ObjectBoxSettingsRepository(),
+      ),
+    ];
+  }
 
   @override
   AbstractAppStateProvider buildAppStateProvider(BuildContext context) {

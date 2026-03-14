@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
-import 'package:music_player_frontend/core/repository/album_repo.dart';
+import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 
 class AlbumService {
   final AlbumRepository _albumRepository;

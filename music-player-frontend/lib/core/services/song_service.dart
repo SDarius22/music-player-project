@@ -4,11 +4,10 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/repository/song_repo.dart';
+import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
-
-import '../dtos/negotiation_request_dto.dart';
 
 class SongService {
   final SongRepository _songRepository;
@@ -42,38 +41,68 @@ class SongService {
     }
   }
 
-  Song? getSong(String songPath) {
+  Song? getSongContaining(String query) {
+    return _songRepository.getSongContaining(query);
+  }
+
+  Future<List<Song>> getAllSongs({
+    bool preferServer = false,
+    bool fallbackToServer = false,
+  }) async {
+    if (preferServer) {
+      return await _songRestService.getAllSongs();
+    }
+
+    final local = _songRepository.getAllSongs();
+    if (fallbackToServer && local.isEmpty) {
+      return await _songRestService.getAllSongs();
+    }
+    return local;
+  }
+
+  Future<List<Song>> getSongs(
+    String query,
+    String sortField,
+    bool ascending, {
+    bool preferServer = false,
+    bool fallbackToServer = false,
+  }) async {
+    if (!preferServer) {
+      final local = _songRepository.getSongs(query, sortField, ascending);
+      if (fallbackToServer && local.isEmpty) {
+        final serverSongs = await _songRestService.getAllSongs();
+        return serverSongs;
+      }
+      return local;
+    }
+
+    final serverSongs = await _songRestService.getAllSongs();
+    return serverSongs;
+  }
+
+  Future<Song?> getSong(
+    String songPath, {
+    bool preferServer = false,
+    int? serverId,
+  }) async {
+    if (preferServer) {
+      if (serverId == null) return null;
+      try {
+        return await _songRestService.getServerSong(serverId);
+      } catch (_) {
+        return null;
+      }
+    }
+
     if (songPath.isEmpty) {
-      throw ArgumentError("Song path cannot be empty");
+      throw ArgumentError('Song path cannot be empty');
     }
 
     try {
       return _songRepository.getSongByPath(songPath);
-    } catch (e) {
-      // debugPrint("Error fetching song with path '$songPath': $e");
+    } catch (_) {
       return null;
     }
-  }
-
-  Song? getSongContaining(String query) {
-    if (query.isEmpty) {
-      throw ArgumentError("Query cannot be empty");
-    }
-
-    try {
-      return _songRepository.getSongContaining(query);
-    } catch (e) {
-      debugPrint("Error fetching song containing '$query': $e");
-      return null;
-    }
-  }
-
-  List<Song> getSongs(String query, String sortField, bool flag) {
-    return _songRepository.getSongs(query, sortField, flag);
-  }
-
-  List<Song> getAllSongs() {
-    return _songRepository.getAllSongs();
   }
 
   Future<List<Song>> getServerSongs() async {
@@ -92,13 +121,13 @@ class SongService {
     _songRepository.deleteSong(song);
   }
 
-  List<Song> getSongsFromPaths(List<String> paths) {
+  Future<List<Song>> getSongsFromPaths(List<String> paths) async {
     if (paths.isEmpty) {
       return [];
     }
     List<Song> songs = [];
     for (String path in paths) {
-      final song = getSong(path);
+      final song = await getSong(path);
       if (song != null) {
         songs.add(song);
       }
@@ -123,21 +152,27 @@ class SongService {
   void runSync() async {
     if (_isSyncing) return;
 
+    // Web guard.
+    if (kIsWeb) {
+      debugPrint('Song sync is not supported on web; skipping.');
+      return;
+    }
+
     _isSyncing = true;
 
     if (!_songRestService.authService.isLoggedIn) {
-      debugPrint("User not logged in, skipping song sync");
+      debugPrint('User not logged in, skipping song sync');
       _isSyncing = false;
       return;
     }
 
-    debugPrint("Starting song sync...");
+    debugPrint('Starting song sync...');
 
     try {
       final unsyncedSongs = _songRepository.getUnsyncedSongs();
 
       if (unsyncedSongs.isEmpty) {
-        debugPrint("No songs to sync");
+        debugPrint('No songs to sync');
         _isSyncing = false;
         return;
       }
@@ -179,7 +214,7 @@ class SongService {
         if (response != null) {
           song.serverId = response.songId;
           song.requiresSync = false;
-          updateSong(song);
+          _songRepository.updateSong(song);
 
           if (response.missingIndices.isNotEmpty) {
             for (final index in response.missingIndices) {

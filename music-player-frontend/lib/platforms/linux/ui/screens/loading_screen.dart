@@ -39,7 +39,10 @@ class _LoadingScreenState extends LoadingScreenState<LoadingScreen>
       final userProvider = context.read<UserProvider>();
       await userProvider.tryAutoLogin().then((_) async {
         if (!context.mounted) return;
-        await context.read<SongProvider>().initialize(
+        var songProvider = context.read<SongProvider>();
+        songProvider.preferServer = true;
+        songProvider.fallbackToServer = true;
+        await songProvider.initialize(
           abstractAppStateProvider.appSettings.songPlaces,
         );
       });

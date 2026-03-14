@@ -138,6 +138,7 @@ class SongRestService extends AbstractRestService {
         onProgress(1, 1); // Mark as complete
         return true;
       } else {
+        onProgress(0, 1); // Reset progress on failure
         debugPrint(
           'Full song upload failed: ${streamedResponse.statusCode} ${streamedResponse.body}',
         );
@@ -166,12 +167,18 @@ class SongRestService extends AbstractRestService {
   }
 
   Future<List<Song>> getAllSongs() async {
+    debugPrint('Fetching all songs from server...');
     try {
       final response = await get('/songs');
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(response.body);
-        return jsonList.map((json) => Song.fromJson(json)).toList();
+        var songs = jsonList.map((json) => Song.fromJson(json)).toList();
+        debugPrint('Fetched ${songs.length} songs from server.');
+        debugPrint(
+          'First song: ${songs[0].name}, ${songs[0].id}, ${songs[0].serverId}, ${songs[0].path}',
+        );
+        return songs;
       } else {
         debugPrint(
           'Failed to fetch songs: ${response.statusCode} ${response.body}',

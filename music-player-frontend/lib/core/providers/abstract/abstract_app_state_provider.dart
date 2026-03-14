@@ -21,6 +21,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   List<String> appActions = [];
 
   bool isFullScreen = false;
+  bool _isInitialized = false;
 
   List<Color> get colors =>
       audioProvider.currentSong.colors.isNotEmpty &&
@@ -32,6 +33,12 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
   ValueNotifier<double> opacityNotifier = ValueNotifier(1.0);
 
   AbstractAppStateProvider(this.audioProvider, this.settingsService) {
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
     appSettings = settingsService.getAppSettings();
     audioProvider.currentSongNotifier.addListener(() {
       notifyListeners();

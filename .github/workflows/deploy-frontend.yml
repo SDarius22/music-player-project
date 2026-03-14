@@ -1,0 +1,46 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'music_player_frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - working-directory: ./music_player_frontend
+        run: flutter pub get
+
+      - working-directory: ./music_player_frontend
+        run: flutter build web --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
+
+      - uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            sudo mkdir -p /var/www/music-frontend
+            sudo chown -R $USER:$USER /var/www/music-frontend
+            sudo rm -rf /var/www/music-frontend/*
+
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "music_player_frontend/build/web/*"
+          target: "/var/www/music-frontend"
+          strip_components: 3

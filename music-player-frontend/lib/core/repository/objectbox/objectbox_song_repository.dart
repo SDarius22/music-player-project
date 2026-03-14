@@ -1,26 +1,31 @@
 import 'package:music_player_frontend/core/database/objectBox.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 
-class SongRepository {
+class ObjectBoxSongRepository implements SongRepository {
   Box<Song> get _songBox => ObjectBox.store.box<Song>();
 
+  @override
   Stream watchSongs() => _songBox
       .query()
       .watch(triggerImmediately: true)
       .map((query) => query.find());
 
+  @override
   Map<String, dynamic> get sortFields => {
     'Title': Song_.name,
     'Duration': Song_.durationInSeconds,
     'Year': Song_.year,
   };
 
+  @override
   Song saveSong(Song song) {
     song.id = _songBox.put(song);
     return song;
   }
 
+  @override
   List<Song> saveSongs(List<Song> songs) {
     final ids = _songBox.putMany(songs);
     for (int i = 0; i < songs.length; i++) {
@@ -29,10 +34,12 @@ class SongRepository {
     return songs;
   }
 
+  @override
   int getSongCount() {
     return _songBox.count();
   }
 
+  @override
   Song getSongByPath(String path) {
     try {
       return _songBox.query(Song_.path.equals(path)).build().findUnique()!;
@@ -41,10 +48,12 @@ class SongRepository {
     }
   }
 
+  @override
   Song? getSongByServerId(int serverId) {
     return _songBox.query(Song_.serverId.equals(serverId)).build().findFirst();
   }
 
+  @override
   Song getSong(int id) {
     try {
       return _songBox.get(id)!;
@@ -53,6 +62,7 @@ class SongRepository {
     }
   }
 
+  @override
   Song getSongContaining(String query) {
     try {
       return _songBox
@@ -64,6 +74,7 @@ class SongRepository {
     }
   }
 
+  @override
   Song? getMostRecentPlayedSong() {
     return _songBox
         .query(Song_.lastPlayed.notNull())
@@ -72,8 +83,9 @@ class SongRepository {
         .findFirst();
   }
 
+  @override
   List<Song> getRecentlyPlayedSongs(int limit) {
-    var query =
+    final query =
         _songBox
             .query(Song_.lastPlayed.notNull())
             .order(Song_.lastPlayed, flags: Order.descending)
@@ -84,8 +96,9 @@ class SongRepository {
     return query.find();
   }
 
+  @override
   List<Song> getMostPlayedSongs(int limit) {
-    var query =
+    final query =
         _songBox
             .query(Song_.playCount.greaterThan(0))
             .order(Song_.playCount, flags: Order.descending)
@@ -96,13 +109,15 @@ class SongRepository {
     return query.find();
   }
 
+  @override
   List<Song> getFavoriteSongs() {
     return _songBox.query(Song_.likedByUser.equals(true)).build().find();
   }
 
-  List<Song> getSongs(String query, String sortField, bool flag) {
+  @override
+  List<Song> getSongs(String query, String sortField, bool ascending) {
     Query<Song> builderQuery;
-    if (flag == true) {
+    if (ascending) {
       builderQuery =
           _songBox
               .query(Song_.name.contains(query, caseSensitive: false))
@@ -127,17 +142,20 @@ class SongRepository {
     return builderQuery.find();
   }
 
+  @override
   List<Song> getAllSongs() {
     return _songBox.query().order(Song_.name).build().find();
   }
 
+  @override
   List<Song> getUnsyncedSongs() {
     return _songBox.query(Song_.requiresSync.equals(true)).build().find();
   }
 
+  @override
   void markSongsAsSynced(List<int> serverIds) {
-    for (int serverId in serverIds) {
-      var song =
+    for (final serverId in serverIds) {
+      final song =
           _songBox.query(Song_.serverId.equals(serverId)).build().findFirst();
       if (song != null) {
         song.requiresSync = false;
@@ -146,14 +164,17 @@ class SongRepository {
     }
   }
 
+  @override
   void deleteSong(Song song) {
     _songBox.remove(song.id);
   }
 
+  @override
   void updateSong(Song song) {
     _songBox.put(song);
   }
 
+  @override
   void updateSongs(List<Song> songs) {
     _songBox.putMany(songs);
   }

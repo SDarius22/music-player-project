@@ -12,11 +12,16 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   String _sortField = 'Title';
 
   bool _isInitialized = false;
+  bool _preferServer = false;
+  bool _fallbackToServer = false;
 
   late Future _songsFuture;
 
   SongProvider(this._songService, this._scannerService) {
-    _songsFuture = Future(() => _songService.getAllSongs());
+    _songsFuture = _songService.getAllSongs(
+      preferServer: _preferServer,
+      fallbackToServer: _fallbackToServer,
+    );
     _scannerService.progressStream.listen((progress) {
       debugPrint("Music scan progress: $progress");
       refreshSongs();
@@ -30,6 +35,14 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   Future get query => _songsFuture;
 
   int get totalSongsCount => _songService.getSongCount();
+
+  set preferServer(bool value) {
+    _preferServer = value;
+  }
+
+  set fallbackToServer(bool value) {
+    _fallbackToServer = value;
+  }
 
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
@@ -46,8 +59,12 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     debugPrint(
       "Refreshing songs with query '$_query', sortField '$_sortField', isAscending '$_isAscending'",
     );
-    _songsFuture = Future(
-      () => _songService.getSongs(_query, _sortField, _isAscending),
+    _songsFuture = _songService.getSongs(
+      _query,
+      _sortField,
+      _isAscending,
+      preferServer: _preferServer,
+      fallbackToServer: _fallbackToServer,
     );
     notifyListeners();
   }
@@ -100,30 +117,36 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     notifyListeners();
   }
 
-  Song? getSong(String songPath) {
-    return _songService.getSong(songPath);
-  }
-
   Song? getSongContaining(String query) {
     return _songService.getSongContaining(query);
   }
 
-  List<Song> getSongs(String query, String sortField, bool flag) {
-    return _songService.getSongs(query, sortField, flag);
+  Future<List<Song>> getSongs(String query, String sortField, bool flag) async {
+    return await _songService.getSongs(
+      query,
+      sortField,
+      flag,
+      preferServer: _preferServer,
+      fallbackToServer: _fallbackToServer,
+    );
   }
 
-  List<Song> getSongsFromPaths(List<String> paths) {
-    return _songService.getSongsFromPaths(paths);
+  Future<List<Song>> getSongsFromPaths(List<String> paths) async {
+    return await _songService.getSongsFromPaths(paths);
   }
 
-  List<Song> getAllSongs() {
-    return _songService.getAllSongs();
+  Future<List<Song>> getAllSongs() async {
+    return await _songService.getAllSongs(
+      preferServer: _preferServer,
+      fallbackToServer: _fallbackToServer,
+    );
   }
 
   @override
   Future<void> refresh() async {
-    _songsFuture = Future(
-      () => _songService.getSongs(_query, _sortField, _isAscending),
+    _songsFuture = _songService.getAllSongs(
+      preferServer: _preferServer,
+      fallbackToServer: _fallbackToServer,
     );
     notifyListeners();
   }

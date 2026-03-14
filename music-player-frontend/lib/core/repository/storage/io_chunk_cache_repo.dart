@@ -1,12 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:path_provider/path_provider.dart';
 
-class ChunkCacheRepository {
+class IOChunkCacheRepository implements ChunkCacheRepository {
   Directory? _baseDir;
 
-  ChunkCacheRepository() {
+  IOChunkCacheRepository() {
     _getBaseDir();
   }
 

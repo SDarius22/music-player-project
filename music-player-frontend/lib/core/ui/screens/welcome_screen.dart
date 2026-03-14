@@ -19,7 +19,11 @@ abstract class AbstractWelcomeScreenState<T extends AbstractWelcomeScreen>
     return GlassAnimatedScaffold(
       controller: context.read<AbstractAppStateProvider>().gradientController,
       appBar: buildAppBar(context),
-      body: Padding(padding: buildPadding(context), child: buildBody(context)),
+      body: Container(
+        alignment: Alignment.center,
+        padding: buildPadding(context),
+        child: buildBody(context),
+      ),
     );
   }
 

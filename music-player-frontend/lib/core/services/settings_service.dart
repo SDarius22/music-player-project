@@ -1,6 +1,6 @@
 import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
-import 'package:music_player_frontend/core/repository/settings_repo.dart';
+import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
 
 class SettingsService {
   final SettingsRepository _settingsRepository;

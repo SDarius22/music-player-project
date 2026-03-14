@@ -188,12 +188,24 @@ class AppAudioService {
 
     _normalQueue = List.from(songs);
 
-    _queuePlaylist.songs.clear();
-    _queuePlaylist.songsIds.clear();
-    playlistService.addToPlaylist(_queuePlaylist, songs);
+    // try {
+    //   _queuePlaylist.songs.clear();
+    //   _queuePlaylist.songsIds.clear();
+    //   playlistService.addToPlaylist(_queuePlaylist, songs);
+    // } catch (e) {
+    //   debugPrint("Error setting queue and play: $e");
+    // }
 
-    await _setAudioSourcesForQueue(song);
-    await setCurrentSongAndPlay(song);
+    try {
+      await _setAudioSourcesForQueue(song);
+    } catch (e) {
+      debugPrint("Error setting audio sources for queue: $e");
+    }
+    try {
+      await setCurrentSongAndPlay(song);
+    } catch (e) {
+      debugPrint("Error setting current song and playing: $e");
+    }
   }
 
   Future<void> _initPlayer() async {
@@ -225,16 +237,42 @@ class AppAudioService {
   }
 
   int _getPlayIndex(Song song) {
+    debugPrint(
+      "Calculating play index for song: ${song.path} (serverId: ${song.serverId})",
+    );
     final playIndex = audioPlayer.audioSources.indexWhere((source) {
       if (source is IndexedAudioSource) {
         final taggedSong = source.tag as Map<String, dynamic>?;
-        return (taggedSong!["path"].toString().isNotEmpty &&
-                taggedSong["path"] == song.path) ||
-            (taggedSong["serverId"] != null &&
-                taggedSong["serverId"] == song.serverId);
+        if (taggedSong == null) {
+          debugPrint("Audio source with missing tag: $source. Skipping.");
+          return false;
+        }
+
+        if (taggedSong['path'] == null ||
+            taggedSong['path'].toString().isEmpty) {
+          debugPrint(
+            "Audio source with missing path tag: $taggedSong. Falling back to serverId matching.",
+          );
+          if (taggedSong['serverId'] == null || taggedSong['serverId'] == -1) {
+            debugPrint(
+              "Audio source with missing path and serverId tag: $taggedSong",
+            );
+            return false;
+          }
+          if (taggedSong['serverId'] != song.serverId) {
+            return false;
+          }
+          if (taggedSong['serverId'] == song.serverId) {
+            return true;
+          }
+          return false;
+        }
+
+        return (taggedSong["path"] == song.path);
       }
       return false;
     });
+    debugPrint("Calculated play index is $playIndex");
     return playIndex != -1 ? playIndex : 0;
   }
 
@@ -263,6 +301,9 @@ class AppAudioService {
     bool isServerTrack = !song.isLocal;
 
     if (isServerTrack) {
+      debugPrint(
+        "Building P2PChunkedAudioSource for song ID ${song.serverId} at path ${song.path}",
+      );
       final chunkManager = await createChunkManager(song.serverId);
       return P2PChunkedAudioSource(
         chunkManager: chunkManager,

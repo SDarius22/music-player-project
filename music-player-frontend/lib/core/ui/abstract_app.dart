@@ -9,12 +9,12 @@ import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
-import 'package:music_player_frontend/core/repository/album_repo.dart';
-import 'package:music_player_frontend/core/repository/artist_repo.dart';
-import 'package:music_player_frontend/core/repository/chunk_cache_repo.dart';
-import 'package:music_player_frontend/core/repository/playlist_repo.dart';
-import 'package:music_player_frontend/core/repository/settings_repo.dart';
-import 'package:music_player_frontend/core/repository/song_repo.dart';
+import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/active_router_service.dart';
@@ -60,13 +60,7 @@ abstract class AbstractApp extends StatelessWidget {
     return [
       Provider<Scaler>(create: (_) => createScaler(context)),
 
-      Provider<AlbumRepository>(create: (_) => AlbumRepository()),
-      Provider<ArtistRepository>(create: (_) => ArtistRepository()),
-      Provider<PlaylistRepository>(create: (_) => PlaylistRepository()),
-      Provider<SettingsRepository>(create: (_) => SettingsRepository()),
-      Provider<SongRepository>(create: (_) => SongRepository()),
-
-      Provider<ChunkCacheRepository>(create: (_) => ChunkCacheRepository()),
+      ...platformProviders(context),
 
       Provider<ActiveChunkRouter>(
         create:
@@ -228,6 +222,8 @@ abstract class AbstractApp extends StatelessWidget {
   List<InheritedProvider> extraProviders(BuildContext context) {
     return [];
   }
+
+  List<InheritedProvider> platformProviders(BuildContext context);
 
   Widget getAppWidget(BuildContext context);
 

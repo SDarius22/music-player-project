@@ -45,7 +45,7 @@ class MacosMusicScannerService implements AbstractMusicScannerService {
     int addedCount = 0;
 
     for (final file in files) {
-      final existing = _songService.getSong(file.path);
+      final existing = await _songService.getSong(file.path);
       if (existing == null) {
         var artist = _artistService.getOrCreateArtist('Unknown Artist');
         var album = _albumService.getOrCreateAlbum('Unknown Album', artist.id);
@@ -83,7 +83,9 @@ class MacosMusicScannerService implements AbstractMusicScannerService {
     _progressController.add(0.0); // Signal start
 
     final songs =
-        _songService.getAllSongs().where((song) => !song.fullyLoaded).toList();
+        (await _songService.getAllSongs())
+            .where((song) => !song.fullyLoaded)
+            .toList();
 
     if (songs.isEmpty) {
       debugPrint("No songs need metadata enrichment");

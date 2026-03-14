@@ -1,5 +1,5 @@
 import 'package:music_player_frontend/core/entities/artist.dart';
-import 'package:music_player_frontend/core/repository/artist_repo.dart';
+import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 
 class ArtistService {
   final ArtistRepository _artistRepository;

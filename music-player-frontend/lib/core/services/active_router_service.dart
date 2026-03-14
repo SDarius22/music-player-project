@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:music_player_frontend/core/repository/chunk_cache_repo.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 
 class ActiveChunkRouter {
