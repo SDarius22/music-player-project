@@ -3,7 +3,7 @@ name: Deploy Frontend
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'music-player-frontend/**'
       - '.github/workflows/deploy-frontend.yml'
