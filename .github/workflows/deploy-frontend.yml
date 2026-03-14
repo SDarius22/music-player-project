@@ -39,6 +39,6 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "music_player_frontend/build/web/*"
+          source: "music-player-frontend/build/web/*"
           target: "/var/www/music-frontend"
           strip_components: 3
