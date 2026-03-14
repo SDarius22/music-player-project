@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'music_player_frontend/**'
+      - 'music-player-frontend/**'
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
@@ -20,11 +20,11 @@ jobs:
         with:
           channel: 'stable'
 
-      - working-directory: ./music_player_frontend
+      - working-directory: ./music-player-frontend
         run: flutter pub get
 
-      - working-directory: ./music_player_frontend
-        run: flutter build web --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
+      - working-directory: ./music-player-frontend
+        run: flutter build web -t lib/main-web.dart --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
 
       - uses: appleboy/ssh-action@v1.0.0
         with:
