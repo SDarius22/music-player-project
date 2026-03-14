@@ -281,9 +281,7 @@ class AppAudioService {
     if (isServerTrack) {
       if (kIsWeb) {
         return AudioSource.uri(
-          Uri.parse(
-            '${String.fromEnvironment('API_BASE_URL')}/stream/${song.serverId}/full',
-          ),
+          Uri.parse('${authService.baseUrl}/stream/${song.serverId}/full'),
           headers: {'Authorization': 'Bearer ${authService.accessToken}'},
           tag: Map<String, dynamic>.from({
             "path": song.path,
