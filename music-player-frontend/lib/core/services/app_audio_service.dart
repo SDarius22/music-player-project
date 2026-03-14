@@ -16,8 +16,7 @@ class AppAudioService {
   final SettingsService settingsService;
   final PlaylistService playlistService;
 
-  final Future<ChunkService> Function(int songId) createChunkManager;
-
+  final ChunkService Function(int songId) createChunkManager;
   ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
 
@@ -287,9 +286,9 @@ class AppAudioService {
     bool isServerTrack = !song.isLocal;
 
     if (isServerTrack) {
-      final chunkManager = await createChunkManager(song.serverId);
       return P2PChunkedAudioSource(
-        chunkManager: chunkManager,
+        songId: song.serverId,
+        chunkManagerFactory: createChunkManager,
         tag: Map<String, dynamic>.from({
           "path": song.path,
           "serverId": song.serverId,

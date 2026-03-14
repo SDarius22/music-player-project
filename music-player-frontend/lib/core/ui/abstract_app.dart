@@ -140,7 +140,7 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<SongService>(),
               context.read<SettingsService>(),
               context.read<PlaylistService>(),
-              (int songId) async {
+              (int songId) {
                 final manager = ChunkService(
                   songId: songId,
                   cacheRepo: context.read<ChunkCacheRepository>(),
@@ -148,9 +148,8 @@ abstract class AbstractApp extends StatelessWidget {
                   webrtcManager: context.read<WebRTCService>(),
                 );
 
-                context.read<ActiveChunkRouter>().activeChunkManager = manager;
+                context.read<ActiveChunkRouter>().registerManager(manager);
 
-                await manager.loadManifest();
                 return manager;
               },
             ),
