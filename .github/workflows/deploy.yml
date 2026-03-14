@@ -52,7 +52,7 @@ jobs:
               --network music-net \
               --restart unless-stopped \
               -p 9000:9000 \
-              -v /opt/music-data:/app/STORAGE_ROOT \
+              -v /opt/music-data:/root/music-server \
               -e DB_HOST=music-postgres \
               -e DB_PORT=5432 \
               -e DB_NAME=music_db \
