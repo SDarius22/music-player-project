@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -50,8 +51,18 @@ public class SongService {
 
 
     @Transactional
-    public void uploadSong(String name, String artistName, String albumName, String photo,
-                           Integer duration, Integer track, Integer disc, Integer year, MultipartFile file) throws Exception {
+    public void uploadSong(User user, String name, String artistName, String albumName, String photo,
+                           Integer duration, Integer track, Integer disc, Integer year, MultipartFile file, String fileHash) throws Exception {
+        if (user.getAuthorities().stream().noneMatch(auth -> Objects.equals(auth.getAuthority(), "ROLE_ADMIN"))) {
+            throw new RuntimeException("Unauthorized: Only admins can upload songs.");
+        }
+        Song existingSong = songRepository.findByFileHash(fileHash).orElse(null);
+        if (existingSong != null) {
+            existingSong.setOwnerId(null);
+            existingSong.setSongType(SongType.STREAMABLE);
+            songRepository.save(existingSong);
+            return;
+        }
 
         Artist artist = artistRepository.findByName(artistName)
                 .orElseGet(() -> artistRepository.save(Artist.builder().name(artistName).build()));
@@ -73,6 +84,7 @@ public class SongService {
                 .discNumber(disc)
                 .trackNumber(track)
                 .releaseYear(year)
+                .fileHash(fileHash)
                 .build();
 
         song = songRepository.save(song);

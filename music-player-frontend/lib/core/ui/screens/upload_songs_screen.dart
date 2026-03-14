@@ -177,7 +177,7 @@ abstract class AbstractUploadSongsScreenState<
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${item['artist'] ?? ''} - ${item['album'] ?? ''}'),
-              if (uploading) ...[
+              if (uploading || progress >= 0.1) ...[
                 const SizedBox(height: 6),
                 LinearProgressIndicator(value: progress),
                 const SizedBox(height: 4),

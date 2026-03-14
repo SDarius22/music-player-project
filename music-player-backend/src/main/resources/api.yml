@@ -473,6 +473,9 @@ components:
         photo:
           type: string
           description: Base64-encoded album art image
+        fileHash:
+          type: string
+          description: The SHA-256 hash of the entire file for quick server-side duplicate detection.
 
 
     ChunkManifestDto:

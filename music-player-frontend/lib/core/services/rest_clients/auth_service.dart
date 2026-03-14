@@ -112,6 +112,10 @@ class AuthService {
         body: jsonEncode({'refreshToken': refresh}),
       );
 
+      debugPrint(
+        "Refresh token response: ${response.statusCode} - ${response.body}",
+      );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         await saveTokens(data['accessToken'], data['refreshToken'] ?? refresh);

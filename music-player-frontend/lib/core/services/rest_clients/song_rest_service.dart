@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
@@ -109,6 +110,10 @@ class SongRestService extends AbstractRestService {
     required void Function(int sentBytes, int totalBytes) onProgress,
   }) async {
     try {
+      final file = File(audioFilePath);
+      final fileBytes = await file.readAsBytes();
+      final fileHash = sha256.convert(fileBytes).toString();
+
       final fields = {
         'name': name,
         'artistName': artistName,
@@ -118,9 +123,8 @@ class SongRestService extends AbstractRestService {
         'discNumber': discNumber.toString(),
         'releaseYear': releaseYear.toString(),
         'photo': coverArtBytes != null ? base64Encode(coverArtBytes) : '',
+        'fileHash': fileHash,
       };
-
-      final file = File(audioFilePath);
 
       final streamedResponse = await multipartRequestWithProgress(
         'POST',

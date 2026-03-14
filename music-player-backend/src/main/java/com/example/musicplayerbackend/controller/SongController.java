@@ -35,14 +35,14 @@ public class SongController implements SongsApi {
 
     @Override
     public ResponseEntity<NegotiationResponseDto> negotiateUserUpload(NegotiationRequestDto negotiationRequestDto) {
-        User user = (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
+        User user = getCurrentUser();
         var response = songService.initiateNegotiation(negotiationRequestDto, Objects.requireNonNull(user).getId());
         return ResponseEntity.ok(response);
     }
 
     @Override
     public ResponseEntity<Void> uploadMissingChunk(Long songId, Integer chunkIndex, MultipartFile chunkData, String contentHash) {
-        User user = (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
+        User user = getCurrentUser();
         try {
             songService.saveMissingChunk(user, songId, chunkIndex, contentHash, chunkData);
             return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -53,13 +53,18 @@ public class SongController implements SongsApi {
     }
 
     @Override
-    public ResponseEntity<Void> uploadSong(MultipartFile file, String name, String artistName, String albumName, Integer durationInSeconds, Integer trackNumber, Integer releaseYear, Integer discNumber, String photo) {
+    public ResponseEntity<Void> uploadSong(MultipartFile file, String name, String artistName, String albumName, Integer durationInSeconds, Integer trackNumber, Integer releaseYear, Integer discNumber, String photo, String fileHash) {
+        User user = getCurrentUser();
         try {
-            songService.uploadSong(name, artistName, albumName, photo, durationInSeconds, trackNumber, discNumber, releaseYear, file);
+            songService.uploadSong(user, name, artistName, albumName, photo, durationInSeconds, trackNumber, discNumber, releaseYear, file, fileHash);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    User getCurrentUser() {
+        return (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
     }
 }
