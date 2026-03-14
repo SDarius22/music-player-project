@@ -6,6 +6,7 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/p2p_chunked_source.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/local_libs/extensions.dart';
@@ -15,8 +16,9 @@ class AppAudioService {
   final SongService songService;
   final SettingsService settingsService;
   final PlaylistService playlistService;
-
+  final AuthService authService;
   final ChunkService Function(int songId) createChunkManager;
+
   ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
 
@@ -40,6 +42,7 @@ class AppAudioService {
     this.songService,
     this.settingsService,
     this.playlistService,
+    this.authService,
     this.createChunkManager,
   ) {
     _currentAudioSettings = settingsService.getAudioSettings();
@@ -281,6 +284,7 @@ class AppAudioService {
           Uri.parse(
             '${String.fromEnvironment('API_BASE_URL')}/stream/${song.serverId}/full',
           ),
+          headers: {'Authorization': 'Bearer ${authService.accessToken}'},
           tag: Map<String, dynamic>.from({
             "path": song.path,
             "serverId": song.serverId,

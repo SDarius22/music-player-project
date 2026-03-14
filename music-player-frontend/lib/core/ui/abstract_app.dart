@@ -140,6 +140,7 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<SongService>(),
               context.read<SettingsService>(),
               context.read<PlaylistService>(),
+              context.read<AuthService>(),
               (int songId) {
                 final manager = ChunkService(
                   songId: songId,
