@@ -287,9 +287,6 @@ class AppAudioService {
     bool isServerTrack = !song.isLocal;
 
     if (isServerTrack) {
-      debugPrint(
-        "Building P2PChunkedAudioSource for song ID ${song.serverId} at path ${song.path}",
-      );
       final chunkManager = await createChunkManager(song.serverId);
       return P2PChunkedAudioSource(
         chunkManager: chunkManager,

@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_response_dto.dart';
+import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
@@ -166,19 +167,49 @@ class SongRestService extends AbstractRestService {
     throw Exception('Failed to fetch song with ID $songId');
   }
 
-  Future<List<Song>> getAllSongs() async {
-    debugPrint('Fetching all songs from server...');
+  Future<SongPageDto> getSongsPage({
+    String? query,
+    int page = 0,
+    int size = 50,
+    String sort = 'name,asc',
+  }) async {
+    debugPrint('Fetching songs page from server...');
+
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+      'sort': sort,
+    };
+    if (query != null && query.trim().isNotEmpty) {
+      qp['q'] = query.trim();
+    }
+
+    final endpoint = '/songs?${Uri(queryParameters: qp).query}';
+
     try {
-      final response = await get('/songs');
+      final response = await get(endpoint);
 
       if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body);
-        var songs = jsonList.map((json) => Song.fromJson(json)).toList();
-        debugPrint('Fetched ${songs.length} songs from server.');
-        debugPrint(
-          'First song: ${songs[0].name}, ${songs[0].id}, ${songs[0].serverId}, ${songs[0].path}',
-        );
-        return songs;
+        final dynamic decoded = jsonDecode(response.body);
+
+        // Expected: page envelope. If backend returns an array (older versions),
+        // adapt it into a single-page response.
+        if (decoded is Map<String, dynamic>) {
+          return SongPageDto.fromJson(decoded);
+        }
+        if (decoded is List) {
+          final songs =
+              decoded
+                  .map((e) => Song.fromJson(e as Map<String, dynamic>))
+                  .toList();
+          return SongPageDto(
+            content: songs,
+            page: 0,
+            size: songs.length,
+            totalPages: 1,
+            totalElements: songs.length,
+          );
+        }
       } else {
         debugPrint(
           'Failed to fetch songs: ${response.statusCode} ${response.body}',
@@ -187,6 +218,23 @@ class SongRestService extends AbstractRestService {
     } catch (e) {
       debugPrint('Error fetching songs: $e');
     }
-    return [];
+
+    return SongPageDto(
+      content: const [],
+      page: page,
+      size: size,
+      totalPages: 0,
+      totalElements: 0,
+    );
+  }
+
+  Future<List<Song>> getAllSongs() async {
+    final page = await getSongsPage(page: 0, size: 200);
+    debugPrint('Fetched ${page.content.length} songs from server.');
+    if (page.content.isNotEmpty) {
+      final s = page.content.first;
+      debugPrint('First song: ${s.name}, ${s.id}, ${s.serverId}, ${s.path}');
+    }
+    return page.content;
   }
 }

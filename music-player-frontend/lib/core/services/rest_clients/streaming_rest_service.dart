@@ -58,7 +58,6 @@ class StreamingRestService {
   }
 
   Future<ChunkManifestDto> fetchManifest(int songId) async {
-    debugPrint("Fetching manifest for song $songId");
     final response = await _getJson('/stream/$songId/manifest');
 
     if (response.statusCode == 200) {

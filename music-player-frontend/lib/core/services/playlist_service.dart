@@ -38,7 +38,10 @@ class PlaylistService {
 
   Playlist updatePlaylist(Playlist playlist) {
     if (playlist.indestructible) {
-      playlist.imageBytes = playlist.songsList.first.coverArt;
+      final list = playlist.songsList;
+      if (list.isNotEmpty) {
+        playlist.imageBytes = list.first.coverArt;
+      }
     }
     return _playlistRepository.savePlaylist(playlist);
   }

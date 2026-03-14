@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
+import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
@@ -49,15 +50,19 @@ class SongService {
     bool preferServer = false,
     bool fallbackToServer = false,
   }) async {
-    if (preferServer) {
-      return await _songRestService.getAllSongs();
+    if (!preferServer) {
+      final local = _songRepository.getAllSongs();
+      if (!fallbackToServer || local.isNotEmpty) {
+        return local;
+      }
+      final serverSongs = await _songRestService.getAllSongs();
+      _cacheServerSongs(serverSongs);
+      return _songRepository.getAllSongs();
     }
 
-    final local = _songRepository.getAllSongs();
-    if (fallbackToServer && local.isEmpty) {
-      return await _songRestService.getAllSongs();
-    }
-    return local;
+    final serverSongs = await _songRestService.getAllSongs();
+    _cacheServerSongs(serverSongs);
+    return _songRepository.getAllSongs();
   }
 
   Future<List<Song>> getSongs(
@@ -69,15 +74,42 @@ class SongService {
   }) async {
     if (!preferServer) {
       final local = _songRepository.getSongs(query, sortField, ascending);
-      if (fallbackToServer && local.isEmpty) {
-        final serverSongs = await _songRestService.getAllSongs();
-        return serverSongs;
+      if (!fallbackToServer || local.isNotEmpty) {
+        return local;
       }
-      return local;
+
+      await searchSongsFromServer(
+        query,
+        page: 0,
+        size: 200,
+        sort: _toServerSort(sortField, ascending),
+      );
+      return _songRepository.getSongs(query, sortField, ascending);
     }
 
-    final serverSongs = await _songRestService.getAllSongs();
-    return serverSongs;
+    await searchSongsFromServer(
+      query,
+      page: 0,
+      size: 200,
+      sort: _toServerSort(sortField, ascending),
+    );
+
+    return _songRepository.getSongs(query, sortField, ascending);
+  }
+
+  String _toServerSort(String sortField, bool ascending) {
+    final normalized = sortField.trim().toLowerCase();
+
+    final serverField = switch (normalized) {
+      'title' || 'name' => 'name',
+      'year' => 'year',
+      'duration' || 'durationinseconds' => 'durationInSeconds',
+      'track' || 'tracknumber' => 'trackNumber',
+      'disc' || 'discnumber' => 'discNumber',
+      _ => 'name',
+    };
+
+    return '$serverField,${ascending ? 'asc' : 'desc'}';
   }
 
   Future<Song?> getSong(
@@ -87,8 +119,16 @@ class SongService {
   }) async {
     if (preferServer) {
       if (serverId == null) return null;
+
+      final cached = _songRepository.getSongByServerId(serverId);
+      if (cached != null) {
+        return cached;
+      }
+
       try {
-        return await _songRestService.getServerSong(serverId);
+        final serverSong = await _songRestService.getServerSong(serverId);
+        _cacheServerSong(serverSong);
+        return _songRepository.getSongByServerId(serverId);
       } catch (_) {
         return null;
       }
@@ -105,8 +145,14 @@ class SongService {
     }
   }
 
+  Future<List<Song>> refreshServerSongs() async {
+    final serverSongs = await _songRestService.getAllSongs();
+    _cacheServerSongs(serverSongs);
+    return _songRepository.getAllSongs();
+  }
+
   Future<List<Song>> getServerSongs() async {
-    return await _songRestService.getAllSongs();
+    return await refreshServerSongs();
   }
 
   void updateSong(Song song) {
@@ -147,6 +193,39 @@ class SongService {
     song.lastPlayed = DateTime.now();
     song.requiresSync = true;
     _songRepository.updateSong(song);
+  }
+
+  void _cacheServerSongs(List<Song> serverSongs) {
+    for (final s in serverSongs) {
+      _cacheServerSong(s);
+    }
+  }
+
+  void _cacheServerSong(Song serverSong) {
+    if (serverSong.serverId == -1) return;
+
+    final existing = _songRepository.getSongByServerId(serverSong.serverId);
+    if (existing == null) {
+      serverSong.requiresSync = false;
+      _songRepository.saveSong(serverSong);
+      return;
+    }
+
+    existing.name = serverSong.name;
+    existing.durationInSeconds = serverSong.durationInSeconds;
+    existing.trackNumber = serverSong.trackNumber;
+    existing.discNumber = serverSong.discNumber;
+    existing.year = serverSong.year;
+    existing.requiresSync = false;
+
+    if (!existing.isLocal) {
+      existing.path = '';
+    }
+
+    existing.artist.target = serverSong.artist.target;
+    existing.album.target = serverSong.album.target;
+
+    _songRepository.updateSong(existing);
   }
 
   void runSync() async {
@@ -244,5 +323,54 @@ class SongService {
       chunks.add(bytes.sublist(i, min(i + _chunkSize, bytes.length)));
     }
     return chunks;
+  }
+
+  Future<List<Song>> searchSongsFromServer(
+    String query, {
+    int page = 0,
+    int size = 50,
+    String sort = 'name,asc',
+  }) async {
+    final result = await searchSongsPageFromServer(
+      query,
+      page: page,
+      size: size,
+      sort: sort,
+    );
+    return result.content;
+  }
+
+  Future<SongPageDto> searchSongsPageFromServer(
+    String query, {
+    int page = 0,
+    int size = 50,
+    String sort = 'name,asc',
+  }) async {
+    final serverPage = await _songRestService.getSongsPage(
+      query: query,
+      page: page,
+      size: size,
+      sort: sort,
+    );
+
+    _cacheServerSongs(serverPage.content);
+
+    final refreshed = <Song>[];
+    for (final s in serverPage.content) {
+      final cached = _songRepository.getSongByServerId(s.serverId);
+      if (cached != null) {
+        refreshed.add(cached);
+      } else {
+        refreshed.add(s);
+      }
+    }
+
+    return SongPageDto(
+      content: refreshed,
+      page: serverPage.page,
+      size: serverPage.size,
+      totalPages: serverPage.totalPages,
+      totalElements: serverPage.totalElements,
+    );
   }
 }

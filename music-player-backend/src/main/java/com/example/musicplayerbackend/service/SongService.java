@@ -5,6 +5,9 @@ import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.mapper.NegotiationMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,11 +38,15 @@ public class SongService {
 
 
     @Transactional(readOnly = true)
-    public List<SongDto> getAllSongs() {
-        return songRepository.findAll()
-                .stream()
-                .map(songMapper::toDto)
-                .toList();
+    public Page<SongDto> getSongsVisibleToUser(String q, User user, Pageable pageable) {
+        Specification<Song> spec = SongSpecifications.visibleTo(user.getId());
+        Specification<Song> qSpec = SongSpecifications.matchesQuery(q);
+        if (qSpec != null) {
+            spec = spec.and(qSpec);
+        }
+
+        return songRepository.findAll(spec, pageable)
+                .map(songMapper::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -256,3 +263,4 @@ public class SongService {
         return hex.toString();
     }
 }
+
