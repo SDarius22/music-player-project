@@ -3,7 +3,6 @@ package com.example.musicplayerbackend.data;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongType;
 import jakarta.persistence.criteria.JoinType;
-import org.springframework.data.jpa.domain.PredicateSpecification;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
@@ -44,11 +43,11 @@ public final class SongSpecifications {
      */
     public static Specification<Song> matchesQuery(String q) {
         if (q == null || q.isBlank()) {
-            return Specification.where((PredicateSpecification<Song>) null);
+            return (_, _, cb) -> cb.conjunction();
         }
         final String like = "%" + q.trim().toLowerCase() + "%";
 
-        return (root, query, cb) -> {
+        return (root, _, cb) -> {
             var artistJoin = root.join("artist", JoinType.LEFT);
             var albumJoin = root.join("album", JoinType.LEFT);
 
