@@ -222,26 +222,16 @@ class AppAudioService {
   }
 
   int _getPlayIndex(Song song) {
-    debugPrint(
-      "Calculating play index for song: ${song.path} (serverId: ${song.serverId})",
-    );
     final playIndex = audioPlayer.audioSources.indexWhere((source) {
       if (source is IndexedAudioSource) {
         final taggedSong = source.tag as Map<String, dynamic>?;
         if (taggedSong == null) {
-          debugPrint("Audio source with missing tag: $source. Skipping.");
           return false;
         }
 
         if (taggedSong['path'] == null ||
             taggedSong['path'].toString().isEmpty) {
-          debugPrint(
-            "Audio source with missing path tag: $taggedSong. Falling back to serverId matching.",
-          );
           if (taggedSong['serverId'] == null || taggedSong['serverId'] == -1) {
-            debugPrint(
-              "Audio source with missing path and serverId tag: $taggedSong",
-            );
             return false;
           }
           if (taggedSong['serverId'] != song.serverId) {
