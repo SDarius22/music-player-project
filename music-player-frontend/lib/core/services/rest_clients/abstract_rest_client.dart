@@ -25,7 +25,7 @@ abstract class AbstractRestService {
 
     var response = await perform(token ?? "");
 
-    if (response.statusCode == 401) {
+    if (response.statusCode == 401 || response.statusCode == 403) {
       final newToken = await authService.refreshAccessToken();
       if (newToken != null) {
         response = await perform(newToken);
@@ -49,7 +49,7 @@ abstract class AbstractRestService {
 
     var response = await perform(token ?? "");
 
-    if (response.statusCode == 401) {
+    if (response.statusCode == 401 || response.statusCode == 403) {
       final newToken = await authService.refreshAccessToken();
       if (newToken != null) {
         response = await perform(newToken);
@@ -79,7 +79,8 @@ abstract class AbstractRestService {
 
     var streamedResponse = await perform(token ?? "");
 
-    if (streamedResponse.statusCode == 401) {
+    if (streamedResponse.statusCode == 401 ||
+        streamedResponse.statusCode == 403) {
       final newToken = await authService.refreshAccessToken();
       if (newToken != null) {
         streamedResponse = await perform(newToken);
@@ -136,7 +137,8 @@ abstract class AbstractRestService {
 
     var streamedResponse = await perform(token ?? "");
 
-    if (streamedResponse.statusCode == 401) {
+    if (streamedResponse.statusCode == 401 ||
+        streamedResponse.statusCode == 403) {
       final newToken = await authService.refreshAccessToken();
       if (newToken != null) {
         streamedResponse = await perform(newToken);
