@@ -187,25 +187,11 @@ class AppAudioService {
     }
 
     _normalQueue = List.from(songs);
-
-    // try {
-    //   _queuePlaylist.songs.clear();
-    //   _queuePlaylist.songsIds.clear();
-    //   playlistService.addToPlaylist(_queuePlaylist, songs);
-    // } catch (e) {
-    //   debugPrint("Error setting queue and play: $e");
-    // }
-
-    try {
-      await _setAudioSourcesForQueue(song);
-    } catch (e) {
-      debugPrint("Error setting audio sources for queue: $e");
-    }
-    try {
-      await setCurrentSongAndPlay(song);
-    } catch (e) {
-      debugPrint("Error setting current song and playing: $e");
-    }
+    _queuePlaylist.songs.clear();
+    _queuePlaylist.songsIds.clear();
+    playlistService.addToPlaylist(_queuePlaylist, songs);
+    await _setAudioSourcesForQueue(song);
+    await setCurrentSongAndPlay(song);
   }
 
   Future<void> _initPlayer() async {
