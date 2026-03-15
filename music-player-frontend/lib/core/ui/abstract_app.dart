@@ -35,6 +35,7 @@ import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:provider/provider.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 abstract class AbstractApp extends StatelessWidget {
@@ -55,9 +56,10 @@ abstract class AbstractApp extends StatelessWidget {
 
   static String _generateDeviceId() {
     final random = Random.secure();
-    return List.generate(16, (_) => random.nextInt(256))
-        .map((b) => b.toRadixString(16).padLeft(2, '0'))
-        .join();
+    return List.generate(
+      16,
+      (_) => random.nextInt(256),
+    ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 
   @override
@@ -65,6 +67,18 @@ abstract class AbstractApp extends StatelessWidget {
     return MultiProvider(
       providers: [..._commonProviders(context), ...extraProviders(context)],
       child: getAppWidget(context),
+    );
+  }
+
+  Widget responsiveBuilder(Widget? child) {
+    return ResponsiveBreakpoints.builder(
+      child: child!,
+      breakpoints: [
+        const Breakpoint(start: 0, end: 599, name: MOBILE),
+        const Breakpoint(start: 600, end: 1024, name: TABLET),
+        const Breakpoint(start: 1025, end: 1920, name: DESKTOP),
+        const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+      ],
     );
   }
 

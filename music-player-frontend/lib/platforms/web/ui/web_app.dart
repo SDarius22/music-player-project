@@ -31,7 +31,6 @@ import 'package:music_player_frontend/platforms/web/services/web_file_service.da
 import 'package:music_player_frontend/platforms/web/services/web_music_scanner_service.dart';
 import 'package:music_player_frontend/platforms/web/ui/components/web_scaler.dart';
 import 'package:provider/provider.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 class WebApp extends AbstractApp {
   const WebApp({super.key});
@@ -56,18 +55,7 @@ class WebApp extends AbstractApp {
   Widget getAppWidget(BuildContext context) {
     return MaterialApp(
       builder:
-          (context, child) => BotToastInit()(
-            context,
-            ResponsiveBreakpoints.builder(
-              child: child!,
-              breakpoints: [
-                const Breakpoint(start: 0, end: 450, name: MOBILE),
-                const Breakpoint(start: 451, end: 800, name: TABLET),
-                const Breakpoint(start: 801, end: 1920, name: DESKTOP),
-                const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
-              ],
-            ),
-          ),
+          (context, child) => BotToastInit()(context, responsiveBuilder(child)),
       debugShowCheckedModeBanner: false,
       theme: MusicPlayerTheme.getDefaultTheme(),
       home: const LoadingScreen(),

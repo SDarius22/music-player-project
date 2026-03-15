@@ -29,7 +29,6 @@ import 'package:music_player_frontend/platforms/linux/services/linux_file_servic
 import 'package:music_player_frontend/platforms/linux/services/music_scanner_service.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
 import 'package:provider/provider.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 class LinuxApp extends AbstractApp {
   const LinuxApp({super.key});
@@ -54,18 +53,7 @@ class LinuxApp extends AbstractApp {
   Widget getAppWidget(BuildContext context) {
     return MaterialApp(
       builder:
-          (context, child) => BotToastInit()(
-            context,
-            ResponsiveBreakpoints.builder(
-              child: child!,
-              breakpoints: [
-                const Breakpoint(start: 0, end: 599, name: MOBILE),
-                const Breakpoint(start: 600, end: 1024, name: TABLET),
-                const Breakpoint(start: 1025, end: 1920, name: DESKTOP),
-                const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
-              ],
-            ),
-          ),
+          (context, child) => BotToastInit()(context, responsiveBuilder(child)),
       debugShowCheckedModeBanner: false,
       checkerboardOffscreenLayers: true,
       theme: MusicPlayerTheme.getDefaultTheme(),
