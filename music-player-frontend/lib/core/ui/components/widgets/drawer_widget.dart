@@ -114,10 +114,13 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
-          onTap: isSelected ? null : () {
-            item["onTap"](context);
-            if (widget.mobileDrawer) Scaffold.of(context).closeDrawer();
-          },
+          onTap:
+              isSelected
+                  ? null
+                  : () {
+                    item["onTap"](context);
+                    if (widget.mobileDrawer) Scaffold.of(context).closeDrawer();
+                  },
           child: HoverContainer(
             hoverColor: Colors.indigo.withValues(alpha: 0.2),
             normalColor:
@@ -192,7 +195,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       duration: const Duration(milliseconds: 300),
       width:
           widget.mobileDrawer
-              ? double.infinity
+              ? width * 0.6
               : (isDrawerOpen ? width * 0.12 : width * 0.05),
       curve: Curves.easeInOut,
       alignment: Alignment.center,

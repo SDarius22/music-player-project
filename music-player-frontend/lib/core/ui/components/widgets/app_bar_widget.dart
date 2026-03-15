@@ -14,14 +14,13 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   const AppBarWidget({super.key});
 
   Widget buildAppBar(BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return ValueListenableBuilder(
       valueListenable: context.read<AbstractAppStateProvider>().opacityNotifier,
       builder: (context, appBarOpacity, child) {
         return AnimatedOpacity(
           duration: const Duration(milliseconds: 100),
-          opacity: UniversalPlatform.isDesktop ? 1.0 : appBarOpacity,
+          opacity: UniversalPlatform.isDesktopOrWeb ? 1.0 : appBarOpacity,
           child: GlassContainer(
             height: MediaQuery.of(context).padding.top + kToolbarHeight,
             width: width,
@@ -145,6 +144,22 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           const Spacer(),
+          if (UniversalPlatform.isWeb)
+            TextButton.icon(
+              onPressed: () {
+                context
+                    .read<AbstractAppStateProvider>()
+                    .scaffoldKey
+                    .currentState
+                    ?.openEndDrawer();
+              },
+              icon: Icon(
+                FluentIcons.download,
+                size: height * 0.025,
+                color: Colors.white,
+              ),
+              label: const SizedBox.shrink(),
+            ),
         ],
       ],
     );

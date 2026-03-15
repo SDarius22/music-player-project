@@ -25,15 +25,12 @@ class AppAudioService {
 
   bool _initialized = false;
 
-  // Guard against the sequenceStateStream listener re-entering during moveAudioSource.
-  bool _rotating = false;
   List<Song> _normalQueue = [];
   Playlist _queuePlaylist = Playlist();
   AudioSettings _currentAudioSettings = AudioSettings();
 
   AudioSettings get currentAudioSettings => _currentAudioSettings;
 
-  // _normalQueue[0] is always the currently playing song.
   List<Song> get queue => _normalQueue;
 
   Song get currentSong => currentSongNotifier.value;
@@ -62,22 +59,20 @@ class AppAudioService {
   Future<void> pause() => audioPlayer.pause();
 
   Future<void> skipToNext() async {
+    if (_normalQueue.isEmpty) return;
+    final currentIdx = audioPlayer.currentIndex ?? 0;
+    final nextIdx = (currentIdx + 1) % _normalQueue.length;
+    currentSong = _normalQueue[nextIdx];
     await audioPlayer.seekToNext();
     await audioPlayer.play();
   }
 
   Future<void> skipToPrevious() async {
-    if (_normalQueue.length <= 1) {
-      await audioPlayer.seek(Duration.zero, index: 0);
-      await audioPlayer.play();
-      return;
-    }
-    _rotating = true;
-    _normalQueue.insert(0, _normalQueue.removeLast());
-    await audioPlayer.moveAudioSource(_normalQueue.length - 1, 0);
-    _rotating = false;
-    currentSong = _normalQueue[0];
-    await audioPlayer.seek(Duration.zero, index: 0);
+    if (_normalQueue.isEmpty) return;
+    final currentIdx = audioPlayer.currentIndex ?? 0;
+    final prevIdx = currentIdx > 0 ? currentIdx - 1 : _normalQueue.length - 1;
+    currentSong = _normalQueue[prevIdx];
+    await audioPlayer.seek(Duration.zero, index: prevIdx);
     await audioPlayer.play();
   }
 
@@ -143,8 +138,8 @@ class AppAudioService {
   Future<void> addNextToQueue(List<Song> songs) async {
     if (songs.isEmpty) return;
 
-    // Current song is always at index 0; insert right after it.
-    final insertAt = _normalQueue.isEmpty ? 0 : 1;
+    final currentIdx = audioPlayer.currentIndex ?? 0;
+    final insertAt = _normalQueue.isEmpty ? 0 : currentIdx + 1;
     List<AudioSource> sourcesToInsert = [];
 
     for (final song in songs.reversed) {
@@ -215,9 +210,7 @@ class AppAudioService {
 
     await _setAudioSourcesForQueue(currentSong);
 
-    audioPlayer.sequenceStateStream.listen((state) async {
-      if (_rotating) return;
-
+    audioPlayer.sequenceStateStream.listen((state) {
       final currentSource = state.currentSource;
       if (currentSource == null) return;
 
@@ -225,10 +218,6 @@ class AppAudioService {
       final song = songMap?["song"] as Song?;
 
       if (song != null && song.id != currentSong.id) {
-        _rotating = true;
-        _normalQueue.add(_normalQueue.removeAt(0));
-        await audioPlayer.moveAudioSource(0, _normalQueue.length - 1);
-        _rotating = false;
         _updateCurrentSong(song);
       }
     });
@@ -313,7 +302,12 @@ class AppAudioService {
   }
 
   Future<void> _proactivelyCachePrefixes() async {
-    for (final song in _normalQueue.skip(1).take(2)) {
+    final currentIdx = audioPlayer.currentIndex ?? 0;
+    final upcoming = List.generate(
+      2,
+      (i) => _normalQueue[(currentIdx + 1 + i) % _normalQueue.length],
+    );
+    for (final song in upcoming) {
       if (song.serverId > 0) {
         try {
           final manager = createChunkManager(song.serverId);

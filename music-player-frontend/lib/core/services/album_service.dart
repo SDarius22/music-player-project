@@ -40,6 +40,22 @@ class AlbumService {
     return _albumRepository.getAlbums(query, sortField, flag);
   }
 
+  List<Album> getAlbumsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int pageSize,
+  ) {
+    return _albumRepository.getAlbumsPaged(
+      query,
+      sortField,
+      ascending,
+      page * pageSize,
+      pageSize,
+    );
+  }
+
   List<Album> getAllAlbums() {
     return _albumRepository.getAllAlbums();
   }

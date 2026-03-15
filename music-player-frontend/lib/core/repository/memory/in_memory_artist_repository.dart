@@ -61,6 +61,19 @@ class InMemoryArtistRepository implements ArtistRepository {
   }
 
   @override
+  List<Artist> getArtistsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  ) {
+    final all = getArtists(query, sortField, ascending);
+    if (offset >= all.length) return [];
+    return all.sublist(offset, (offset + limit).clamp(0, all.length));
+  }
+
+  @override
   List<Artist> getAllArtists() {
     final list = _byId.values.toList();
     list.sort((a, b) => a.name.compareTo(b.name));

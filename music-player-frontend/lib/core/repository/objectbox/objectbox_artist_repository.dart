@@ -60,6 +60,29 @@ class ObjectBoxArtistRepository implements ArtistRepository {
   }
 
   @override
+  List<Artist> getArtistsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  ) {
+    final q =
+        _artistBox
+            .query(Artist_.name.contains(query, caseSensitive: false))
+            .order(
+              sortFields.containsKey(sortField)
+                  ? sortFields[sortField]
+                  : Artist_.name,
+              flags: ascending ? 0 : Order.descending,
+            )
+            .build();
+    q.offset = offset;
+    q.limit = limit;
+    return q.find();
+  }
+
+  @override
   List<Artist> getAllArtists() {
     return _artistBox.getAll();
   }

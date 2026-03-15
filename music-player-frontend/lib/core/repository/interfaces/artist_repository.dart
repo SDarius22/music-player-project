@@ -13,6 +13,14 @@ abstract class ArtistRepository {
 
   List<Artist> getArtists(String query, String sortField, bool ascending);
 
+  List<Artist> getArtistsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  );
+
   List<Artist> getAllArtists();
 
   void updateArtist(Artist artist);

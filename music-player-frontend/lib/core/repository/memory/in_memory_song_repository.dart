@@ -147,6 +147,19 @@ class InMemorySongRepository implements SongRepository {
   }
 
   @override
+  List<Song> getSongsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  ) {
+    final all = getSongs(query, sortField, ascending);
+    if (offset >= all.length) return [];
+    return all.sublist(offset, (offset + limit).clamp(0, all.length));
+  }
+
+  @override
   List<Song> getAllSongs() {
     final all = _byId.values.toList();
     all.sort((a, b) => a.name.compareTo(b.name));

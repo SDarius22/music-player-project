@@ -13,6 +13,14 @@ abstract class AlbumRepository {
 
   List<Album> getAlbums(String query, String sortField, bool ascending);
 
+  List<Album> getAlbumsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  );
+
   List<Album> getAllAlbums();
 
   void updateAlbum(Album album);

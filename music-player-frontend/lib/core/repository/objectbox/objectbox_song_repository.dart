@@ -143,6 +143,29 @@ class ObjectBoxSongRepository implements SongRepository {
   }
 
   @override
+  List<Song> getSongsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  ) {
+    final q =
+        _songBox
+            .query(Song_.name.contains(query, caseSensitive: false))
+            .order(
+              sortFields.containsKey(sortField)
+                  ? sortFields[sortField]
+                  : Song_.name,
+              flags: ascending ? 0 : Order.descending,
+            )
+            .build();
+    q.offset = offset;
+    q.limit = limit;
+    return q.find();
+  }
+
+  @override
   List<Song> getAllSongs() {
     return _songBox.query().order(Song_.name).build().find();
   }

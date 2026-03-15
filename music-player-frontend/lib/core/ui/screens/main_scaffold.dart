@@ -66,7 +66,13 @@ class _MainScaffoldState extends State<MainScaffold> {
         extendBody: true,
         extendBodyBehindAppBar: true,
         appBar: AppBarWidget(),
-        drawer: buildDrawer(),
+        drawer: Drawer(
+          backgroundColor: Colors.transparent,
+          child:
+              ResponsiveBreakpoints.of(context).isMobile
+                  ? DrawerWidget(mobileDrawer: true)
+                  : SizedBox.shrink(),
+        ),
         body: Padding(
           padding: buildPadding(context),
           child: Stack(
@@ -117,7 +123,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  Widget buildDrawer() {
+  Drawer buildDrawer() {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
     if (isMobile) {
       return Drawer(
@@ -125,7 +131,10 @@ class _MainScaffoldState extends State<MainScaffold> {
         child: DrawerWidget(mobileDrawer: true),
       );
     }
-    return const SizedBox.shrink();
+    return Drawer(
+      backgroundColor: Colors.transparent,
+      child: SizedBox.shrink(),
+    );
   }
 
   Widget buildMainContent() {

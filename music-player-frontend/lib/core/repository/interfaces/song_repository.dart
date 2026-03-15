@@ -29,6 +29,14 @@ abstract class SongRepository {
 
   List<Song> getSongs(String query, String sortField, bool ascending);
 
+  List<Song> getSongsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  );
+
   List<Song> getAllSongs();
 
   List<Song> getUnsyncedSongs();

@@ -85,6 +85,19 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   }
 
   @override
+  List<Playlist> getPlaylistsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  ) {
+    final all = getPlaylists(query, sortField, ascending);
+    if (offset >= all.length) return [];
+    return all.sublist(offset, (offset + limit).clamp(0, all.length));
+  }
+
+  @override
   void deletePlaylist(Playlist playlist) {
     _byId.remove(playlist.id);
     _emit();

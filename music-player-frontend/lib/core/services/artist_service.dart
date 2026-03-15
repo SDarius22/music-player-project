@@ -40,6 +40,22 @@ class ArtistService {
     return _artistRepository.getArtists(query, sortField, flag);
   }
 
+  List<Artist> getArtistsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int pageSize,
+  ) {
+    return _artistRepository.getArtistsPaged(
+      query,
+      sortField,
+      ascending,
+      page * pageSize,
+      pageSize,
+    );
+  }
+
   List<Artist> getAllArtists() {
     return _artistRepository.getAllArtists();
   }

@@ -325,6 +325,39 @@ class SongService {
     return chunks;
   }
 
+  /// Fetches one page from the server using display-level sort field names.
+  Future<SongPageDto> getSongsPage(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int pageSize,
+  ) {
+    return searchSongsPageFromServer(
+      query,
+      page: page,
+      size: pageSize,
+      sort: _toServerSort(sortField, ascending),
+    );
+  }
+
+  /// Fetches one page from the local repository using native DB offset/limit.
+  List<Song> getSongsPagedLocal(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int pageSize,
+  ) {
+    return _songRepository.getSongsPaged(
+      query,
+      sortField,
+      ascending,
+      page * pageSize,
+      pageSize,
+    );
+  }
+
   Future<List<Song>> searchSongsFromServer(
     String query, {
     int page = 0,

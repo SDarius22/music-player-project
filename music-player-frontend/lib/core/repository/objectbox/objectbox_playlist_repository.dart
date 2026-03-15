@@ -91,6 +91,30 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   }
 
   @override
+  List<Playlist> getPlaylistsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  ) {
+    final q =
+        _playlistBox
+            .query(Playlist_.name.contains(query, caseSensitive: false))
+            .order(Playlist_.indestructible, flags: Order.descending)
+            .order(
+              sortFields.containsKey(sortField)
+                  ? sortFields[sortField]
+                  : Playlist_.name,
+              flags: ascending ? 0 : Order.descending,
+            )
+            .build();
+    q.offset = offset;
+    q.limit = limit;
+    return q.find();
+  }
+
+  @override
   void deletePlaylist(Playlist playlist) {
     _playlistBox.remove(playlist.id);
   }

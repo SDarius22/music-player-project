@@ -19,5 +19,13 @@ abstract class PlaylistRepository {
 
   List<Playlist> getPlaylists(String query, String sortField, bool ascending);
 
+  List<Playlist> getPlaylistsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  );
+
   void deletePlaylist(Playlist playlist);
 }

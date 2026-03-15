@@ -61,6 +61,19 @@ class InMemoryAlbumRepository implements AlbumRepository {
   }
 
   @override
+  List<Album> getAlbumsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  ) {
+    final all = getAlbums(query, sortField, ascending);
+    if (offset >= all.length) return [];
+    return all.sublist(offset, (offset + limit).clamp(0, all.length));
+  }
+
+  @override
   List<Album> getAllAlbums() {
     final list = _byId.values.toList();
     list.sort((a, b) => a.name.compareTo(b.name));

@@ -186,6 +186,22 @@ class PlaylistService {
     return _playlistRepository.getPlaylists(query, sortField, flag);
   }
 
+  List<Playlist> getPlaylistsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int pageSize,
+  ) {
+    return _playlistRepository.getPlaylistsPaged(
+      query,
+      sortField,
+      ascending,
+      page * pageSize,
+      pageSize,
+    );
+  }
+
   List<Playlist> getAllPlaylists() {
     return _playlistRepository.getAllPlaylists();
   }

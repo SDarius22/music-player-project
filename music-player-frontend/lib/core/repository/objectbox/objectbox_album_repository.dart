@@ -57,6 +57,29 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
   }
 
   @override
+  List<Album> getAlbumsPaged(
+    String query,
+    String sortField,
+    bool ascending,
+    int offset,
+    int limit,
+  ) {
+    final q =
+        _albumBox
+            .query(Album_.name.contains(query, caseSensitive: false))
+            .order(
+              sortFields.containsKey(sortField)
+                  ? sortFields[sortField]
+                  : Album_.name,
+              flags: ascending ? 0 : Order.descending,
+            )
+            .build();
+    q.offset = offset;
+    q.limit = limit;
+    return q.find();
+  }
+
+  @override
   List<Album> getAllAlbums() {
     return _albumBox.getAll();
   }
