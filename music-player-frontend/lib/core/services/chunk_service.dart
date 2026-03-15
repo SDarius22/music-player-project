@@ -16,17 +16,20 @@ class ChunkService {
 
   ChunkManifestDto? manifest;
 
+  static const int _preloadAhead = 16;
+
   final Map<int, Future<Uint8List>> _activeRequests = {};
   final Map<int, Completer<Uint8List>> _p2pCompleters = {};
   final Map<int, Uint8List> _hotRamCache = {};
 
-  // Delivery tracking: chunkIndex → true if P2P, false if server.
   final Map<int, bool> _deliveredBy = {};
   String? _songName;
   void Function(ChunkDeliveryStats)? _onFullyReceived;
 
   bool get isReady => manifest != null;
+
   int get totalBytes => manifest?.totalBytes ?? 0;
+
   int get totalChunks => manifest?.totalChunks ?? 0;
 
   ChunkService({
@@ -37,8 +40,6 @@ class ChunkService {
   }) : _streamingClient = streamingClient,
        _webrtcManager = webrtcManager;
 
-  /// Call this right after the factory creates a ChunkService to enable
-  /// per-song delivery statistics.
   void configureSongInfo(
     String songName,
     void Function(ChunkDeliveryStats)? onFullyReceived,
@@ -77,8 +78,12 @@ class ChunkService {
       return cachedData;
     }
 
-    if (index + 1 < totalChunks) {
-      _preloadChunk(index + 1);
+    for (
+      var i = index + 1;
+      i <= index + _preloadAhead && i < totalChunks;
+      i++
+    ) {
+      _preloadChunk(i);
     }
 
     final future = _fetchChunkLogic(index);
@@ -98,10 +103,14 @@ class ChunkService {
     if (_activeRequests.containsKey(index) || _hotRamCache.containsKey(index)) {
       return;
     }
+    final future = _fetchChunkLogic(index);
+    _activeRequests[index] = future;
     try {
-      await getChunk(index);
+      await future;
     } catch (e) {
       debugPrint("Preload failed for chunk $index: $e");
+    } finally {
+      _activeRequests.remove(index);
     }
   }
 
@@ -113,7 +122,9 @@ class ChunkService {
       data = await _streamingClient.downloadChunkFallback(songId, index);
     } else if (_webrtcManager.hasPeersForSong(songId)) {
       try {
-        data = await _requestFromPeer(index).timeout(const Duration(seconds: 5));
+        data = await _requestFromPeer(
+          index,
+        ).timeout(const Duration(seconds: 1));
         isP2P = true;
         debugPrint('[P2P] song=$songId chunk=$index — served by peer');
       } catch (_) {
@@ -139,7 +150,7 @@ class ChunkService {
         );
         if (_verifyIntegrity(index, serverData)) {
           _saveToCache(index, serverData);
-          _recordDelivery(index, false); // integrity fallback always = server
+          _recordDelivery(index, false);
           return serverData;
         }
       }

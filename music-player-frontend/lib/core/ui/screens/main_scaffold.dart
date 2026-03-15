@@ -61,7 +61,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     try {
       return GlassAnimatedScaffold(
-        key: provider.scaffoldKey,
+        scaffoldKey: provider.scaffoldKey,
         controller: provider.gradientController,
         extendBody: true,
         extendBodyBehindAppBar: true,

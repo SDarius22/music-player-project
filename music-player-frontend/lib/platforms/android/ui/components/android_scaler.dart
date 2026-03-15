@@ -6,7 +6,7 @@ class AndroidScaler extends Scaler {
   double scale(BuildContext context, double wantedSize) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-    double baseWidth = 1080.0;
+    double baseWidth = 600.0;
     double baseHeight = 1920.0;
     double widthRatio = screenWidth / baseWidth;
     double heightRatio = screenHeight / baseHeight;
@@ -17,7 +17,7 @@ class AndroidScaler extends Scaler {
   @override
   double scaleWidth(BuildContext context, double wantedSize) {
     double screenWidth = MediaQuery.of(context).size.width;
-    double baseWidth = 1080.0;
+    double baseWidth = 600.0;
     return wantedSize * (screenWidth / baseWidth);
   }
 

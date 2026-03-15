@@ -351,8 +351,11 @@ class GlassAnimatedScaffold extends StatelessWidget {
   ///    Flutter.
   final String? restorationId;
 
+  final GlobalKey<ScaffoldState>? scaffoldKey;
+
   const GlassAnimatedScaffold({
     super.key,
+    this.scaffoldKey,
     this.appBar,
     this.body,
     this.floatingActionButton,
@@ -390,7 +393,7 @@ class GlassAnimatedScaffold extends StatelessWidget {
         elevation: 0.0,
         alignment: Alignment.center,
         child: Scaffold(
-          key: const Key('glass_animated_scaffold'),
+          key: scaffoldKey,
           appBar: appBar,
           body: body,
           floatingActionButton: floatingActionButton,

@@ -277,7 +277,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: integerquest
             format: int64
       responses:
         '200':

@@ -49,24 +49,17 @@ class _UploadSongsScreenState extends State<UploadSongsScreen> {
       ),
       body: Padding(
         padding: buildPadding(context),
-        child: Column(
-          children: [
-            buildHeader(context),
-            Expanded(
-              child:
-                  items.isEmpty ? buildEmptyState(context) : buildList(context),
-            ),
-          ],
-        ),
+        child: items.isEmpty ? buildEmptyState(context) : buildList(context),
       ),
     );
   }
 
   PreferredSizeWidget buildAppBar(BuildContext context) {
-    return AppBar(title: const Text('Upload songs to server'));
+    return AppBar(
+      title: const Text('Upload songs to server'),
+      automaticallyImplyLeading: false,
+    );
   }
-
-  Widget buildHeader(BuildContext context) => const SizedBox.shrink();
 
   Widget buildEmptyState(BuildContext context) {
     return InkWell(

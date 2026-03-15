@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -10,10 +12,32 @@ class StreamingRestService {
   final String baseUrl;
   final AuthService _auth;
 
+  static const int _maxConcurrent = 3;
+  int _active = 0;
+  final Queue<Completer<void>> _waitQueue = Queue();
+
   StreamingRestService({
     required this.baseUrl,
     required AuthService authService,
   }) : _auth = authService;
+
+  Future<void> _acquire() async {
+    if (_active < _maxConcurrent) {
+      _active++;
+      return;
+    }
+    final completer = Completer<void>();
+    _waitQueue.add(completer);
+    await completer.future;
+    _active++;
+  }
+
+  void _release() {
+    _active--;
+    if (_waitQueue.isNotEmpty) {
+      _waitQueue.removeFirst().complete();
+    }
+  }
 
   Future<http.Response> _getJson(String endpoint) async {
     String? token = await _auth.accessToken;
@@ -67,12 +91,16 @@ class StreamingRestService {
   }
 
   Future<Uint8List> downloadChunkFallback(int songId, int chunkIndex) async {
-    final response = await _getBinary('/stream/$songId/chunk/$chunkIndex');
-
-    if (response.statusCode == 200) {
-      return response.bodyBytes;
+    await _acquire();
+    try {
+      final response = await _getBinary('/stream/$songId/chunk/$chunkIndex');
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      }
+      throw Exception("Master fallback failed: ${response.statusCode}");
+    } finally {
+      _release();
     }
-    throw Exception("Master fallback failed: ${response.statusCode}");
   }
 
   Future<Uint8List> fetchPrefix(int songId) async {

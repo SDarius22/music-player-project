@@ -4,7 +4,6 @@ import 'package:music_player_frontend/core/services/rest_clients/statistics_rest
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
-import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -53,39 +52,53 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       body: RefreshIndicator(
         onRefresh: _refresh,
         color: Colors.white,
-        backgroundColor: Colors.indigo,
         child: FutureBuilder<List<ChunkStatRecord>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.white),
+              return const CustomScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverFillRemaining(
+                    child: Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  ),
+                ],
               );
             }
 
             if (snapshot.hasError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.white38,
-                      size: 48,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Failed to load statistics',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white54,
+              return CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.white38,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Failed to load statistics',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: Colors.white54,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               );
             }
 
             final records = snapshot.data ?? [];
+            debugPrint('Loaded ${records.length} statistics records');
 
             return CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -201,35 +214,34 @@ class _SummaryCard extends StatelessWidget {
             ? 0.0
             : records.fold(0.0, (s, r) => s + r.p2pPercentage) / records.length;
 
-    return GlassContainer(
-      color: Colors.indigo.withValues(alpha: 0.15),
-      borderColor: Colors.indigo.withValues(alpha: 0.3),
-      borderRadius: BorderRadius.circular(12),
-      blur: 20,
-      borderWidth: 1,
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      child: Padding(
-        padding: EdgeInsets.all(width * 0.02),
-        child: Row(
-          children: [
-            _StatBadge(
-              label: 'Avg P2P',
-              value: '${avgP2p.toStringAsFixed(1)}%',
-              color: Colors.greenAccent,
-            ),
-            _StatBadge(
-              label: 'P2P Chunks',
-              value: totalP2p.toString(),
-              color: Colors.blueAccent,
-            ),
-            _StatBadge(
-              label: 'Total Chunks',
-              value: totalChunks.toString(),
-              color: Colors.white70,
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.indigo.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.indigo.withValues(alpha: 0.3),
+          width: 1,
         ),
+      ),
+      padding: EdgeInsets.all(width * 0.02),
+      child: Row(
+        children: [
+          _StatBadge(
+            label: 'Avg P2P',
+            value: '${avgP2p.toStringAsFixed(1)}%',
+            color: Colors.greenAccent,
+          ),
+          _StatBadge(
+            label: 'P2P Chunks',
+            value: totalP2p.toString(),
+            color: Colors.blueAccent,
+          ),
+          _StatBadge(
+            label: 'Total Chunks',
+            value: totalChunks.toString(),
+            color: Colors.white70,
+          ),
+        ],
       ),
     );
   }
@@ -297,71 +309,70 @@ class _StatRow extends StatelessWidget {
         '${ts.hour.toString().padLeft(2, '0')}:'
         '${ts.minute.toString().padLeft(2, '0')}';
 
-    return GlassContainer(
-      color: Colors.white.withValues(alpha: 0.05),
-      borderColor: Colors.white.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(10),
-      blur: 15,
-      borderWidth: 0.5,
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      child: Padding(
-        padding: EdgeInsets.all(width * 0.015),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    record.songName ?? 'Unknown song',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Text(
-                  '${pct.toStringAsFixed(1)}% P2P',
-                  style: TextStyle(
-                    color: barColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: width * 0.008),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: pct / 100,
-                backgroundColor: Colors.white12,
-                valueColor: AlwaysStoppedAnimation<Color>(barColor),
-                minHeight: 6,
-              ),
-            ),
-            SizedBox(height: width * 0.008),
-            Row(
-              children: [
-                Text(
-                  '${record.p2pChunks} P2P · ${record.serverChunks} server · ${record.totalChunks} total',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white38,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  dateStr,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white38,
-                  ),
-                ),
-              ],
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+          width: 0.5,
         ),
+      ),
+      padding: EdgeInsets.all(width * 0.015),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  record.songName ?? 'Unknown song',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '${pct.toStringAsFixed(1)}% P2P',
+                style: TextStyle(
+                  color: barColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: width * 0.008),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: pct / 100,
+              backgroundColor: Colors.white12,
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+              minHeight: 6,
+            ),
+          ),
+          SizedBox(height: width * 0.008),
+          Row(
+            children: [
+              Text(
+                '${record.p2pChunks} P2P · ${record.serverChunks} server · ${record.totalChunks} total',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.white38,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                dateStr,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.white38,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

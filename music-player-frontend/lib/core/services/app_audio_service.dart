@@ -186,13 +186,7 @@ class AppAudioService {
     currentSong = song;
     try {
       final idx = _normalQueue.indexWhere((s) => s.id == song.id);
-      if (idx > 0) {
-        _normalQueue = [
-          ..._normalQueue.sublist(idx),
-          ..._normalQueue.sublist(0, idx),
-        ];
-      }
-      await _rebuildSources();
+      await _rebuildSources(startIndex: idx < 0 ? 0 : idx);
       await audioPlayer.play();
     } catch (e) {
       debugPrint("Error setting current song and playing: $e");
@@ -228,7 +222,7 @@ class AppAudioService {
     });
   }
 
-  Future<void> _rebuildSources() async {
+  Future<void> _rebuildSources({int startIndex = 0}) async {
     if (_normalQueue.isEmpty) return;
     final sources = await Future.wait(
       _normalQueue.map((s) => _buildAudioSource(s)),
@@ -237,19 +231,13 @@ class AppAudioService {
     if (_currentAudioSettings.shuffle) {
       audioPlayer.setShuffleModeEnabled(true);
     }
-    await audioPlayer.seek(Duration.zero, index: 0);
+    await audioPlayer.seek(Duration.zero, index: startIndex);
   }
 
   Future<void> _setAudioSourcesForQueue(Song song) async {
     if (_normalQueue.isEmpty) return;
 
     final idx = _normalQueue.indexWhere((s) => s.id == song.id);
-    if (idx > 0) {
-      _normalQueue = [
-        ..._normalQueue.sublist(idx),
-        ..._normalQueue.sublist(0, idx),
-      ];
-    }
 
     final sources = await Future.wait(
       _normalQueue.map((s) => _buildAudioSource(s)),
@@ -262,7 +250,7 @@ class AppAudioService {
 
     await audioPlayer.seek(
       Duration(seconds: _currentAudioSettings.sliderInSeconds),
-      index: 0,
+      index: idx < 0 ? 0 : idx,
     );
   }
 

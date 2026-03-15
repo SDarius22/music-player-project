@@ -46,7 +46,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "index": 0,
       "onTap": (BuildContext context) {
         setState(() => _selected = 0);
-        _appStateProvider.innerNavigatorKey.currentState!.push(HomeScreen.route());
+        _appStateProvider.innerNavigatorKey.currentState!.push(
+          HomeScreen.route(),
+        );
       },
     },
     {
@@ -133,6 +135,13 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     final int itemIndex = item["index"];
     final bool isSelected = _selected == itemIndex;
 
+    double horizontalPadding =
+        isDrawerOpen
+            ? widget.mobileDrawer
+                ? width * 0.05
+                : width * 0.01
+            : 0;
+
     return AnimatedContainer(
       height: height * 0.05,
       duration: const Duration(milliseconds: 300),
@@ -154,7 +163,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                     ? Colors.white.withValues(alpha: 0.15)
                     : Colors.transparent,
             padding: EdgeInsets.symmetric(
-              horizontal: isDrawerOpen ? width * 0.01 : 0,
+              horizontal: horizontalPadding,
               vertical: height * 0.01,
             ),
             alignment: Alignment.center,
@@ -170,7 +179,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                 ),
                 if (isDrawerOpen) ...[
-                  SizedBox(width: width * 0.01),
+                  SizedBox(
+                    width: widget.mobileDrawer ? width * 0.05 : width * 0.01,
+                  ),
                   Expanded(
                     child: Text(
                       item["text"],
@@ -221,7 +232,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       duration: const Duration(milliseconds: 300),
       width:
           widget.mobileDrawer
-              ? width * 0.6
+              ? width * 0.75
               : (isDrawerOpen ? width * 0.12 : width * 0.05),
       curve: Curves.easeInOut,
       alignment: Alignment.center,
@@ -229,7 +240,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
         color: Colors.black.withValues(alpha: 0.4),
         borderColor: Colors.transparent,
         borderRadius: BorderRadius.circular(
-          MediaQuery.of(context).size.height * 0.015,
+          widget.mobileDrawer ? 0 : MediaQuery.of(context).size.height * 0.015,
         ),
         blur: 45.0,
         borderWidth: 0.0,
@@ -371,7 +382,12 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                             ? Colors.white.withValues(alpha: 0.15)
                             : Colors.transparent,
                     padding: EdgeInsets.symmetric(
-                      horizontal: isDrawerOpen ? width * 0.01 : 0,
+                      horizontal:
+                          isDrawerOpen
+                              ? widget.mobileDrawer
+                                  ? width * 0.05
+                                  : width * 0.01
+                              : 0,
                       vertical: height * 0.01,
                     ),
                     alignment: Alignment.center,
@@ -396,7 +412,12 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                           ),
                         ),
                         if (isDrawerOpen) ...[
-                          SizedBox(width: width * 0.01),
+                          SizedBox(
+                            width:
+                                widget.mobileDrawer
+                                    ? width * 0.05
+                                    : width * 0.01,
+                          ),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
