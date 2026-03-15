@@ -4,7 +4,6 @@ import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/tracks.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
@@ -51,24 +50,24 @@ class _MainScaffoldState extends State<MainScaffold> {
       extendBodyBehindAppBar: true,
       appBar: AppBarWidget(),
       drawer: buildDrawer(),
-      body: Padding(
-        padding: buildPadding(context),
-        child: Stack(
-          children: [
-            ValueListenableBuilder<double>(
-              valueListenable: provider.opacityNotifier,
-              child: buildMainContent(),
-              builder: (context, opacity, child) {
-                return AnimatedOpacity(
-                  opacity: opacity,
-                  duration: const Duration(milliseconds: 300),
-                  child: child,
-                );
-              },
-            ),
-            SongPlayerWidget(),
-          ],
-        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxHeight < 400) {
+            return Center(
+              child: Text(
+                "This app is not optimized for small screens. Please use a larger device.",
+                textAlign: TextAlign.center,
+                style:
+                    MusicPlayerTheme.getTheme(
+                      context,
+                      context.read<Scaler>(),
+                    ).textTheme.headlineMedium,
+              ),
+            );
+          } else {
+            return buildMainContent();
+          }
+        },
       ),
       floatingActionButton: buildFloatingActionButton(),
     );
