@@ -97,8 +97,10 @@ class ChunkService {
     } else if (_webrtcManager.hasPeersForSong(songId)) {
       try {
         data = await _requestFromPeer(index).timeout(const Duration(seconds: 5));
+        debugPrint('[P2P] song=$songId chunk=$index — served by peer');
       } catch (_) {
         _p2pCompleters.remove(index);
+        debugPrint('[P2P] song=$songId chunk=$index — peer timeout/fail, falling back to server');
         data = await _streamingClient.downloadChunkFallback(songId, index);
       }
     } else {
