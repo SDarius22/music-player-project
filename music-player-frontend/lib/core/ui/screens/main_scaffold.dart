@@ -103,7 +103,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       left: width * 0.01,
       right: width * 0.01,
       bottom: width * 0.01,
-      top: width * 0.01 + MediaQuery.of(context).padding.top + kToolbarHeight,
+      top: width * 0.01 + MediaQuery.of(context).padding.top,
     );
   }
 
