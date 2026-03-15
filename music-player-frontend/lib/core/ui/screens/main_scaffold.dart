@@ -66,7 +66,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 );
               },
             ),
-            buildSongPlayer(),
+            SongPlayerWidget(),
           ],
         ),
       ),
@@ -74,18 +74,11 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  Widget buildSongPlayer() => const SongPlayerWidget();
-
   EdgeInsetsGeometry buildPadding(BuildContext context) {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
     final width = MediaQuery.of(context).size.width;
     if (isMobile) {
-      return EdgeInsets.only(
-        left: width * 0.015,
-        right: width * 0.015,
-        bottom: width * 0.015 + MediaQuery.of(context).padding.bottom,
-        top: width * 0.015 + MediaQuery.of(context).padding.top,
-      );
+      return EdgeInsets.zero;
     }
 
     return EdgeInsets.only(
@@ -134,9 +127,11 @@ class _MainScaffoldState extends State<MainScaffold> {
         padding: EdgeInsets.only(
           bottom: height * 0.1 + width * 0.015,
           top:
-              width * 0.015 +
+              width * 0.05 +
               MediaQuery.of(context).padding.top +
               kToolbarHeight,
+          left: width * 0.015,
+          right: width * 0.015,
         ),
         child: navigator,
       );
