@@ -44,6 +44,21 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     final provider = context.read<AbstractAppStateProvider>();
 
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+
+    if (width < 400 || height < 250) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+            "Your screen is too small to display the app. Please use a device with a larger screen.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
+      );
+    }
+
     return GlassAnimatedScaffold(
       key: provider.scaffoldKey,
       controller: provider.gradientController,
@@ -51,42 +66,24 @@ class _MainScaffoldState extends State<MainScaffold> {
       extendBodyBehindAppBar: true,
       appBar: AppBarWidget(),
       drawer: buildDrawer(),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxHeight < 400) {
-            return Center(
-              child: Text(
-                "This app is not optimized for small screens. Please use a larger device.",
-                textAlign: TextAlign.center,
-                style:
-                    MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.headlineMedium,
-              ),
-            );
-          } else {
-            return Padding(
-              padding: buildPadding(context),
-              child: Stack(
-                children: [
-                  ValueListenableBuilder<double>(
-                    valueListenable: provider.opacityNotifier,
-                    child: buildMainContent(),
-                    builder: (context, opacity, child) {
-                      return AnimatedOpacity(
-                        opacity: opacity,
-                        duration: const Duration(milliseconds: 300),
-                        child: child,
-                      );
-                    },
-                  ),
-                  SongPlayerWidget(),
-                ],
-              ),
-            );
-          }
-        },
+      body: Padding(
+        padding: buildPadding(context),
+        child: Stack(
+          children: [
+            ValueListenableBuilder<double>(
+              valueListenable: provider.opacityNotifier,
+              child: buildMainContent(),
+              builder: (context, opacity, child) {
+                return AnimatedOpacity(
+                  opacity: opacity,
+                  duration: const Duration(milliseconds: 300),
+                  child: child,
+                );
+              },
+            ),
+            SongPlayerWidget(),
+          ],
+        ),
       ),
       floatingActionButton: buildFloatingActionButton(),
     );
@@ -103,7 +100,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       left: width * 0.01,
       right: width * 0.01,
       bottom: width * 0.01,
-      top: width * 0.01 + MediaQuery.of(context).padding.top,
+      top: width * 0.01 + MediaQuery.of(context).padding.top + kToolbarHeight,
     );
   }
 
