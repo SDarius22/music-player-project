@@ -17,8 +17,8 @@ class P2PChunkedAudioSource extends StreamAudioSource {
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
-    if (_chunkManager == null) {
-      _chunkManager = chunkManagerFactory(songId);
+    _chunkManager ??= chunkManagerFactory(songId);
+    if (!_chunkManager!.isReady) {
       await _chunkManager!.loadManifest();
     }
 

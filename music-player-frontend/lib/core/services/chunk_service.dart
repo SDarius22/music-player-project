@@ -82,11 +82,15 @@ class ChunkService {
     }
   }
 
-  void _preloadChunk(int index) {
+  Future<void> _preloadChunk(int index) async {
     if (_activeRequests.containsKey(index) || _hotRamCache.containsKey(index)) {
       return;
     }
-    getChunk(index).catchError((_) => Uint8List(0));
+    try {
+      await getChunk(index);
+    } catch (e) {
+      debugPrint("Preload failed for chunk $index: $e");
+    }
   }
 
   Future<Uint8List> _fetchChunkLogic(int index) async {
@@ -96,11 +100,15 @@ class ChunkService {
       data = await _streamingClient.downloadChunkFallback(songId, index);
     } else if (_webrtcManager.hasPeersForSong(songId)) {
       try {
-        data = await _requestFromPeer(index).timeout(const Duration(seconds: 5));
+        data = await _requestFromPeer(
+          index,
+        ).timeout(const Duration(seconds: 5));
         debugPrint('[P2P] song=$songId chunk=$index — served by peer');
       } catch (_) {
         _p2pCompleters.remove(index);
-        debugPrint('[P2P] song=$songId chunk=$index — peer timeout/fail, falling back to server');
+        debugPrint(
+          '[P2P] song=$songId chunk=$index — peer timeout/fail, falling back to server',
+        );
         data = await _streamingClient.downloadChunkFallback(songId, index);
       }
     } else {

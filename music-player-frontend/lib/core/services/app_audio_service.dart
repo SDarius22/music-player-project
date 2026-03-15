@@ -61,14 +61,11 @@ class AppAudioService {
 
   Future<void> pause() => audioPlayer.pause();
 
-  // Let just_audio advance to index 1; the sequenceStateStream listener
-  // will rotate the played song (index 0) to the end.
   Future<void> skipToNext() async {
     await audioPlayer.seekToNext();
     await audioPlayer.play();
   }
 
-  // Move the last song to the front, then seek to index 0.
   Future<void> skipToPrevious() async {
     if (_normalQueue.length <= 1) {
       await audioPlayer.seek(Duration.zero, index: 0);
@@ -77,7 +74,6 @@ class AppAudioService {
     }
     _rotating = true;
     _normalQueue.insert(0, _normalQueue.removeLast());
-    // moveAudioSource shifts indices: player was at 0, now at 1 after insert.
     await audioPlayer.moveAudioSource(_normalQueue.length - 1, 0);
     _rotating = false;
     currentSong = _normalQueue[0];
@@ -190,7 +186,6 @@ class AppAudioService {
     await setCurrentSongAndPlay(song);
   }
 
-  // Rotate _normalQueue so song is at index 0, rebuild audio sources, play.
   Future<void> setCurrentSongAndPlay(Song song) async {
     currentSong = song;
     try {
