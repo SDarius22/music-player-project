@@ -335,7 +335,6 @@ class AppAudioService {
 
           if (existingChunk == null) {
             debugPrint("Proactively Prefix Caching Song ID ${song.serverId}");
-            // This triggers the Fast-Path we wrote above, instantly saving it to disk
             await manager.getChunk(0);
           }
         } catch (e) {

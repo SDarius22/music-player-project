@@ -96,9 +96,10 @@ class WebRTCService {
       }
     }
 
+    // Do NOT check _peerConnections here: createPeerConnection() is async so
+    // the peer may be in _peerLibraries before it appears in _peerConnections.
     for (final peerId in _peerLibraries.keys) {
-      if (_peerLibraries[peerId]?.contains(songId) == true &&
-          _peerConnections.containsKey(peerId)) {
+      if (_peerLibraries[peerId]?.contains(songId) == true) {
         _pendingChunkRequests.putIfAbsent(peerId, () => []);
         _pendingChunkRequests[peerId]!.add((
           songId: songId,
