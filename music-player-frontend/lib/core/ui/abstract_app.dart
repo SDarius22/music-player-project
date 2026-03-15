@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -48,6 +50,16 @@ abstract class AbstractApp extends StatelessWidget {
     defaultValue: 'ws://localhost:9000/ws/signaling',
   );
 
+  // Unique per-session device ID used for WebRTC peer routing.
+  static final String _deviceId = _generateDeviceId();
+
+  static String _generateDeviceId() {
+    final random = Random.secure();
+    return List.generate(16, (_) => random.nextInt(256))
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -96,11 +108,6 @@ abstract class AbstractApp extends StatelessWidget {
             ),
       ),
 
-      Provider<WebRTCService>(
-        create: (context) => createWebRTCService(context),
-        lazy: false,
-      ),
-
       Provider<AbstractFileService>(
         create: (context) => createFileService(context),
       ),
@@ -129,6 +136,11 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<SongRepository>(),
               context.read<SongRestService>(),
             ),
+      ),
+
+      Provider<WebRTCService>(
+        create: (context) => createWebRTCService(context),
+        lazy: false,
       ),
       Provider<AbstractMusicScannerService>(
         create: (context) => buildMusicScannerService(context),
@@ -237,15 +249,15 @@ abstract class AbstractApp extends StatelessWidget {
 
   WebRTCService createWebRTCService(BuildContext context) {
     final router = context.read<ActiveChunkRouter>();
-
     final socket = WebSocketChannel.connect(Uri.parse(_wsBaseUrl));
 
     return WebRTCService(
-      myDeviceId: 'linux-client-002',
+      myDeviceId: _deviceId,
       authService: context.read<AuthService>(),
       signalingSocket: socket,
       onChunkReceived: router.routeChunk,
       onChunkRequested: router.getLocalChunk,
+      onSyncTrigger: context.read<SongService>().runSync,
     );
   }
 }

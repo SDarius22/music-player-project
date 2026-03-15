@@ -13,6 +13,7 @@ class WebRTCService {
   final Function(int songId, int chunkIndex, Uint8List data) onChunkReceived;
   final Future<Uint8List?> Function(int songId, int chunkIndex)
   onChunkRequested;
+  final VoidCallback? onSyncTrigger;
 
   int? _userId;
 
@@ -34,6 +35,7 @@ class WebRTCService {
     required this.signalingSocket,
     required this.onChunkReceived,
     required this.onChunkRequested,
+    this.onSyncTrigger,
   }) {
     _init();
   }
@@ -268,6 +270,10 @@ class WebRTCService {
       if (senderId == myDeviceId) return;
 
       switch (type) {
+        case 'SYNC_TRIGGER':
+          onSyncTrigger?.call();
+          break;
+
         case 'PEER_BUFFER_MAP':
           Map<String, dynamic> map = payload;
           for (String peerId in map.keys) {

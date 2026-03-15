@@ -40,7 +40,7 @@ class P2PChunkedAudioSource extends StreamAudioSource {
         contentLength: 0,
         offset: reqStart,
         stream: const Stream.empty(),
-        contentType: 'audio/flac',
+        contentType: 'application/octet-stream',
       );
     }
 
@@ -61,7 +61,7 @@ class P2PChunkedAudioSource extends StreamAudioSource {
         endChunk: endChunk,
         contentLen: contentLen,
       ),
-      contentType: 'audio/flac',
+      contentType: 'application/octet-stream',
     );
   }
 

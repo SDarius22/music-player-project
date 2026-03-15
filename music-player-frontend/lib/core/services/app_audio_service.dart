@@ -358,7 +358,7 @@ class AppAudioService {
   }
 
   void _updateCurrentSong(Song updated) {
-    if (updated.path == currentSong.path) return;
+    if (updated == currentSong) return;
 
     currentSong = updated;
 
@@ -369,7 +369,7 @@ class AppAudioService {
     playlistService.updateMostPlayedPlaylist();
     playlistService.updateRecentlyPlayedPlaylist();
 
-    // _proactivelyCachePrefixes();
+    _proactivelyCachePrefixes();
   }
 
   void updateSliderInSeconds(int seconds) {

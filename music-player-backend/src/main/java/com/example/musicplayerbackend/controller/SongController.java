@@ -3,6 +3,7 @@ package com.example.musicplayerbackend.controller;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.service.SongService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Objects;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -62,11 +64,12 @@ public class SongController implements SongsApi {
     @Override
     public ResponseEntity<Void> uploadMissingChunk(Long songId, Integer chunkIndex, MultipartFile chunkData, String contentHash) {
         User user = getCurrentUser();
+        log.info("[SONG] Upload missing chunk: songId={}, chunkIndex={}, userId={}", songId, chunkIndex, user.getId());
         try {
             songService.saveMissingChunk(user, songId, chunkIndex, contentHash, chunkData);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("[SONG] Failed to save chunk: songId={}, chunkIndex={}, userId={}: {}", songId, chunkIndex, user.getId(), e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
@@ -74,11 +77,12 @@ public class SongController implements SongsApi {
     @Override
     public ResponseEntity<Void> uploadSong(MultipartFile file, String name, String artistName, String albumName, Integer durationInSeconds, Integer trackNumber, Integer releaseYear, Integer discNumber, String photo, String fileHash) {
         User user = getCurrentUser();
+        log.info("[SONG] Admin upload: name='{}', artist='{}', album='{}', userId={}", name, artistName, albumName, user.getId());
         try {
             songService.uploadSong(user, name, artistName, albumName, photo, durationInSeconds, trackNumber, discNumber, releaseYear, file, fileHash);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("[SONG] Upload failed for '{}': {}", name, e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }

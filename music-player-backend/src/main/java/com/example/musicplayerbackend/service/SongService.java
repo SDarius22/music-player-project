@@ -5,6 +5,7 @@ import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.mapper.NegotiationMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SongService {
@@ -65,6 +67,7 @@ public class SongService {
         }
         Song existingSong = songRepository.findByFileHash(fileHash).orElse(null);
         if (existingSong != null) {
+            log.info("[SONG] Duplicate detected for fileHash={} — promoting existing song id={} to STREAMABLE", fileHash, existingSong.getId());
             existingSong.setOwnerId(null);
             existingSong.setSongType(SongType.STREAMABLE);
             songRepository.save(existingSong);
@@ -95,12 +98,14 @@ public class SongService {
                 .build();
 
         song = songRepository.save(song);
+        log.info("[SONG] Saved new song: id={}, name='{}', artist='{}', album='{}'", song.getId(), name, artistName, albumName);
 
         processFileIntoChunks(file, song);
     }
 
     @Transactional
     public NegotiationResponseDto initiateNegotiation(NegotiationRequestDto request, Long userId) {
+        log.info("[SONG] Negotiation initiated: name='{}', userId={}, totalChunks={}", request.getName(), userId, request.getHashes().size());
         Optional<Song> existingSongOpt = songRepository.findByFileHash(request.getFileHash());
         Song song;
 
@@ -155,6 +160,7 @@ public class SongService {
             songChunkRepository.saveAll(newLinks);
         }
 
+        log.info("[SONG] Negotiation complete: songId={}, missingChunks={}, deduplicatedChunks={}", song.getId(), missingIndices.size(), newLinks.size());
         return negotiationMapper.toNegotiationResponseDto(song.getId(), missingIndices);
     }
 
@@ -183,7 +189,7 @@ public class SongService {
             try (FileOutputStream fos = new FileOutputStream(path)) {
                 fos.write(bytes);
             } catch (Exception e) {
-                System.out.println("Error writing chunk to disk: " + e.getMessage());
+                log.error("[SONG] Error writing chunk to disk: path={}, error={}", path, e.getMessage());
                 throw new RuntimeException("Failed to save chunk to disk");
             }
 
@@ -199,7 +205,7 @@ public class SongService {
             }
         }
 
-        System.out.println("Received chunk for song ID: " + songId + " at index: " + chunkIndex);
+        log.info("[SONG] Chunk received and verified: songId={}, chunkIndex={}, size={} bytes", songId, chunkIndex, bytes.length);
 
         boolean linkExists = songChunkRepository.existsBySongAndOrderIndex(song, chunkIndex);
 
@@ -251,6 +257,7 @@ public class SongService {
             songChunks.add(link);
         }
         songChunkRepository.saveAll(songChunks);
+        log.info("[SONG] Processed {} chunk(s) for songId={}", orderIndex, song.getId());
     }
 
     private String bytesToHex(byte[] hash) {

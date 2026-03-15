@@ -6,6 +6,7 @@ import com.example.musicplayerbackend.service.PeerTrackingService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class SignalingHandler extends TextWebSocketHandler {
@@ -40,17 +42,22 @@ public class SignalingHandler extends TextWebSocketHandler {
                     }
                 """;
 
+        log.info("[SIGNALING] Sending SYNC_TRIGGER to user {} ({} session(s))", userId, sessionIds.size());
         for (String sessionId : sessionIds) {
             ClientConnection client = registry.get(sessionId);
             if (client != null && client.session().isOpen()) {
                 try {
-                    System.out.println("[SIGNALING] Sending SYNC_TRIGGER to User " + userId);
                     client.session().sendMessage(new TextMessage(triggerMessage));
                 } catch (IOException e) {
-                    System.err.println("Failed to send sync trigger: " + e.getMessage());
+                    log.error("[SIGNALING] Failed to send SYNC_TRIGGER to session {} (user {}): {}", sessionId, userId, e.getMessage());
                 }
             }
         }
+    }
+
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) {
+        log.info("[SIGNALING] New WebSocket connection: session={}", session.getId());
     }
 
     @Override
@@ -71,6 +78,7 @@ public class SignalingHandler extends TextWebSocketHandler {
             if (client.peerId() != null) {
                 peerIndex.remove(client.peerId());
                 peerTrackingService.unregisterPeer(client.peerId());
+                log.info("[SIGNALING] Peer disconnected: peerId={}, userId={}, status={}", client.peerId(), client.userId(), status);
             }
         }
     }
@@ -108,22 +116,28 @@ public class SignalingHandler extends TextWebSocketHandler {
 
                 if (songId != null && senderId != null) {
                     peerTrackingService.registerPeerChunks(songId, senderId, chunkIndices);
+                    log.info("[SIGNALING] REGISTER_CACHE: peer={}, songId={}, chunks={}", senderId, songId, chunkIndices.size());
                 }
             }
 
             case "DISCOVER_PEERS" -> {
                 Integer songId = ((Number) payloadMap.get("songId")).intValue();
+                log.info("[SIGNALING] DISCOVER_PEERS: requester={}, songId={}", senderId, songId);
                 sendBufferMaps(session, songId, senderId);
             }
 
             case "OFFER", "ANSWER", "ICE_CANDIDATE" -> {
                 WebRTCMessage signal = objectMapper.convertValue(payloadMap, WebRTCMessage.class);
+                log.info("[SIGNALING] {}: from={} to={}", type, signal.senderId(), signal.targetId());
                 routeToTarget(signal);
             }
 
             case "SYNC_TRIGGER" -> { /* Ignore echo */ }
 
-            default -> session.close(CloseStatus.BAD_DATA.withReason("Unknown signal type"));
+            default -> {
+                log.warn("[SIGNALING] Unknown signal type '{}' from session={}", type, session.getId());
+                session.close(CloseStatus.BAD_DATA.withReason("Unknown signal type"));
+            }
         }
     }
 
