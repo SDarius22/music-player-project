@@ -9,6 +9,7 @@ import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
+import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/local_libs/extensions.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -282,7 +283,14 @@ class AppAudioService {
 
       return P2PChunkedAudioSource(
         songId: song.serverId,
-        chunkManagerFactory: createChunkManager,
+        chunkManagerFactory: (id) {
+          final manager = createChunkManager(id);
+          manager.configureSongInfo(
+            song.name,
+            ChunkStatsService.instance.report,
+          );
+          return manager;
+        },
         tag: Map<String, dynamic>.from({
           "path": song.path,
           "serverId": song.serverId,

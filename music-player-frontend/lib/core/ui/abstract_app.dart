@@ -26,9 +26,11 @@ import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
+import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/statistics_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
@@ -120,6 +122,18 @@ abstract class AbstractApp extends StatelessWidget {
               baseUrl: _apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
+      ),
+
+      Provider<StatisticsRestService>(
+        create: (context) {
+          final service = StatisticsRestService(
+            baseUrl: _apiBaseUrl,
+            authService: context.read<AuthService>(),
+          );
+          ChunkStatsService.instance.configure(service);
+          return service;
+        },
+        lazy: false,
       ),
 
       Provider<AbstractFileService>(

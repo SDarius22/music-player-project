@@ -1,6 +1,7 @@
 package com.example.musicplayerbackend.controller;
 
 import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.service.RecommendationService;
 import com.example.musicplayerbackend.service.SongService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -25,6 +27,7 @@ import java.util.Objects;
 public class SongController implements SongsApi {
 
     private final SongService songService;
+    private final RecommendationService recommendationService;
 
     @Override
     public ResponseEntity<SongPageDto> getAllSongs(@Nullable String q, Integer page, Integer size, String sort) {
@@ -47,6 +50,24 @@ public class SongController implements SongsApi {
                 result.getTotalElements(),
                 result.getTotalPages()
         ));
+    }
+
+    @Override
+    public ResponseEntity<List<SongDto>> getRecommendations() {
+        User user = getCurrentUser();
+        return ResponseEntity.ok(recommendationService.getRecommendations(user.getId()));
+    }
+
+    @Override
+    public ResponseEntity<List<SongDto>> getForgottenFavourites() {
+        User user = getCurrentUser();
+        return ResponseEntity.ok(recommendationService.getForgottenFavourites(user.getId()));
+    }
+
+    @Override
+    public ResponseEntity<List<SongDto>> getQuickDial() {
+        User user = getCurrentUser();
+        return ResponseEntity.ok(recommendationService.getQuickDial(user.getId()));
     }
 
     @Override

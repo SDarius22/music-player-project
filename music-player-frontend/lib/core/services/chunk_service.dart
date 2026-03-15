@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
+import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
@@ -16,15 +17,16 @@ class ChunkService {
   ChunkManifestDto? manifest;
 
   final Map<int, Future<Uint8List>> _activeRequests = {};
-
   final Map<int, Completer<Uint8List>> _p2pCompleters = {};
-
   final Map<int, Uint8List> _hotRamCache = {};
 
+  // Delivery tracking: chunkIndex → true if P2P, false if server.
+  final Map<int, bool> _deliveredBy = {};
+  String? _songName;
+  void Function(ChunkDeliveryStats)? _onFullyReceived;
+
   bool get isReady => manifest != null;
-
   int get totalBytes => manifest?.totalBytes ?? 0;
-
   int get totalChunks => manifest?.totalChunks ?? 0;
 
   ChunkService({
@@ -34,6 +36,16 @@ class ChunkService {
     required WebRTCService webrtcManager,
   }) : _streamingClient = streamingClient,
        _webrtcManager = webrtcManager;
+
+  /// Call this right after the factory creates a ChunkService to enable
+  /// per-song delivery statistics.
+  void configureSongInfo(
+    String songName,
+    void Function(ChunkDeliveryStats)? onFullyReceived,
+  ) {
+    _songName = songName;
+    _onFullyReceived = onFullyReceived;
+  }
 
   Future<void> loadManifest() async {
     if (isReady) return;
@@ -95,14 +107,14 @@ class ChunkService {
 
   Future<Uint8List> _fetchChunkLogic(int index) async {
     Uint8List data;
+    bool isP2P = false;
 
     if (index < 8) {
       data = await _streamingClient.downloadChunkFallback(songId, index);
     } else if (_webrtcManager.hasPeersForSong(songId)) {
       try {
-        data = await _requestFromPeer(
-          index,
-        ).timeout(const Duration(seconds: 5));
+        data = await _requestFromPeer(index).timeout(const Duration(seconds: 5));
+        isP2P = true;
         debugPrint('[P2P] song=$songId chunk=$index — served by peer');
       } catch (_) {
         _p2pCompleters.remove(index);
@@ -117,6 +129,7 @@ class ChunkService {
 
     if (_verifyIntegrity(index, data)) {
       _saveToCache(index, data);
+      _recordDelivery(index, isP2P);
       return data;
     } else {
       if (index >= 8) {
@@ -126,10 +139,30 @@ class ChunkService {
         );
         if (_verifyIntegrity(index, serverData)) {
           _saveToCache(index, serverData);
+          _recordDelivery(index, false); // integrity fallback always = server
           return serverData;
         }
       }
       throw Exception("Integrity failed for chunk $index");
+    }
+  }
+
+  void _recordDelivery(int index, bool isP2P) {
+    if (_deliveredBy.containsKey(index)) return;
+    _deliveredBy[index] = isP2P;
+
+    final total = manifest?.totalChunks ?? 0;
+    if (total > 0 && _deliveredBy.length == total && _onFullyReceived != null) {
+      final p2pCount = _deliveredBy.values.where((v) => v).length;
+      final serverCount = _deliveredBy.values.where((v) => !v).length;
+      _onFullyReceived!(
+        ChunkDeliveryStats(
+          songId: songId,
+          songName: _songName ?? 'Unknown',
+          p2pChunks: p2pCount,
+          serverChunks: serverCount,
+        ),
+      );
     }
   }
 
