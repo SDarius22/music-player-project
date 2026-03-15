@@ -59,34 +59,47 @@ class _MainScaffoldState extends State<MainScaffold> {
       );
     }
 
-    return GlassAnimatedScaffold(
-      key: provider.scaffoldKey,
-      controller: provider.gradientController,
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      appBar: AppBarWidget(),
-      drawer: buildDrawer(),
-      body: Padding(
-        padding: buildPadding(context),
-        child: Stack(
-          children: [
-            ValueListenableBuilder<double>(
-              valueListenable: provider.opacityNotifier,
-              child: buildMainContent(),
-              builder: (context, opacity, child) {
-                return AnimatedOpacity(
-                  opacity: opacity,
-                  duration: const Duration(milliseconds: 300),
-                  child: child,
-                );
-              },
-            ),
-            SongPlayerWidget(),
-          ],
+    try {
+      return GlassAnimatedScaffold(
+        key: provider.scaffoldKey,
+        controller: provider.gradientController,
+        extendBody: true,
+        extendBodyBehindAppBar: true,
+        appBar: AppBarWidget(),
+        drawer: buildDrawer(),
+        body: Padding(
+          padding: buildPadding(context),
+          child: Stack(
+            children: [
+              ValueListenableBuilder<double>(
+                valueListenable: provider.opacityNotifier,
+                child: buildMainContent(),
+                builder: (context, opacity, child) {
+                  return AnimatedOpacity(
+                    opacity: opacity,
+                    duration: const Duration(milliseconds: 300),
+                    child: child,
+                  );
+                },
+              ),
+              SongPlayerWidget(),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: buildFloatingActionButton(),
-    );
+        floatingActionButton: buildFloatingActionButton(),
+      );
+    } catch (e) {
+      debugPrint("Error building MainScaffold: $e");
+      return Scaffold(
+        body: Center(
+          child: Text(
+            "An error occurred while loading the app.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
+      );
+    }
   }
 
   EdgeInsetsGeometry buildPadding(BuildContext context) {

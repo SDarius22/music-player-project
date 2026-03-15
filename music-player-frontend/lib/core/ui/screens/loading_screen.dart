@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:after_layout/after_layout.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -11,6 +8,7 @@ import 'package:music_player_frontend/core/ui/screens/main_scaffold.dart';
 import 'package:music_player_frontend/core/ui/screens/welcome_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/animated_background.dart';
 import 'package:provider/provider.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -63,8 +61,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       listen: false,
     );
 
-    final isDesktop =
-        !kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS);
+    final isDesktop = UniversalPlatform.isDesktop;
 
     if (isDesktop &&
         (abstractAppStateProvider.appSettings.firstTime ||
@@ -80,7 +77,7 @@ class _LoadingScreenState extends State<LoadingScreen>
 
     if (!context.mounted) return;
 
-    if (!userProvider.isAuthenticated && kIsWeb) {
+    if (UniversalPlatform.isWeb && !userProvider.isAuthenticated) {
       Navigator.pushReplacement(context, WelcomeScreen.route());
       return;
     }
