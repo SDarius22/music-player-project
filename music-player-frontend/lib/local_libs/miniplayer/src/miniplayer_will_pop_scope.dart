@@ -11,7 +11,7 @@ class MiniplayerWillPopScope extends StatefulWidget {
   final Future<bool> Function() onWillPop;
 
   @override
-  _MiniplayerWillPopScopeState createState() => _MiniplayerWillPopScopeState();
+  State<MiniplayerWillPopScope> createState() => _MiniplayerWillPopScopeState();
 
   static _MiniplayerWillPopScopeState? of(BuildContext context) {
     return context.findAncestorStateOfType<_MiniplayerWillPopScopeState>();

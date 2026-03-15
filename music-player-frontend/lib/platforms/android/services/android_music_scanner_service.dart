@@ -28,7 +28,7 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
     int addedCount = 0;
 
     for (final songModel in songs) {
-      final existing = _songService.getSong(songModel.data);
+      final existing = await _songService.getSong(songModel.data);
       if (existing == null) {
         _addSong(songModel);
         addedCount++;

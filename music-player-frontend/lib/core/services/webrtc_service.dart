@@ -21,6 +21,8 @@ class WebRTCService {
   final Map<String, RTCDataChannel> _dataChannels = {};
   final Map<String, List<RTCIceCandidate>> _iceQueues = {};
   final Map<String, Set<int>> _peerLibraries = {};
+  final Map<String, List<({int songId, int chunkIndex})>>
+  _pendingChunkRequests = {};
 
   final Map<String, dynamic> _iceServers = {
     'iceServers': [
@@ -87,11 +89,22 @@ class WebRTCService {
       final peerId = entry.key;
       final channel = entry.value;
 
-      if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
-        if (_peerLibraries[peerId]?.contains(songId) == true) {
-          channel.send(RTCDataChannelMessage(requestMsg));
-          return;
-        }
+      if (channel.state == RTCDataChannelState.RTCDataChannelOpen &&
+          _peerLibraries[peerId]?.contains(songId) == true) {
+        channel.send(RTCDataChannelMessage(requestMsg));
+        return;
+      }
+    }
+
+    for (final peerId in _peerLibraries.keys) {
+      if (_peerLibraries[peerId]?.contains(songId) == true &&
+          _peerConnections.containsKey(peerId)) {
+        _pendingChunkRequests.putIfAbsent(peerId, () => []);
+        _pendingChunkRequests[peerId]!.add((
+          songId: songId,
+          chunkIndex: chunkIndex,
+        ));
+        return;
       }
     }
   }
@@ -103,7 +116,6 @@ class WebRTCService {
       jsonEncode({
         'type': 'REGISTER_CACHE',
         'senderId': myDeviceId,
-        'userId': _userId,
         'targetId': 'SERVER',
         'songId': songId,
         'payload': chunkIndices,
@@ -118,7 +130,6 @@ class WebRTCService {
       jsonEncode({
         'type': 'DISCOVER_PEERS',
         'senderId': myDeviceId,
-        'userId': _userId,
         'targetId': 'SERVER',
         'songId': songId,
         'payload': {},
@@ -182,6 +193,16 @@ class WebRTCService {
   void _setupDataChannel(String remotePeerId, RTCDataChannel channel) {
     _dataChannels[remotePeerId] = channel;
 
+    channel.onDataChannelState = (state) {
+      if (state == RTCDataChannelState.RTCDataChannelOpen) {
+        _drainPendingRequests(remotePeerId, channel);
+      }
+    };
+
+    if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
+      _drainPendingRequests(remotePeerId, channel);
+    }
+
     channel.onMessage = (message) async {
       if (message.isBinary) {
         _handleBinaryMessage(message.binary);
@@ -189,6 +210,16 @@ class WebRTCService {
         await _handleTextMessage(remotePeerId, message.text);
       }
     };
+  }
+
+  void _drainPendingRequests(String peerId, RTCDataChannel channel) {
+    final pending = _pendingChunkRequests.remove(peerId);
+    if (pending == null) return;
+    for (final req in pending) {
+      channel.send(
+        RTCDataChannelMessage('REQUEST_CHUNK:${req.songId}:${req.chunkIndex}'),
+      );
+    }
   }
 
   void _handleBinaryMessage(Uint8List binary) {
@@ -253,7 +284,6 @@ class WebRTCService {
       jsonEncode({
         'type': type,
         'senderId': myDeviceId,
-        'userId': _userId,
         'targetId': targetId,
         'payload': payload,
       }),
@@ -357,6 +387,7 @@ class WebRTCService {
     _peerConnections.remove(peerId);
     _iceQueues.remove(peerId);
     _peerLibraries.remove(peerId);
+    _pendingChunkRequests.remove(peerId);
   }
 
   void dispose() {

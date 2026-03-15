@@ -326,7 +326,7 @@ class AppAudioService {
     for (final song in upcomingSongs) {
       if (song.serverId > 0) {
         try {
-          final manager = await createChunkManager(song.serverId);
+          final manager = createChunkManager(song.serverId);
 
           final existingChunk = await manager.cacheRepo.readChunk(
             song.serverId,

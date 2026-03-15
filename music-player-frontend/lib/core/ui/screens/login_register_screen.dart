@@ -134,6 +134,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
         showToast('Failed to send code');
         return;
       }
+      if (!mounted) return;
       context.read<UserProvider>().setPendingEmail(email);
       isCodeStep.value = true;
       FocusScope.of(context).requestFocus(codeFocus);
@@ -169,7 +170,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
         showToast('Invalid code');
         return;
       }
-
+      if (!mounted) return;
       showToast('$primaryActionLabel successful');
       onAuthenticated(context);
     } finally {
@@ -187,6 +188,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
         showToast('Google sign-in not available');
         return;
       }
+      if (!mounted) return;
       showToast('$primaryActionLabel successful');
       onAuthenticated(context);
     } finally {
@@ -208,7 +210,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
       builder: (context, codeStep, _) {
         return ValueListenableBuilder<bool>(
           valueListenable: isBusy,
-          builder: (context, busy, __) {
+          builder: (context, busy, _) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

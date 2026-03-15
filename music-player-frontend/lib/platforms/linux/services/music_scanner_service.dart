@@ -62,7 +62,7 @@ class LinuxMusicScannerService implements AbstractMusicScannerService {
       await Future.delayed(const Duration(milliseconds: 8));
 
       final file = files[i];
-      final existing = _songService.getSong(file.path);
+      final existing = await _songService.getSong(file.path);
 
       if (existing == null) {
         try {

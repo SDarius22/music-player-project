@@ -31,6 +31,7 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
     return songDir;
   }
 
+  @override
   Future<Uint8List?> readChunk(int songId, int chunkIndex) async {
     final songDir = await _getSongDir(songId);
     final file = File('${songDir.path}/$chunkIndex.bin');
@@ -41,6 +42,7 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
     return null;
   }
 
+  @override
   Future<void> saveChunk(int songId, int chunkIndex, Uint8List data) async {
     final songDir = await _getSongDir(songId);
 
@@ -52,6 +54,7 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
     await file.writeAsBytes(data, flush: true);
   }
 
+  @override
   Future<List<int>> getAvailableChunkIndices(int songId) async {
     final songDir = await _getSongDir(songId);
 

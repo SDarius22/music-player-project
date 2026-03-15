@@ -96,10 +96,9 @@ class ChunkService {
       data = await _streamingClient.downloadChunkFallback(songId, index);
     } else if (_webrtcManager.hasPeersForSong(songId)) {
       try {
-        data = await _requestFromPeer(
-          index,
-        ).timeout(const Duration(milliseconds: 200));
+        data = await _requestFromPeer(index).timeout(const Duration(seconds: 5));
       } catch (_) {
+        _p2pCompleters.remove(index);
         data = await _streamingClient.downloadChunkFallback(songId, index);
       }
     } else {
@@ -132,10 +131,7 @@ class ChunkService {
   }
 
   void resolvePeerRequest(int chunkIndex, Uint8List data) {
-    if (_p2pCompleters.containsKey(chunkIndex)) {
-      _p2pCompleters[chunkIndex]!.complete(data);
-      _p2pCompleters.remove(chunkIndex);
-    }
+    _p2pCompleters.remove(chunkIndex)?.complete(data);
   }
 
   bool _verifyIntegrity(int index, Uint8List data) {
