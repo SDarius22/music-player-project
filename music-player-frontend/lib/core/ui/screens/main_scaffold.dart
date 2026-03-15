@@ -99,51 +99,58 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget buildMainContent() {
-    final provider = context.read<AbstractAppStateProvider>();
-    final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
+    try {
+      final provider = context.read<AbstractAppStateProvider>();
+      final isMobile = ResponsiveBreakpoints.of(context).isMobile;
+      final width = MediaQuery.of(context).size.width;
+      final height = MediaQuery.of(context).size.height;
 
-    final navigator = Theme(
-      data: MusicPlayerTheme.getTheme(context, context.read<Scaler>()),
-      child: Expanded(
-        child: HeroControllerScope(
-          controller: MaterialApp.createMaterialHeroController(),
-          child: Navigator(
-            key: provider.innerNavigatorKey,
-            onGenerateRoute:
-                (_) => PageRouteBuilder(
-                  pageBuilder: (_, _, _) => const SizedBox.shrink(),
-                  transitionDuration: Duration(milliseconds: 300),
-                  reverseTransitionDuration: Duration(milliseconds: 300),
-                ),
+      final navigator = Theme(
+        data: MusicPlayerTheme.getTheme(context, context.read<Scaler>()),
+        child: Expanded(
+          child: HeroControllerScope(
+            controller: MaterialApp.createMaterialHeroController(),
+            child: Navigator(
+              key: provider.innerNavigatorKey,
+              onGenerateRoute:
+                  (_) => PageRouteBuilder(
+                    pageBuilder: (_, _, _) => const SizedBox.shrink(),
+                    transitionDuration: Duration(milliseconds: 300),
+                    reverseTransitionDuration: Duration(milliseconds: 300),
+                  ),
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    if (isMobile) {
+      if (isMobile) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: height * 0.1 + width * 0.015,
+            top:
+                width * 0.05 +
+                MediaQuery.of(context).padding.top +
+                kToolbarHeight,
+            left: width * 0.015,
+            right: width * 0.015,
+          ),
+          child: navigator,
+        );
+      }
+
       return Padding(
-        padding: EdgeInsets.only(
-          bottom: height * 0.1 + width * 0.015,
-          top:
-              width * 0.05 +
-              MediaQuery.of(context).padding.top +
-              kToolbarHeight,
-          left: width * 0.015,
-          right: width * 0.015,
+        padding: EdgeInsets.only(bottom: width * 0.01 + height * 0.1),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [DrawerWidget(), SizedBox(width: width * 0.01), navigator],
         ),
-        child: navigator,
+      );
+    } catch (e) {
+      debugPrint("Error building main content: $e");
+      return const Center(
+        child: Text("An error occurred while loading the app."),
       );
     }
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: width * 0.01 + height * 0.1),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [DrawerWidget(), SizedBox(width: width * 0.01), navigator],
-      ),
-    );
   }
 
   Widget buildFloatingActionButton() {
