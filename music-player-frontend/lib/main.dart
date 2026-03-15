@@ -16,7 +16,7 @@ Future<void> main() async {
 
   JustAudioMediaKit.protocolWhitelist = ["http", "https", "file"];
   JustAudioMediaKit.title = 'Music Player';
-  JustAudioMediaKit.ensureInitialized(linux: true, windows: true);
+  JustAudioMediaKit.ensureInitialized(linux: true, windows: true, macOS: true);
 
   await runOnTargetPlatform();
 }

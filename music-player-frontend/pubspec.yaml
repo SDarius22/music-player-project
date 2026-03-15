@@ -25,6 +25,7 @@ dependencies:
 
   media_kit: ^1.2.6
   media_kit_libs_linux: any
+  media_kit_libs_macos_audio: any
   media_kit_libs_windows_audio: any
 
   audio_service: ^0.18.18 # default audio service
