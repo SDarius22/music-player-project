@@ -144,6 +144,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          const Spacer(),
         ],
       ],
     );
