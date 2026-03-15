@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/local_libs/text_scroll/text_scroll.dart';
 
 class CustomTextScroll extends StatelessWidget {
   final String text;
@@ -28,14 +27,11 @@ class CustomTextScroll extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       );
     }
-    return TextScroll(
+    return Text(
       text,
-      mode: TextScrollMode.bouncing,
-      velocity: const Velocity(pixelsPerSecond: Offset(20, 0)),
       style: style,
-      pauseOnBounce: const Duration(seconds: 5),
-      delayBefore: const Duration(seconds: 0),
-      pauseBetween: const Duration(seconds: 5),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

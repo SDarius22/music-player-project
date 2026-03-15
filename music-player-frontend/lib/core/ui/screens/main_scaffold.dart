@@ -47,7 +47,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
 
-    if (width < 400 || height < 250) {
+    if (width < 250 || height < 250) {
       return Scaffold(
         body: Center(
           child: Text(
