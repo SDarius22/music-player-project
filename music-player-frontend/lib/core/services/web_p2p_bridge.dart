@@ -16,70 +16,73 @@ class WebP2PBridge {
   void _listenToServiceWorker() {
     web.window.navigator.serviceWorker.addEventListener(
       'message',
-      (web.Event event) async {
-        final web.MessageEvent msgEvent = event as web.MessageEvent;
-        final data = msgEvent.data.dartify() as Map<dynamic, dynamic>?;
-
-        if (data != null && data['type'] == 'P2P_CHUNK_REQUEST') {
-          final String reqId = data['reqId'] as String;
-          final int songId = int.parse(data['songId'].toString());
-          final String rangeStr = data['range'].toString();
-
-          if (!_managers.containsKey(songId)) {
-            _managers[songId] = chunkManagerFactory(songId);
-            await _managers[songId]!.loadManifest();
-          }
-          final manager = _managers[songId]!;
-
-          int requestedStart = 0;
-          int requestedEnd = manager.totalBytes - 1;
-
-          if (rangeStr.startsWith('bytes=')) {
-            final parts = rangeStr.substring(6).split('-');
-            if (parts[0].isNotEmpty) {
-              requestedStart = int.parse(parts[0]);
-            }
-            if (parts.length > 1 && parts[1].isNotEmpty) {
-              requestedEnd = int.parse(parts[1]);
-            }
-          }
-
-          int maxContentLength = 512000;
-          if ((requestedEnd - requestedStart + 1) > maxContentLength) {
-            requestedEnd = requestedStart + maxContentLength - 1;
-          }
-
-          if (requestedEnd >= manager.totalBytes) {
-            requestedEnd = manager.totalBytes - 1;
-          }
-
-          try {
-            Uint8List responseBytes = await _compileBytesForRange(
-              manager,
-              requestedStart,
-              requestedEnd,
-            );
-
-            final source = msgEvent.source;
-            if (source != null) {
-              final jsResponse =
-                  {
-                    'type': 'P2P_CHUNK_RESPONSE',
-                    'reqId': reqId,
-                    'bytes': responseBytes.toJS,
-                    'start': requestedStart,
-                    'end': requestedStart + responseBytes.length - 1,
-                    'total': manager.totalBytes,
-                  }.jsify();
-
-              (source as web.Client).postMessage(jsResponse);
-            }
-          } catch (e) {
-            debugPrint("WebP2PBridge Error: $e");
-          }
-        }
-      }.toJS,
+      ((web.Event event) {
+        _processWorkerMessage(event as web.MessageEvent);
+      }).toJS,
     );
+  }
+
+  Future<void> _processWorkerMessage(web.MessageEvent msgEvent) async {
+    final data = msgEvent.data.dartify() as Map<dynamic, dynamic>?;
+
+    if (data != null && data['type'] == 'P2P_CHUNK_REQUEST') {
+      final String reqId = data['reqId'] as String;
+      final int songId = int.parse(data['songId'].toString());
+      final String rangeStr = data['range'].toString();
+
+      if (!_managers.containsKey(songId)) {
+        _managers[songId] = chunkManagerFactory(songId);
+        await _managers[songId]!.loadManifest();
+      }
+      final manager = _managers[songId]!;
+
+      int requestedStart = 0;
+      int requestedEnd = manager.totalBytes - 1;
+
+      if (rangeStr.startsWith('bytes=')) {
+        final parts = rangeStr.substring(6).split('-');
+        if (parts[0].isNotEmpty) {
+          requestedStart = int.parse(parts[0]);
+        }
+        if (parts.length > 1 && parts[1].isNotEmpty) {
+          requestedEnd = int.parse(parts[1]);
+        }
+      }
+
+      int maxContentLength = 512000;
+      if ((requestedEnd - requestedStart + 1) > maxContentLength) {
+        requestedEnd = requestedStart + maxContentLength - 1;
+      }
+
+      if (requestedEnd >= manager.totalBytes) {
+        requestedEnd = manager.totalBytes - 1;
+      }
+
+      try {
+        Uint8List responseBytes = await _compileBytesForRange(
+          manager,
+          requestedStart,
+          requestedEnd,
+        );
+
+        final source = msgEvent.source;
+        if (source != null) {
+          final jsResponse =
+              {
+                'type': 'P2P_CHUNK_RESPONSE',
+                'reqId': reqId,
+                'bytes': responseBytes.toJS,
+                'start': requestedStart,
+                'end': requestedStart + responseBytes.length - 1,
+                'total': manager.totalBytes,
+              }.jsify();
+
+          (source as web.Client).postMessage(jsResponse);
+        }
+      } catch (e) {
+        debugPrint("WebP2PBridge Error: $e");
+      }
+    }
   }
 
   Future<Uint8List> _compileBytesForRange(
