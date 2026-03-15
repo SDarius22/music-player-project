@@ -40,6 +40,7 @@ Future<void> runOnTargetPlatform() async {
       debugPrint('Running on Linux');
       if (await FlutterSingleInstance().isFirstInstance()) {
         await initializeDatabase();
+        appWindow.minSize = const Size(800, 600);
         appWindow.maximize();
         runApp(const LinuxApp());
       }
@@ -49,6 +50,7 @@ Future<void> runOnTargetPlatform() async {
       if (await FlutterSingleInstance().isFirstInstance()) {
         await initializeDatabase();
         await FullScreen.ensureInitialized();
+        appWindow.minSize = const Size(800, 600);
         appWindow.maximize();
         runApp(const MacosApplication());
       }
