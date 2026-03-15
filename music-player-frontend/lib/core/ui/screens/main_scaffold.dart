@@ -90,8 +90,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   EdgeInsetsGeometry buildPadding(BuildContext context) {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-    if (isMobile || kIsWeb) return EdgeInsets.zero;
+    if (isMobile) return EdgeInsets.zero;
     final width = MediaQuery.of(context).size.width;
+    if (kIsWeb) {
+      return EdgeInsets.all(width * 0.01);
+    }
     return EdgeInsets.only(
       left: width * 0.01,
       right: width * 0.01,
