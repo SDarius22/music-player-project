@@ -90,8 +90,15 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   EdgeInsetsGeometry buildPadding(BuildContext context) {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-    if (isMobile) return EdgeInsets.zero;
     final width = MediaQuery.of(context).size.width;
+    if (isMobile) {
+      return EdgeInsets.only(
+        left: width * 0.015,
+        right: width * 0.015,
+        bottom: width * 0.015 + MediaQuery.of(context).padding.bottom,
+        top: width * 0.1 + MediaQuery.of(context).padding.top + kToolbarHeight,
+      );
+    }
     if (kIsWeb) {
       return EdgeInsets.all(width * 0.01);
     }
@@ -106,6 +113,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget buildDrawer() {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
     if (isMobile) {
+      debugPrint("Building drawer for mobile");
       return const DrawerWidget();
     }
     return const SizedBox.shrink();
@@ -137,7 +145,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     if (isMobile) {
       return Padding(
-        padding: EdgeInsets.only(bottom: height * 0.075),
+        padding: EdgeInsets.only(bottom: height * 0.1 + width * 0.015),
         child: navigator,
       );
     }
@@ -146,11 +154,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       padding: EdgeInsets.only(bottom: width * 0.01 + height * 0.1),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const DrawerWidget(),
-          SizedBox(width: width * 0.01),
-          navigator,
-        ],
+        children: [DrawerWidget(), SizedBox(width: width * 0.01), navigator],
       ),
     );
   }

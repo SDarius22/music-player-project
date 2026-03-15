@@ -7,6 +7,7 @@ import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
@@ -36,11 +37,15 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(width: width * 0.025),
-                  if (UniversalPlatform.isAndroid)
+                  if (ResponsiveBreakpoints.of(context).isMobile)
                     IconButton(
                       onPressed: () {
                         final provider =
                             context.read<AbstractAppStateProvider>();
+                        debugPrint("Menu button pressed");
+                        debugPrint(
+                          "Drawer is ${provider.scaffoldKey.currentState?.isDrawerOpen == true ? "open" : "closed"}",
+                        );
                         if (provider.scaffoldKey.currentState?.isDrawerOpen ??
                             false) {
                           provider.scaffoldKey.currentState?.closeDrawer();
