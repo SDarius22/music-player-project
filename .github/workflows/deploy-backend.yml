@@ -6,7 +6,7 @@ on:
       - master
     paths:
       - 'music-player-backend/**'
-      - '.github/workflows/**'
+      - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
 jobs:
