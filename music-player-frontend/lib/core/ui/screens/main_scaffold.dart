@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
@@ -10,7 +9,6 @@ import 'package:music_player_frontend/core/ui/screens/tracks.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:universal_platform/universal_platform.dart';
 
 class MainScaffold extends StatefulWidget {
   static Route<dynamic> route() {
@@ -51,7 +49,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       controller: provider.gradientController,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      appBar: buildAppBar(),
+      appBar: AppBarWidget(),
       drawer: buildDrawer(),
       body: Padding(
         padding: buildPadding(context),
@@ -76,16 +74,6 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  PreferredSizeWidget buildAppBar() {
-    if (UniversalPlatform.isWeb) {
-      return const PreferredSize(
-        preferredSize: Size.fromHeight(0),
-        child: SizedBox.shrink(),
-      );
-    }
-    return AppBarWidget();
-  }
-
   Widget buildSongPlayer() => const SongPlayerWidget();
 
   EdgeInsetsGeometry buildPadding(BuildContext context) {
@@ -99,9 +87,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         top: width * 0.015 + MediaQuery.of(context).padding.top,
       );
     }
-    if (kIsWeb) {
-      return EdgeInsets.all(width * 0.01);
-    }
+
     return EdgeInsets.only(
       left: width * 0.01,
       right: width * 0.01,
