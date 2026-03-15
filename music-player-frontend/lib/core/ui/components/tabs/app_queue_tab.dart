@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/ui/components/tabs/queue_tab.dart';
-import 'package:music_player_frontend/core/ui/components/tiling/app_list_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:provider/provider.dart';
 
-class AppQueueTab extends AbstractQueueTab {
+class QueueTab extends StatelessWidget {
   final ScrollController itemScrollController;
 
-  const AppQueueTab({super.key, required this.itemScrollController});
+  const QueueTab({super.key, required this.itemScrollController});
 
   @override
-  Widget buildQueueContent(BuildContext context) {
+  Widget build(BuildContext context) {
+    return _buildQueueContent(context);
+  }
+
+  Widget _buildQueueContent(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
 
@@ -23,7 +26,7 @@ class AppQueueTab extends AbstractQueueTab {
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(right: width * 0.01),
-            sliver: AppListComponent(
+            sliver: ListComponent(
               items: Provider.of<AudioProvider>(context).normalQueue,
               itemExtent: height * 0.1,
               isSelected: (entity) {

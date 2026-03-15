@@ -5,10 +5,10 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
-import 'package:music_player_frontend/core/ui/components/tiling/app_list_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/core/ui/screens/app_add_or_export_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
@@ -51,7 +51,7 @@ class PlaylistScreen extends EntityScreen {
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
 
             abstractAppStateProvider.innerNavigatorKey.currentState?.push(
-              AppAddOrExportScreen.route(songs: songs),
+              AddOrExportScreen.route(songs: songs),
             );
             return;
           }
@@ -61,7 +61,7 @@ class PlaylistScreen extends EntityScreen {
             final abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
             abstractAppStateProvider.innerNavigatorKey.currentState?.push(
-              AppAddOrExportScreen.route(songs: songs, export: true),
+              AddOrExportScreen.route(songs: songs, export: true),
             );
             return;
           }
@@ -328,9 +328,7 @@ class PlaylistScreen extends EntityScreen {
                                       ),
                                     )
                                     : SizedBox(
-                                      key: const ValueKey(
-                                        "Playlist Name Edit",
-                                      ),
+                                      key: const ValueKey("Playlist Name Edit"),
                                       width: width * 0.2,
                                       child: TextFormField(
                                         initialValue: playlist.name,
@@ -401,7 +399,7 @@ class PlaylistScreen extends EntityScreen {
                                         vertical: height * 0.01,
                                         horizontal: width * 0.01,
                                       ),
-                                      sliver: AppListComponent(
+                                      sliver: ListComponent(
                                         items: songs,
                                         itemExtent: height * 0.125,
                                         isSelected: (entity) => false,

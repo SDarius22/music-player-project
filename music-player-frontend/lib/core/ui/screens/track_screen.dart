@@ -7,7 +7,7 @@ import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';

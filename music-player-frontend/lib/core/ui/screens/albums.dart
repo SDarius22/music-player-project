@@ -5,16 +5,17 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/app_search_header.dart';
-import 'package:music_player_frontend/core/ui/screens/app_add_or_export_screen.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
 import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Albums extends MultipleEntitiesScreen<AlbumProvider> {
   static Route<dynamic> route() {
     return PageRouteBuilder(
+      settings: const RouteSettings(name: "/albums"),
       pageBuilder: (context, animation, secondaryAnimation) {
         return Albums(provider: context.read<AlbumProvider>());
       },
@@ -65,7 +66,7 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
             abstractAppStateProvider.innerNavigatorKey.currentState!.push(
-              AppAddOrExportScreen.route(songs: album.songs),
+              AddOrExportScreen.route(songs: album.songs),
             );
             break;
           case 'playNext':
@@ -130,7 +131,7 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
       height: height * 0.065,
       width: width,
       padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-      child: AppSearchHeader(title: 'Albums', provider: provider),
+      child: SearchHeader(title: 'Albums', provider: provider),
     );
   }
 }

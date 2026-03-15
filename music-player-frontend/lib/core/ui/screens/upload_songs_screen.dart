@@ -5,14 +5,23 @@ import 'package:music_player_frontend/core/services/rest_clients/song_rest_servi
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
-abstract class AbstractUploadSongsScreen extends StatefulWidget {
-  const AbstractUploadSongsScreen({super.key});
+class UploadSongsScreen extends StatefulWidget {
+  static Route<dynamic> route() {
+    return PageRouteBuilder(
+      settings: const RouteSettings(name: "/upload-songs"),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const UploadSongsScreen();
+      },
+    );
+  }
+
+  const UploadSongsScreen({super.key});
+
+  @override
+  State<UploadSongsScreen> createState() => _UploadSongsScreenState();
 }
 
-abstract class AbstractUploadSongsScreenState<
-  T extends AbstractUploadSongsScreen
->
-    extends State<T> {
+class _UploadSongsScreenState extends State<UploadSongsScreen> {
   final ValueNotifier<bool> isBusy = ValueNotifier<bool>(false);
   final List<Map<String, dynamic>> items = [];
 
@@ -22,7 +31,36 @@ abstract class AbstractUploadSongsScreenState<
     super.dispose();
   }
 
-  EdgeInsetsGeometry buildPadding(BuildContext context) => EdgeInsets.zero;
+  @override
+  Widget build(BuildContext context) {
+    return GlassScaffold(
+      appBar: buildAppBar(context),
+      floatingActionButton: ValueListenableBuilder<bool>(
+        valueListenable: isBusy,
+        builder: (context, busy, _) {
+          if (items.isEmpty) return const SizedBox.shrink();
+
+          return FloatingActionButton.extended(
+            onPressed: busy ? null : uploadAll,
+            icon: const Icon(Icons.cloud_upload),
+            label: const Text('Upload'),
+          );
+        },
+      ),
+      body: Padding(
+        padding: buildPadding(context),
+        child: Column(
+          children: [
+            buildHeader(context),
+            Expanded(
+              child:
+                  items.isEmpty ? buildEmptyState(context) : buildList(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   PreferredSizeWidget buildAppBar(BuildContext context) {
     return AppBar(title: const Text('Upload songs to server'));
@@ -196,34 +234,7 @@ abstract class AbstractUploadSongsScreenState<
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return GlassScaffold(
-      appBar: buildAppBar(context),
-      floatingActionButton: ValueListenableBuilder<bool>(
-        valueListenable: isBusy,
-        builder: (context, busy, _) {
-          if (items.isEmpty) return const SizedBox.shrink();
-
-          return FloatingActionButton.extended(
-            onPressed: busy ? null : uploadAll,
-            icon: const Icon(Icons.cloud_upload),
-            label: const Text('Upload'),
-          );
-        },
-      ),
-      body: Padding(
-        padding: buildPadding(context),
-        child: Column(
-          children: [
-            buildHeader(context),
-            Expanded(
-              child:
-                  items.isEmpty ? buildEmptyState(context) : buildList(context),
-            ),
-          ],
-        ),
-      ),
-    );
+  EdgeInsetsGeometry buildPadding(BuildContext context) {
+    return const EdgeInsets.all(24);
   }
 }

@@ -1,19 +1,33 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
+import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
 enum AuthMode { login, register }
 
-abstract class AbstractAuthScreen extends StatefulWidget {
+class LoginRegisterScreen extends StatefulWidget {
+  static Route<void> route({required AuthMode mode}) {
+    return PageRouteBuilder(
+      settings: RouteSettings(
+        name: mode == AuthMode.login ? "/login" : "/register",
+      ),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const LoginRegisterScreen(mode: AuthMode.login);
+      },
+    );
+  }
+
   final AuthMode mode;
 
-  const AbstractAuthScreen({super.key, required this.mode});
+  const LoginRegisterScreen({super.key, required this.mode});
+
+  @override
+  State<LoginRegisterScreen> createState() => _LoginRegisterScreenState();
 }
 
-abstract class AbstractAuthScreenState<T extends AbstractAuthScreen>
-    extends State<T> {
+class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
   final emailController = TextEditingController();
   final codeController = TextEditingController();
 
@@ -22,6 +36,17 @@ abstract class AbstractAuthScreenState<T extends AbstractAuthScreen>
 
   late ValueNotifier<bool> isCodeStep;
   late ValueNotifier<bool> isBusy;
+
+  String get primaryActionLabel =>
+      widget.mode == AuthMode.login ? 'Login' : 'Register';
+
+  AuthMode get _otherMode =>
+      widget.mode == AuthMode.login ? AuthMode.register : AuthMode.login;
+
+  String get _toggleLabel =>
+      widget.mode == AuthMode.login
+          ? 'Don\'t have an account yet? Register here'
+          : 'Already have an account? Log in';
 
   @override
   void initState() {
@@ -41,6 +66,14 @@ abstract class AbstractAuthScreenState<T extends AbstractAuthScreen>
     super.dispose();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return GlassScaffold(
+      appBar: buildAppBar(context),
+      body: Padding(padding: buildPadding(context), child: buildBody(context)),
+    );
+  }
+
   void showToast(String message, {int durationSeconds = 2}) {
     BotToast.showText(
       text: message,
@@ -48,34 +81,42 @@ abstract class AbstractAuthScreenState<T extends AbstractAuthScreen>
     );
   }
 
-  String get primaryActionLabel =>
-      widget.mode == AuthMode.login ? 'Login' : 'Register';
-
-  AuthMode get _otherMode =>
-      widget.mode == AuthMode.login ? AuthMode.register : AuthMode.login;
-
-  String get _toggleLabel =>
-      widget.mode == AuthMode.login
-          ? 'Don\'t have an account yet? Register here'
-          : 'Already have an account? Log in';
-
-  Future<bool> sendEmailCode(String email);
-
-  Widget buildHeader(BuildContext context) => const SizedBox.shrink();
-
-  EdgeInsetsGeometry buildPadding(BuildContext context) => EdgeInsets.zero;
-
-  void onAuthenticated(BuildContext context) {
-    Navigator.pop(context);
+  EdgeInsetsGeometry buildPadding(BuildContext context) {
+    return const EdgeInsets.all(24);
   }
 
-  void onToggleAuthMode(BuildContext context, AuthMode mode) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => buildAuthScreenForMode(mode)),
+  Widget buildHeader(BuildContext context) {
+    final title =
+        widget.mode == AuthMode.login ? 'Welcome back' : 'Create account';
+    final subtitle =
+        widget.mode == AuthMode.login
+            ? 'Sign in with Google or verify your email'
+            : 'Sign up with Google or verify your email';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+      ],
     );
   }
 
-  AbstractAuthScreen buildAuthScreenForMode(AuthMode mode);
+  Future<bool> sendEmailCode(String email) {
+    final userProvider = context.read<UserProvider>();
+    return userProvider.sendLoginCode(email);
+  }
+
+  void onAuthenticated(BuildContext context) {
+    Navigator.of(context).pushReplacement(LoadingScreen.route());
+  }
+
+  void onToggleAuthMode(BuildContext context, AuthMode mode) {
+    Navigator.of(
+      context,
+    ).pushReplacement(LoginRegisterScreen.route(mode: mode));
+  }
 
   Future<void> handleContinue() async {
     if (isBusy.value) return;
@@ -151,14 +192,6 @@ abstract class AbstractAuthScreenState<T extends AbstractAuthScreen>
     } finally {
       isBusy.value = false;
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassScaffold(
-      appBar: buildAppBar(context),
-      body: Padding(padding: buildPadding(context), child: buildBody(context)),
-    );
   }
 
   PreferredSizeWidget buildAppBar(BuildContext context) {

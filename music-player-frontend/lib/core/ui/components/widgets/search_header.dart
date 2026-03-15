@@ -7,8 +7,8 @@ import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
-class AppSearchHeader extends StatefulWidget {
-  const AppSearchHeader({
+class SearchHeader extends StatefulWidget {
+  const SearchHeader({
     super.key,
     required this.title,
     required this.provider,
@@ -22,10 +22,10 @@ class AppSearchHeader extends StatefulWidget {
   final void Function()? clickedShuffle;
 
   @override
-  State<StatefulWidget> createState() => _AppSearchHeaderState();
+  State<StatefulWidget> createState() => _SearchHeaderState();
 }
 
-class _AppSearchHeaderState extends State<AppSearchHeader> {
+class _SearchHeaderState extends State<SearchHeader> {
   FocusNode searchNode = FocusNode();
   Timer? _debounce;
   final TextEditingController _controller = TextEditingController();
@@ -163,9 +163,7 @@ class _AppSearchHeaderState extends State<AppSearchHeader> {
                         color: Colors.white,
                         size: context.read<Scaler>().scale(context, 16),
                       ),
-                      SizedBox(
-                        width: context.read<Scaler>().scale(context, 8),
-                      ),
+                      SizedBox(width: context.read<Scaler>().scale(context, 8)),
                       Text(
                         _isAscending ? "Ascending" : "Descending",
                         style:

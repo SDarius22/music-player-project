@@ -7,9 +7,9 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/app_search_header.dart';
-import 'package:music_player_frontend/core/ui/screens/app_create_or_import_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
+import 'package:music_player_frontend/core/ui/screens/create_or_import_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/playlist_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
@@ -42,7 +42,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
           listen: false,
         );
         appState.innerNavigatorKey.currentState?.push(
-          AppCreateOrImportScreen.route(),
+          CreateOrImportScreen.route(),
         );
       },
       onLongPress: () {
@@ -132,7 +132,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
       height: height * 0.065,
       width: width,
       padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-      child: AppSearchHeader(title: 'Playlists', provider: provider),
+      child: SearchHeader(title: 'Playlists', provider: provider),
     );
   }
 }

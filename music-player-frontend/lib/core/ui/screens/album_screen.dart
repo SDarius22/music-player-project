@@ -7,10 +7,10 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/core/ui/components/tiling/app_list_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/core/ui/screens/app_add_or_export_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/entity_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 class AlbumScreen extends EntityScreen {
   static Route<void> route({required Album album}) {
     return PageRouteBuilder(
+      settings: RouteSettings(name: "/album/${album.id}"),
       pageBuilder: (context, animation, secondaryAnimation) {
         return AlbumScreen(entity: album as BaseEntity);
       },
@@ -62,7 +63,7 @@ class AlbumScreen extends EntityScreen {
                         listen: false,
                       );
                   abstractAppStateProvider.innerNavigatorKey.currentState?.push(
-                    AppAddOrExportScreen.route(songs: album.songs),
+                    AddOrExportScreen.route(songs: album.songs),
                   );
                 },
                 icon: Icon(
@@ -191,7 +192,7 @@ class AlbumScreen extends EntityScreen {
                           vertical: height * 0.01,
                           horizontal: width * 0.01,
                         ),
-                        sliver: AppListComponent(
+                        sliver: ListComponent(
                           items: album.songs,
                           itemExtent: height * 0.1,
                           isSelected: (entity) {

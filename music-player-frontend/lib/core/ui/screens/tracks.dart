@@ -6,10 +6,10 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/app_search_header.dart';
-import 'package:music_player_frontend/core/ui/screens/app_add_or_export_screen.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
 import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/multiple_entities_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/track_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
@@ -80,7 +80,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
               listen: false,
             );
             appState.innerNavigatorKey.currentState?.push(
-              AppAddOrExportScreen.route(songs: [entity as Song]),
+              AddOrExportScreen.route(songs: [entity as Song]),
             );
             break;
           case 'playNext':
@@ -172,7 +172,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
       height: height * 0.065,
       width: width,
       padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-      child: AppSearchHeader(title: 'Tracks', provider: provider),
+      child: SearchHeader(title: 'Tracks', provider: provider),
     );
   }
 }

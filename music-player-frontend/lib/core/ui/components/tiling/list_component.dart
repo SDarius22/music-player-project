@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/list_tile.dart';
 
-abstract class AbstractListComponent extends StatelessWidget {
+class ListComponent extends StatelessWidget {
   final List<BaseEntity> items;
   final double itemExtent;
   final Function(BaseEntity) onTap;
@@ -11,7 +12,7 @@ abstract class AbstractListComponent extends StatelessWidget {
   final Widget? leadingAction;
   final Widget? trailingAction;
 
-  const AbstractListComponent({
+  const ListComponent({
     super.key,
     required this.items,
     required this.itemExtent,
@@ -22,7 +23,20 @@ abstract class AbstractListComponent extends StatelessWidget {
     this.trailingAction,
   });
 
-  Widget getCustomListTile(BaseEntity entity);
+  Widget _getCustomListTile(BaseEntity entity) {
+    return CustomListTile(
+      onTap: () {
+        onTap(entity);
+      },
+      onLongPress: () {
+        onLongPress(entity);
+      },
+      isSelected: isSelected(entity),
+      entity: entity,
+      leadingAction: leadingAction ?? const SizedBox.shrink(),
+      trailingAction: trailingAction ?? const SizedBox.shrink(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +44,7 @@ abstract class AbstractListComponent extends StatelessWidget {
       itemCount: items.length,
       itemExtent: itemExtent,
       itemBuilder: (BuildContext context, int index) {
-        return getCustomListTile(items[index]);
+        return _getCustomListTile(items[index]);
       },
     );
   }

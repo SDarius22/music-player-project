@@ -64,7 +64,6 @@ class _LibrarySettingsLayout {
 class _LibrarySettingsState extends State<LibrarySettings> {
   AbstractAppStateProvider get _provider => widget.abstractAppStateProvider;
 
-  /// Convenience accessors.
   List<String> get _songPlaces => _provider.appSettings.songPlaces;
 
   List<int> get _includeSubfolders =>
@@ -82,7 +81,6 @@ class _LibrarySettingsState extends State<LibrarySettings> {
   }
 
   void _normalizeSettingsListsIfNeeded() {
-    // Keep parallel lists in sync so the UI can safely index them.
     final places = List<String>.from(_songPlaces);
     final includes = List<int>.from(_includeSubfolders);
 
@@ -92,7 +90,6 @@ class _LibrarySettingsState extends State<LibrarySettings> {
       includes.removeRange(places.length, includes.length);
     }
 
-    // Ensure mainSongPlace is valid.
     if (places.isEmpty) {
       _provider.appSettings.mainSongPlace = '';
     } else if (!_provider.appSettings.songPlaces.contains(
@@ -101,7 +98,6 @@ class _LibrarySettingsState extends State<LibrarySettings> {
       _provider.appSettings.mainSongPlace = places.first;
     }
 
-    // Only write back if something drifted.
     if (places.length != _songPlaces.length ||
         includes.length != _includeSubfolders.length ||
         !_listsEqual(includes, _includeSubfolders)) {
@@ -140,7 +136,6 @@ class _LibrarySettingsState extends State<LibrarySettings> {
       _includeSubfolders,
     )..add(1);
 
-    // If this is the first folder, also make it the main one.
     if (_provider.appSettings.mainSongPlace.isEmpty) {
       _provider.appSettings.mainSongPlace = chosen;
     }
@@ -149,7 +144,7 @@ class _LibrarySettingsState extends State<LibrarySettings> {
   }
 
   void _setMainFolder(int index) {
-    if (_songPlaces.length <= 1) return; // Mirrors disabled UI.
+    if (_songPlaces.length <= 1) return;
     if (index < 0 || index >= _songPlaces.length) return;
 
     _provider.appSettings.mainSongPlace = _songPlaces[index];
@@ -177,7 +172,6 @@ class _LibrarySettingsState extends State<LibrarySettings> {
       _includeSubfolders,
     )..removeAt(index);
 
-    // If we removed the main entry, pick a new main if possible.
     if (_provider.appSettings.mainSongPlace == removed) {
       _provider.appSettings.mainSongPlace =
           _provider.appSettings.songPlaces.isNotEmpty
