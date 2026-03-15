@@ -27,8 +27,9 @@ import 'package:music_player_frontend/platforms/macos/providers/app_state_provid
 import 'package:music_player_frontend/platforms/macos/services/macos_file_service.dart';
 import 'package:music_player_frontend/platforms/macos/services/music_scanner_service.dart';
 import 'package:music_player_frontend/platforms/macos/ui/components/macos_scaler.dart';
-import 'package:music_player_frontend/platforms/macos/ui/screens/loading_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/app_loading_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 
 class MacosApplication extends AbstractApp {
   const MacosApplication({super.key});
@@ -81,11 +82,22 @@ class MacosApplication extends AbstractApp {
   @override
   Widget getAppWidget(BuildContext context) {
     return MaterialApp(
-      builder: BotToastInit(),
+      builder: (context, child) => BotToastInit()(
+        context,
+        ResponsiveBreakpoints.builder(
+          child: child!,
+          breakpoints: [
+            const Breakpoint(start: 0, end: 450, name: MOBILE),
+            const Breakpoint(start: 451, end: 800, name: TABLET),
+            const Breakpoint(start: 801, end: 1920, name: DESKTOP),
+            const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+          ],
+        ),
+      ),
       debugShowCheckedModeBanner: false,
       checkerboardOffscreenLayers: true,
       theme: MusicPlayerTheme.getDefaultTheme(),
-      home: const LoadingScreen(),
+      home: const AppLoadingScreen(),
     );
   }
 }

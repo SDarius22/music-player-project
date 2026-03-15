@@ -1,6 +1,8 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/screens/app_loading_screen.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
@@ -27,7 +29,6 @@ import 'package:music_player_frontend/platforms/linux/providers/app_state_provid
 import 'package:music_player_frontend/platforms/linux/services/linux_file_service.dart';
 import 'package:music_player_frontend/platforms/linux/services/music_scanner_service.dart';
 import 'package:music_player_frontend/platforms/linux/ui/components/linux_scaler.dart';
-import 'package:music_player_frontend/platforms/linux/ui/screens/loading_screen.dart';
 import 'package:provider/provider.dart';
 
 class LinuxApp extends AbstractApp {
@@ -52,11 +53,22 @@ class LinuxApp extends AbstractApp {
   @override
   Widget getAppWidget(BuildContext context) {
     return MaterialApp(
-      builder: BotToastInit(),
+      builder: (context, child) => BotToastInit()(
+        context,
+        ResponsiveBreakpoints.builder(
+          child: child!,
+          breakpoints: [
+            const Breakpoint(start: 0, end: 450, name: MOBILE),
+            const Breakpoint(start: 451, end: 800, name: TABLET),
+            const Breakpoint(start: 801, end: 1920, name: DESKTOP),
+            const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+          ],
+        ),
+      ),
       debugShowCheckedModeBanner: false,
       checkerboardOffscreenLayers: true,
       theme: MusicPlayerTheme.getDefaultTheme(),
-      home: const LoadingScreen(),
+      home: const AppLoadingScreen(),
     );
   }
 

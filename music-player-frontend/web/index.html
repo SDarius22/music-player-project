@@ -37,9 +37,11 @@
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-            navigator.serviceWorker.register('/p2p-worker.js').then(function (registration) {
-                console.log('P2P ServiceWorker registered with scope: ', registration.scope);
-            }, function (err) {
+            navigator.serviceWorker.register('/music-player/p2p-worker.js', {
+                scope: '/music-player/'
+            }).then(function (registration) {
+                console.log('P2P ServiceWorker registered');
+            }).catch(function (err) {
                 console.log('P2P ServiceWorker registration failed: ', err);
             });
         });

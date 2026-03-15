@@ -17,7 +17,7 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    if (url.pathname.startsWith('/p2p-stream/')) {
+    if (url.pathname.startsWith('/music-player/p2p-stream/')) {
         const songId = url.pathname.split('/').pop();
         const rangeHeader = event.request.headers.get('Range') || 'bytes=0-';
 
@@ -37,7 +37,7 @@ self.addEventListener('fetch', (event) => {
 
         }).then((data) => {
             return new Response(data.bytes, {
-                status: 206, // Partial Content
+                status: 206,
                 headers: {
                     'Content-Type': 'audio/flac',
                     'Content-Range': `bytes ${data.start}-${data.end}/${data.total}`,
