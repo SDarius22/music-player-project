@@ -31,35 +31,45 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             borderWidth: 0.0,
             elevation: 0.0,
             alignment: Alignment.center,
-            child: SafeArea(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(width: width * 0.025),
-                  if (ResponsiveBreakpoints.of(context).isMobile)
-                    IconButton(
-                      onPressed: () {
-                        final provider =
-                            context.read<AbstractAppStateProvider>();
-                        debugPrint("Menu button pressed");
-                        debugPrint(
-                          "Drawer is ${provider.scaffoldKey.currentState?.isDrawerOpen == true ? "open" : "closed"}",
-                        );
-                        if (provider.scaffoldKey.currentState?.isDrawerOpen ??
-                            false) {
-                          provider.scaffoldKey.currentState?.closeDrawer();
-                        } else {
-                          provider.scaffoldKey.currentState?.openDrawer();
-                        }
-                      },
-                      icon: Icon(
-                        FluentIcons.menu,
-                        size: height * 0.025,
-                        color: Colors.white,
-                      ),
-                    ),
+            child: SafeArea(child: buildContent(context)),
+          ),
+        );
+      },
+    );
+  }
 
+  Widget buildContent(BuildContext context) {
+    var height = MediaQuery.of(context).size.height;
+    var width = MediaQuery.of(context).size.width;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(width: width * 0.025),
+        if (ResponsiveBreakpoints.of(context).isMobile)
+          IconButton(
+            onPressed: () {
+              final provider = context.read<AbstractAppStateProvider>();
+              debugPrint("Menu button pressed");
+              debugPrint(
+                "Drawer is ${provider.scaffoldKey.currentState?.isDrawerOpen == true ? "open" : "closed"}",
+              );
+              if (provider.scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                provider.scaffoldKey.currentState?.closeDrawer();
+              } else {
+                provider.scaffoldKey.currentState?.openDrawer();
+              }
+            },
+            icon: Icon(
+              FluentIcons.menu,
+              size: height * 0.025,
+              color: Colors.white,
+            ),
+          ),
+        UniversalPlatform.isDesktop
+            ? MoveWindow(
+              child: Row(
+                children: [
                   Text(
                     'Music Player',
                     style: MusicPlayerTheme.getTheme(
@@ -72,9 +82,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   const Spacer(),
-                  if (UniversalPlatform.isDesktop &&
-                      !(UniversalPlatform.isMacOS &&
-                          FullScreen.isFullScreen)) ...[
+                  if (!(UniversalPlatform.isMacOS &&
+                      FullScreen.isFullScreen)) ...[
                     MinimizeWindowButton(
                       animate: true,
                       colors: WindowButtonColors(
@@ -119,10 +128,23 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ],
               ),
+            )
+            : Row(
+              children: [
+                Text(
+                  'Music Player',
+                  style: MusicPlayerTheme.getTheme(
+                    context,
+                    context.read<Scaler>(),
+                  ).textTheme.titleLarge!.copyWith(
+                    color: Colors.white,
+                    fontSize: height * 0.025,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-          ),
-        );
-      },
+      ],
     );
   }
 

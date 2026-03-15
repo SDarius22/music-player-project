@@ -299,8 +299,11 @@ class _TextScrollState extends State<TextScroll> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
     _timer?.cancel();
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -523,23 +526,39 @@ class _TextScrollState extends State<TextScroll> {
     if (duration == Duration.zero) return;
 
     if (!_available) return;
-    await _scrollController.animateTo(
-      maxExtent,
-      duration: duration,
-      curve: Curves.linear,
-    );
-    if (widget.pauseOnBounce != null) {
-      await Future.delayed(widget.pauseOnBounce!);
+    try {
+      await _scrollController.animateTo(
+        maxExtent,
+        duration: duration,
+        curve: Curves.linear,
+      );
+    } catch (e) {
+      debugPrint('Error during bouncing animation 1: $e');
+    }
+    try {
+      if (widget.pauseOnBounce != null) {
+        await Future.delayed(widget.pauseOnBounce!);
+      }
+    } catch (e) {
+      debugPrint('Error during pause on bounce 1: $e');
     }
     if (!_available) return;
-    await _scrollController.animateTo(
-      minExtent,
-      duration: duration,
-      curve: Curves.linear,
-    );
+    try {
+      await _scrollController.animateTo(
+        minExtent,
+        duration: duration,
+        curve: Curves.linear,
+      );
+    } catch (e) {
+      debugPrint('Error during bouncing animation 2: $e');
+    }
     if (!_available) return;
-    if (widget.pauseBetween != null) {
-      await Future<dynamic>.delayed(widget.pauseBetween!);
+    try {
+      if (widget.pauseOnBounce != null) {
+        await Future.delayed(widget.pauseOnBounce!);
+      }
+    } catch (e) {
+      debugPrint('Error during pause on bounce 2: $e');
     }
   }
 

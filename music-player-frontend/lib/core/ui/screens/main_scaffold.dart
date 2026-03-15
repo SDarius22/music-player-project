@@ -92,8 +92,10 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget buildDrawer() {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
     if (isMobile) {
-      debugPrint("Building drawer for mobile");
-      return const DrawerWidget();
+      return Drawer(
+        backgroundColor: Colors.transparent,
+        child: DrawerWidget(mobileDrawer: true),
+      );
     }
     return const SizedBox.shrink();
   }
