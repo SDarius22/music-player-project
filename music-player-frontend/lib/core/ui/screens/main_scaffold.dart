@@ -96,7 +96,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         left: width * 0.015,
         right: width * 0.015,
         bottom: width * 0.015 + MediaQuery.of(context).padding.bottom,
-        top: width * 0.1 + MediaQuery.of(context).padding.top + kToolbarHeight,
+        top: width * 0.015 + MediaQuery.of(context).padding.top,
       );
     }
     if (kIsWeb) {
@@ -145,7 +145,13 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     if (isMobile) {
       return Padding(
-        padding: EdgeInsets.only(bottom: height * 0.1 + width * 0.015),
+        padding: EdgeInsets.only(
+          bottom: height * 0.1 + width * 0.015,
+          top:
+              width * 0.015 +
+              MediaQuery.of(context).padding.top +
+              kToolbarHeight,
+        ),
         child: navigator,
       );
     }
