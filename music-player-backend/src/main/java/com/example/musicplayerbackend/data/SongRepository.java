@@ -2,9 +2,11 @@ package com.example.musicplayerbackend.data;
 
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,4 +28,7 @@ public interface SongRepository extends JpaRepository<Song, Long>, JpaSpecificat
     Optional<Song> findById(Long id);
 
     Optional<Song> findByFileHash(String fileHash);
+
+    @Query(value = "SELECT * FROM music_library.songs WHERE song_type = 'STREAMABLE' ORDER BY RANDOM()", nativeQuery = true)
+    List<Song> findRandomStreamable(Pageable pageable);
 }

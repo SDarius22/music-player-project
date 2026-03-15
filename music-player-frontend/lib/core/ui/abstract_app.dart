@@ -4,6 +4,7 @@ import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
+import 'package:music_player_frontend/core/providers/home_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
@@ -194,6 +195,10 @@ abstract class AbstractApp extends StatelessWidget {
                 return manager;
               },
             ),
+      ),
+
+      ChangeNotifierProvider<HomeProvider>(
+        create: (context) => HomeProvider(context.read<SongRestService>()),
       ),
 
       ChangeNotifierProvider<AlbumProvider>(

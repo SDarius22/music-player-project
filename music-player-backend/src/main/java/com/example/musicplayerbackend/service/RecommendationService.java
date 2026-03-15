@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.service;
 
+import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.UserLibraryRepository;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongDto;
@@ -25,16 +26,17 @@ public class RecommendationService {
 
     private static final int LIMIT = 10;
     private static final long FORGOTTEN_DAYS = 30;
-    // Songs played within this window are considered "too fresh" for recommendations.
     private static final long RECENT_HOURS = 48;
 
     private final UserLibraryRepository userLibraryRepository;
+    private final SongRepository songRepository;
     private final SongMapper songMapper;
 
     /**
      * Heuristic recommendations: blends liked songs (weighted by play count)
      * with the user's overall most-played tracks. Songs played in the last
      * 48 hours are excluded to keep the list fresh.
+     * Always returns LIMIT songs by padding with random catalog tracks.
      */
     @Transactional(readOnly = true)
     public List<SongDto> getRecommendations(Long userId) {
@@ -59,6 +61,9 @@ public class RecommendationService {
             }
         }
 
+        // Pad with random catalog songs so the list is never empty.
+        padWithRandom(result, seen);
+
         log.debug("[RECOMMEND] userId={} → {} songs", userId, result.size());
         return result;
     }
@@ -67,6 +72,7 @@ public class RecommendationService {
      * Forgotten favourites: songs the user played at least once but hasn't
      * touched in the last 30 days, surfaced by play count so their old
      * favourites appear first.
+     * Always returns songs by padding with random catalog tracks.
      */
     @Transactional(readOnly = true)
     public List<SongDto> getForgottenFavourites(Long userId) {
@@ -74,14 +80,19 @@ public class RecommendationService {
         List<UserLibrary> entries =
                 userLibraryRepository.findForgottenByUserId(userId, cutoff, PageRequest.of(0, LIMIT));
 
-        List<SongDto> result = toSongDtos(entries);
+        List<SongDto> result = new ArrayList<>(toSongDtos(entries));
+        Set<Long> seen = new HashSet<>();
+        result.forEach(s -> seen.add(s.getId()));
+
+        padWithRandom(result, seen);
+
         log.debug("[FORGOTTEN] userId={} → {} songs", userId, result.size());
         return result;
     }
 
     /**
      * Quick dial: the user's most recently played tracks for instant access,
-     * padded with most recently added songs when the played list is short.
+     * padded with random catalog songs when the played list is short.
      */
     @Transactional(readOnly = true)
     public List<SongDto> getQuickDial(Long userId) {
@@ -92,18 +103,33 @@ public class RecommendationService {
         addFromLibrary(result, seen,
                 userLibraryRepository.findRecentlyPlayedByUserId(userId, PageRequest.of(0, LIMIT)));
 
-        // Pad with recently added if we don't have enough.
+        // Pad with recently added from the user's library if available.
         if (result.size() < LIMIT) {
             addFromLibrary(result, seen,
                     userLibraryRepository.findRecentlyAddedByUserId(
                             userId, PageRequest.of(0, LIMIT - result.size())));
         }
 
+        // Final fallback: random catalog songs.
+        padWithRandom(result, seen);
+
         log.debug("[QUICK_DIAL] userId={} → {} songs", userId, result.size());
         return result;
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
+
+    private void padWithRandom(List<SongDto> result, Set<Long> seen) {
+        if (result.size() >= LIMIT) return;
+        List<Song> random = songRepository.findRandomStreamable(
+                PageRequest.of(0, (LIMIT - result.size()) * 3));
+        for (Song song : random) {
+            if (result.size() >= LIMIT) break;
+            if (seen.add(song.getId())) {
+                result.add(songMapper.toDto(song));
+            }
+        }
+    }
 
     private void addFromLibrary(List<SongDto> result, Set<Long> seen, List<UserLibrary> entries) {
         for (UserLibrary ul : entries) {

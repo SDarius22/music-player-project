@@ -5,7 +5,7 @@ import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
-import 'package:music_player_frontend/core/ui/screens/tracks.dart';
+import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -36,7 +36,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     _didPushInitial = true;
     final appState = context.read<AbstractAppStateProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      appState.innerNavigatorKey.currentState?.pushReplacement(Tracks.route());
+      appState.innerNavigatorKey.currentState?.pushReplacement(HomeScreen.route());
     });
   }
 

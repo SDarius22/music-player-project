@@ -16,21 +16,21 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
   @override
   Widget build(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
-    var height = MediaQuery.of(context).size.height;
 
     return GlassScaffold(
-      appBar: buildAppBar(context),
-      body: Padding(
-        padding: buildPadding(width, height),
-        child: Selector<T, Future>(
-          selector: (context, provider) => provider.query,
-          builder: (context, query, child) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                buildHeader(context),
-                Expanded(
+      body: Selector<T, Future>(
+        selector: (context, provider) => provider.query,
+        builder: (context, query, child) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              buildHeader(context),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await provider.refresh();
+                  },
                   child: FutureBuilder(
                     future: Future.delayed(
                       const Duration(milliseconds: 150),
@@ -46,48 +46,27 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
                           child: Text('Error when loading :('),
                         );
                       }
-                      customLogic(snapshot);
-                      return RefreshIndicator(
-                        onRefresh: () async {
-                          await provider.refresh();
-                        },
-                        child: CustomScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          slivers: [
-                            SliverPadding(
-                              padding: EdgeInsets.only(
-                                left: width * 0.01,
-                                right: width * 0.01,
-                              ),
-                              sliver: buildGridComponent(context, snapshot),
+                      return CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverPadding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.01,
+                              right: width * 0.01,
                             ),
-                          ],
-                        ),
+                            sliver: buildGridComponent(context, snapshot),
+                          ),
+                        ],
                       );
                     },
                   ),
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ],
+          );
+        },
       ),
     );
-  }
-
-  void customLogic(AsyncSnapshot snapshot) {
-    // Can be overridden by subclasses for custom logic after data is loaded
-  }
-
-  PreferredSizeWidget buildAppBar(BuildContext context) {
-    return const PreferredSize(
-      preferredSize: Size.fromHeight(0),
-      child: SizedBox.shrink(),
-    );
-  }
-
-  EdgeInsetsGeometry buildPadding(double width, double height) {
-    return EdgeInsets.zero;
   }
 
   Widget buildHeader(BuildContext context) {

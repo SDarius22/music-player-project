@@ -8,7 +8,9 @@ import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/albums.dart';
 import 'package:music_player_frontend/core/ui/screens/artists.dart';
+import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/playlists.dart';
+import 'package:music_player_frontend/core/ui/screens/statistics_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/tracks.dart';
 import 'package:music_player_frontend/core/ui/screens/upload_songs_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/user_settings_screen.dart';
@@ -28,7 +30,7 @@ class DrawerWidget extends StatefulWidget {
 }
 
 class _DrawerWidgetState extends State<DrawerWidget> {
-  int _selected = 3;
+  int _selected = 0;
   late AbstractAppStateProvider _appStateProvider;
 
   @override
@@ -37,6 +39,16 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   }
 
   List<Map<String, dynamic>> get menuItems => [
+    {
+      "text": "Home",
+      "tooltip": "Home",
+      "icon": Icons.home_rounded,
+      "index": 0,
+      "onTap": (BuildContext context) {
+        setState(() => _selected = 0);
+        _appStateProvider.innerNavigatorKey.currentState!.push(HomeScreen.route());
+      },
+    },
     {
       "text": "Albums",
       "tooltip": "Albums",
@@ -94,6 +106,20 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             .innerNavigatorKey
             .currentState!
             .push(UploadSongsScreen.route());
+      },
+    },
+    {
+      "text": "Statistics",
+      "tooltip": "Chunk delivery statistics",
+      "icon": Icons.bar_chart_rounded,
+      "index": 7,
+      "onTap": (BuildContext context) {
+        setState(() => _selected = 7);
+        context
+            .read<AbstractAppStateProvider>()
+            .innerNavigatorKey
+            .currentState!
+            .push(StatisticsScreen.route());
       },
     },
   ];
