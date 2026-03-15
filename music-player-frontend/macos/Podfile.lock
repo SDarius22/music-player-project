@@ -12,6 +12,9 @@ PODS:
     - FlutterMacOS
   - file_saver (0.0.1):
     - FlutterMacOS
+  - flutter_secure_storage_darwin (10.0.0):
+    - Flutter
+    - FlutterMacOS
   - flutter_webrtc (1.2.0):
     - FlutterMacOS
     - WebRTC-SDK (= 137.7151.12)
@@ -44,6 +47,7 @@ DEPENDENCIES:
   - desktop_drop (from `Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos`)
   - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
   - file_saver (from `Flutter/ephemeral/.symlinks/plugins/file_saver/macos`)
+  - flutter_secure_storage_darwin (from `Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
   - flutter_webrtc (from `Flutter/ephemeral/.symlinks/plugins/flutter_webrtc/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - just_audio (from `Flutter/ephemeral/.symlinks/plugins/just_audio/darwin`)
@@ -72,6 +76,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/file_picker/macos
   file_saver:
     :path: Flutter/ephemeral/.symlinks/plugins/file_saver/macos
+  flutter_secure_storage_darwin:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_darwin/darwin
   flutter_webrtc:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_webrtc/macos
   FlutterMacOS:
@@ -98,6 +104,7 @@ SPEC CHECKSUMS:
   desktop_drop: 10a3e6a7fa9dbe350541f2574092fecfa345a07b
   file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
   file_saver: e35bd97de451dde55ff8c38862ed7ad0f3418d0f
+  flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
   flutter_webrtc: 7cda18a9cd917db2f8bfcde8011804f6018a12df
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
