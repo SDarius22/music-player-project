@@ -453,12 +453,20 @@ class _TextScrollState extends State<TextScroll> {
       switch (widget.mode) {
         case TextScrollMode.bouncing:
           {
-            await _animateBouncing();
+            try {
+              await _animateBouncing();
+            } catch (e) {
+              debugPrint('Error during bouncing animation: $e');
+            }
             break;
           }
         default:
           {
-            await _animateEndless();
+            try {
+              await _animateEndless();
+            } catch (e) {
+              debugPrint('Error during endless animation: $e');
+            }
           }
       }
     }
