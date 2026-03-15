@@ -66,9 +66,11 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               color: Colors.white,
             ),
           ),
-        UniversalPlatform.isDesktop
-            ? MoveWindow(
+        if (UniversalPlatform.isDesktop) ...[
+          Expanded(
+            child: MoveWindow(
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     'Music Player',
@@ -128,22 +130,21 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ],
               ),
-            )
-            : Row(
-              children: [
-                Text(
-                  'Music Player',
-                  style: MusicPlayerTheme.getTheme(
-                    context,
-                    context.read<Scaler>(),
-                  ).textTheme.titleLarge!.copyWith(
-                    color: Colors.white,
-                    fontSize: height * 0.025,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
             ),
+          ),
+        ] else ...[
+          Text(
+            'Music Player',
+            style: MusicPlayerTheme.getTheme(
+              context,
+              context.read<Scaler>(),
+            ).textTheme.titleLarge!.copyWith(
+              color: Colors.white,
+              fontSize: height * 0.025,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ],
     );
   }

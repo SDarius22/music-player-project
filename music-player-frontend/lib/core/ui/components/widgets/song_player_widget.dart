@@ -74,6 +74,12 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             ).miniPlayerController;
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          final height = MediaQuery.of(context).size.height;
+          final width = MediaQuery.of(context).size.width;
+          if (height < 250 || width < 250) {
+            debugPrint("Screen too small for mini player, not showing player");
+            return;
+          }
           var animateTo =
               Provider.of<AbstractAppStateProvider>(
                         context,

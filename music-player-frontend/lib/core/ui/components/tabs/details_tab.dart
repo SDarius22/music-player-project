@@ -7,7 +7,7 @@ import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/artist_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
-import 'package:music_player_frontend/local_libs/text_scroll/text_scroll.dart';
+import 'package:music_player_frontend/local_libs/text_scroll/custom_text_scroll.dart';
 import 'package:provider/provider.dart';
 
 class DetailsTab extends StatelessWidget {
@@ -69,20 +69,13 @@ class DetailsTab extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        TextScroll(
-                          audioProvider.currentSong.name,
-                          mode: TextScrollMode.bouncing,
-                          velocity: const Velocity(
-                            pixelsPerSecond: Offset(20, 0),
-                          ),
+                        CustomTextScroll(
+                          text: audioProvider.currentSong.name,
                           style:
                               MusicPlayerTheme.getTheme(
                                 context,
                                 context.read<Scaler>(),
-                              ).textTheme.displaySmall,
-                          pauseOnBounce: const Duration(seconds: 5),
-                          delayBefore: const Duration(seconds: 0),
-                          pauseBetween: const Duration(seconds: 5),
+                              ).textTheme.displaySmall!,
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -113,21 +106,15 @@ class DetailsTab extends StatelessWidget {
                                   ),
                                 ),
                                 iconAlignment: IconAlignment.end,
-                                label: TextScroll(
-                                  audioProvider.currentSong.artist.target
-                                      .toString(),
-                                  mode: TextScrollMode.bouncing,
-                                  velocity: const Velocity(
-                                    pixelsPerSecond: Offset(25, 0),
-                                  ),
+                                label: CustomTextScroll(
+                                  text:
+                                      audioProvider.currentSong.artist.target
+                                          .toString(),
                                   style:
                                       MusicPlayerTheme.getTheme(
                                         context,
                                         context.read<Scaler>(),
-                                      ).textTheme.titleLarge,
-                                  pauseOnBounce: const Duration(seconds: 5),
-                                  delayBefore: const Duration(seconds: 0),
-                                  pauseBetween: const Duration(seconds: 5),
+                                      ).textTheme.titleLarge!,
                                 ),
                               ),
                             ),
@@ -159,21 +146,15 @@ class DetailsTab extends StatelessWidget {
                                     20,
                                   ),
                                 ),
-                                label: TextScroll(
-                                  audioProvider.currentSong.album.target
-                                      .toString(),
-                                  mode: TextScrollMode.bouncing,
-                                  velocity: const Velocity(
-                                    pixelsPerSecond: Offset(20, 0),
-                                  ),
+                                label: CustomTextScroll(
+                                  text:
+                                      audioProvider.currentSong.album.target
+                                          .toString(),
                                   style:
                                       MusicPlayerTheme.getTheme(
                                         context,
                                         context.read<Scaler>(),
-                                      ).textTheme.titleLarge,
-                                  pauseOnBounce: const Duration(seconds: 5),
-                                  delayBefore: const Duration(seconds: 0),
-                                  pauseBetween: const Duration(seconds: 5),
+                                      ).textTheme.titleLarge!,
                                 ),
                               ),
                             ),
