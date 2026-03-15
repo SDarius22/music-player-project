@@ -37,10 +37,10 @@ public class DataSyncService {
         List<UserLibrary> serverChanges;
 
         if (request.getLastSyncTime() == null) {
-            serverChanges = userLibraryRepository.findByUserIdAndIsDeletedFalse(userId);
+            serverChanges = userLibraryRepository.findByIdUserIdAndIsDeletedFalse(userId);
         } else {
             Instant lastSync = request.getLastSyncTime().toInstant();
-            serverChanges = userLibraryRepository.findByUserIdAndLastUpdatedAfter(userId, lastSync);
+            serverChanges = userLibraryRepository.findByIdUserIdAndLastUpdatedAfter(userId, lastSync);
         }
 
         List<SongSyncDto> dtos = serverChanges.stream()
