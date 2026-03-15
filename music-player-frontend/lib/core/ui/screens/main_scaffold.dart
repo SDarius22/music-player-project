@@ -135,20 +135,18 @@ class _MainScaffoldState extends State<MainScaffold> {
       final width = MediaQuery.of(context).size.width;
       final height = MediaQuery.of(context).size.height;
 
-      final navigator = Theme(
+      final navigatorWidget = Theme(
         data: MusicPlayerTheme.getTheme(context, context.read<Scaler>()),
-        child: Expanded(
-          child: HeroControllerScope(
-            controller: MaterialApp.createMaterialHeroController(),
-            child: Navigator(
-              key: provider.innerNavigatorKey,
-              onGenerateRoute:
-                  (_) => PageRouteBuilder(
-                    pageBuilder: (_, _, _) => const SizedBox.shrink(),
-                    transitionDuration: Duration(milliseconds: 300),
-                    reverseTransitionDuration: Duration(milliseconds: 300),
-                  ),
-            ),
+        child: HeroControllerScope(
+          controller: MaterialApp.createMaterialHeroController(),
+          child: Navigator(
+            key: provider.innerNavigatorKey,
+            onGenerateRoute:
+                (_) => PageRouteBuilder(
+                  pageBuilder: (_, _, _) => const SizedBox.shrink(),
+                  transitionDuration: Duration(milliseconds: 300),
+                  reverseTransitionDuration: Duration(milliseconds: 300),
+                ),
           ),
         ),
       );
@@ -164,7 +162,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             left: width * 0.015,
             right: width * 0.015,
           ),
-          child: navigator,
+          child: navigatorWidget,
         );
       }
 
@@ -172,7 +170,11 @@ class _MainScaffoldState extends State<MainScaffold> {
         padding: EdgeInsets.only(bottom: width * 0.01 + height * 0.1),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [DrawerWidget(), SizedBox(width: width * 0.01), navigator],
+          children: [
+            DrawerWidget(),
+            SizedBox(width: width * 0.01),
+            Expanded(child: navigatorWidget),
+          ],
         ),
       );
     } catch (e) {
