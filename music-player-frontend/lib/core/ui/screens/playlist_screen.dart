@@ -39,10 +39,6 @@ class PlaylistScreen extends EntityScreen {
     final ValueNotifier<bool> editMode = ValueNotifier<bool>(false);
     final ValueNotifier<bool> orderChanged = ValueNotifier<bool>(false);
 
-    final normalSize = height * 0.02;
-    final boldSize = height * 0.025;
-    final smallSize = height * 0.0175;
-
     Future<void> handleAction(_PlaylistAction action) async {
       switch (action) {
         case _PlaylistAction.add:
@@ -137,12 +133,12 @@ class PlaylistScreen extends EntityScreen {
                 onPressed: () => handleAction(_PlaylistAction.editToggle),
                 icon: Icon(
                   FluentIcons.check,
-                  size: height * 0.02,
+                  size: 20,
                   color: Colors.white,
                 ),
                 label: Text(
                   "Done",
-                  style: TextStyle(color: Colors.white, fontSize: normalSize),
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: width * 0.01),
@@ -220,7 +216,7 @@ class PlaylistScreen extends EntityScreen {
               child: Icon(
                 FluentIcons.moreVertical,
                 color: Colors.white,
-                size: height * 0.025,
+                size: 24,
               ),
             ),
           );
@@ -245,7 +241,7 @@ class PlaylistScreen extends EntityScreen {
                 },
                 icon: Icon(
                   FluentIcons.back,
-                  size: height * 0.02,
+                  size: 20,
                   color: Colors.white,
                 ),
               ),
@@ -263,7 +259,7 @@ class PlaylistScreen extends EntityScreen {
                 icon: Icon(
                   FluentIcons.play,
                   color: Colors.white,
-                  size: height * 0.025,
+                  size: 24,
                 ),
               ),
               IconButton(
@@ -273,7 +269,7 @@ class PlaylistScreen extends EntityScreen {
                 icon: Icon(
                   FluentIcons.shuffleOn,
                   color: Colors.white,
-                  size: height * 0.025,
+                  size: 24,
                 ),
               ),
               actionsMenuButton(),
@@ -323,8 +319,7 @@ class PlaylistScreen extends EntityScreen {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: boldSize,
+                                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     )
@@ -342,9 +337,8 @@ class PlaylistScreen extends EntityScreen {
                                             right: width * 0.01,
                                           ),
                                           hintText: "Playlist Name",
-                                          hintStyle: TextStyle(
+                                          hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                             color: Colors.grey.shade600,
-                                            fontSize: normalSize,
                                           ),
                                           border: OutlineInputBorder(
                                             borderRadius: BorderRadius.circular(
@@ -353,9 +347,8 @@ class PlaylistScreen extends EntityScreen {
                                           ),
                                         ),
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           color: Colors.white,
-                                          fontSize: normalSize,
                                         ),
                                         onChanged: (value) {
                                           playlist.name = value;
@@ -475,7 +468,7 @@ class PlaylistScreen extends EntityScreen {
                                                       icon: Icon(
                                                         FluentIcons.trash,
                                                         color: Colors.white,
-                                                        size: height * 0.02,
+                                                        size: 20,
                                                       ),
                                                     ),
                                                   ),
@@ -495,9 +488,8 @@ class PlaylistScreen extends EntityScreen {
                                                           ? "${song.name.toString().substring(0, 60)}..."
                                                           : song.name
                                                               .toString(),
-                                                      style: TextStyle(
+                                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Colors.white,
-                                                        fontSize: normalSize,
                                                       ),
                                                     ),
                                                     SizedBox(
@@ -511,9 +503,8 @@ class PlaylistScreen extends EntityScreen {
                                                           ? "${song.artist.toString().substring(0, 60)}..."
                                                           : song.artist
                                                               .toString(),
-                                                      style: TextStyle(
+                                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
                                                         color: Colors.white,
-                                                        fontSize: smallSize,
                                                       ),
                                                     ),
                                                   ],
@@ -523,9 +514,8 @@ class PlaylistScreen extends EntityScreen {
                                                   song.durationInSeconds == 0
                                                       ? "??:??"
                                                       : "${song.durationInSeconds ~/ 60}:${(song.durationInSeconds % 60).toString().padLeft(2, '0')}",
-                                                  style: TextStyle(
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Colors.white,
-                                                    fontSize: normalSize,
                                                   ),
                                                 ),
                                               ],

@@ -15,7 +15,7 @@ class SongService {
   final SongRestService _songRestService;
 
   bool _isSyncing = false;
-  static const int _chunkSize = 64 * 1024; // 64KB
+  static const int _chunkSize = 64 * 1024;
 
   SongService(this._songRepository, this._songRestService);
 
@@ -325,7 +325,6 @@ class SongService {
     return chunks;
   }
 
-  /// Fetches one page from the server using display-level sort field names.
   Future<SongPageDto> getSongsPage(
     String query,
     String sortField,
@@ -341,7 +340,6 @@ class SongService {
     );
   }
 
-  /// Fetches one page from the local repository using native DB offset/limit.
   List<Song> getSongsPagedLocal(
     String query,
     String sortField,

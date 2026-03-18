@@ -13,11 +13,7 @@ class ActionsWidgetState extends State<ActionsWidget> {
   ValueNotifier<bool> expanded = ValueNotifier(false);
 
   Widget _buildContent(BuildContext context) {
-    // var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
-    //var boldSize = height * 0.025;
-    var normalSize = height * 0.02;
-
     return Consumer<AbstractAppStateProvider>(
       builder: (context, am, child) {
         return ValueListenableBuilder(
@@ -30,9 +26,8 @@ class ActionsWidgetState extends State<ActionsWidget> {
                       leading: Icon(Icons.file_download, color: Colors.white),
                       title: Text(
                         'Downloading/Uploading ${am.appActions.length} files',
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           color: Colors.white,
-                          fontSize: normalSize,
                         ),
                       ),
                       onTap: () {
@@ -51,7 +46,7 @@ class ActionsWidgetState extends State<ActionsWidget> {
                             icon: Icon(
                               Icons.arrow_back,
                               color: Colors.white,
-                              size: height * 0.015,
+                              size: 16,
                             ),
                             onPressed: () {
                               expanded.value = !expanded.value;
@@ -60,9 +55,8 @@ class ActionsWidgetState extends State<ActionsWidget> {
                           : ListTile(
                             title: Text(
                               am.appActions[index],
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                           );

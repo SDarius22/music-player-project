@@ -21,13 +21,11 @@ import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/ui/abstract_app.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/platforms/macos/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/macos/services/macos_file_service.dart';
 import 'package:music_player_frontend/platforms/macos/services/music_scanner_service.dart';
-import 'package:music_player_frontend/platforms/macos/ui/components/macos_scaler.dart';
 import 'package:provider/provider.dart';
 
 class MacosApplication extends AbstractApp {
@@ -74,18 +72,13 @@ class MacosApplication extends AbstractApp {
   }
 
   @override
-  Scaler createScaler(BuildContext context) {
-    return MacosScaler();
-  }
-
-  @override
   Widget getAppWidget(BuildContext context) {
     return MaterialApp(
       builder:
           (context, child) => BotToastInit()(context, responsiveBuilder(child)),
       debugShowCheckedModeBanner: false,
       checkerboardOffscreenLayers: true,
-      theme: MusicPlayerTheme.getDefaultTheme(),
+      theme: MusicPlayerTheme.getTheme(),
       home: const LoadingScreen(),
     );
   }

@@ -28,8 +28,6 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
 
   List<Map<String, Widget>> get settingsMap {
     var height = MediaQuery.of(context).size.height;
-    var normalSize = height * 0.02;
-    var smallSize = height * 0.015;
 
     final audioProvider = Provider.of<AudioProvider>(context, listen: false);
 
@@ -65,7 +63,7 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
               },
               child: Text(
                 "Login / Register",
-                style: TextStyle(color: Colors.white, fontSize: normalSize),
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
               ),
             );
           },
@@ -76,15 +74,14 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
       {
         "title": Text(
           "Playback Speed",
-          style: TextStyle(
-            fontSize: normalSize,
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
             fontWeight: FontWeight.normal,
             color: Colors.white,
           ),
         ),
         "subtitle": Text(
           "Set the playback speed to a certain value",
-          style: TextStyle(fontSize: smallSize, color: Colors.grey.shade300),
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.grey.shade300),
         ),
         "trailing": SizedBox(
           width: MediaQuery.of(context).size.width * 0.15,
@@ -99,11 +96,10 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                     enabledThumbRadius: height * 0.0075,
                   ),
                   showValueIndicator: ShowValueIndicator.onDrag,
-                  activeTrackColor: MusicPlayerTheme.primaryPurple,
+                  activeTrackColor: MusicPlayerTheme.gradientViolet,
                   inactiveTrackColor: Colors.white,
                   valueIndicatorColor: Colors.white,
-                  valueIndicatorTextStyle: TextStyle(
-                    fontSize: smallSize,
+                  valueIndicatorTextStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
                     color: Colors.black,
                   ),
                   valueIndicatorShape: const PaddleSliderValueIndicatorShape(),

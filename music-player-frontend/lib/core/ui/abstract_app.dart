@@ -4,9 +4,9 @@ import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
-import 'package:music_player_frontend/core/providers/home_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/providers/home_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
@@ -25,9 +25,9 @@ import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
+import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
-import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
@@ -36,7 +36,6 @@ import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -87,8 +86,6 @@ abstract class AbstractApp extends StatelessWidget {
 
   List<InheritedProvider> _commonProviders(BuildContext context) {
     return [
-      Provider<Scaler>(create: (_) => createScaler(context)),
-
       ...platformProviders(context),
 
       Provider<ActiveChunkRouter>(
@@ -271,8 +268,6 @@ abstract class AbstractApp extends StatelessWidget {
   List<InheritedProvider> platformProviders(BuildContext context);
 
   Widget getAppWidget(BuildContext context);
-
-  Scaler createScaler(BuildContext context);
 
   AbstractFileService createFileService(BuildContext context);
 

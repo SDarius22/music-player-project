@@ -6,8 +6,6 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -130,7 +128,6 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
 
   Widget buildHeader(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
-    var height = MediaQuery.of(context).size.height;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -141,7 +138,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
           },
           icon: Icon(
             FluentIcons.back,
-            size: height * 0.02,
+            size: 20,
             color: Colors.white,
           ),
         ),
@@ -149,10 +146,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
         Text(
           "Choose one or more playlists to ${widget.export ? 'export' : 'add to'}",
           style:
-              MusicPlayerTheme.getTheme(
-                context,
-                context.read<Scaler>(),
-              ).textTheme.headlineMedium,
+              Theme.of(context).textTheme.headlineMedium,
         ),
         const Spacer(),
         ElevatedButton(
@@ -197,10 +191,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
           child: Text(
             "Done",
             style:
-                MusicPlayerTheme.getTheme(
-                  context,
-                  context.read<Scaler>(),
-                ).textTheme.headlineMedium,
+                Theme.of(context).textTheme.headlineMedium,
           ),
         ),
       ],
@@ -241,10 +232,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                   child: Text(
                     "Error loading playlists",
                     style:
-                        MusicPlayerTheme.getTheme(
-                          context,
-                          context.read<Scaler>(),
-                        ).textTheme.bodyMedium,
+                        Theme.of(context).textTheme.bodyMedium,
                   ),
                 );
               }
@@ -254,10 +242,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                   child: Text(
                     "No playlists found",
                     style:
-                        MusicPlayerTheme.getTheme(
-                          context,
-                          context.read<Scaler>(),
-                        ).textTheme.bodyMedium,
+                        Theme.of(context).textTheme.bodyMedium,
                   ),
                 );
               }

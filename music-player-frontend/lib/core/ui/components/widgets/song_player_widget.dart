@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/app_queue_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/volume_widget.dart';
 import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -45,10 +43,10 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     audioProvider = context.read<AudioProvider>();
   }
 
-  bool get _isMobile => ResponsiveBreakpoints.of(context).isMobile;
+  bool get _isNotDesktop => !ResponsiveBreakpoints.of(context).isDesktop;
 
   bool isMinimized(double percentage) {
-    if (_isMobile) return percentage < 0.45;
+    if (_isNotDesktop) return percentage < 0.45;
     return percentage < 0.25;
   }
 
@@ -140,9 +138,8 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   double getMinHeight(BuildContext context) {
-    if (_isMobile) {
-      return MediaQuery.of(context).size.height * 0.075 +
-          MediaQuery.of(context).padding.bottom;
+    if (_isNotDesktop) {
+      return MediaQuery.of(context).size.height * 0.075;
     }
     return MediaQuery.of(context).size.height * 0.1;
   }
@@ -164,24 +161,18 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   BorderRadius getBorderRadius(BuildContext context) {
-    if (_isMobile) {
-      return BorderRadius.only(
-        topLeft: Radius.circular(MediaQuery.of(context).size.height * 0.015),
-        topRight: Radius.circular(MediaQuery.of(context).size.height * 0.015),
-      );
-    }
     return BorderRadius.circular(MediaQuery.of(context).size.height * 0.015);
   }
 
   Widget buildMinimizedPlayerContent(BuildContext context, double percentage) {
-    if (_isMobile) {
+    if (_isNotDesktop) {
       return _buildMobileMinimizedContent(context, percentage);
     }
     return _buildDesktopMinimizedContent(context, percentage);
   }
 
   Widget buildMaximizedPlayerContent(BuildContext context, double percentage) {
-    if (_isMobile) {
+    if (_isNotDesktop) {
       return _buildMobileMaximizedContent(context, percentage);
     }
     return _buildDesktopMaximizedContent(context, percentage);
@@ -249,10 +240,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     audioProvider.currentSong.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.headlineLarge?.copyWith(
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       shadows: [
                         Shadow(
                           color: Colors.black.withValues(alpha: 0.75),
@@ -267,10 +255,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                         'Unknown Artist',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.bodyLarge?.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.white70,
                       shadows: [
                         Shadow(
@@ -324,11 +309,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     ).miniPlayerController.animateToHeight(
                       state: PanelState.max,
                     ),
-                icon: Icon(
-                  FluentIcons.maximize,
-                  color: Colors.white,
-                  size: height * 0.02,
-                ),
+                icon: Icon(FluentIcons.maximize, color: Colors.white, size: 20),
               ),
             ),
           ),
@@ -343,13 +324,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
 
     double imageLeftMargin =
         lerpDouble(0.0, width * 0.05, percentage / 0.45) ?? 0.0;
-    double maxSymmetricMargin = width * 0.015;
-    double symmetricMargin =
-        lerpDouble(maxSymmetricMargin, 0.0, percentage / 0.45) ?? 0.0;
-    if (symmetricMargin > maxSymmetricMargin) {
-      symmetricMargin = maxSymmetricMargin;
-    }
-    if (symmetricMargin < 0) symmetricMargin = 0;
     if (imageLeftMargin < 0) imageLeftMargin = 0;
     double imageTopMargin =
         lerpDouble(0.0, width * 0.05, percentage / 0.45) ?? 0.0;
@@ -366,11 +340,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
       blur: 45.0,
       elevation: 3.0,
       borderRadius: getBorderRadius(context),
-      margin: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom,
-        left: symmetricMargin,
-        right: symmetricMargin,
-      ),
+      margin: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       child: Row(
         children: [
           Container(
@@ -409,10 +379,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     audioProvider.currentSong.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.headlineLarge?.copyWith(
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       shadows: [
                         Shadow(
                           color: Colors.black.withValues(alpha: 0.75),
@@ -427,10 +394,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                         'Unknown Artist',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.bodyLarge?.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.white70,
                       shadows: [
                         Shadow(
@@ -618,9 +582,10 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                                   barHeight: 4.0,
                                   thumbRadius: 7.0,
                                   timeLabelLocation: TimeLabelLocation.sides,
-                                  timeLabelTextStyle: TextStyle(
+                                  timeLabelTextStyle: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium!.copyWith(
                                     color: Colors.white,
-                                    fontSize: height * 0.02,
                                     fontWeight: FontWeight.normal,
                                     shadows: [
                                       Shadow(
@@ -683,7 +648,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     icon: Icon(
                       FluentIcons.minimize,
                       color: Colors.white,
-                      size: height * 0.025,
+                      size: 24,
                       shadows: [
                         Shadow(
                           color: Colors.black.withValues(alpha: 0.5),
@@ -774,7 +739,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                           icon: Icon(
                             FluentIcons.down,
                             color: Colors.white,
-                            size: height * 0.025,
+                            size: 24,
                             shadows: [
                               Shadow(
                                 color: Colors.black.withValues(alpha: 0.5),
@@ -878,13 +843,10 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                                     barHeight: 4.0,
                                     thumbRadius: 7.0,
                                     timeLabelLocation: TimeLabelLocation.above,
-                                    timeLabelTextStyle:
-                                        MusicPlayerTheme.getTheme(
-                                          context,
-                                          context.read<Scaler>(),
-                                        ).textTheme.bodyMedium!.copyWith(
-                                          color: Colors.white,
-                                        ),
+                                    timeLabelTextStyle: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium!
+                                        .copyWith(color: Colors.white),
                                     timeLabelPadding: 5.0,
                                     onSeek: (duration) {
                                       audioProvider.seek(duration);
@@ -968,7 +930,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
               bottom:
                   percentage < 0.35
                       ? MediaQuery.of(context).padding.bottom + height * 0.025
-                      : MediaQuery.of(context).padding.bottom,
+                      : MediaQuery.of(context).padding.bottom + width * 0.05,
             ),
             child: Column(
               children: [
@@ -987,7 +949,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                   icon: Icon(
                     percentage < 0.35 ? FluentIcons.up : FluentIcons.down,
                     color: Colors.white,
-                    size: height * 0.025,
+                    size: 24,
                     shadows: [
                       Shadow(
                         color: Colors.black.withValues(alpha: 0.5),
@@ -1064,7 +1026,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
       icon: Icon(
         FluentIcons.listView,
         color: Colors.white,
-        size: height * 0.02,
+        size: 20,
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.5),
@@ -1077,7 +1039,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   Widget buildPlayPauseButton(BuildContext context, {bool expanded = false}) {
-    var height = MediaQuery.of(context).size.height;
     return ValueListenableBuilder(
       valueListenable: audioProvider.playingNotifier,
       builder: (context, value, child) {
@@ -1092,7 +1053,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
           icon: Icon(
             value ? FluentIcons.pause : FluentIcons.play,
             color: Colors.white,
-            size: height * 0.03,
+            size: 28,
             shadows: [
               Shadow(
                 color: Colors.black.withValues(alpha: 0.5),
@@ -1107,7 +1068,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   Widget buildNextButton(BuildContext context, {bool expanded = false}) {
-    var height = MediaQuery.of(context).size.height;
     return IconButton(
       onPressed: () async {
         debugPrint("next");
@@ -1116,7 +1076,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
       icon: Icon(
         FluentIcons.next,
         color: Colors.white,
-        size: height * 0.03,
+        size: 28,
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.5),
@@ -1129,13 +1089,12 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   Widget buildPreviousButton(BuildContext context, {bool expanded = false}) {
-    var height = MediaQuery.of(context).size.height;
     return IconButton(
       onPressed: () => audioProvider.skipToPrevious(),
       icon: Icon(
         FluentIcons.previous,
         color: Colors.white,
-        size: height * 0.03,
+        size: 28,
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.5),
@@ -1148,7 +1107,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   Widget buildShuffleButton(BuildContext context, {bool expanded = false}) {
-    var height = MediaQuery.of(context).size.height;
     return ValueListenableBuilder(
       valueListenable: audioProvider.shuffleNotifier,
       builder: (context, shuffle, child) {
@@ -1158,7 +1116,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
           },
           icon: Icon(
             shuffle == false ? FluentIcons.shuffleOff : FluentIcons.shuffleOn,
-            size: height * 0.03,
+            size: 28,
             color: Colors.white,
             shadows: [
               Shadow(
@@ -1174,7 +1132,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   Widget buildRepeatButton(BuildContext context, {bool expanded = false}) {
-    var height = MediaQuery.of(context).size.height;
     return ValueListenableBuilder(
       valueListenable: audioProvider.repeatNotifier,
       builder: (context, value, child) {
@@ -1184,7 +1141,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
           },
           icon: Icon(
             value == false ? FluentIcons.repeatOff : FluentIcons.repeatOn,
-            size: height * 0.025,
+            size: 24,
             color: Colors.white,
             shadows: [
               Shadow(

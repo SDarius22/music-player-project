@@ -47,7 +47,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget buildBody(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-    double boldSize = height * 0.035;
     return Consumer<AbstractAppStateProvider>(
       builder: (context, appState, child) {
         return SizedBox(
@@ -60,8 +59,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               Text(
                 "Welcome to Music Player!",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: boldSize,
+                style: Theme.of(context).textTheme.displaySmall!.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -110,7 +108,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     child: Icon(
                       FluentIcons.forward,
                       color: Colors.white,
-                      size: height * 0.03,
+                      size: 28,
                     ),
                   ),
                 ),

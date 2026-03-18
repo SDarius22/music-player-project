@@ -23,13 +23,11 @@ import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/web_p2p_bridge.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
 import 'package:music_player_frontend/core/ui/abstract_app.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/platforms/web/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/web/services/web_file_service.dart';
 import 'package:music_player_frontend/platforms/web/services/web_music_scanner_service.dart';
-import 'package:music_player_frontend/platforms/web/ui/components/web_scaler.dart';
 import 'package:provider/provider.dart';
 
 class WebApp extends AbstractApp {
@@ -57,7 +55,7 @@ class WebApp extends AbstractApp {
       builder:
           (context, child) => BotToastInit()(context, responsiveBuilder(child)),
       debugShowCheckedModeBanner: false,
-      theme: MusicPlayerTheme.getDefaultTheme(),
+      theme: MusicPlayerTheme.getTheme(),
       home: const LoadingScreen(),
     );
   }
@@ -98,10 +96,5 @@ class WebApp extends AbstractApp {
   @override
   AbstractFileService createFileService(BuildContext context) {
     return WebFileService();
-  }
-
-  @override
-  Scaler createScaler(BuildContext context) {
-    return WebScaler();
   }
 }

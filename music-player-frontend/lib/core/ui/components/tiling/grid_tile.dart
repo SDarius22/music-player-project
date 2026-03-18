@@ -7,8 +7,6 @@ import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/text_scroll/custom_text_scroll.dart';
@@ -75,11 +73,7 @@ class CustomGridTile extends StatelessWidget {
                     ),
                     child: CustomTextScroll(
                       text: _getEntityText(entity),
-                      style:
-                          MusicPlayerTheme.getTheme(
-                            context,
-                            context.read<Scaler>(),
-                          ).textTheme.titleSmall!,
+                      style: Theme.of(context).textTheme.titleSmall!,
                     ),
                   ),
                   Row(
@@ -116,26 +110,24 @@ class CustomGridTile extends StatelessWidget {
                               builder: (_, song, _) {
                                 return CustomTextScroll(
                                   text: entity.name,
-                                  style: MusicPlayerTheme.getTheme(
-                                    context,
-                                    context.read<Scaler>(),
-                                  ).textTheme.titleSmall!.copyWith(
-                                    color:
-                                        song == (entity as Song)
-                                            ? Colors.blue
-                                            : Colors.white,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall!
+                                      .copyWith(
+                                        color:
+                                            song == (entity as Song)
+                                                ? Colors.blue
+                                                : Colors.white,
+                                      ),
                                 );
                               },
                             )
                             : CustomTextScroll(
                               text: entity.name,
-                              style: MusicPlayerTheme.getTheme(
-                                context,
-                                context.read<Scaler>(),
-                              ).textTheme.titleSmall!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall!
+                                  .copyWith(color: Colors.white),
                             ),
                   ),
                 ],
@@ -151,7 +143,7 @@ class CustomGridTile extends StatelessWidget {
                             child: Icon(
                               FluentIcons.check,
                               color: Colors.white,
-                              size: height * 0.05,
+                              size: 48,
                             ),
                           ),
                         ),
@@ -185,15 +177,15 @@ class CustomGridTile extends StatelessWidget {
                                       entity.name,
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
-                                      style: MusicPlayerTheme.getTheme(
-                                        context,
-                                        context.read<Scaler>(),
-                                      ).textTheme.titleSmall!.copyWith(
-                                        color:
-                                            song == (entity as Song)
-                                                ? Colors.blue
-                                                : Colors.white,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall!
+                                          .copyWith(
+                                            color:
+                                                song == (entity as Song)
+                                                    ? Colors.blue
+                                                    : Colors.white,
+                                          ),
                                     );
                                   },
                                 )
@@ -201,12 +193,10 @@ class CustomGridTile extends StatelessWidget {
                                   entity.name,
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
-                                  style: MusicPlayerTheme.getTheme(
-                                    context,
-                                    context.read<Scaler>(),
-                                  ).textTheme.titleSmall!.copyWith(
-                                    color: Colors.white,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall!
+                                      .copyWith(color: Colors.white),
                                 ),
                       ),
             ),

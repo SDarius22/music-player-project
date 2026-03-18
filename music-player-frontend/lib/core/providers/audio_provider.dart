@@ -242,7 +242,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
           updatePosition: _audioService.audioPlayer.position,
           bufferedPosition: _audioService.audioPlayer.bufferedPosition,
           speed: _currentAudioSettings.speed,
-          queueIndex: event.currentIndex,
+          queueIndex: _audioService.currentIndex,
         ),
       );
     });

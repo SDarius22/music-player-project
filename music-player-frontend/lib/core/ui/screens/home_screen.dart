@@ -3,7 +3,6 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/home_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
@@ -47,11 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scaler = context.read<Scaler>();
     final width = MediaQuery.of(context).size.width;
-    final theme = MusicPlayerTheme.getTheme(context, scaler);
+    final theme = MusicPlayerTheme.getTheme();
     final isMobile = width < _mobileBreakpoint;
-    final hPad = isMobile ? width * 0.04 : width * 0.02;
+    final hPad = isMobile ? width * 0.04 : width * 0.015;
 
     return GlassScaffold(
       body: RefreshIndicator(
@@ -82,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                     ),
-                    SizedBox(height: isMobile ? 20 : width * 0.04),
+                    SizedBox(height: isMobile ? 20 : width * 0.025),
                   ],
                 ),
               ),
@@ -98,36 +96,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
 
-                return SliverList(
-                  delegate: SliverChildListDelegate([
-                    if (home.quickDial.isNotEmpty)
-                      _Section(
-                        title: 'Jump back in',
-                        subtitle: 'Your recent tracks',
-                        songs: home.quickDial,
-                        cardStyle: _CardStyle.wide,
+                return SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      if (home.quickDial.isNotEmpty)
+                        _Section(
+                          title: 'Jump back in',
+                          subtitle: 'Your recent tracks',
+                          songs: home.quickDial,
+                          cardStyle: _CardStyle.wide,
+                        ),
+                      if (home.recommendations.isNotEmpty)
+                        _Section(
+                          title: 'Recommended for you',
+                          subtitle: 'Based on your listening',
+                          songs: home.recommendations,
+                          cardStyle: _CardStyle.square,
+                        ),
+                      if (home.forgottenFavourites.isNotEmpty)
+                        _Section(
+                          title: 'Rediscover',
+                          subtitle: "Songs you haven't heard in a while",
+                          songs: home.forgottenFavourites,
+                          cardStyle: _CardStyle.square,
+                        ),
+                      if (!home.loading &&
+                          home.quickDial.isEmpty &&
+                          home.recommendations.isEmpty &&
+                          home.forgottenFavourites.isEmpty)
+                        _EmptyState(),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.15,
                       ),
-                    if (home.recommendations.isNotEmpty)
-                      _Section(
-                        title: 'Recommended for you',
-                        subtitle: 'Based on your listening',
-                        songs: home.recommendations,
-                        cardStyle: _CardStyle.square,
-                      ),
-                    if (home.forgottenFavourites.isNotEmpty)
-                      _Section(
-                        title: 'Rediscover',
-                        subtitle: "Songs you haven't heard in a while",
-                        songs: home.forgottenFavourites,
-                        cardStyle: _CardStyle.square,
-                      ),
-                    if (!home.loading &&
-                        home.quickDial.isEmpty &&
-                        home.recommendations.isEmpty &&
-                        home.forgottenFavourites.isEmpty)
-                      _EmptyState(),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.15),
-                  ]),
+                    ]),
+                  ),
                 );
               },
             ),
@@ -155,39 +158,28 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scaler = context.read<Scaler>();
     final width = MediaQuery.of(context).size.width;
-    final theme = MusicPlayerTheme.getTheme(context, scaler);
+    final theme = MusicPlayerTheme.getTheme();
     final isMobile = width < _mobileBreakpoint;
-    final hPad = isMobile ? width * 0.04 : width * 0.02;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: isMobile ? 28 : width * 0.03),
+      padding: EdgeInsets.only(bottom: isMobile ? width * 0.075 : width * 0.02),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: hPad),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white54,
-                  ),
-                ),
-                SizedBox(height: isMobile ? 12 : width * 0.01),
-              ],
+          Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(color: Colors.white54),
+          ),
+          SizedBox(height: width * 0.01),
           if (isMobile)
             _buildMobileLayout(context, width, theme)
           else
@@ -202,56 +194,53 @@ class _Section extends StatelessWidget {
     double width,
     ThemeData theme,
   ) {
-    final hPad = width * 0.04;
-
+    final capped =
+        cardStyle == _CardStyle.wide
+            ? songs.sublist(0, 6)
+            : songs.sublist(0, 9);
     if (cardStyle == _CardStyle.wide) {
-      final capped = songs.length > 6 ? songs.sublist(0, 6) : songs;
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: hPad),
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 3.2,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-          ),
-          itemCount: capped.length,
-          itemBuilder:
-              (context, i) => GestureDetector(
-                onTap:
-                    () => context.read<AudioProvider>().setQueueAndPlay(
-                      songs,
-                      capped[i],
-                    ),
-                child: _MobileQuickDialCard(song: capped[i], theme: theme),
-              ),
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 3,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
         ),
+        padding: EdgeInsets.only(top: width * 0.04),
+        itemCount: capped.length,
+        itemBuilder:
+            (context, i) => GestureDetector(
+              onTap:
+                  () => context.read<AudioProvider>().setQueueAndPlay(
+                    songs,
+                    capped[i],
+                  ),
+              child: _MobileQuickDialCard(song: capped[i], theme: theme),
+            ),
       );
     } else {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: hPad),
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.78,
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 14,
-          ),
-          itemCount: songs.length,
-          itemBuilder:
-              (context, i) => GestureDetector(
-                onTap:
-                    () => context.read<AudioProvider>().setQueueAndPlay(
-                      songs,
-                      songs[i],
-                    ),
-                child: _MobileSquareGridCard(song: songs[i], theme: theme),
-              ),
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 0.75,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
         ),
+        padding: EdgeInsets.only(top: width * 0.04),
+        itemCount: capped.length,
+        itemBuilder:
+            (context, i) => GestureDetector(
+              onTap:
+                  () => context.read<AudioProvider>().setQueueAndPlay(
+                    capped,
+                    capped[i],
+                  ),
+              child: _MobileSquareGridCard(song: capped[i], theme: theme),
+            ),
       );
     }
   }
@@ -263,20 +252,25 @@ class _Section extends StatelessWidget {
         cardStyle == _CardStyle.wide ? width * 0.08 : width * 0.14;
 
     return SizedBox(
-      height: cardHeight + width * 0.06,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-        itemCount: songs.length,
-        separatorBuilder: (_, _) => SizedBox(width: width * 0.01),
-        itemBuilder:
-            (context, i) => _SongCard(
-              song: songs[i],
-              songs: songs,
-              width: cardWidth,
-              height: cardHeight,
-              wide: cardStyle == _CardStyle.wide,
-            ),
+      height: cardHeight + width * 0.045,
+      child: ScrollConfiguration(
+        behavior: const ScrollBehavior().copyWith(
+          scrollbars: true,
+          physics: const BouncingScrollPhysics(),
+        ),
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: songs.length,
+          separatorBuilder: (_, _) => SizedBox(width: width * 0.015),
+          itemBuilder:
+              (context, i) => _SongCard(
+                song: songs[i],
+                songs: songs,
+                width: cardWidth,
+                height: cardHeight,
+                wide: cardStyle == _CardStyle.wide,
+              ),
+        ),
       ),
     );
   }
@@ -425,8 +419,7 @@ class _SongCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scaler = context.read<Scaler>();
-    final theme = MusicPlayerTheme.getTheme(context, scaler);
+    final theme = MusicPlayerTheme.getTheme();
 
     return GestureDetector(
       onTap: () async {
@@ -512,14 +505,13 @@ class _WideCard extends StatelessWidget {
       borderWidth: 0.5,
       elevation: 0,
       shadowColor: Colors.transparent,
+      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
       child: SizedBox(
         height: height,
         child: Row(
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(10),
-              ),
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
               child: _CoverImage(song: song, size: height),
             ),
             Expanded(

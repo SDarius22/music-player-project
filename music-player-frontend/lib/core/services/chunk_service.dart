@@ -28,6 +28,8 @@ class ChunkService {
 
   bool get isReady => manifest != null;
 
+  String? get songName => _songName;
+
   int get totalBytes => manifest?.totalBytes ?? 0;
 
   int get totalChunks => manifest?.totalChunks ?? 0;
@@ -187,6 +189,10 @@ class ChunkService {
   void resolvePeerRequest(int chunkIndex, Uint8List data) {
     _p2pCompleters.remove(chunkIndex)?.complete(data);
   }
+
+  /// Returns true if the chunk was served by a peer, false if by server,
+  /// or null if the chunk has not been fetched yet.
+  bool? wasServedByP2P(int chunkIndex) => _deliveredBy[chunkIndex];
 
   bool _verifyIntegrity(int index, Uint8List data) {
     if (manifest == null || index >= manifest!.hashes.length) return false;

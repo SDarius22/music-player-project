@@ -51,14 +51,14 @@ class _VolumeWidgetState extends State<VolumeWidget> {
               return IconButton(
                 icon:
                     value > 0.0
-                        ? Icon(
+                        ? const Icon(
                           FluentIcons.volumeOn,
-                          size: height * 0.0225,
+                          size: 20,
                           color: Colors.white,
                         )
-                        : Icon(
+                        : const Icon(
                           FluentIcons.volumeOff,
-                          size: height * 0.0225,
+                          size: 20,
                           color: Colors.white,
                         ),
                 onPressed: () {

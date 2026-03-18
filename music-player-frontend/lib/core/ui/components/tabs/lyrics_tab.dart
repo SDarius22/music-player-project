@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/lyric_ui.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/ui_netease.dart';
@@ -25,10 +24,7 @@ class LyricsTab extends StatelessWidget {
     var width = MediaQuery.of(context).size.width;
 
     UINetease lyricUI = UINetease(
-      defaultTextStyle: MusicPlayerTheme.getTheme(
-        context,
-        context.read<Scaler>(),
-      ).textTheme.titleLarge!.copyWith(
+      defaultTextStyle: MusicPlayerTheme.getTheme().textTheme.titleLarge!.copyWith(
         shadows: [
           Shadow(
             color: Colors.black.withValues(alpha: 0.75),
@@ -37,10 +33,7 @@ class LyricsTab extends StatelessWidget {
           ),
         ],
       ),
-      defaultExtTextStyle: MusicPlayerTheme.getTheme(
-        context,
-        context.read<Scaler>(),
-      ).textTheme.titleMedium!.copyWith(
+      defaultExtTextStyle: MusicPlayerTheme.getTheme().textTheme.titleMedium!.copyWith(
         color: oneLine ? Colors.transparent : Colors.grey,
         shadows: [
           Shadow(
@@ -50,10 +43,7 @@ class LyricsTab extends StatelessWidget {
           ),
         ],
       ),
-      otherMainTextStyle: MusicPlayerTheme.getTheme(
-        context,
-        context.read<Scaler>(),
-      ).textTheme.titleMedium!.copyWith(
+      otherMainTextStyle: MusicPlayerTheme.getTheme().textTheme.titleMedium!.copyWith(
         color: oneLine ? Colors.transparent : Colors.grey,
         shadows: [
           Shadow(
@@ -126,10 +116,7 @@ class LyricsTab extends StatelessWidget {
                                   child: Text(
                                     lyricsProvider.unsyncedLyrics,
                                     style:
-                                        MusicPlayerTheme.getTheme(
-                                          context,
-                                          context.read<Scaler>(),
-                                        ).textTheme.bodyMedium,
+                                        MusicPlayerTheme.getTheme().textTheme.bodyMedium,
                                   ),
                                 ),
                               ),

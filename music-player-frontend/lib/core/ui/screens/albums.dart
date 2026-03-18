@@ -26,9 +26,8 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
 
   @override
   Widget buildLeftAction(BaseEntity entity, BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     return IconButton(
-      icon: Icon(FluentIcons.play, color: Colors.white, size: height * 0.025),
+      icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
       onPressed: () async {
         debugPrint("Playing album ${entity.name}");
         if (entity is! Album) {
@@ -45,18 +44,16 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
 
   @override
   Widget buildMainAction(BaseEntity entity, BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
-    return Icon(FluentIcons.open, color: Colors.white, size: height * 0.03);
+    return const Icon(FluentIcons.open, color: Colors.white, size: 28);
   }
 
   @override
   Widget buildRightAction(BaseEntity entity, BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     return PopupMenuButton<String>(
-      icon: Icon(
+      icon: const Icon(
         FluentIcons.moreVertical,
         color: Colors.white,
-        size: height * 0.03,
+        size: 28,
       ),
       onSelected: (String value) async {
         switch (value) {

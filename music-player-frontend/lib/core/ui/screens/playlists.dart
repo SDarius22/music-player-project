@@ -29,7 +29,6 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
 
   @override
   Widget Function(BuildContext context)? get buildExtraTile => (context) {
-    var height = MediaQuery.of(context).size.height;
     Playlist emptyPlaylist = Playlist();
     emptyPlaylist.name = "Create New Playlist";
     emptyPlaylist.indestructible = true;
@@ -50,19 +49,18 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
       },
       entity: emptyPlaylist,
       isSelected: false,
-      mainAction: Icon(
+      mainAction: const Icon(
         FluentIcons.add,
         color: Colors.white,
-        size: height * 0.03,
+        size: 28,
       ),
     );
   };
 
   @override
   Widget buildLeftAction(BaseEntity entity, BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     return IconButton(
-      icon: Icon(FluentIcons.play, color: Colors.white, size: height * 0.025),
+      icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
       onPressed: () async {
         debugPrint("Playing playlist ${entity.name}");
         if (entity is! Playlist) {
@@ -79,18 +77,16 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
 
   @override
   Widget buildMainAction(BaseEntity entity, BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
-    return Icon(FluentIcons.open, color: Colors.white, size: height * 0.03);
+    return const Icon(FluentIcons.open, color: Colors.white, size: 28);
   }
 
   @override
   Widget buildRightAction(BaseEntity entity, BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     return PopupMenuButton<String>(
-      icon: Icon(
+      icon: const Icon(
         FluentIcons.moreVertical,
         color: Colors.white,
-        size: height * 0.03,
+        size: 28,
       ),
       onSelected: (String value) {},
       itemBuilder: (context) {

@@ -2,8 +2,6 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_fullscreen/flutter_fullscreen.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
@@ -38,7 +36,6 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget buildContent(BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -61,7 +58,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             },
             icon: Icon(
               FluentIcons.menu,
-              size: height * 0.025,
+              size: 24,
               color: Colors.white,
             ),
           ),
@@ -73,12 +70,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 children: [
                   Text(
                     'Music Player',
-                    style: MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.titleLarge!.copyWith(
+                    style: Theme.of(context).textTheme.titleLarge!.copyWith(
                       color: Colors.white,
-                      fontSize: height * 0.025,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -134,12 +127,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         ] else ...[
           Text(
             'Music Player',
-            style: MusicPlayerTheme.getTheme(
-              context,
-              context.read<Scaler>(),
-            ).textTheme.titleLarge!.copyWith(
+            style: Theme.of(context).textTheme.titleLarge!.copyWith(
               color: Colors.white,
-              fontSize: height * 0.025,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -155,7 +144,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               },
               icon: Icon(
                 FluentIcons.download,
-                size: height * 0.025,
+                size: 24,
                 color: Colors.white,
               ),
               label: const SizedBox.shrink(),

@@ -2,11 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:provider/provider.dart';
-
 class SearchHeader extends StatefulWidget {
   const SearchHeader({
     super.key,
@@ -49,7 +45,6 @@ class _SearchHeaderState extends State<SearchHeader> {
 
   @override
   Widget build(BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -57,30 +52,29 @@ class _SearchHeaderState extends State<SearchHeader> {
           child: TextFormField(
             focusNode: searchNode,
             controller: _controller,
-            style: TextStyle(color: Colors.white, fontSize: height * 0.02),
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
             cursorColor: Colors.white,
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.transparent,
               hintText: widget.title,
-              hintStyle: TextStyle(
+              hintStyle: Theme.of(context).textTheme.titleMedium!.copyWith(
                 color: Colors.white,
-                fontSize: height * 0.025,
                 fontWeight: FontWeight.bold,
               ),
               border: InputBorder.none,
-              prefixIcon: Icon(
+              prefixIcon: const Icon(
                 FluentIcons.search,
                 color: Colors.white,
-                size: height * 0.025,
+                size: 24,
               ),
               suffixIcon:
                   _controller.text.isNotEmpty
                       ? IconButton(
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.clear,
                           color: Colors.white,
-                          size: height * 0.025,
+                          size: 24,
                         ),
                         onPressed: () {
                           _controller.clear();
@@ -89,7 +83,7 @@ class _SearchHeaderState extends State<SearchHeader> {
                         },
                       )
                       : null,
-              contentPadding: EdgeInsets.symmetric(vertical: height * 0.005),
+              contentPadding: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.005),
             ),
             onChanged: (value) {
               if (_debounce?.isActive ?? false) {
@@ -104,21 +98,19 @@ class _SearchHeaderState extends State<SearchHeader> {
         IconButton(
           tooltip: "Play All",
           onPressed: () async {},
-          padding: EdgeInsets.all(height * 0.005),
-          icon: Icon(
+          icon: const Icon(
             FluentIcons.play,
             color: Colors.white,
-            size: height * 0.025,
+            size: 24,
           ),
         ),
         IconButton(
           tooltip: "Shuffle",
           onPressed: () async {},
-          padding: EdgeInsets.all(height * 0.005),
-          icon: Icon(
+          icon: const Icon(
             FluentIcons.shuffleOn,
             color: Colors.white,
-            size: height * 0.025,
+            size: 24,
           ),
         ),
         PopupMenuButton<String>(
@@ -128,24 +120,21 @@ class _SearchHeaderState extends State<SearchHeader> {
                 ? FluentIcons.sortAscending
                 : FluentIcons.sortDescending,
             color: Colors.white,
-            size: context.read<Scaler>().scale(context, 24),
+            size: 24,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(
               MediaQuery.of(context).size.height * 0.015,
             ),
           ),
-          menuPadding: EdgeInsets.all(context.read<Scaler>().scale(context, 8)),
+          menuPadding: EdgeInsets.all(8),
           itemBuilder:
               (context) => [
                 PopupMenuItem(
                   enabled: false,
                   child: Text(
                     "Sort By",
-                    style: MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.titleMedium!.copyWith(color: Colors.grey),
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.grey),
                   ),
                 ),
                 const PopupMenuDivider(),
@@ -161,16 +150,13 @@ class _SearchHeaderState extends State<SearchHeader> {
                             ? FluentIcons.sortAscending
                             : FluentIcons.sortDescending,
                         color: Colors.white,
-                        size: context.read<Scaler>().scale(context, 16),
+                        size: 16,
                       ),
-                      SizedBox(width: context.read<Scaler>().scale(context, 8)),
+                      SizedBox(width: 8),
                       Text(
                         _isAscending ? "Ascending" : "Descending",
                         style:
-                            MusicPlayerTheme.getTheme(
-                              context,
-                              context.read<Scaler>(),
-                            ).textTheme.bodyMedium!,
+                            Theme.of(context).textTheme.bodyMedium!,
                       ),
                     ],
                   ),
@@ -196,21 +182,15 @@ class _SearchHeaderState extends State<SearchHeader> {
           Icon(
             isSelected ? FluentIcons.checkCircleOn : FluentIcons.checkCircleOff,
             color: isSelected ? Colors.blue : Colors.transparent,
-            size: context.read<Scaler>().scale(context, 16),
+            size: 16,
           ),
-          SizedBox(width: context.read<Scaler>().scale(context, 8)),
+          SizedBox(width: 8),
           Text(
             value,
             style:
                 isSelected
-                    ? MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.titleMedium
-                    : MusicPlayerTheme.getTheme(
-                      context,
-                      context.read<Scaler>(),
-                    ).textTheme.bodyMedium!.copyWith(color: Colors.grey),
+                    ? Theme.of(context).textTheme.titleMedium
+                    : Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.grey),
           ),
         ],
       ),

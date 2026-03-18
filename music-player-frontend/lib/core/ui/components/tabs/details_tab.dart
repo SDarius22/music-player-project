@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/triangle_clipper.dart';
 import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
@@ -72,10 +71,7 @@ class DetailsTab extends StatelessWidget {
                         CustomTextScroll(
                           text: audioProvider.currentSong.name,
                           style:
-                              MusicPlayerTheme.getTheme(
-                                context,
-                                context.read<Scaler>(),
-                              ).textTheme.displaySmall!,
+                              MusicPlayerTheme.getTheme().textTheme.displaySmall!,
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -100,10 +96,7 @@ class DetailsTab extends StatelessWidget {
                                 icon: Icon(
                                   FluentIcons.open,
                                   color: Colors.white,
-                                  size: context.read<Scaler>().scale(
-                                    context,
-                                    20,
-                                  ),
+                                  size: 20,
                                 ),
                                 iconAlignment: IconAlignment.end,
                                 label: CustomTextScroll(
@@ -111,17 +104,14 @@ class DetailsTab extends StatelessWidget {
                                       audioProvider.currentSong.artist.target
                                           .toString(),
                                   style:
-                                      MusicPlayerTheme.getTheme(
-                                        context,
-                                        context.read<Scaler>(),
-                                      ).textTheme.titleLarge!,
+                                      MusicPlayerTheme.getTheme().textTheme.titleLarge!,
                                 ),
                               ),
                             ),
                             Icon(
                               FluentIcons.divider,
                               color: Colors.white,
-                              size: context.read<Scaler>().scale(context, 16),
+                              size: 16,
                             ),
                             Expanded(
                               child: TextButton.icon(
@@ -141,20 +131,16 @@ class DetailsTab extends StatelessWidget {
                                 icon: Icon(
                                   FluentIcons.open,
                                   color: Colors.white,
-                                  size: context.read<Scaler>().scale(
-                                    context,
-                                    20,
-                                  ),
+                                  size: 20,
                                 ),
                                 label: CustomTextScroll(
                                   text:
                                       audioProvider.currentSong.album.target
                                           .toString(),
                                   style:
-                                      MusicPlayerTheme.getTheme(
-                                        context,
-                                        context.read<Scaler>(),
-                                      ).textTheme.titleLarge!,
+                                      MusicPlayerTheme.getTheme()
+                                          .textTheme
+                                          .titleLarge!,
                                 ),
                               ),
                             ),
@@ -196,7 +182,7 @@ class DetailsTab extends StatelessWidget {
                             icon: Icon(
                               liked ? FluentIcons.liked : FluentIcons.unliked,
                               color: liked ? Colors.red : Colors.white,
-                              size: context.read<Scaler>().scale(context, 24),
+                              size: 24,
                             ),
                           );
                         },

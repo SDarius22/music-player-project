@@ -9,8 +9,6 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
@@ -195,8 +193,6 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
   Widget buildBody(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
-    var normalSize = height * 0.02;
-    var smallSize = height * 0.015;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -210,17 +206,13 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
               },
               icon: Icon(
                 FluentIcons.back,
-                size: height * 0.02,
+                size: 20,
                 color: Colors.white,
               ),
             ),
             Text(
               widget.import ? "Import a playlist" : "Create a new playlist",
-              style:
-                  MusicPlayerTheme.getTheme(
-                    context,
-                    context.read<Scaler>(),
-                  ).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const Spacer(),
             SizedBox(
@@ -266,7 +258,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                 },
                 child: Text(
                   "Done",
-                  style: TextStyle(color: Colors.white, fontSize: normalSize),
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
                 ),
               ),
             ),
@@ -311,7 +303,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                         icon: Icon(
                                           Icons.camera_alt_outlined,
                                           color: Colors.white,
-                                          size: height * 0.05,
+                                          size: 48,
                                         ),
                                       ),
                                       IconButton(
@@ -321,7 +313,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                         icon: Icon(
                                           FluentIcons.trash,
                                           color: Colors.white,
-                                          size: height * 0.05,
+                                          size: 48,
                                         ),
                                       ),
                                     ],
@@ -339,7 +331,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                   icon: Icon(
                                     Icons.camera_alt_outlined,
                                     color: Colors.white,
-                                    size: height * 0.05,
+                                    size: 48,
                                   ),
                                 ),
                               );
@@ -357,15 +349,13 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                           ),
                           hintText: 'Playlist name',
                           counterText: "",
-                          hintStyle: TextStyle(
+                          hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
                             color: Colors.grey,
-                            fontSize: smallSize,
                           ),
                         ),
                         cursorColor: Colors.white,
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           color: Colors.white,
-                          fontSize: normalSize,
                         ),
                         onChanged: (value) {
                           playlistName = value;
@@ -375,9 +365,8 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                         children: [
                           Text(
                             "Where to add new songs in the future?",
-                            style: TextStyle(
+                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                               color: Colors.white,
-                              fontSize: normalSize,
                             ),
                           ),
                           const Spacer(),
@@ -386,10 +375,9 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                             icon: Icon(
                               FluentIcons.down,
                               color: Colors.white,
-                              size: height * 0.025,
+                              size: 24,
                             ),
-                            style: TextStyle(
-                              fontSize: normalSize,
+                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                               fontWeight: FontWeight.normal,
                               color: Colors.white,
                             ),
@@ -443,9 +431,8 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                           });
                         },
                         cursorColor: Colors.white,
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           color: Colors.white,
-                          fontSize: normalSize,
                         ),
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
@@ -454,15 +441,14 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                             ),
                             borderSide: const BorderSide(color: Colors.white),
                           ),
-                          labelStyle: TextStyle(
+                          labelStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
                             color: Colors.white,
-                            fontSize: smallSize,
                           ),
                           labelText: 'Search',
                           suffixIcon: Icon(
                             FluentIcons.search,
                             color: Colors.white,
-                            size: height * 0.02,
+                            size: 20,
                           ),
                         ),
                       ),
@@ -487,9 +473,8 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                   return Center(
                                     child: Text(
                                       "Error loading songs",
-                                      style: TextStyle(
+                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
                                         color: Colors.white,
-                                        fontSize: smallSize,
                                       ),
                                     ),
                                   );
@@ -498,9 +483,8 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                   return Center(
                                     child: Text(
                                       "No songs found",
-                                      style: TextStyle(
+                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
                                         color: Colors.white,
-                                        fontSize: smallSize,
                                       ),
                                     ),
                                   );

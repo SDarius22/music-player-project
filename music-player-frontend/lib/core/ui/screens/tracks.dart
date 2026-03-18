@@ -27,7 +27,6 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
 
   @override
   Widget buildLeftAction(BaseEntity entity, BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     return IconButton(
       tooltip: "Go to Album",
       onPressed: () {
@@ -38,7 +37,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
         );
       },
       padding: const EdgeInsets.all(0),
-      icon: Icon(FluentIcons.album, color: Colors.white, size: height * 0.03),
+      icon: const Icon(FluentIcons.album, color: Colors.white, size: 28),
     );
   }
 
@@ -65,12 +64,11 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
 
   @override
   Widget buildRightAction(BaseEntity entity, BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
     return PopupMenuButton<String>(
-      icon: Icon(
+      icon: const Icon(
         FluentIcons.moreVertical,
         color: Colors.white,
-        size: height * 0.03,
+        size: 28,
       ),
       onSelected: (String value) {
         switch (value) {

@@ -4,7 +4,6 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/albums.dart';
 import 'package:music_player_frontend/core/ui/screens/artists.dart';
@@ -170,32 +169,30 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: width * 0.0125,
-                  child: Icon(
-                    item["icon"],
-                    size: context.read<Scaler>().scale(context, 24),
-                    color: Colors.white,
-                  ),
-                ),
                 if (isDrawerOpen) ...[
+                  SizedBox(
+                    width: width * 0.0125,
+                    child: Icon(item["icon"], size: 24, color: Colors.white),
+                  ),
                   SizedBox(
                     width: widget.mobileDrawer ? width * 0.05 : width * 0.01,
                   ),
                   Expanded(
                     child: Text(
                       item["text"],
-                      style: MusicPlayerTheme.getTheme(
-                        context,
-                        context.read<Scaler>(),
-                      ).textTheme.bodyLarge!.copyWith(
-                        color:
-                            isSelected
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.7),
-                      ),
+                      style: MusicPlayerTheme.getTheme().textTheme.bodyLarge!
+                          .copyWith(
+                            color:
+                                isSelected
+                                    ? Colors.white
+                                    : Colors.white.withValues(alpha: 0.7),
+                          ),
                       overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                ] else ...[
+                  Expanded(
+                    child: Icon(item["icon"], size: 24, color: Colors.white),
                   ),
                 ],
               ],
@@ -233,7 +230,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       width:
           widget.mobileDrawer
               ? width * 0.75
-              : (isDrawerOpen ? width * 0.12 : width * 0.05),
+              : (isDrawerOpen ? width * 0.125 : width * 0.075),
       curve: Curves.easeInOut,
       alignment: Alignment.center,
       child: GlassContainer(
@@ -247,6 +244,12 @@ class _DrawerWidgetState extends State<DrawerWidget> {
         elevation: 3.0,
         shadowColor: Colors.black.withValues(alpha: 0.20),
         alignment: Alignment.topCenter,
+        padding: EdgeInsets.only(
+          top:
+              widget.mobileDrawer
+                  ? kToolbarHeight + MediaQuery.of(context).padding.top
+                  : 0,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -321,18 +324,18 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                                     ? MainAxisAlignment.start
                                     : MainAxisAlignment.center,
                             children: [
-                              SizedBox(
-                                width: width * 0.0125,
-                                child: AspectRatio(
-                                  aspectRatio: 1,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                    value: progress > 0 ? progress : null,
+                              if (isDrawerOpen) ...[
+                                SizedBox(
+                                  width: width * 0.0125,
+                                  child: AspectRatio(
+                                    aspectRatio: 1,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                      value: progress > 0 ? progress : null,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              if (isDrawerOpen) ...[
                                 SizedBox(width: width * 0.01),
                                 Expanded(
                                   child: AnimatedOpacity(
@@ -340,15 +343,26 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                                     duration: const Duration(milliseconds: 300),
                                     child: Text(
                                       isFinished ? "Complete" : "Scanning...",
-                                      style: MusicPlayerTheme.getTheme(
-                                        context,
-                                        context.read<Scaler>(),
-                                      ).textTheme.bodyLarge!.copyWith(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.7,
-                                        ),
-                                      ),
+                                      style: MusicPlayerTheme.getTheme()
+                                          .textTheme
+                                          .bodyLarge!
+                                          .copyWith(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.7,
+                                            ),
+                                          ),
                                       overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ] else ...[
+                                Expanded(
+                                  child: AspectRatio(
+                                    aspectRatio: 1,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                      value: progress > 0 ? progress : null,
                                     ),
                                   ),
                                 ),
@@ -397,21 +411,21 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                               ? MainAxisAlignment.start
                               : MainAxisAlignment.center,
                       children: [
-                        SizedBox(
-                          width: width * 0.0125,
-                          child: CircleAvatar(
-                            radius: height * 0.0125,
-                            backgroundColor: Colors.indigo.withValues(
-                              alpha: 0.3,
-                            ),
-                            child: Icon(
-                              FluentIcons.settings,
-                              size: context.read<Scaler>().scale(context, 24),
-                              color: Colors.white,
+                        if (isDrawerOpen) ...[
+                          SizedBox(
+                            width: width * 0.0125,
+                            child: CircleAvatar(
+                              radius: height * 0.0125,
+                              backgroundColor: Colors.indigo.withValues(
+                                alpha: 0.3,
+                              ),
+                              child: Icon(
+                                FluentIcons.settings,
+                                size: 24,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                        if (isDrawerOpen) ...[
                           SizedBox(
                             width:
                                 widget.mobileDrawer
@@ -426,10 +440,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                                 Text(
                                   "User Settings",
                                   style:
-                                      MusicPlayerTheme.getTheme(
-                                        context,
-                                        context.read<Scaler>(),
-                                      ).textTheme.bodyLarge,
+                                      MusicPlayerTheme.getTheme()
+                                          .textTheme
+                                          .bodyLarge,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Selector<UserProvider, User?>(
@@ -439,19 +452,31 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                                   builder: (context, user, child) {
                                     return Text(
                                       user?.email ?? "Not logged in",
-                                      style: MusicPlayerTheme.getTheme(
-                                        context,
-                                        context.read<Scaler>(),
-                                      ).textTheme.bodyMedium!.copyWith(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.7,
-                                        ),
-                                      ),
+                                      style: MusicPlayerTheme.getTheme()
+                                          .textTheme
+                                          .bodyMedium!
+                                          .copyWith(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.7,
+                                            ),
+                                          ),
                                       overflow: TextOverflow.ellipsis,
                                     );
                                   },
                                 ),
                               ],
+                            ),
+                          ),
+                        ] else ...[
+                          CircleAvatar(
+                            radius: height * 0.0125,
+                            backgroundColor: Colors.indigo.withValues(
+                              alpha: 0.3,
+                            ),
+                            child: Icon(
+                              FluentIcons.settings,
+                              size: 24,
+                              color: Colors.white,
                             ),
                           ),
                         ],

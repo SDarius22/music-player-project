@@ -1,57 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 
 class MusicPlayerTheme {
-  static const Color primaryPurple = Color(0xFF3D2A78);
-  static const Color secondaryPurple = Color(0xFF4B3A91);
-  static const Color accentPurple = Color(0xFF5A4BA3);
-  static const Color darkPurple = Color(0xFF2A1B55);
-  static const Color deepBlack = Color(0xFF000000);
-  static const Color backgroundDark = Color(0xFF0B0B0B);
-  static const Color backgroundLight = Color(0xFF1A1A1A);
-  static const Color surfaceDark = Color(0xFF1E1E1E);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB0B0B0);
+  // ── Gradient anchor colors (exactly 4 — required by the mesh gradient) ──
+  static const Color gradientViolet = Color(0xFF7C3AED); // deep violet
+  static const Color gradientPink   = Color(0xFFDB2777); // hot pink
+  static const Color gradientAmber  = Color(0xFFD97706); // warm amber
+  static const Color gradientIndigo = Color(0xFF2563EB); // electric indigo
 
+  // ── Surfaces ──
+  static const Color backgroundDark  = Color(0xFF07050E);
+  static const Color surfaceDark     = Color(0xFF100C1C);
+  static const Color surfaceElevated = Color(0xFF1A1430);
+
+  // ── Text ──
+  static const Color textPrimary   = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFADA5C8);
+
+  // ── Accent (lighter tints of the gradient for interactive states) ──
+  static const Color accentViolet = Color(0xFFA78BFA);
+  static const Color accentPink   = Color(0xFFF472B6);
+
+  // ── Gradients ──
+  // Used as the default mesh-gradient background (4 colors required).
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF2A1B55),
-      Color(0xFF000000),
-      Color(0xFF000000),
-      Color(0xFF2A1B55),
-    ],
-    stops: [0.0, 0.35, 0.5, 0.65, 1.0],
+    colors: [gradientViolet, gradientPink, gradientAmber, gradientIndigo],
   );
 
+  // Horizontal accent strip (e.g. progress bars, highlights).
   static const LinearGradient accentGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF2A1B55), Color(0xFF3D2A78), Color(0xFF4B3A91)],
-    stops: [0.0, 0.5, 1.0],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [gradientViolet, gradientPink],
   );
 
+  // Subtle card fill.
   static const LinearGradient cardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1A1A1A), Color(0xFF1E1E1E)],
-    stops: [0.0, 1.0],
+    colors: [surfaceDark, surfaceElevated],
   );
 
-  static ThemeData getDefaultTheme() {
+  static ThemeData getTheme() {
     return ThemeData(
       brightness: Brightness.dark,
       fontFamily: 'Inter',
 
       colorScheme: const ColorScheme.dark(
-        primary: primaryPurple,
-        secondary: secondaryPurple,
+        primary: gradientViolet,
+        secondary: gradientPink,
+        tertiary: gradientIndigo,
         surface: surfaceDark,
         onPrimary: textPrimary,
         onSecondary: textPrimary,
+        onTertiary: textPrimary,
         onSurface: textPrimary,
-        tertiary: accentPurple,
       ),
 
       scaffoldBackgroundColor: backgroundDark,
@@ -59,30 +63,32 @@ class MusicPlayerTheme {
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         titleTextStyle: TextStyle(
           fontFamily: 'Inter',
-          fontSize: 14,
+          fontSize: 18,
           fontWeight: FontWeight.w600,
           color: textPrimary,
+          letterSpacing: -0.3,
         ),
         iconTheme: IconThemeData(color: textPrimary),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryPurple,
+          backgroundColor: gradientViolet,
           foregroundColor: textPrimary,
-          elevation: 8,
-          shadowColor: primaryPurple.withValues(alpha: 0.5),
+          elevation: 4,
+          shadowColor: Color(0x667C3AED),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(10),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: const TextStyle(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          textStyle: TextStyle(
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: 15,
+            letterSpacing: 0.1,
           ),
         ),
       ),
@@ -90,87 +96,104 @@ class MusicPlayerTheme {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           backgroundColor: Colors.transparent,
-          foregroundColor: accentPurple,
+          foregroundColor: accentViolet,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
 
       sliderTheme: SliderThemeData(
-        activeTrackColor: accentPurple,
-        inactiveTrackColor: textSecondary.withValues(alpha: 0.2),
-        thumbColor: primaryPurple,
-        overlayColor: primaryPurple.withValues(alpha: 0.2),
-        trackHeight: 4,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+        activeTrackColor: accentViolet,
+        inactiveTrackColor: Color(0x33A78BFA),
+        thumbColor: gradientViolet,
+        overlayColor: Color(0x227C3AED),
+        trackHeight: 3,
+        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7),
       ),
 
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: backgroundLight,
-        selectedItemColor: accentPurple,
+        backgroundColor: surfaceElevated,
+        selectedItemColor: accentViolet,
         unselectedItemColor: textSecondary,
         type: BottomNavigationBarType.fixed,
-        elevation: 16,
+        elevation: 8,
         selectedLabelStyle: TextStyle(
           fontFamily: 'Inter',
           fontWeight: FontWeight.w600,
+          fontSize: 12,
         ),
         unselectedLabelStyle: TextStyle(
           fontFamily: 'Inter',
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
+          fontSize: 12,
         ),
       ),
 
       textTheme: const TextTheme(
+        // Display — large hero text
         displayLarge: TextStyle(
           fontFamily: 'Inter',
           fontSize: 48,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w700,
           color: textPrimary,
+          letterSpacing: -1.0,
         ),
         displayMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: 40,
-          fontWeight: FontWeight.w600,
+          fontSize: 36,
+          fontWeight: FontWeight.w700,
           color: textPrimary,
+          letterSpacing: -0.5,
         ),
         displaySmall: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 36,
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        headlineLarge: TextStyle(
           fontFamily: 'Inter',
           fontSize: 30,
           fontWeight: FontWeight.w600,
           color: textPrimary,
+          letterSpacing: -0.5,
+        ),
+        // Headline — section titles
+        headlineLarge: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 26,
+          fontWeight: FontWeight.w600,
+          color: textPrimary,
+          letterSpacing: -0.3,
         ),
         headlineMedium: TextStyle(
           fontFamily: 'Inter',
-          fontSize: 24,
+          fontSize: 22,
           fontWeight: FontWeight.w600,
           color: textPrimary,
+          letterSpacing: -0.3,
         ),
-        titleLarge: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        titleMedium: TextStyle(
+        headlineSmall: TextStyle(
           fontFamily: 'Inter',
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
-        titleSmall: TextStyle(
+        // Title — card/list item titles
+        titleLarge: TextStyle(
           fontFamily: 'Inter',
-          fontSize: 16,
+          fontSize: 17,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
+        titleMedium: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: textPrimary,
+        ),
+        titleSmall: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: textPrimary,
+        ),
+        // Body — readable content
         bodyLarge: TextStyle(
           fontFamily: 'Inter',
           fontSize: 16,
@@ -187,216 +210,71 @@ class MusicPlayerTheme {
           fontFamily: 'Inter',
           fontSize: 12,
           fontWeight: FontWeight.w400,
+          color: textSecondary,
+        ),
+        // Label — chips, badges, captions
+        labelLarge: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
           color: textPrimary,
+        ),
+        labelMedium: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: textSecondary,
+        ),
+        labelSmall: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: FontWeight.w400,
+          color: textSecondary,
         ),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceDark,
+        fillColor: surfaceElevated,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(fontFamily: 'Inter', color: textSecondary),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Color(0x22A78BFA), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: gradientViolet, width: 1.5),
+        ),
+        hintStyle: TextStyle(
+          fontFamily: 'Inter',
+          color: textSecondary,
+          fontSize: 14,
+        ),
         prefixIconColor: textSecondary,
         suffixIconColor: textSecondary,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
 
       listTileTheme: const ListTileThemeData(
         textColor: textPrimary,
-        subtitleTextStyle: TextStyle(fontFamily: 'Inter', color: textSecondary),
+        subtitleTextStyle: TextStyle(
+          fontFamily: 'Inter',
+          color: textSecondary,
+          fontSize: 13,
+        ),
         titleTextStyle: TextStyle(
           fontFamily: 'Inter',
           fontWeight: FontWeight.w500,
+          fontSize: 15,
+          color: textPrimary,
         ),
       ),
 
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: accentPurple,
-        linearTrackColor: Colors.transparent,
-        circularTrackColor: Colors.transparent,
-      ),
-    );
-  }
-
-  static ThemeData getTheme(BuildContext context, Scaler fontScaler) {
-    return ThemeData(
-      brightness: Brightness.dark,
-      fontFamily: 'Inter',
-
-      colorScheme: const ColorScheme.dark(
-        primary: primaryPurple,
-        secondary: secondaryPurple,
-        surface: surfaceDark,
-        onPrimary: textPrimary,
-        onSecondary: textPrimary,
-        onSurface: textPrimary,
-        tertiary: accentPurple,
-      ),
-
-      scaffoldBackgroundColor: backgroundDark,
-
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 14),
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        iconTheme: const IconThemeData(color: textPrimary),
-      ),
-
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryPurple,
-          foregroundColor: textPrimary,
-          elevation: 8,
-          shadowColor: primaryPurple.withValues(alpha: 0.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w600,
-            fontSize: fontScaler.scaleHeight(context, 16),
-          ),
-        ),
-      ),
-
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          foregroundColor: accentPurple,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-        ),
-      ),
-
-      sliderTheme: SliderThemeData(
-        activeTrackColor: accentPurple,
-        inactiveTrackColor: textSecondary.withValues(alpha: 0.2),
-        thumbColor: primaryPurple,
-        overlayColor: primaryPurple.withValues(alpha: 0.2),
-        trackHeight: 4,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-      ),
-
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: backgroundLight,
-        selectedItemColor: accentPurple,
-        unselectedItemColor: textSecondary,
-        type: BottomNavigationBarType.fixed,
-        elevation: 16,
-        selectedLabelStyle: TextStyle(
-          fontFamily: 'Inter',
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontFamily: 'Inter',
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-
-      textTheme: TextTheme(
-        displayLarge: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 48),
-          fontWeight: FontWeight.bold,
-          color: textPrimary,
-        ),
-        displayMedium: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 40),
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        displaySmall: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 36),
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        headlineLarge: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 30),
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        headlineMedium: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 24),
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        titleLarge: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 20),
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        titleMedium: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 18),
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        titleSmall: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 16),
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        bodyLarge: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 16),
-          fontWeight: FontWeight.w400,
-          color: textPrimary,
-        ),
-        bodyMedium: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 14),
-          fontWeight: FontWeight.w400,
-          color: textPrimary,
-        ),
-        bodySmall: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: fontScaler.scaleHeight(context, 12),
-          fontWeight: FontWeight.w400,
-          color: textPrimary,
-        ),
-      ),
-
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: surfaceDark,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            fontScaler.scaleHeight(context, 15),
-          ),
-          borderSide: BorderSide.none,
-        ),
-        hintStyle: const TextStyle(fontFamily: 'Inter', color: textSecondary),
-        prefixIconColor: textSecondary,
-        suffixIconColor: textSecondary,
-      ),
-
-      listTileTheme: const ListTileThemeData(
-        textColor: textPrimary,
-        subtitleTextStyle: TextStyle(fontFamily: 'Inter', color: textSecondary),
-        titleTextStyle: TextStyle(
-          fontFamily: 'Inter',
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: accentPurple,
+        color: accentViolet,
         linearTrackColor: Colors.transparent,
         circularTrackColor: Colors.transparent,
       ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/models/chunk_stat_record.dart';
 import 'package:music_player_frontend/core/services/rest_clients/statistics_rest_service.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
@@ -44,9 +43,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scaler = context.read<Scaler>();
     final width = MediaQuery.of(context).size.width;
-    final theme = MusicPlayerTheme.getTheme(context, scaler);
+    final theme = MusicPlayerTheme.getTheme();
 
     return GlassScaffold(
       body: RefreshIndicator(

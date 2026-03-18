@@ -37,9 +37,6 @@ class CustomListTile extends StatelessWidget {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
 
-    var normalSize = height * 0.02;
-    var smallSize = height * 0.015;
-
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -85,7 +82,7 @@ class CustomListTile extends StatelessWidget {
                                   child: Icon(
                                     FluentIcons.check,
                                     color: Colors.white,
-                                    size: height * 0.05,
+                                    size: 48,
                                   ),
                                 ),
                               ),
@@ -105,13 +102,12 @@ class CustomListTile extends StatelessWidget {
                           builder: (_, audioProvider, _) {
                             return CustomTextScroll(
                               text: entity.name,
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color:
                                     audioProvider.currentSong ==
                                             (entity as Song)
                                         ? Colors.blue
                                         : Colors.white,
-                                fontSize: normalSize,
                                 fontWeight: FontWeight.bold,
                                 shadows: [
                                   Shadow(
@@ -126,9 +122,8 @@ class CustomListTile extends StatelessWidget {
                         )
                         : CustomTextScroll(
                           text: entity.name,
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                             color: Colors.white,
-                            fontSize: normalSize,
                             fontWeight: FontWeight.bold,
                             shadows: [
                               Shadow(
@@ -144,12 +139,11 @@ class CustomListTile extends StatelessWidget {
                         builder: (_, audioProvider, _) {
                           return CustomTextScroll(
                             text: (entity as Song).artist.target.toString(),
-                            style: TextStyle(
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                               color:
                                   audioProvider.currentSong == (entity as Song)
                                       ? Colors.blue
                                       : Colors.white,
-                              fontSize: smallSize,
                               fontWeight: FontWeight.normal,
                               shadows: [
                                 Shadow(
@@ -171,12 +165,11 @@ class CustomListTile extends StatelessWidget {
                   builder: (_, audioProvider, _) {
                     return Text(
                       "${(entity as Song).durationInSeconds ~/ 60}:${((entity as Song).durationInSeconds % 60).toString().padLeft(2, '0')}",
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         color:
                             audioProvider.currentSong == (entity as Song)
                                 ? Colors.blue
                                 : Colors.white,
-                        fontSize: normalSize,
                         fontWeight: FontWeight.normal,
                         shadows: [
                           Shadow(

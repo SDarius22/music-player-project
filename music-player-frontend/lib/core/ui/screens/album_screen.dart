@@ -5,8 +5,6 @@ import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
@@ -47,7 +45,7 @@ class AlbumScreen extends EntityScreen {
                 },
                 icon: Icon(
                   FluentIcons.back,
-                  size: height * 0.02,
+                  size: 20,
                   color: Colors.white,
                 ),
               ),
@@ -69,7 +67,7 @@ class AlbumScreen extends EntityScreen {
                 icon: Icon(
                   FluentIcons.add,
                   color: Colors.white,
-                  size: height * 0.025,
+                  size: 24,
                 ),
               ),
               IconButton(
@@ -89,7 +87,7 @@ class AlbumScreen extends EntityScreen {
                 icon: Icon(
                   FluentIcons.play,
                   color: Colors.white,
-                  size: height * 0.025,
+                  size: 24,
                 ),
               ),
               IconButton(
@@ -99,7 +97,7 @@ class AlbumScreen extends EntityScreen {
                 icon: Icon(
                   FluentIcons.shuffleOn,
                   color: Colors.white,
-                  size: height * 0.025,
+                  size: 24,
                 ),
               ),
             ],
@@ -136,10 +134,7 @@ class AlbumScreen extends EntityScreen {
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         style:
-                            MusicPlayerTheme.getTheme(
-                              context,
-                              context.read<Scaler>(),
-                            ).textTheme.headlineMedium,
+                            Theme.of(context).textTheme.headlineMedium,
                       ),
                       SizedBox(height: height * 0.005),
                       Text(
@@ -148,10 +143,7 @@ class AlbumScreen extends EntityScreen {
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         style:
-                            MusicPlayerTheme.getTheme(
-                              context,
-                              context.read<Scaler>(),
-                            ).textTheme.bodyMedium,
+                            Theme.of(context).textTheme.bodyMedium,
                       ),
                       SizedBox(height: height * 0.005),
                       Text(
@@ -160,10 +152,7 @@ class AlbumScreen extends EntityScreen {
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         style:
-                            MusicPlayerTheme.getTheme(
-                              context,
-                              context.read<Scaler>(),
-                            ).textTheme.bodyMedium,
+                            Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
                   ),

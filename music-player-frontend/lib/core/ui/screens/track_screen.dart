@@ -5,7 +5,6 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -34,8 +33,6 @@ class TrackScreen extends EntityScreen {
   @override
   Widget buildBody(BuildContext context, double width, double height) {
     var song = entity as Song;
-    var boldSize = height * 0.025;
-    var normalSize = height * 0.02;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -53,7 +50,7 @@ class TrackScreen extends EntityScreen {
                 },
                 icon: Icon(
                   FluentIcons.back,
-                  size: height * 0.02,
+                  size: 20,
                   color: Colors.white,
                 ),
               ),
@@ -65,7 +62,7 @@ class TrackScreen extends EntityScreen {
                 icon: Icon(
                   FluentIcons.add,
                   color: Colors.white,
-                  size: height * 0.025,
+                  size: 24,
                 ),
               ),
               IconButton(
@@ -80,7 +77,7 @@ class TrackScreen extends EntityScreen {
                 icon: Icon(
                   FluentIcons.play,
                   color: Colors.white,
-                  size: height * 0.025,
+                  size: 24,
                 ),
               ),
               ValueListenableBuilder(
@@ -105,7 +102,7 @@ class TrackScreen extends EntityScreen {
                     icon: Icon(
                       liked ? FluentIcons.liked : FluentIcons.unliked,
                       color: liked ? Colors.red : Colors.white,
-                      size: context.read<Scaler>().scale(context, 24),
+                      size: 24,
                     ),
                   );
                 },
@@ -141,8 +138,7 @@ class TrackScreen extends EntityScreen {
                       SizedBox(height: height * 0.01),
                       Text(
                         song.name,
-                        style: TextStyle(
-                          fontSize: boldSize,
+                        style: Theme.of(context).textTheme.titleMedium!.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -183,132 +179,116 @@ class TrackScreen extends EntityScreen {
                           delegate: SliverChildListDelegate([
                             Text(
                               "Track Details",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.titleMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: boldSize,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Song Name:",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               song.name,
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Artist:",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               song.artist.target?.name ?? "Unknown Artist",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Album:",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               song.album.target?.name ?? "Unknown Album",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Duration:",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               Duration(
                                 seconds: song.durationInSeconds,
                               ).pretty(),
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                             SizedBox(height: height * 0.01),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Year:",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               song.year > 0
                                   ? song.year.toString()
                                   : "Unknown year",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Extra Info:",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               "Track: ${song.trackNumber} / Disc: ${song.discNumber}",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               "Play Count: ${song.playCount}",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               "Last Played: ${song.lastPlayed != null ? song.lastPlayed!.toLocal().toString() : "Never"}",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                             Text(
                               "Path: ${song.path}",
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
-                                fontSize: normalSize,
                               ),
                             ),
                           ]),

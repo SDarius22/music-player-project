@@ -38,13 +38,11 @@ class _LibrarySettingsLayout {
 
   const _LibrarySettingsLayout({required this.width, required this.height});
 
-  double get normalFontSize => height * 0.025;
-
   double get headerHeight => height * 0.065;
 
-  double get headerIconSize => height * 0.02;
+  double get headerIconSize => 20.0;
 
-  double get actionIconSize => height * 0.03;
+  double get actionIconSize => 28.0;
 
   double get bottomPadding => height * 0.01;
 
@@ -243,16 +241,13 @@ class _LibrarySettingsState extends State<LibrarySettings> {
   }
 
   Widget _buildEmptyState(BuildContext context, _LibrarySettingsLayout layout) {
-    final normalSize = layout.normalFontSize;
-
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'Add music to your library by choosing a folder below:',
-          style: TextStyle(
-            fontSize: normalSize,
+          style: Theme.of(context).textTheme.titleMedium!.copyWith(
             fontWeight: FontWeight.normal,
             color: Colors.white,
           ),
@@ -289,8 +284,6 @@ class _LibrarySettingsState extends State<LibrarySettings> {
   ) {
     _normalizeSettingsListsIfNeeded();
 
-    final normalSize = layout.normalFontSize;
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
       child: DataTable(
@@ -298,8 +291,7 @@ class _LibrarySettingsState extends State<LibrarySettings> {
           DataColumn(
             label: Text(
               'Folder',
-              style: TextStyle(
-                fontSize: normalSize,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -308,8 +300,7 @@ class _LibrarySettingsState extends State<LibrarySettings> {
           DataColumn(
             label: Text(
               'Main',
-              style: TextStyle(
-                fontSize: normalSize,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -319,8 +310,7 @@ class _LibrarySettingsState extends State<LibrarySettings> {
             headingRowAlignment: MainAxisAlignment.center,
             label: Text(
               'Include subfolders',
-              style: TextStyle(
-                fontSize: normalSize,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -329,8 +319,7 @@ class _LibrarySettingsState extends State<LibrarySettings> {
           DataColumn(
             label: Text(
               '',
-              style: TextStyle(
-                fontSize: normalSize,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -347,7 +336,6 @@ class _LibrarySettingsState extends State<LibrarySettings> {
   }
 
   DataRow _buildFolderRow(_LibrarySettingsLayout layout, int index) {
-    final normalSize = layout.normalFontSize;
     final folder = _songPlaces[index];
 
     final isMain = _provider.appSettings.mainSongPlace == folder;
@@ -359,8 +347,7 @@ class _LibrarySettingsState extends State<LibrarySettings> {
         DataCell(
           Text(
             folder,
-            style: TextStyle(
-              fontSize: normalSize,
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
               fontWeight: FontWeight.normal,
               color: Colors.white,
             ),

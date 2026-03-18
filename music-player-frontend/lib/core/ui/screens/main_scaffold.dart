@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/ui/components/scaler.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
@@ -36,7 +35,9 @@ class _MainScaffoldState extends State<MainScaffold> {
     _didPushInitial = true;
     final appState = context.read<AbstractAppStateProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      appState.innerNavigatorKey.currentState?.pushReplacement(HomeScreen.route());
+      appState.innerNavigatorKey.currentState?.pushReplacement(
+        HomeScreen.route(),
+      );
     });
   }
 
@@ -92,7 +93,6 @@ class _MainScaffoldState extends State<MainScaffold> {
             ],
           ),
         ),
-        floatingActionButton: buildFloatingActionButton(),
       );
     } catch (e) {
       debugPrint("Error building MainScaffold: $e");
@@ -112,14 +112,23 @@ class _MainScaffoldState extends State<MainScaffold> {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
     final width = MediaQuery.of(context).size.width;
     if (isMobile) {
-      return EdgeInsets.zero;
+      return EdgeInsets.only(
+        top:
+            width * 0.02 +
+            MediaQuery.of(context).padding.top +
+            kToolbarHeight +
+            width * 0.02,
+        left: width * 0.02,
+        right: width * 0.02,
+        bottom: width * 0.02,
+      );
     }
 
     return EdgeInsets.only(
-      left: width * 0.01,
-      right: width * 0.01,
-      bottom: width * 0.01,
-      top: width * 0.01 + MediaQuery.of(context).padding.top + kToolbarHeight,
+      left: width * 0.015,
+      right: width * 0.015,
+      bottom: width * 0.015,
+      top: width * 0.015 + MediaQuery.of(context).padding.top + kToolbarHeight,
     );
   }
 
@@ -145,7 +154,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       final height = MediaQuery.of(context).size.height;
 
       final navigatorWidget = Theme(
-        data: MusicPlayerTheme.getTheme(context, context.read<Scaler>()),
+        data: MusicPlayerTheme.getTheme(),
         child: HeroControllerScope(
           controller: MaterialApp.createMaterialHeroController(),
           child: Navigator(
@@ -162,15 +171,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 
       if (isMobile) {
         return Padding(
-          padding: EdgeInsets.only(
-            bottom: height * 0.1 + width * 0.015,
-            top:
-                width * 0.05 +
-                MediaQuery.of(context).padding.top +
-                kToolbarHeight,
-            left: width * 0.015,
-            right: width * 0.015,
-          ),
+          padding: EdgeInsets.only(bottom: height * 0.075 + width * 0.02),
           child: navigatorWidget,
         );
       }
@@ -181,7 +182,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DrawerWidget(),
-            SizedBox(width: width * 0.01),
+            SizedBox(width: width * 0.015),
             Expanded(child: navigatorWidget),
           ],
         ),
@@ -192,9 +193,5 @@ class _MainScaffoldState extends State<MainScaffold> {
         child: Text("An error occurred while loading the app."),
       );
     }
-  }
-
-  Widget buildFloatingActionButton() {
-    return const SizedBox.shrink();
   }
 }
