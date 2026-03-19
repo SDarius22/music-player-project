@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
@@ -52,7 +53,13 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     int page,
     int size,
   ) async {
-    final dto = await _songService.getSongsPage(query, sortField, ascending, page, size);
+    final dto = await _songService.getSongsPage(
+      query,
+      sortField,
+      ascending,
+      page,
+      size,
+    );
     return PageResult(
       content: dto.content,
       totalPages: dto.totalPages,
@@ -93,6 +100,10 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
       preferServer: _preferServer,
       fallbackToServer: _fallbackToServer,
     );
+  }
+
+  CachedNetworkImage getCoverArt(int serverId) {
+    return _songService.getCoverArt(serverId);
   }
 
   @override

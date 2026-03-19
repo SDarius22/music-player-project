@@ -34,7 +34,6 @@ class _UploadSongsScreenState extends State<UploadSongsScreen> {
   @override
   Widget build(BuildContext context) {
     return GlassScaffold(
-      appBar: buildAppBar(context),
       floatingActionButton: ValueListenableBuilder<bool>(
         valueListenable: isBusy,
         builder: (context, busy, _) {
@@ -51,13 +50,6 @@ class _UploadSongsScreenState extends State<UploadSongsScreen> {
         padding: buildPadding(context),
         child: items.isEmpty ? buildEmptyState(context) : buildList(context),
       ),
-    );
-  }
-
-  PreferredSizeWidget buildAppBar(BuildContext context) {
-    return AppBar(
-      title: const Text('Upload songs to server'),
-      automaticallyImplyLeading: false,
     );
   }
 

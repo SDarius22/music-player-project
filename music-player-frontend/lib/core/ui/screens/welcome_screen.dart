@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/library_settings_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
@@ -26,6 +27,24 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  late bool _showLibrary;
+
+  @override
+  void initState() {
+    super.initState();
+    final isAuthenticated = context.read<UserProvider>().isAuthenticated;
+    _showLibrary = isAuthenticated && UniversalPlatform.isDesktop;
+  }
+
+  void _onLoginSuccess() {
+    if (!mounted) return;
+    if (UniversalPlatform.isDesktop) {
+      setState(() => _showLibrary = true);
+    } else {
+      Navigator.pushReplacement(context, LoadingScreen.route());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GlassAnimatedScaffold(
@@ -67,11 +86,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
               ),
               SizedBox(height: height * 0.025),
-              if (UniversalPlatform.isWeb) ...[
+              if (!_showLibrary) ...[
                 SizedBox(
                   width: width * 0.75,
                   height: height * 0.5,
-                  child: LoginRegisterScreen(mode: AuthMode.login),
+                  child: LoginRegisterScreen(
+                    mode: AuthMode.login,
+                    onAuthenticatedCallback: _onLoginSuccess,
+                  ),
                 ),
               ] else ...[
                 SizedBox(
@@ -102,7 +124,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         appState.appSettings.songPlaces.isEmpty
                             ? null
                             : () {
-                              debugPrint("Pressed");
                               appState.appSettings.firstTime = false;
                               appState.updateAppSettings();
                               Navigator.push(context, LoadingScreen.route());

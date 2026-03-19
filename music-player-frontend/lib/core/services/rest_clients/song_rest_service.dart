@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_response_dto.dart';
@@ -11,6 +12,7 @@ import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 
 class SongRestService extends AbstractRestService {
   SongRestService({required String baseUrl, required AuthService authService}) {
@@ -85,17 +87,20 @@ class SongRestService extends AbstractRestService {
     return null;
   }
 
-  Future<Uint8List?> fetchCoverArt(int songId) async {
-    try {
-      final response = await get('/songs/$songId/cover');
-
-      if (response.statusCode == 200) {
-        return response.bodyBytes;
-      }
-    } catch (e) {
-      debugPrint('Error fetching cover art: $e');
-    }
-    return null;
+  CachedNetworkImage fetchCoverArt(int songId) {
+    return CachedNetworkImage(
+      imageUrl: '$baseUrl/songs/$songId/cover',
+      httpHeaders: {'Authorization': 'Bearer ${authService.accessToken}'},
+      errorWidget:
+          (context, url, error) => Container(
+            color: Colors.black,
+            child: Icon(
+              FluentIcons.music,
+              color: Colors.white.withValues(alpha: 0.25),
+              size: 64,
+            ),
+          ),
+    );
   }
 
   Future<bool> uploadFullSong({

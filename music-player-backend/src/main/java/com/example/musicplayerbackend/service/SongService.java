@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,11 +40,7 @@ public class SongService {
 
     @Transactional(readOnly = true)
     public Page<SongDto> getSongsVisibleToUser(String q, User user, Pageable pageable) {
-        Specification<Song> spec = SongSpecifications.visibleTo(user.getId());
-        Specification<Song> qSpec = SongSpecifications.matchesQuery(q);
-        spec = spec.and(qSpec);
-
-        return songRepository.findAll(spec, pageable)
+        return songRepository.findAllByNameContainingIgnoreCaseAndOwnerId(q == null ? "" : q, user.getId(), pageable)
                 .map(songMapper::toDto);
     }
 

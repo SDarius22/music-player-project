@@ -6,9 +6,9 @@ import 'package:music_player_frontend/core/services/rest_clients/album_rest_serv
 
 class AlbumService {
   final AlbumRepository _albumRepository;
-  final AlbumRestService? _albumRestService;
+  final AlbumRestService _albumRestService;
 
-  AlbumService(this._albumRepository, [this._albumRestService]);
+  AlbumService(this._albumRepository, this._albumRestService);
 
   Stream watchAlbums() => _albumRepository.watchAlbums();
 
@@ -51,10 +51,6 @@ class AlbumService {
     int page,
     int size,
   ) async {
-    if (_albumRestService == null) {
-      return _localPage(query, sortField, ascending, page, size);
-    }
-
     try {
       final sort =
           '${_toServerSortField(sortField)},${ascending ? 'asc' : 'desc'}';
@@ -67,7 +63,7 @@ class AlbumService {
 
       final resolved = <Album>[];
       for (final serverAlbum in serverPage.content) {
-        resolved.add(_cacheServerAlbum(serverAlbum));
+        resolved.add(cacheServerAlbum(serverAlbum));
       }
 
       return AlbumPageDto(
@@ -83,7 +79,7 @@ class AlbumService {
     }
   }
 
-  Album _cacheServerAlbum(Album serverAlbum) {
+  Album cacheServerAlbum(Album serverAlbum) {
     if (serverAlbum.serverId != -1) {
       final byServerId = _albumRepository.getAlbumByServerId(
         serverAlbum.serverId,

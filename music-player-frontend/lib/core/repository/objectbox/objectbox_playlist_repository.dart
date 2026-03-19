@@ -24,7 +24,7 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
 
   @override
   Playlist? getPlaylistByName(String name) {
-    return _playlistBox.query(Playlist_.name.equals(name)).build().findUnique();
+    return _playlistBox.query(Playlist_.name.equals(name)).build().findFirst();
   }
 
   @override

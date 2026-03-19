@@ -13,6 +13,8 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   final AppAudioService _audioService;
   final AbstractFileService _fileService;
 
+  ValueNotifier<ProcessingState> processingState =
+      ValueNotifier<ProcessingState>(ProcessingState.idle);
   ValueNotifier<bool> playingNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> repeatNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> shuffleNotifier = ValueNotifier<bool>(false);
@@ -213,6 +215,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     _audioService.audioPlayer.playbackEventStream.listen((event) {
       var playing = _audioService.audioPlayer.playing;
       playingNotifier.value = playing;
+      processingState.value = _audioService.audioPlayer.processingState;
 
       playbackState.add(
         playbackState.value.copyWith(

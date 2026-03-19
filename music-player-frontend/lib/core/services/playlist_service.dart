@@ -7,12 +7,18 @@ import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart';
 
 class PlaylistService {
   final PlaylistRepository _playlistRepository;
   final SongRepository _songRepository;
+  final PlaylistRestService _playlistRestService;
 
-  PlaylistService(this._playlistRepository, this._songRepository) {
+  PlaylistService(
+    this._playlistRepository,
+    this._songRepository,
+    this._playlistRestService,
+  ) {
     if (getIndestructiblePlaylists().isEmpty) {
       initializeIndestructible();
     }

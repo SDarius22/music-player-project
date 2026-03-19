@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -28,6 +29,7 @@ class AppAudioService {
 
   bool _initialized = false;
   int _currentIndex = 0;
+  final Completer<void> _initDone = Completer<void>();
 
   List<Song> _normalQueue = [];
   Playlist _queuePlaylist = Playlist();
@@ -165,18 +167,14 @@ class AppAudioService {
   Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
     if (songs.isEmpty) return;
 
-    if (songs.equals(_normalQueue)) {
-      debugPrint(
-        "Queue is the same as current. Just playing the selected song.",
-      );
-      await setCurrentSongAndPlay(song);
-      return;
+    if (!songs.equals(_normalQueue)) {
+      debugPrint("updating queue with new songs");
+      _normalQueue = List.from(songs);
+      _queuePlaylist.songs.clear();
+      _queuePlaylist.songsIds.clear();
+      playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
     }
 
-    _normalQueue = List.from(songs);
-    _queuePlaylist.songs.clear();
-    _queuePlaylist.songsIds.clear();
-    playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
     await setCurrentSongAndPlay(song);
   }
 
@@ -222,6 +220,8 @@ class AppAudioService {
     audioPlayer.errorStream.listen((error) {
       debugPrint("Audio Player Error: $error");
     });
+
+    if (!_initDone.isCompleted) _initDone.complete();
   }
 
   Future<void> _onSongCompleted() async {
@@ -236,6 +236,7 @@ class AppAudioService {
 
   Future<void> _loadAndPlayIndex(int idx) async {
     if (_normalQueue.isEmpty) return;
+    await _initDone.future;
     final song = _normalQueue[idx];
     currentSong = song;
     final source = await _buildAudioSource(song);

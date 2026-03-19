@@ -20,8 +20,13 @@ class LoginRegisterScreen extends StatefulWidget {
   }
 
   final AuthMode mode;
+  final VoidCallback? onAuthenticatedCallback;
 
-  const LoginRegisterScreen({super.key, required this.mode});
+  const LoginRegisterScreen({
+    super.key,
+    required this.mode,
+    this.onAuthenticatedCallback,
+  });
 
   @override
   State<LoginRegisterScreen> createState() => _LoginRegisterScreenState();
@@ -69,8 +74,13 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return GlassScaffold(
-      appBar: buildAppBar(context),
-      body: Padding(padding: buildPadding(context), child: buildBody(context)),
+      body: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.1,
+        ),
+        alignment: Alignment.center,
+        child: buildBody(context),
+      ),
     );
   }
 
@@ -79,10 +89,6 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
       text: message,
       duration: Duration(seconds: durationSeconds),
     );
-  }
-
-  EdgeInsetsGeometry buildPadding(BuildContext context) {
-    return const EdgeInsets.all(24);
   }
 
   Widget buildHeader(BuildContext context) {
@@ -109,7 +115,11 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
   }
 
   void onAuthenticated(BuildContext context) {
-    Navigator.of(context).pushReplacement(LoadingScreen.route());
+    if (widget.onAuthenticatedCallback != null) {
+      widget.onAuthenticatedCallback!();
+    } else {
+      Navigator.of(context).pushReplacement(LoadingScreen.route());
+    }
   }
 
   void onToggleAuthMode(BuildContext context, AuthMode mode) {
@@ -196,14 +206,6 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
     }
   }
 
-  PreferredSizeWidget buildAppBar(BuildContext context) {
-    return AppBar(
-      title: Text(primaryActionLabel),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-    );
-  }
-
   Widget buildBody(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: isCodeStep,
@@ -213,6 +215,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
           builder: (context, busy, _) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 buildHeader(context),
                 const SizedBox(height: 16),

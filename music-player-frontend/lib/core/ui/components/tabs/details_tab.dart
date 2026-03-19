@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
@@ -11,10 +12,12 @@ import 'package:provider/provider.dart';
 
 class DetailsTab extends StatelessWidget {
   final double opacity;
+  final CachedNetworkImage image;
   final MiniPlayerController miniPlayerController;
 
   const DetailsTab({
     super.key,
+    required this.image,
     required this.miniPlayerController,
     required this.opacity,
   });
@@ -38,14 +41,7 @@ class DetailsTab extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                Container(
-                  color: Colors.black,
-                  child: Icon(
-                    FluentIcons.music,
-                    color: Colors.white.withValues(alpha: 0.25),
-                    size: 64,
-                  ),
-                ),
+                Positioned.fill(child: image),
                 Container(
                   alignment: Alignment.bottomCenter,
                   padding: EdgeInsets.only(bottom: height * 0.01),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
@@ -8,8 +9,25 @@ class AuthService {
   final String baseUrl;
   final _storage = const FlutterSecureStorage();
   String? _cachedAccessToken;
+  Timer? _refreshTimer;
+
+  static const _refreshInterval = Duration(minutes: 10);
 
   AuthService({required this.baseUrl});
+
+  void startTokenRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) async {
+      if (isLoggedIn) {
+        await refreshAccessToken();
+      }
+    });
+  }
+
+  void stopTokenRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
 
   bool get isLoggedIn => _cachedAccessToken != null;
 
@@ -65,6 +83,7 @@ class AuthService {
     _cachedAccessToken = access;
     await _storage.write(key: 'access_token', value: access);
     await _storage.write(key: 'refresh_token', value: refresh);
+    startTokenRefresh();
   }
 
   Future<bool> sendLoginCode(String email) async {
@@ -141,6 +160,7 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    stopTokenRefresh();
     _cachedAccessToken = null;
     await _storage.deleteAll();
   }

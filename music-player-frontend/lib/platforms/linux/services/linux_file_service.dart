@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
 class LinuxFileService extends AbstractFileService {

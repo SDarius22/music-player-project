@@ -1,10 +1,8 @@
 import 'dart:ui';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
@@ -29,14 +27,27 @@ class ImageWidget extends StatefulWidget {
 }
 
 class _ImageWidgetState extends State<ImageWidget> {
-  ValueNotifier<bool> isHovered = ValueNotifier(false);
+  final ValueNotifier<bool> isHovered = ValueNotifier(false);
+  late Future<Widget> _imageFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _imageFuture = _getImageWidget(context);
+  }
 
   @override
   void didUpdateWidget(covariant ImageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.entity != widget.entity) {
-      setState(() {});
+      _imageFuture = _getImageWidget(context);
     }
+  }
+
+  @override
+  void dispose() {
+    isHovered.dispose();
+    super.dispose();
   }
 
   Widget _buildForeground() {
@@ -70,27 +81,11 @@ class _ImageWidgetState extends State<ImageWidget> {
     return widget.child ?? const SizedBox.shrink();
   }
 
-  Future<Widget> _getImageWidget() async {
+  Future<Widget> _getImageWidget(BuildContext context) async {
     if (widget.entity.coverArt == null) {
       if (widget.entity.serverId != -1) {
-        return CachedNetworkImage(
-          imageUrl:
-              "${Constants.apiBaseUrl}/songs/${widget.entity.serverId}/cover",
-          httpHeaders: {
-            "Authorization":
-                "Bearer ${Provider.of<AuthService>(context, listen: false).accessToken}",
-          },
-          fit: BoxFit.cover,
-          errorWidget:
-              (context, url, error) => Container(
-                color: Colors.black,
-                child: Icon(
-                  FluentIcons.music,
-                  color: Colors.white.withValues(alpha: 0.25),
-                  size: 64,
-                ),
-              ),
-        );
+        var songProvider = context.read<SongProvider>();
+        return songProvider.getCoverArt(widget.entity.serverId);
       }
       return Container(
         color: Colors.black,
@@ -101,6 +96,7 @@ class _ImageWidgetState extends State<ImageWidget> {
         ),
       );
     }
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.black,
@@ -114,11 +110,11 @@ class _ImageWidgetState extends State<ImageWidget> {
 
   Widget _buildImageLayer() {
     return FutureBuilder<Widget>(
-      future: _getImageWidget(),
+      future: _imageFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(color: Colors.black);
-        } else if (snapshot.hasError) {
+        } else if (snapshot.hasError || !snapshot.hasData) {
           return Container(color: Colors.black);
         } else {
           final shouldFadeImageOnly = widget.fadeBottom && widget.child != null;

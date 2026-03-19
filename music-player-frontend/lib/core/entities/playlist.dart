@@ -16,6 +16,7 @@ class Playlist with AbstractCollection implements BaseEntity {
   bool _isLocal = false;
 
   @Index()
+  @Unique()
   int _serverId = -1;
 
   @override

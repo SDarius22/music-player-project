@@ -25,7 +25,7 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
 
   @override
   Album? getAlbumByName(String albumName) {
-    return _albumBox.query(Album_.name.equals(albumName)).build().findUnique();
+    return _albumBox.query(Album_.name.equals(albumName)).build().findFirst();
   }
 
   @override
@@ -33,7 +33,7 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
     return _albumBox
         .query(Album_.serverId.equals(serverId))
         .build()
-        .findUnique();
+        .findFirst();
   }
 
   @override

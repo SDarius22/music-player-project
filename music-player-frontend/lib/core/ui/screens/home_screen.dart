@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/home_provider.dart';
+import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
@@ -558,20 +559,40 @@ class _CoverImage extends StatelessWidget {
 
   const _CoverImage({required this.song, required this.size});
 
+  Widget _getImage(BuildContext context) {
+    if (song.coverArt == null) {
+      if (song.serverId != -1) {
+        var songProvider = context.read<SongProvider>();
+        return songProvider.getCoverArt(song.serverId);
+      }
+      return Container(
+        color: Colors.black,
+        child: Icon(
+          FluentIcons.music,
+          color: Colors.white.withValues(alpha: 0.25),
+          size: 64,
+        ),
+      );
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        image: DecorationImage(
+          fit: BoxFit.cover,
+          image: MemoryImage(song.coverArt!),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Image(
-      image: MemoryImage(song.coverArt ?? Uint8List(0)),
+    return Container(
       width: size,
       height: size,
-      fit: BoxFit.cover,
-      errorBuilder:
-          (_, _, _) => Container(
-            width: size,
-            height: size,
-            color: Colors.indigo.withValues(alpha: 0.3),
-            child: const Icon(Icons.music_note, color: Colors.white54),
-          ),
+      color: Colors.indigo.withValues(alpha: 0.3),
+      child: _getImage(context),
     );
   }
 }

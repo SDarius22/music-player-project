@@ -14,6 +14,7 @@ class Album with AbstractCollection implements BaseEntity {
   int id = 0;
 
   @Index()
+  @Unique()
   int _serverId = -1;
 
   @override

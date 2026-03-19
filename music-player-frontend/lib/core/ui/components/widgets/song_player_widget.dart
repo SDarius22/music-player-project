@@ -1,10 +1,12 @@
-import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/app_queue_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
@@ -13,6 +15,7 @@ import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
+import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
@@ -27,14 +30,16 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     with TickerProviderStateMixin {
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   final ScrollController itemScrollController = ScrollController();
-  late MemoryImage cachedCoverArt;
+  late CachedNetworkImage cachedCoverArt;
   late AbstractAppStateProvider appStateProvider;
   late AudioProvider audioProvider;
   final MiniPlayerController _lyricsPlayerController = MiniPlayerController();
   final ValueNotifier<bool> _listView = ValueNotifier<bool>(false);
 
-  void _getCoverArtImage(Song currentSong) {
-    cachedCoverArt = MemoryImage(currentSong.coverArt ?? Uint8List(0));
+  void _getCoverArtImage(Song currentSong, BuildContext context) {
+    cachedCoverArt = context.read<SongProvider>().getCoverArt(
+      currentSong.serverId,
+    );
   }
 
   @override
@@ -62,7 +67,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
           debugPrint("Not showing player");
           return const SizedBox.shrink();
         }
-        _getCoverArtImage(audioProvider.currentSong);
+        _getCoverArtImage(audioProvider.currentSong, context);
         final ValueNotifier<double> playerExpandProgress =
             ValueNotifier<double>(getMinHeight(context));
 
@@ -217,12 +222,8 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                 decoration: BoxDecoration(
                   shape: BoxShape.rectangle,
                   borderRadius: getBorderRadius(context),
-                  image: DecorationImage(
-                    fit: BoxFit.cover,
-                    image: cachedCoverArt,
-                    isAntiAlias: true,
-                  ),
                 ),
+                child: cachedCoverArt,
               ),
             ),
           ),
@@ -357,12 +358,8 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                 decoration: BoxDecoration(
                   shape: BoxShape.rectangle,
                   borderRadius: BorderRadius.circular(borderRadius),
-                  image: DecorationImage(
-                    fit: BoxFit.cover,
-                    image: cachedCoverArt,
-                    isAntiAlias: true,
-                  ),
                 ),
+                child: cachedCoverArt,
               ),
             ),
           ),
@@ -511,6 +508,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                   constraints: BoxConstraints(maxWidth: width * 0.325),
                   margin: EdgeInsets.only(right: imageRightMargin),
                   child: DetailsTab(
+                    image: cachedCoverArt,
                     opacity: detailsOpacity,
                     miniPlayerController: appStateProvider.miniPlayerController,
                   ),
@@ -772,6 +770,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                                 )
                                 : DetailsTab(
                                   key: const ValueKey<int>(2),
+                                  image: cachedCoverArt,
                                   miniPlayerController:
                                       appStateProvider.miniPlayerController,
                                   opacity: detailsOpacity,
@@ -1040,19 +1039,44 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   }
 
   Widget buildPlayPauseButton(BuildContext context, {bool expanded = false}) {
-    return ValueListenableBuilder(
-      valueListenable: audioProvider.playingNotifier,
-      builder: (context, value, child) {
+    return MultiValueListenableBuilder(
+      valueListenables: [
+        audioProvider.processingState,
+        audioProvider.playingNotifier,
+      ],
+      builder: (context, values, child) {
+        final ProcessingState processingState = values[0] as ProcessingState;
+        final bool isPlaying = values[1] as bool;
+
+        if (processingState == ProcessingState.loading ||
+            processingState == ProcessingState.buffering) {
+          return Container(
+            width: 28,
+            height: 28,
+            padding: const EdgeInsets.all(4),
+            child: const CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          );
+        }
+
+        final bool showPause =
+            isPlaying && processingState != ProcessingState.completed;
+
         return IconButton(
-          onPressed: () async {
-            if (audioProvider.playingNotifier.value) {
-              await audioProvider.pause();
+          onPressed: () {
+            if (isPlaying) {
+              audioProvider.pause();
             } else {
-              await audioProvider.play();
+              if (processingState == ProcessingState.completed) {
+                audioProvider.seek(Duration.zero);
+              }
+              audioProvider.play();
             }
           },
           icon: Icon(
-            value ? FluentIcons.pause : FluentIcons.play,
+            showPause ? FluentIcons.pause : FluentIcons.play,
             color: Colors.white,
             size: 28,
             shadows: [

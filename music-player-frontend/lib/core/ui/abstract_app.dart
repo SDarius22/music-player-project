@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:audio_service/audio_service.dart' as platform_service;
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
@@ -47,7 +46,16 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 abstract class AbstractApp extends StatelessWidget {
   const AbstractApp({super.key});
 
-  // Unique per-session device ID used for WebRTC peer routing.
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:9000/api/v1',
+  );
+
+  static const String wsBaseUrl = String.fromEnvironment(
+    'WS_BASE_URL',
+    defaultValue: 'ws://localhost:9000/ws/signaling',
+  );
+
   static final String _deviceId = _generateDeviceId();
 
   static String _generateDeviceId() {
@@ -89,13 +97,13 @@ abstract class AbstractApp extends StatelessWidget {
       ),
 
       Provider<AuthService>(
-        create: (context) => AuthService(baseUrl: Constants.apiBaseUrl),
+        create: (context) => AuthService(baseUrl: apiBaseUrl),
       ),
 
       Provider<DataSyncService>(
         create:
             (context) => DataSyncService(
-              baseUrl: Constants.apiBaseUrl,
+              baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
@@ -103,7 +111,7 @@ abstract class AbstractApp extends StatelessWidget {
       Provider<SongRestService>(
         create:
             (context) => SongRestService(
-              baseUrl: Constants.apiBaseUrl,
+              baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
@@ -111,7 +119,7 @@ abstract class AbstractApp extends StatelessWidget {
       Provider<StreamingRestService>(
         create:
             (context) => StreamingRestService(
-              baseUrl: Constants.apiBaseUrl,
+              baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
@@ -119,7 +127,7 @@ abstract class AbstractApp extends StatelessWidget {
       Provider<StatisticsRestService>(
         create: (context) {
           final service = StatisticsRestService(
-            baseUrl: Constants.apiBaseUrl,
+            baseUrl: apiBaseUrl,
             authService: context.read<AuthService>(),
           );
           ChunkStatsService.instance.configure(service);
@@ -135,21 +143,21 @@ abstract class AbstractApp extends StatelessWidget {
       Provider<AlbumRestService>(
         create:
             (context) => AlbumRestService(
-              baseUrl: Constants.apiBaseUrl,
+              baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
       Provider<ArtistRestService>(
         create:
             (context) => ArtistRestService(
-              baseUrl: Constants.apiBaseUrl,
+              baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
       Provider<PlaylistRestService>(
         create:
             (context) => PlaylistRestService(
-              baseUrl: Constants.apiBaseUrl,
+              baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
@@ -173,6 +181,7 @@ abstract class AbstractApp extends StatelessWidget {
             (context) => PlaylistService(
               context.read<PlaylistRepository>(),
               context.read<SongRepository>(),
+              context.read<PlaylistRestService>(),
             ),
       ),
       Provider<SettingsService>(
@@ -184,6 +193,8 @@ abstract class AbstractApp extends StatelessWidget {
             (context) => SongService(
               context.read<SongRepository>(),
               context.read<SongRestService>(),
+              context.read<ArtistService>(),
+              context.read<AlbumService>(),
             ),
       ),
 
@@ -300,7 +311,7 @@ abstract class AbstractApp extends StatelessWidget {
 
   WebRTCService createWebRTCService(BuildContext context) {
     final router = context.read<ActiveChunkRouter>();
-    final socket = WebSocketChannel.connect(Uri.parse(Constants.wsBaseUrl));
+    final socket = WebSocketChannel.connect(Uri.parse(wsBaseUrl));
 
     return WebRTCService(
       myDeviceId: _deviceId,

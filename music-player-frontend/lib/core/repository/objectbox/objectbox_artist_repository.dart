@@ -28,7 +28,7 @@ class ObjectBoxArtistRepository implements ArtistRepository {
     return _artistBox
         .query(Artist_.name.equals(artistName))
         .build()
-        .findUnique();
+        .findFirst();
   }
 
   @override
@@ -36,7 +36,7 @@ class ObjectBoxArtistRepository implements ArtistRepository {
     return _artistBox
         .query(Artist_.serverId.equals(serverId))
         .build()
-        .findUnique();
+        .findFirst();
   }
 
   @override

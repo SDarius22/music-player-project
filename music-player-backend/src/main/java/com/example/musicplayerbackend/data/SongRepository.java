@@ -1,6 +1,7 @@
 package com.example.musicplayerbackend.data;
 
 import com.example.musicplayerbackend.domain.Song;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +22,11 @@ public interface SongRepository extends JpaRepository<Song, Long>, JpaSpecificat
 
     @Query(value = "SELECT * FROM music_library.songs WHERE song_type = 'STREAMABLE' ORDER BY RANDOM()", nativeQuery = true)
     List<Song> findRandomStreamable(Pageable pageable);
+
+    @Query("SELECT s FROM Song s WHERE " +
+            "(LOWER(s.name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+            "LOWER(s.artist.name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+            "LOWER(s.album.name) LIKE LOWER(CONCAT('%', :q, '%'))) AND " +
+            "(s.ownerId = :userId OR s.ownerId IS NULL)")
+    Page<Song> findVisibleToUser(String q, Long userId, Pageable pageable);
 }

@@ -12,6 +12,7 @@ class Song implements BaseEntity {
   int id = 0;
 
   @Index()
+  @Unique()
   int _serverId = -1;
 
   @override
@@ -76,7 +77,14 @@ class Song implements BaseEntity {
     song.trackNumber = json['trackNumber'] ?? 0;
     song.discNumber = json['discNumber'] ?? 0;
     song.year = json['year'] ?? 0;
-
+    if (json['artist'] is Map<String, dynamic>) {
+      song.artist.target = Artist.fromJson(
+        json['artist'] as Map<String, dynamic>,
+      );
+    }
+    if (json['album'] is Map<String, dynamic>) {
+      song.album.target = Album.fromJson(json['album'] as Map<String, dynamic>);
+    }
     return song;
   }
 

@@ -6,9 +6,9 @@ import 'package:music_player_frontend/core/services/rest_clients/artist_rest_ser
 
 class ArtistService {
   final ArtistRepository _artistRepository;
-  final ArtistRestService? _artistRestService;
+  final ArtistRestService _artistRestService;
 
-  ArtistService(this._artistRepository, [this._artistRestService]);
+  ArtistService(this._artistRepository, this._artistRestService);
 
   Stream watchArtists() => _artistRepository.watchArtists();
 
@@ -48,7 +48,6 @@ class ArtistService {
     _artistRepository.updateArtist(artist);
   }
 
-  /// Fetches a page of artists from the server (with local fallback) and caches results locally.
   Future<ArtistPageDto> getArtistsPage(
     String query,
     String sortField,
@@ -56,12 +55,9 @@ class ArtistService {
     int page,
     int size,
   ) async {
-    if (_artistRestService == null) {
-      return _localPage(query, sortField, ascending, page, size);
-    }
-
     try {
-      final sort = '${_toServerSortField(sortField)},${ascending ? 'asc' : 'desc'}';
+      final sort =
+          '${_toServerSortField(sortField)},${ascending ? 'asc' : 'desc'}';
       final serverPage = await _artistRestService.getArtistsPage(
         query: query.isEmpty ? null : query,
         page: page,
@@ -71,7 +67,7 @@ class ArtistService {
 
       final resolved = <Artist>[];
       for (final serverArtist in serverPage.content) {
-        resolved.add(_cacheServerArtist(serverArtist));
+        resolved.add(cacheServerArtist(serverArtist));
       }
 
       return ArtistPageDto(
@@ -87,9 +83,11 @@ class ArtistService {
     }
   }
 
-  Artist _cacheServerArtist(Artist serverArtist) {
+  Artist cacheServerArtist(Artist serverArtist) {
     if (serverArtist.serverId != -1) {
-      final byServerId = _artistRepository.getArtistByServerId(serverArtist.serverId);
+      final byServerId = _artistRepository.getArtistByServerId(
+        serverArtist.serverId,
+      );
       if (byServerId != null) {
         byServerId.name = serverArtist.name;
         _artistRepository.updateArtist(byServerId);
@@ -129,7 +127,10 @@ class ArtistService {
         totalElements: totalElements,
       );
     }
-    final content = all.sublist(offset, (offset + size).clamp(0, totalElements));
+    final content = all.sublist(
+      offset,
+      (offset + size).clamp(0, totalElements),
+    );
     return ArtistPageDto(
       content: content,
       page: page,

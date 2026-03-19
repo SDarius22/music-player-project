@@ -42,7 +42,7 @@ class ObjectBoxSongRepository implements SongRepository {
   @override
   Song getSongByPath(String path) {
     try {
-      return _songBox.query(Song_.path.equals(path)).build().findUnique()!;
+      return _songBox.query(Song_.path.equals(path)).build().findFirst()!;
     } catch (e) {
       throw Exception('Song with path $path not found');
     }

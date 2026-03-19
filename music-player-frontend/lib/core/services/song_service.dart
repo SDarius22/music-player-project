@@ -2,22 +2,34 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
+import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/services/album_service.dart';
+import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
 
 class SongService {
   final SongRepository _songRepository;
   final SongRestService _songRestService;
+  final ArtistService _artistService;
+  final AlbumService _albumService;
 
   bool _isSyncing = false;
   static const int _chunkSize = 64 * 1024;
 
-  SongService(this._songRepository, this._songRestService);
+  SongService(
+    this._songRepository,
+    this._songRestService,
+    this._artistService,
+    this._albumService,
+  );
 
   Map<String, dynamic> get sortFields => _songRepository.sortFields;
 
@@ -204,9 +216,27 @@ class SongService {
   void _cacheServerSong(Song serverSong) {
     if (serverSong.serverId == -1) return;
 
+    // Resolve and persist artist first so album can reference it.
+    Artist? resolvedArtist;
+    if (serverSong.artist.target != null) {
+      resolvedArtist = _artistService.cacheServerArtist(serverSong.artist.target!);
+    }
+
+    // Resolve and persist album, linking it to the resolved artist.
+    Album? resolvedAlbum;
+    if (serverSong.album.target != null) {
+      final serverAlbum = serverSong.album.target!;
+      if (resolvedArtist != null) {
+        serverAlbum.artist.target = resolvedArtist;
+      }
+      resolvedAlbum = _albumService.cacheServerAlbum(serverAlbum);
+    }
+
     final existing = _songRepository.getSongByServerId(serverSong.serverId);
     if (existing == null) {
       serverSong.requiresSync = false;
+      serverSong.artist.target = resolvedArtist;
+      serverSong.album.target = resolvedAlbum;
       _songRepository.saveSong(serverSong);
       return;
     }
@@ -222,8 +252,8 @@ class SongService {
       existing.path = '';
     }
 
-    existing.artist.target = serverSong.artist.target;
-    existing.album.target = serverSong.album.target;
+    if (resolvedArtist != null) existing.artist.target = resolvedArtist;
+    if (resolvedAlbum != null) existing.album.target = resolvedAlbum;
 
     _songRepository.updateSong(existing);
   }
@@ -403,5 +433,9 @@ class SongService {
       totalPages: serverPage.totalPages,
       totalElements: serverPage.totalElements,
     );
+  }
+
+  CachedNetworkImage getCoverArt(int serverId) {
+    return _songRestService.fetchCoverArt(serverId);
   }
 }
