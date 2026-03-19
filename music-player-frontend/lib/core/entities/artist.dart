@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
@@ -13,7 +12,14 @@ class Artist with AbstractCollection implements BaseEntity {
   int id = 0;
 
   @Index()
-  int serverId = -1;
+  int _serverId = -1;
+
+  @override
+  int get serverId => _serverId;
+
+  @override
+  set serverId(int value) => _serverId = value;
+
   bool requiresSync = false;
   bool _isLocal = false;
 
@@ -57,6 +63,5 @@ class Artist with AbstractCollection implements BaseEntity {
   }
 
   @override
-  Uint8List get coverArt =>
-      albums.isNotEmpty ? albums.first.coverArt : Constants.logoBytes;
+  Uint8List? get coverArt => albums.isNotEmpty ? albums.first.coverArt : null;
 }

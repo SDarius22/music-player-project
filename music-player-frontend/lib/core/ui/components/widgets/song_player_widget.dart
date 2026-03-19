@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   final ValueNotifier<bool> _listView = ValueNotifier<bool>(false);
 
   void _getCoverArtImage(Song currentSong) {
-    cachedCoverArt = MemoryImage(currentSong.coverArt);
+    cachedCoverArt = MemoryImage(currentSong.coverArt ?? Uint8List(0));
   }
 
   @override

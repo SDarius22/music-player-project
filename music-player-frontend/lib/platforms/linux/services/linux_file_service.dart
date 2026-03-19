@@ -44,19 +44,16 @@ class LinuxFileService extends AbstractFileService {
   }
 
   @override
-  Future<Uint8List> getImage(dynamic path) async {
-    if (path.isEmpty) {
-      return Constants.logoBytes;
-    }
+  Future<Uint8List?> getImage(dynamic path) async {
     try {
       var metadataVar = readMetadata(File(path), getImage: true);
       return metadataVar.pictures.isNotEmpty
           ? metadataVar.pictures[0].bytes
-          : Constants.logoBytes;
+          : null;
     } catch (e) {
       debugPrint("Error reading image metadata for $path: $e");
     }
-    return Constants.logoBytes;
+    return null;
   }
 
   @override

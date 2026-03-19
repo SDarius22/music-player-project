@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -13,7 +12,14 @@ class Song implements BaseEntity {
   int id = 0;
 
   @Index()
-  int serverId = -1;
+  int _serverId = -1;
+
+  @override
+  int get serverId => _serverId;
+
+  @override
+  set serverId(int value) => _serverId = value;
+
   bool requiresSync = true;
   bool _isLocal = false;
 
@@ -82,7 +88,7 @@ class Song implements BaseEntity {
   };
 
   @override
-  Uint8List get coverArt => album.target?.coverArt ?? Constants.logoBytes;
+  Uint8List? get coverArt => album.target?.coverArt;
 
   List<Color> get colors {
     if (album.target != null && album.target!.colors.isNotEmpty) {

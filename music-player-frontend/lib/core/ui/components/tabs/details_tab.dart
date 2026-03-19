@@ -35,13 +35,17 @@ class DetailsTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(
                 MediaQuery.of(context).size.height * 0.015,
               ),
-              image: DecorationImage(
-                fit: BoxFit.cover,
-                image: MemoryImage(audioProvider.currentSong.coverArt),
-              ),
             ),
             child: Stack(
               children: [
+                Container(
+                  color: Colors.black,
+                  child: Icon(
+                    FluentIcons.music,
+                    color: Colors.white.withValues(alpha: 0.25),
+                    size: 64,
+                  ),
+                ),
                 Container(
                   alignment: Alignment.bottomCenter,
                   padding: EdgeInsets.only(bottom: height * 0.01),
@@ -71,7 +75,9 @@ class DetailsTab extends StatelessWidget {
                         CustomTextScroll(
                           text: audioProvider.currentSong.name,
                           style:
-                              MusicPlayerTheme.getTheme().textTheme.displaySmall!,
+                              MusicPlayerTheme.getTheme()
+                                  .textTheme
+                                  .displaySmall!,
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -104,7 +110,9 @@ class DetailsTab extends StatelessWidget {
                                       audioProvider.currentSong.artist.target
                                           .toString(),
                                   style:
-                                      MusicPlayerTheme.getTheme().textTheme.titleLarge!,
+                                      MusicPlayerTheme.getTheme()
+                                          .textTheme
+                                          .titleLarge!,
                                 ),
                               ),
                             ),

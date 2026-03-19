@@ -35,7 +35,7 @@ abstract class AbstractFileService {
 
   Future<List> getAudioFiles(List<String>? songPlaces);
 
-  Future<Uint8List> getImage(dynamic path);
+  Future<Uint8List?> getImage(dynamic path);
 
   Stream watchForFileChanges(List<String> songPlaces) {
     List<Stream> streams = [];
@@ -74,13 +74,17 @@ abstract class AbstractFileService {
       throw Exception("Song is null");
     }
 
+    if (song.coverArt == null) {
+      return File(''); // Return an empty file if no cover art is available
+    }
+
     final String dir = (await getApplicationCacheDirectory()).path;
     final String path = '$dir/${song.album.target?.name ?? song.name}.png';
     final File file = File(path);
     if (file.existsSync()) {
       return file;
     }
-    final ByteData data = ByteData.view(song.coverArt.buffer);
+    final ByteData data = ByteData.view(song.coverArt!.buffer);
     await file.writeAsBytes(data.buffer.asUint8List());
     return file;
   }

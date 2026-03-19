@@ -26,7 +26,7 @@ class PlaylistService {
     String name,
     List<Song> songs,
     String whereToAdd,
-    Uint8List coverArt,
+    Uint8List? coverArt,
   ) {
     Playlist newPlaylist = Playlist();
     newPlaylist.name = name;

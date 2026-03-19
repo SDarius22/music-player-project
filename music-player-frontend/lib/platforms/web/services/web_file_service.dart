@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
@@ -24,9 +23,9 @@ class WebFileService extends AbstractFileService {
   }
 
   @override
-  Future<Uint8List> getImage(dynamic path) async {
+  Future<Uint8List?> getImage(dynamic path) async {
     // On web we don't have embedded cover art for local files.
-    return Constants.logoBytes;
+    return null;
   }
 
   @override

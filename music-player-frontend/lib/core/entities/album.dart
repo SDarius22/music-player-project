@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
@@ -15,7 +14,14 @@ class Album with AbstractCollection implements BaseEntity {
   int id = 0;
 
   @Index()
-  int serverId = -1;
+  int _serverId = -1;
+
+  @override
+  int get serverId => _serverId;
+
+  @override
+  set serverId(int value) => _serverId = value;
+
   bool requiresSync = false;
   bool _isLocal = false;
 
@@ -47,7 +53,7 @@ class Album with AbstractCollection implements BaseEntity {
   ToMany<Song> get songs => _songs;
 
   @override
-  Uint8List get coverArt => imageBytes ?? Constants.logoBytes;
+  Uint8List? get coverArt => imageBytes;
 
   int _duration = -1;
 

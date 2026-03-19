@@ -43,17 +43,6 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
 
-                        // Public song discovery (visibility still enforced in the service layer)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/songs").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/songs/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/songs/*/cover").permitAll()
-
-                        // Public album and artist browsing
-                        .requestMatchers(HttpMethod.GET, "/api/v1/albums").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/albums/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/artists").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/artists/*").permitAll()
-
                         .requestMatchers(HttpMethod.POST, "/api/v1/songs").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/songs").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/songs").hasRole("ADMIN")

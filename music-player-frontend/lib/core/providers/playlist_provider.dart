@@ -35,14 +35,11 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     final totalElements = all.length;
     final totalPages = totalElements == 0 ? 1 : (totalElements / size).ceil();
     final offset = page * size;
-    final content = offset >= totalElements
-        ? <Playlist>[]
-        : all.sublist(offset, (offset + size).clamp(0, totalElements));
-    return PageResult(
-      content: content,
-      totalPages: totalPages,
-      page: page,
-    );
+    final content =
+        offset >= totalElements
+            ? <Playlist>[]
+            : all.sublist(offset, (offset + size).clamp(0, totalElements));
+    return PageResult(content: content, totalPages: totalPages, page: page);
   }
 
   @override
@@ -54,7 +51,7 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     String name,
     List<Song> songs,
     String whereToAdd,
-    Uint8List coverArt,
+    Uint8List? coverArt,
   ) {
     _playlistService.addPlaylist(name, songs, whereToAdd, coverArt);
     notifyListeners();

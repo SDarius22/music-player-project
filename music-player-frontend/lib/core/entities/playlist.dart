@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
@@ -16,6 +15,15 @@ class Playlist with AbstractCollection implements BaseEntity {
   bool requiresSync = false;
   bool _isLocal = false;
 
+  @Index()
+  int _serverId = -1;
+
+  @override
+  int get serverId => _serverId;
+
+  @override
+  set serverId(int value) => _serverId = value;
+
   @override
   bool get isLocal => _isLocal;
 
@@ -27,7 +35,7 @@ class Playlist with AbstractCollection implements BaseEntity {
   String nextAdded = "last";
 
   @Property(type: PropertyType.byteVector)
-  Uint8List imageBytes = Constants.logoBytes;
+  Uint8List? imageBytes;
 
   @Property(type: PropertyType.date)
   DateTime createdAt = DateTime.now();
@@ -44,7 +52,7 @@ class Playlist with AbstractCollection implements BaseEntity {
   ToMany<Song> get songs => _songs;
 
   @override
-  Uint8List get coverArt => imageBytes;
+  Uint8List? get coverArt => imageBytes;
 
   List<int> songsIds = [];
 

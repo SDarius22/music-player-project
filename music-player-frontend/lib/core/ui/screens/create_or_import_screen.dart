@@ -4,7 +4,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/constants.dart';
+import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
@@ -136,7 +136,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
       playlistName,
       selected.value,
       playlistAdd,
-      coverArt.value ?? Constants.logoBytes,
+      coverArt.value,
     );
 
     showToast(
@@ -204,11 +204,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                 debugPrint("Back");
                 Navigator.pop(context);
               },
-              icon: Icon(
-                FluentIcons.back,
-                size: 20,
-                color: Colors.white,
-              ),
+              icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
             ),
             Text(
               widget.import ? "Import a playlist" : "Create a new playlist",
@@ -245,7 +241,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                     playlistName,
                     selected.value,
                     playlistAdd,
-                    coverArt.value ?? Constants.logoBytes,
+                    coverArt.value,
                   );
                   BotToast.showText(
                     text:
@@ -258,7 +254,9 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                 },
                 child: Text(
                   "Done",
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium!.copyWith(color: Colors.white),
                 ),
               ),
             ),
@@ -293,8 +291,11 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                             builder: (context, values, child) {
                               var cover = values[0] as Uint8List?;
                               if (cover != null) {
+                                var playlist = Playlist();
+                                playlist.imageBytes = cover;
+
                                 return ImageWidget(
-                                  imageBytes: cover,
+                                  entity: playlist,
                                   hoveredChild: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -308,7 +309,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                       ),
                                       IconButton(
                                         onPressed: () {
-                                          coverArt.value = Constants.logoBytes;
+                                          coverArt.value = null;
                                         },
                                         icon: Icon(
                                           FluentIcons.trash,
@@ -321,11 +322,18 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                 );
                               }
                               var selectedSongs = values[1] as List<Song>;
+                              if (selectedSongs.isEmpty) {
+                                return Container(
+                                  color: Colors.black,
+                                  child: Icon(
+                                    FluentIcons.music,
+                                    color: Colors.white.withValues(alpha: 0.25),
+                                    size: 64,
+                                  ),
+                                );
+                              }
                               return ImageWidget(
-                                imageBytes:
-                                    selectedSongs.isNotEmpty
-                                        ? selectedSongs.first.coverArt
-                                        : Constants.logoBytes,
+                                entity: selectedSongs.first,
                                 hoveredChild: IconButton(
                                   onPressed: _pickCoverArt,
                                   icon: Icon(
@@ -349,14 +357,14 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                           ),
                           hintText: 'Playlist name',
                           counterText: "",
-                          hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
-                            color: Colors.grey,
-                          ),
+                          hintStyle: Theme.of(
+                            context,
+                          ).textTheme.bodySmall!.copyWith(color: Colors.grey),
                         ),
                         cursorColor: Colors.white,
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          color: Colors.white,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium!.copyWith(color: Colors.white),
                         onChanged: (value) {
                           playlistName = value;
                         },
@@ -365,9 +373,8 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                         children: [
                           Text(
                             "Where to add new songs in the future?",
-                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                              color: Colors.white,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(color: Colors.white),
                           ),
                           const Spacer(),
                           DropdownButton<String>(
@@ -377,7 +384,9 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                               color: Colors.white,
                               size: 24,
                             ),
-                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium!.copyWith(
                               fontWeight: FontWeight.normal,
                               color: Colors.white,
                             ),
@@ -431,9 +440,9 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                           });
                         },
                         cursorColor: Colors.white,
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          color: Colors.white,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium!.copyWith(color: Colors.white),
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
@@ -441,9 +450,9 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                             ),
                             borderSide: const BorderSide(color: Colors.white),
                           ),
-                          labelStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
-                            color: Colors.white,
-                          ),
+                          labelStyle: Theme.of(
+                            context,
+                          ).textTheme.bodySmall!.copyWith(color: Colors.white),
                           labelText: 'Search',
                           suffixIcon: Icon(
                             FluentIcons.search,
@@ -473,9 +482,10 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                   return Center(
                                     child: Text(
                                       "Error loading songs",
-                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                        color: Colors.white,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall!
+                                          .copyWith(color: Colors.white),
                                     ),
                                   );
                                 }
@@ -483,9 +493,10 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                   return Center(
                                     child: Text(
                                       "No songs found",
-                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                        color: Colors.white,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall!
+                                          .copyWith(color: Colors.white),
                                     ),
                                   );
                                 }

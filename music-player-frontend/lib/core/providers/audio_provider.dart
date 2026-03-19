@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
@@ -185,8 +184,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<void> _setColors() async {
-    if (currentSong.coverArt == Constants.logoBytes ||
-        currentSong.colors.isNotEmpty) {
+    if (currentSong.coverArt == null || currentSong.colors.isNotEmpty) {
       debugPrint("Skipping color extraction for ${currentSong.name}");
       return;
     }

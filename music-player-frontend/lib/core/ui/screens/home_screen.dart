@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
@@ -5,6 +7,7 @@ import 'package:music_player_frontend/core/providers/home_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
 
@@ -299,13 +302,13 @@ class _MobileQuickDialCard extends StatelessWidget {
           AspectRatio(
             aspectRatio: 1,
             child: Image(
-              image: MemoryImage(song.coverArt),
+              image: MemoryImage(song.coverArt ?? Uint8List(0)),
               fit: BoxFit.cover,
               errorBuilder:
                   (_, _, _) => Container(
                     color: Colors.indigo.withValues(alpha: 0.4),
-                    child: const Icon(
-                      Icons.music_note,
+                    child: Icon(
+                      FluentIcons.music,
                       color: Colors.white38,
                       size: 18,
                     ),
@@ -361,7 +364,7 @@ class _MobileSquareGridCard extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Image(
-              image: MemoryImage(song.coverArt),
+              image: MemoryImage(song.coverArt ?? Uint8List(0)),
               fit: BoxFit.cover,
               width: double.infinity,
               errorBuilder:
@@ -558,7 +561,7 @@ class _CoverImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image(
-      image: MemoryImage(song.coverArt),
+      image: MemoryImage(song.coverArt ?? Uint8List(0)),
       width: size,
       height: size,
       fit: BoxFit.cover,

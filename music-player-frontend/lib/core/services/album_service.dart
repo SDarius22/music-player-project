@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/dtos/album_page_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
@@ -32,8 +31,7 @@ class AlbumService {
     }
     Album newAlbum = Album();
     newAlbum.name = albumName;
-    newAlbum.imageBytes =
-        albumName == 'Unknown Album' ? Constants.logoBytes : image;
+    newAlbum.imageBytes = image;
     newAlbum.artist.targetId = artistId;
     return _albumRepository.saveAlbum(newAlbum);
   }
