@@ -43,9 +43,7 @@ public class SongService {
     public Page<SongDto> getSongsVisibleToUser(String q, User user, Pageable pageable) {
         Specification<Song> spec = SongSpecifications.visibleTo(user.getId());
         Specification<Song> qSpec = SongSpecifications.matchesQuery(q);
-        if (qSpec != null) {
-            spec = spec.and(qSpec);
-        }
+        spec = spec.and(qSpec);
 
         return songRepository.findAll(spec, pageable)
                 .map(songMapper::toDto);

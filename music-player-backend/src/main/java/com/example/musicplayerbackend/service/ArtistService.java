@@ -1,11 +1,7 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.ArtistRepository;
-import com.example.musicplayerbackend.domain.Artist;
-import com.example.musicplayerbackend.domain.AlbumDto;
-import com.example.musicplayerbackend.domain.ArtistDetailDto;
-import com.example.musicplayerbackend.domain.ArtistDto;
-import com.example.musicplayerbackend.domain.ArtistPageDto;
+import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,7 +24,7 @@ public class ArtistService {
     public ArtistPageDto getArtists(String q, int page, int size, String sort) {
         String query = (q == null || q.isBlank()) ? null : q;
         Pageable pageable = PageRequest.of(page, size, parseSort(sort));
-        Page<Artist> result = artistRepository.findAllByQuery(query, pageable);
+        Page<Artist> result = artistRepository.findAllByNameContainingIgnoreCase(query, pageable);
 
         List<ArtistDto> content = result.getContent().stream().map(a -> {
             ArtistDto dto = new ArtistDto();
