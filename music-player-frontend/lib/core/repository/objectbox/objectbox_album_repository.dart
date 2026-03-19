@@ -29,6 +29,14 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
   }
 
   @override
+  Album? getAlbumByServerId(int serverId) {
+    return _albumBox
+        .query(Album_.serverId.equals(serverId))
+        .build()
+        .findUnique();
+  }
+
+  @override
   List<Album> getAlbums(String query, String sortField, bool ascending) {
     Query<Album> builderQuery;
     if (ascending) {

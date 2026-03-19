@@ -51,6 +51,14 @@ class InMemoryArtistRepository implements ArtistRepository {
   }
 
   @override
+  Artist? getArtistByServerId(int serverId) {
+    for (final a in _byId.values) {
+      if (a.serverId == serverId) return a;
+    }
+    return null;
+  }
+
+  @override
   List<Artist> getArtists(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final list =

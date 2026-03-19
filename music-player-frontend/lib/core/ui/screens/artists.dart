@@ -5,7 +5,6 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/artist_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
@@ -24,15 +23,14 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
   const Artists({super.key, required super.provider});
 
   @override
+  String get screenTitle => 'Artists';
+
+  @override
   Widget buildLeftAction(BaseEntity entity, BuildContext context) {
     return IconButton(
       icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
       onPressed: () async {
-        debugPrint("Playing artist ${entity.name}");
-        if (entity is! Artist) {
-          debugPrint("Entity is not an Artist");
-          return;
-        }
+        if (entity is! Artist) return;
         Artist artist = entity;
         var audioProvider = Provider.of<AudioProvider>(context, listen: false);
         await audioProvider.setQueueAndPlay(artist.songs, artist.songs.first);
@@ -48,11 +46,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
   @override
   Widget buildRightAction(BaseEntity entity, BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(
-        FluentIcons.moreVertical,
-        color: Colors.white,
-        size: 28,
-      ),
+      icon: const Icon(FluentIcons.moreVertical, color: Colors.white, size: 28),
       onSelected: (String value) {
         switch (value) {
           case 'add':
@@ -65,10 +59,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             break;
           case 'playNext':
             Artist artist = entity as Artist;
-            var audioProvider = Provider.of<AudioProvider>(
-              context,
-              listen: false,
-            );
+            var audioProvider = Provider.of<AudioProvider>(context, listen: false);
             audioProvider.addNextToQueue(artist.songs);
             break;
           case 'select':
@@ -87,14 +78,8 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
       },
       itemBuilder: (context) {
         return [
-          const PopupMenuItem<String>(
-            value: 'add',
-            child: Text("Add to Playlist"),
-          ),
-          const PopupMenuItem<String>(
-            value: 'playNext',
-            child: Text("Play Next"),
-          ),
+          const PopupMenuItem<String>(value: 'add', child: Text("Add to Playlist")),
+          const PopupMenuItem<String>(value: 'playNext', child: Text("Play Next")),
           const PopupMenuItem<String>(value: 'select', child: Text("Select")),
         ];
       },
@@ -104,7 +89,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
   @override
   Future<void> onEntityTap(
     BaseEntity entity,
-    AsyncSnapshot snapshot,
+    List<dynamic> items,
     BuildContext context,
   ) async {
     var abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
@@ -113,18 +98,6 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
     );
     abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       ArtistScreen.route(artist: entity as Artist),
-    );
-  }
-
-  @override
-  Widget buildHeader(BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
-    var width = MediaQuery.of(context).size.width;
-    return Container(
-      height: height * 0.065,
-      width: width,
-      padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-      child: SearchHeader(title: 'Artists', provider: provider),
     );
   }
 }

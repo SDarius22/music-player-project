@@ -15,6 +15,13 @@ class Artist with AbstractCollection implements BaseEntity {
   @Index()
   int serverId = -1;
   bool requiresSync = false;
+  bool _isLocal = false;
+
+  @override
+  bool get isLocal => _isLocal;
+
+  @override
+  set isLocal(bool value) => _isLocal = value;
 
   @Unique()
   String _name = "Unknown artist";

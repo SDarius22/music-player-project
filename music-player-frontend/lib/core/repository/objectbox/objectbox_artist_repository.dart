@@ -32,6 +32,14 @@ class ObjectBoxArtistRepository implements ArtistRepository {
   }
 
   @override
+  Artist? getArtistByServerId(int serverId) {
+    return _artistBox
+        .query(Artist_.serverId.equals(serverId))
+        .build()
+        .findUnique();
+  }
+
+  @override
   List<Artist> getArtists(String query, String sortField, bool ascending) {
     Query<Artist> builderQuery;
     if (ascending) {

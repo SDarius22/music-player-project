@@ -28,8 +28,11 @@ import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/album_rest_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/artist_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/statistics_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_service.dart';
@@ -138,11 +141,35 @@ abstract class AbstractApp extends StatelessWidget {
         create: (context) => createFileService(context),
       ),
 
+      Provider<AlbumRestService>(
+        create: (context) => AlbumRestService(
+          baseUrl: _apiBaseUrl,
+          authService: context.read<AuthService>(),
+        ),
+      ),
+      Provider<ArtistRestService>(
+        create: (context) => ArtistRestService(
+          baseUrl: _apiBaseUrl,
+          authService: context.read<AuthService>(),
+        ),
+      ),
+      Provider<PlaylistRestService>(
+        create: (context) => PlaylistRestService(
+          baseUrl: _apiBaseUrl,
+          authService: context.read<AuthService>(),
+        ),
+      ),
       Provider<AlbumService>(
-        create: (context) => AlbumService(context.read<AlbumRepository>()),
+        create: (context) => AlbumService(
+          context.read<AlbumRepository>(),
+          context.read<AlbumRestService>(),
+        ),
       ),
       Provider<ArtistService>(
-        create: (context) => ArtistService(context.read<ArtistRepository>()),
+        create: (context) => ArtistService(
+          context.read<ArtistRepository>(),
+          context.read<ArtistRestService>(),
+        ),
       ),
       Provider<LyricsService>(create: (context) => LyricsService()),
       Provider<PlaylistService>(

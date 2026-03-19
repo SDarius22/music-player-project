@@ -109,7 +109,6 @@ class AppAudioService {
     if (shuffle == _currentAudioSettings.shuffle) return;
     _currentAudioSettings.shuffle = shuffle;
     settingsService.updateAudioSettings(_currentAudioSettings);
-    // Shuffle is managed in Dart via random index selection on song completion.
   }
 
   Future<Duration> getDuration() async {
@@ -240,7 +239,11 @@ class AppAudioService {
     final song = _normalQueue[idx];
     currentSong = song;
     final source = await _buildAudioSource(song);
-    await audioPlayer.setAudioSource(source);
+    await audioPlayer.setAudioSource(
+      source,
+      preload: false,
+      initialPosition: Duration(seconds: 0),
+    );
     await audioPlayer.play();
     _onSongStarted(song);
   }

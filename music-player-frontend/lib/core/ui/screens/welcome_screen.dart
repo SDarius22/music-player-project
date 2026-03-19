@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/library_settings_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/login_register_screen.dart';
@@ -29,6 +30,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     return GlassAnimatedScaffold(
       controller: context.read<AbstractAppStateProvider>().gradientController,
+      appBar: AppBarWidget(),
       body: Container(
         alignment: Alignment.center,
         padding: buildPadding(context),

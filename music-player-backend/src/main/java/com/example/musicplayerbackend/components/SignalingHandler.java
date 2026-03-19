@@ -1,6 +1,7 @@
 package com.example.musicplayerbackend.components;
 
 import com.example.musicplayerbackend.domain.ClientConnection;
+import com.example.musicplayerbackend.domain.PlaybackStateDto;
 import com.example.musicplayerbackend.domain.WebRTCMessage;
 import com.example.musicplayerbackend.service.PeerTrackingService;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -30,6 +31,32 @@ public class SignalingHandler extends TextWebSocketHandler {
     private final Map<String, ClientConnection> registry = new ConcurrentHashMap<>();
     private final Map<Long, Set<String>> userIndex = new ConcurrentHashMap<>();
     private final Map<String, String> peerIndex = new ConcurrentHashMap<>();
+
+    public void sendPlaybackStateChanged(Long userId, PlaybackStateDto state) {
+        Set<String> sessionIds = userIndex.getOrDefault(userId, Collections.emptySet());
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(Map.of(
+                    "type", "PLAYBACK_STATE_CHANGED",
+                    "senderId", "SERVER",
+                    "payload", state
+            ));
+        } catch (IOException e) {
+            log.error("[SIGNALING] Failed to serialize PLAYBACK_STATE_CHANGED: {}", e.getMessage());
+            return;
+        }
+        log.info("[SIGNALING] Sending PLAYBACK_STATE_CHANGED to user {} ({} session(s))", userId, sessionIds.size());
+        for (String sessionId : sessionIds) {
+            ClientConnection client = registry.get(sessionId);
+            if (client != null && client.session().isOpen()) {
+                try {
+                    client.session().sendMessage(new TextMessage(payload));
+                } catch (IOException e) {
+                    log.error("[SIGNALING] Failed to send PLAYBACK_STATE_CHANGED to session {}: {}", sessionId, e.getMessage());
+                }
+            }
+        }
+    }
 
     public void sendSyncTrigger(Long userId) {
         Set<String> sessionIds = userIndex.getOrDefault(userId, Collections.emptySet());
@@ -132,7 +159,7 @@ public class SignalingHandler extends TextWebSocketHandler {
                 routeToTarget(signal);
             }
 
-            case "SYNC_TRIGGER" -> { /* Ignore echo */ }
+            case "SYNC_TRIGGER", "PLAYBACK_STATE_CHANGED" -> { /* Server-sent only — ignore if echoed by client */ }
 
             default -> {
                 log.warn("[SIGNALING] Unknown signal type '{}' from session={}", type, session.getId());

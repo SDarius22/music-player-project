@@ -1,17 +1,25 @@
+class PageResult {
+  final List<dynamic> content;
+  final int totalPages;
+  final int page;
+
+  const PageResult({
+    required this.content,
+    required this.totalPages,
+    required this.page,
+  });
+}
+
 abstract class QueryableProvider {
-  void setFlag(bool value);
+  Map<String, dynamic> get sortFields;
 
-  bool getFlag();
-
-  void setSortField(String field);
-
-  String getSortField();
-
-  void setQuery(String query);
+  Future<PageResult> fetchPage(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int size,
+  );
 
   Future<void> refresh();
-
-  Future get query;
-
-  Map<String, dynamic> get sortFields;
 }

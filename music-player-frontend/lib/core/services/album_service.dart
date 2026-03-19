@@ -1,13 +1,15 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/constants.dart';
+import 'package:music_player_frontend/core/dtos/album_page_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
+import 'package:music_player_frontend/core/services/rest_clients/album_rest_service.dart';
 
 class AlbumService {
   final AlbumRepository _albumRepository;
+  final AlbumRestService? _albumRestService;
 
-  AlbumService(this._albumRepository);
+  AlbumService(this._albumRepository, [this._albumRestService]);
 
   Stream watchAlbums() => _albumRepository.watchAlbums();
 
@@ -36,31 +38,120 @@ class AlbumService {
     return _albumRepository.saveAlbum(newAlbum);
   }
 
-  List<Album> getAlbums(String query, String sortField, bool flag) {
-    return _albumRepository.getAlbums(query, sortField, flag);
-  }
-
-  List<Album> getAlbumsPaged(
-    String query,
-    String sortField,
-    bool ascending,
-    int page,
-    int pageSize,
-  ) {
-    return _albumRepository.getAlbumsPaged(
-      query,
-      sortField,
-      ascending,
-      page * pageSize,
-      pageSize,
-    );
-  }
-
   List<Album> getAllAlbums() {
     return _albumRepository.getAllAlbums();
   }
 
   void updateAlbum(Album album) {
     _albumRepository.updateAlbum(album);
+  }
+
+  Future<AlbumPageDto> getAlbumsPage(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int size,
+  ) async {
+    if (_albumRestService == null) {
+      return _localPage(query, sortField, ascending, page, size);
+    }
+
+    try {
+      final sort =
+          '${_toServerSortField(sortField)},${ascending ? 'asc' : 'desc'}';
+      final serverPage = await _albumRestService.getAlbumsPage(
+        query: query.isEmpty ? null : query,
+        page: page,
+        size: size,
+        sort: sort,
+      );
+
+      final resolved = <Album>[];
+      for (final serverAlbum in serverPage.content) {
+        resolved.add(_cacheServerAlbum(serverAlbum));
+      }
+
+      return AlbumPageDto(
+        content: resolved,
+        page: serverPage.page,
+        size: serverPage.size,
+        totalPages: serverPage.totalPages,
+        totalElements: serverPage.totalElements,
+      );
+    } catch (e) {
+      debugPrint('AlbumService: server fetch failed, using local: $e');
+      return _localPage(query, sortField, ascending, page, size);
+    }
+  }
+
+  Album _cacheServerAlbum(Album serverAlbum) {
+    if (serverAlbum.serverId != -1) {
+      final byServerId = _albumRepository.getAlbumByServerId(
+        serverAlbum.serverId,
+      );
+      if (byServerId != null) {
+        byServerId.name = serverAlbum.name;
+        if (byServerId.imageBytes == null && serverAlbum.imageBytes != null) {
+          byServerId.imageBytes = serverAlbum.imageBytes;
+        }
+        _albumRepository.updateAlbum(byServerId);
+        return byServerId;
+      }
+    }
+
+    final byName = _albumRepository.getAlbumByName(serverAlbum.name);
+    if (byName != null) {
+      if (byName.serverId == -1 && serverAlbum.serverId != -1) {
+        byName.serverId = serverAlbum.serverId;
+      }
+      if (byName.imageBytes == null && serverAlbum.imageBytes != null) {
+        byName.imageBytes = serverAlbum.imageBytes;
+      }
+      _albumRepository.updateAlbum(byName);
+      return byName;
+    }
+
+    return _albumRepository.saveAlbum(serverAlbum);
+  }
+
+  AlbumPageDto _localPage(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int size,
+  ) {
+    final all = _albumRepository.getAlbums(query, sortField, ascending);
+    final totalElements = all.length;
+    final totalPages = (totalElements / size).ceil();
+    final offset = page * size;
+    if (offset >= totalElements) {
+      return AlbumPageDto(
+        content: const [],
+        page: page,
+        size: size,
+        totalPages: totalPages,
+        totalElements: totalElements,
+      );
+    }
+    final content = all.sublist(
+      offset,
+      (offset + size).clamp(0, totalElements),
+    );
+    return AlbumPageDto(
+      content: content,
+      page: page,
+      size: size,
+      totalPages: totalPages,
+      totalElements: totalElements,
+    );
+  }
+
+  String _toServerSortField(String sortField) {
+    return switch (sortField.toLowerCase()) {
+      'name' => 'name',
+      _ => 'name',
+    };
   }
 }

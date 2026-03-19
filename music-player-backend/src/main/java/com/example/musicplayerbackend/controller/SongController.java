@@ -1,6 +1,7 @@
 package com.example.musicplayerbackend.controller;
 
 import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.service.AlbumService;
 import com.example.musicplayerbackend.service.RecommendationService;
 import com.example.musicplayerbackend.service.SongService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -28,6 +34,7 @@ public class SongController implements SongsApi {
 
     private final SongService songService;
     private final RecommendationService recommendationService;
+    private final AlbumService albumService;
 
     @Override
     public ResponseEntity<SongPageDto> getAllSongs(@Nullable String q, Integer page, Integer size, String sort) {
@@ -73,6 +80,19 @@ public class SongController implements SongsApi {
     @Override
     public ResponseEntity<SongDto> getSongById(Long songId) {
         return ResponseEntity.ok(songService.getSongById(songId));
+    }
+
+    @Override
+    public ResponseEntity<Resource> getSongCover(Long songId) {
+        SongDto song = songService.getSongById(songId);
+        if (song.getAlbum() == null || song.getAlbum().getId() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] bytes = albumService.getAlbumCover(song.getAlbum().getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
+                .body(new ByteArrayResource(bytes));
     }
 
     @Override

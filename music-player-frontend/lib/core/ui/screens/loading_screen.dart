@@ -4,6 +4,7 @@ import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/main_scaffold.dart';
 import 'package:music_player_frontend/core/ui/screens/welcome_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/animated_background.dart';
@@ -36,7 +37,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: buildAppBar(context),
+      appBar: AppBarWidget(),
       body: SafeArea(
         child: AnimatedBackground(
           controller: AnimatedMeshGradientController(),
@@ -45,13 +46,6 @@ class _LoadingScreenState extends State<LoadingScreen>
           ),
         ),
       ),
-    );
-  }
-
-  PreferredSizeWidget buildAppBar(BuildContext context) {
-    return const PreferredSize(
-      preferredSize: Size.fromHeight(0),
-      child: SizedBox.shrink(),
     );
   }
 

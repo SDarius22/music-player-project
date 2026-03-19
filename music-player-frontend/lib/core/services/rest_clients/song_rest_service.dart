@@ -233,7 +233,9 @@ class SongRestService extends AbstractRestService {
       final response = await get('/songs/recommendations');
       if (response.statusCode == 200) {
         final List<dynamic> decoded = jsonDecode(response.body);
-        return decoded.map((e) => Song.fromJson(e as Map<String, dynamic>)).toList();
+        return decoded
+            .map((e) => Song.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
     } catch (e) {
       debugPrint('Error fetching recommendations: $e');
@@ -246,7 +248,9 @@ class SongRestService extends AbstractRestService {
       final response = await get('/songs/forgotten');
       if (response.statusCode == 200) {
         final List<dynamic> decoded = jsonDecode(response.body);
-        return decoded.map((e) => Song.fromJson(e as Map<String, dynamic>)).toList();
+        return decoded
+            .map((e) => Song.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
     } catch (e) {
       debugPrint('Error fetching forgotten favourites: $e');
@@ -259,7 +263,9 @@ class SongRestService extends AbstractRestService {
       final response = await get('/songs/quick-dial');
       if (response.statusCode == 200) {
         final List<dynamic> decoded = jsonDecode(response.body);
-        return decoded.map((e) => Song.fromJson(e as Map<String, dynamic>)).toList();
+        return decoded
+            .map((e) => Song.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
     } catch (e) {
       debugPrint('Error fetching quick dial: $e');

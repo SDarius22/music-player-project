@@ -17,6 +17,7 @@ class Album with AbstractCollection implements BaseEntity {
   @Index()
   int serverId = -1;
   bool requiresSync = false;
+  bool _isLocal = false;
 
   String _name = "Unknown album";
 
@@ -35,6 +36,12 @@ class Album with AbstractCollection implements BaseEntity {
 
   @override
   set name(String value) => _name = value;
+
+  @override
+  bool get isLocal => _isLocal;
+
+  @override
+  set isLocal(bool value) => _isLocal = value;
 
   @override
   ToMany<Song> get songs => _songs;

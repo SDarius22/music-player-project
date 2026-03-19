@@ -11,6 +11,8 @@ abstract class AlbumRepository {
 
   Album? getAlbumByName(String albumName);
 
+  Album? getAlbumByServerId(int serverId);
+
   List<Album> getAlbums(String query, String sortField, bool ascending);
 
   List<Album> getAlbumsPaged(

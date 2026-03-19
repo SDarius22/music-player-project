@@ -58,6 +58,55 @@ abstract class AbstractRestService {
     return response;
   }
 
+  Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
+    String? token = await authService.accessToken;
+
+    Future<http.Response> perform(String t) {
+      return http.put(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode(body),
+      );
+    }
+
+    var response = await perform(token ?? "");
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      final newToken = await authService.refreshAccessToken();
+      if (newToken != null) {
+        response = await perform(newToken);
+      }
+    }
+    return response;
+  }
+
+  Future<http.Response> delete(String endpoint) async {
+    String? token = await authService.accessToken;
+
+    Future<http.Response> perform(String t) {
+      return http.delete(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+      );
+    }
+
+    var response = await perform(token ?? "");
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      final newToken = await authService.refreshAccessToken();
+      if (newToken != null) {
+        response = await perform(newToken);
+      }
+    }
+    return response;
+  }
+
   Future<http.Response> multipartRequest(
     String method,
     String endpoint, {

@@ -51,6 +51,14 @@ class InMemoryAlbumRepository implements AlbumRepository {
   }
 
   @override
+  Album? getAlbumByServerId(int serverId) {
+    for (final a in _byId.values) {
+      if (a.serverId == serverId) return a;
+    }
+    return null;
+  }
+
+  @override
   List<Album> getAlbums(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final list =

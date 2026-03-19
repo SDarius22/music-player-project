@@ -9,20 +9,9 @@ import 'package:music_player_frontend/core/services/playlist_service.dart';
 class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   final PlaylistService _playlistService;
 
-  bool _isAscending = true;
-  String _query = '';
-  String _sortField = 'Name';
-
-  late Future _playlistsFuture;
-
   PlaylistProvider(this._playlistService) {
-    _playlistsFuture = Future(() => _playlistService.getAllPlaylists());
-
     playlistsStream.listen((event) {
-      debugPrint("Playlists stream updated with ${event.toString()} playlists");
-      _playlistsFuture = Future(
-        () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
-      );
+      debugPrint("Playlists stream updated");
       notifyListeners();
     });
   }
@@ -30,45 +19,34 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   Stream get playlistsStream => _playlistService.watchPlaylists();
 
   @override
-  get sortFields => _playlistService.sortFields;
+  Map<String, dynamic> get sortFields => const {'Name': null};
+
+  String get defaultSortField => 'Name';
 
   @override
-  Future get query => _playlistsFuture;
-
-  @override
-  bool getFlag() {
-    return _isAscending;
-  }
-
-  @override
-  void setFlag(bool value) {
-    _isAscending = value;
-    _playlistsFuture = Future(
-      () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
+  Future<PageResult> fetchPage(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int size,
+  ) async {
+    final all = _playlistService.getPlaylists(query, sortField, ascending);
+    final totalElements = all.length;
+    final totalPages = totalElements == 0 ? 1 : (totalElements / size).ceil();
+    final offset = page * size;
+    final content = offset >= totalElements
+        ? <Playlist>[]
+        : all.sublist(offset, (offset + size).clamp(0, totalElements));
+    return PageResult(
+      content: content,
+      totalPages: totalPages,
+      page: page,
     );
-    notifyListeners();
   }
 
   @override
-  String getSortField() {
-    return _sortField;
-  }
-
-  @override
-  void setSortField(String field) {
-    _sortField = field;
-    _playlistsFuture = Future(
-      () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
-    );
-    notifyListeners();
-  }
-
-  @override
-  void setQuery(String newQuery) {
-    _query = newQuery;
-    _playlistsFuture = Future(
-      () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
-    );
+  Future<void> refresh() async {
     notifyListeners();
   }
 
@@ -99,10 +77,6 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     return _playlistService.getNormalPlaylists();
   }
 
-  List<Playlist> getPlaylists() {
-    return _playlistService.getPlaylists(_query, _sortField, _isAscending);
-  }
-
   List<Playlist> getAllPlaylists() {
     return _playlistService.getAllPlaylists();
   }
@@ -119,13 +93,5 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
 
   void updateFavoritesPlaylist() {
     _playlistService.updateFavoritesPlaylist();
-  }
-
-  @override
-  Future<void> refresh() async {
-    _playlistsFuture = Future(
-      () => _playlistService.getPlaylists(_query, _sortField, _isAscending),
-    );
-    notifyListeners();
   }
 }

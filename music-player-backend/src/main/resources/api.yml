@@ -193,6 +193,31 @@ paths:
         '404':
           description: Song not found
 
+  /songs/{songId}/cover:
+    get:
+      summary: Get song cover art
+      description: Returns the binary cover image for the song's album.
+      operationId: getSongCover
+      tags:
+        - Songs
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Cover image bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Song or cover not found
+
   /songs/{songId}/chunks/{chunkIndex}:
     post:
       summary: Upload a missing chunk
@@ -235,6 +260,404 @@ paths:
           description: Chunk accepted and linked
         '400':
           description: Hash mismatch or invalid index
+
+  /albums:
+    get:
+      summary: Get albums
+      operationId: getAlbums
+      tags:
+        - Albums
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive search in album name or artist name.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            default: name,asc
+          description: Sort as `field,direction` (e.g. `name,asc`).
+      responses:
+        '200':
+          description: A page of albums
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlbumPageDto'
+
+  /albums/{albumId}:
+    get:
+      summary: Get album by ID
+      operationId: getAlbumById
+      tags:
+        - Albums
+      parameters:
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Album with tracks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlbumDetailDto'
+        '404':
+          description: Album not found
+
+  /albums/{albumId}/cover:
+    get:
+      summary: Get album cover art
+      operationId: getAlbumCover
+      tags:
+        - Albums
+      parameters:
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Cover image bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Album or cover not found
+
+  /artists:
+    get:
+      summary: Get artists
+      operationId: getArtists
+      tags:
+        - Artists
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive search in artist name.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            default: name,asc
+      responses:
+        '200':
+          description: A page of artists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistPageDto'
+
+  /artists/{artistId}:
+    get:
+      summary: Get artist by ID
+      operationId: getArtistById
+      tags:
+        - Artists
+      parameters:
+        - name: artistId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Artist with albums
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistDetailDto'
+        '404':
+          description: Artist not found
+
+  /artists/{artistId}/cover:
+    get:
+      summary: Get artist cover art
+      description: Returns the cover image of the artist's first album that has one.
+      operationId: getArtistCover
+      tags:
+        - Artists
+      parameters:
+        - name: artistId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Cover image bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Artist or cover not found
+
+  /playlists:
+    get:
+      summary: Get the current user's playlists
+      operationId: getPlaylists
+      tags:
+        - Playlists
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: A page of playlists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistPageDto'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a playlist
+      operationId: createPlaylist
+      tags:
+        - Playlists
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlaylistDto'
+      responses:
+        '201':
+          description: Playlist created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistDetailDto'
+        '401':
+          description: Unauthorized
+
+  /playlists/{playlistId}:
+    get:
+      summary: Get playlist by ID
+      operationId: getPlaylistById
+      tags:
+        - Playlists
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Playlist with tracks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistDetailDto'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Playlist not found
+    put:
+      summary: Update a playlist
+      operationId: updatePlaylist
+      tags:
+        - Playlists
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePlaylistDto'
+      responses:
+        '200':
+          description: Playlist updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistDetailDto'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Playlist not found
+    delete:
+      summary: Delete a playlist
+      operationId: deletePlaylist
+      tags:
+        - Playlists
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Playlist deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Playlist not found
+
+  /playlists/{playlistId}/cover:
+    get:
+      summary: Get playlist cover art
+      operationId: getPlaylistCover
+      tags:
+        - Playlists
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Cover image bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Playlist or cover not found
+
+  /playback:
+    get:
+      summary: Get saved playback state
+      description: Returns the most recently saved queue, current song, and position for the authenticated user.
+      operationId: getPlaybackState
+      tags:
+        - Playback
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Saved playback state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybackStateDto'
+        '204':
+          description: No saved state exists yet
+        '401':
+          description: Unauthorized
+    put:
+      summary: Save playback state
+      description: |
+        Persists the caller's current queue, active song, and seek position.
+        All other sessions of the same user receive a PLAYBACK_STATE_CHANGED
+        WebSocket event so they can re-fetch the updated state.
+      operationId: savePlaybackState
+      tags:
+        - Playback
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaybackStateDto'
+      responses:
+        '200':
+          description: State saved; returns the persisted state with server-set updatedAt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybackStateDto'
+        '401':
+          description: Unauthorized
 
   /stream/{songId}/prefix:
     get:
@@ -347,7 +770,7 @@ paths:
     post:
       summary: Delta sync for user library
       description: |
-        Performs a bi-directional delta sync. 
+        Performs a bi-directional delta sync.
         1. Client sends its 'lastSyncTimestamp' and a list of local changes (adds/updates/soft-deletes).
         2. Server applies valid local changes.
         3. Server returns a 'newSyncTimestamp' and a list of changes from OTHER devices that happened since the client's last sync.
@@ -515,6 +938,46 @@ components:
         name:
           type: string
 
+    ArtistDetailDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        albums:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlbumDto'
+
+    ArtistPageDto:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtistDto'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+
     AlbumDto:
       type: object
       properties:
@@ -526,6 +989,168 @@ components:
         photo:
           type: string
 
+    AlbumDetailDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        photo:
+          type: string
+        artist:
+          $ref: '#/components/schemas/ArtistDto'
+        songs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SongDto'
+
+    AlbumPageDto:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlbumDto'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+
+    PlaylistDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        songIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        hasCover:
+          type: boolean
+
+    PlaylistDetailDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        songs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SongDto'
+        hasCover:
+          type: boolean
+
+    PlaylistPageDto:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlaylistDto'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+
+    CreatePlaylistDto:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        songIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          default: []
+        coverImage:
+          type: string
+          description: Base64-encoded cover image (optional)
+
+    UpdatePlaylistDto:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        songIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          nullable: true
+        coverImage:
+          type: string
+          nullable: true
+          description: Base64-encoded cover image; null to remove existing cover
+
+    PlaybackStateDto:
+      type: object
+      properties:
+        queueSongIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        currentSongId:
+          type: integer
+          format: int64
+          nullable: true
+        positionMs:
+          type: integer
+          format: int64
+          default: 0
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
 
     SongDto:
       type: object
@@ -584,7 +1209,7 @@ components:
         isDeleted:
           type: boolean
           default: false
-        
+
         songMetadata:
           $ref: '#/components/schemas/SongDto'
 

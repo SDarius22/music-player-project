@@ -7,34 +7,22 @@ import 'package:music_player_frontend/core/services/song_service.dart';
 class SongProvider with ChangeNotifier implements QueryableProvider {
   final SongService _songService;
   final AbstractMusicScannerService _scannerService;
-  bool _isAscending = true;
-  String _query = '';
-  String _sortField = 'Title';
 
   bool _isInitialized = false;
   bool _preferServer = false;
   bool _fallbackToServer = false;
 
-  late Future _songsFuture;
-
   SongProvider(this._songService, this._scannerService) {
-    _songsFuture = _songService.getAllSongs(
-      preferServer: _preferServer,
-      fallbackToServer: _fallbackToServer,
-    );
     _scannerService.progressStream.listen((progress) {
       debugPrint("Music scan progress: $progress");
-      refreshSongs();
+      notifyListeners();
     });
   }
 
   @override
-  get sortFields => _songService.sortFields;
+  Map<String, dynamic> get sortFields => _songService.sortFields;
 
-  @override
-  Future get query => _songsFuture;
-
-  int get totalSongsCount => _songService.getSongCount();
+  String get defaultSortField => 'Title';
 
   set preferServer(bool value) {
     _preferServer = value;
@@ -43,6 +31,8 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   set fallbackToServer(bool value) {
     _fallbackToServer = value;
   }
+
+  int get totalSongsCount => _songService.getSongCount();
 
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
@@ -54,56 +44,20 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     _isInitialized = true;
   }
 
-  void refreshSongs() {
-    debugPrint(
-      "Refreshing songs with query '$_query', sortField '$_sortField', isAscending '$_isAscending'",
-    );
-    _songsFuture = _songService.getSongs(
-      _query,
-      _sortField,
-      _isAscending,
-      preferServer: _preferServer,
-      fallbackToServer: _fallbackToServer,
-    );
-    notifyListeners();
-  }
-
   @override
-  bool getFlag() {
-    return _isAscending;
-  }
-
-  @override
-  void setFlag(bool value) {
-    _isAscending = value;
-    _songsFuture = Future(
-      () => _songService.getSongs(_query, _sortField, _isAscending),
+  Future<PageResult> fetchPage(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int size,
+  ) async {
+    final dto = await _songService.getSongsPage(query, sortField, ascending, page, size);
+    return PageResult(
+      content: dto.content,
+      totalPages: dto.totalPages,
+      page: dto.page,
     );
-    notifyListeners();
-  }
-
-  @override
-  String getSortField() {
-    return _sortField;
-  }
-
-  @override
-  void setSortField(String field) {
-    _sortField = field;
-    _songsFuture = Future(
-      () => _songService.getSongs(_query, _sortField, _isAscending),
-    );
-    notifyListeners();
-  }
-
-  @override
-  void setQuery(String newQuery) {
-    if (newQuery == _query) return;
-    _query = newQuery;
-    _songsFuture = Future(
-      () => _songService.getSongs(_query, _sortField, _isAscending),
-    );
-    notifyListeners();
   }
 
   void removeSong(Song song) {
@@ -143,15 +97,15 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   @override
   Future<void> refresh() async {
-    _songsFuture = _songService.getAllSongs(
-      preferServer: _preferServer,
-      fallbackToServer: _fallbackToServer,
-    );
+    notifyListeners();
+  }
+
+  void refreshSongs() {
     notifyListeners();
   }
 
   void runSync() async {
     _songService.runSync();
-    refreshSongs();
+    notifyListeners();
   }
 }

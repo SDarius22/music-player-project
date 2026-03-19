@@ -7,7 +7,6 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
 import 'package:music_player_frontend/core/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/playlist_screen.dart';
@@ -28,6 +27,9 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   Playlists({super.key, required super.provider});
 
   @override
+  String get screenTitle => 'Playlists';
+
+  @override
   Widget Function(BuildContext context)? get buildExtraTile => (context) {
     Playlist emptyPlaylist = Playlist();
     emptyPlaylist.name = "Create New Playlist";
@@ -35,7 +37,6 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
     emptyPlaylist.imageBytes = _createPlaylistImageBytes;
     return CustomGridTile(
       onTap: () {
-        debugPrint("Create new playlist tapped");
         var appState = Provider.of<AbstractAppStateProvider>(
           context,
           listen: false,
@@ -44,16 +45,10 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
           CreateOrImportScreen.route(),
         );
       },
-      onLongPress: () {
-        debugPrint("Create new playlist long pressed");
-      },
+      onLongPress: () {},
       entity: emptyPlaylist,
       isSelected: false,
-      mainAction: const Icon(
-        FluentIcons.add,
-        color: Colors.white,
-        size: 28,
-      ),
+      mainAction: const Icon(FluentIcons.add, color: Colors.white, size: 28),
     );
   };
 
@@ -62,11 +57,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
     return IconButton(
       icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
       onPressed: () async {
-        debugPrint("Playing playlist ${entity.name}");
-        if (entity is! Playlist) {
-          debugPrint("Entity is not a Playlist");
-          return;
-        }
+        if (entity is! Playlist) return;
         Playlist playlist = entity;
         final songs = playlist.songsList;
         var audioProvider = Provider.of<AudioProvider>(context, listen: false);
@@ -83,22 +74,12 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   @override
   Widget buildRightAction(BaseEntity entity, BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(
-        FluentIcons.moreVertical,
-        color: Colors.white,
-        size: 28,
-      ),
+      icon: const Icon(FluentIcons.moreVertical, color: Colors.white, size: 28),
       onSelected: (String value) {},
       itemBuilder: (context) {
         return [
-          const PopupMenuItem<String>(
-            value: 'add',
-            child: Text("Add to Playlist"),
-          ),
-          const PopupMenuItem<String>(
-            value: 'playNext',
-            child: Text("Play Next"),
-          ),
+          const PopupMenuItem<String>(value: 'add', child: Text("Add to Playlist")),
+          const PopupMenuItem<String>(value: 'playNext', child: Text("Play Next")),
           const PopupMenuItem<String>(value: 'select', child: Text("Select")),
         ];
       },
@@ -108,7 +89,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   @override
   Future<void> onEntityTap(
     BaseEntity entity,
-    AsyncSnapshot snapshot,
+    List<dynamic> items,
     BuildContext context,
   ) async {
     var abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
@@ -117,18 +98,6 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
     );
     abstractAppStateProvider.innerNavigatorKey.currentState!.push(
       PlaylistScreen.route(playlist: entity as Playlist),
-    );
-  }
-
-  @override
-  Widget buildHeader(BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
-    var width = MediaQuery.of(context).size.width;
-    return Container(
-      height: height * 0.065,
-      width: width,
-      padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-      child: SearchHeader(title: 'Playlists', provider: provider),
     );
   }
 }

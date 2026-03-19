@@ -6,7 +6,6 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
@@ -24,6 +23,9 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
   }
 
   const Tracks({super.key, required super.provider});
+
+  @override
+  String get screenTitle => 'Tracks';
 
   @override
   Widget buildLeftAction(BaseEntity entity, BuildContext context) {
@@ -65,11 +67,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
   @override
   Widget buildRightAction(BaseEntity entity, BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(
-        FluentIcons.moreVertical,
-        color: Colors.white,
-        size: 28,
-      ),
+      icon: const Icon(FluentIcons.moreVertical, color: Colors.white, size: 28),
       onSelected: (String value) {
         switch (value) {
           case 'add':
@@ -89,7 +87,6 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
             audioProvider.addNextToQueue([(entity as Song)]);
             break;
           case 'select':
-            debugPrint("Select ${entity.name}");
             var selectionProvider = Provider.of<SelectionProvider>(
               context,
               listen: false,
@@ -102,7 +99,6 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
             }
             break;
           case 'details':
-            debugPrint("Details ${entity.name}");
             var appState = Provider.of<AbstractAppStateProvider>(
               context,
               listen: false,
@@ -115,19 +111,10 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
       },
       itemBuilder: (context) {
         return [
-          const PopupMenuItem<String>(
-            value: 'add',
-            child: Text("Add to Playlist"),
-          ),
-          const PopupMenuItem<String>(
-            value: 'playNext',
-            child: Text("Play Next"),
-          ),
+          const PopupMenuItem<String>(value: 'add', child: Text("Add to Playlist")),
+          const PopupMenuItem<String>(value: 'playNext', child: Text("Play Next")),
           const PopupMenuItem<String>(value: 'select', child: Text("Select")),
-          const PopupMenuItem<String>(
-            value: 'details',
-            child: Text("Track Details"),
-          ),
+          const PopupMenuItem<String>(value: 'details', child: Text("Track Details")),
         ];
       },
     );
@@ -136,41 +123,26 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
   @override
   Future<void> onEntityTap(
     BaseEntity entity,
-    AsyncSnapshot snapshot,
+    List<dynamic> items,
     BuildContext context,
   ) async {
-    var song = entity as Song;
-    var audioProvider = Provider.of<AudioProvider>(context, listen: false);
+    final song = entity as Song;
+    final audioProvider = Provider.of<AudioProvider>(context, listen: false);
     try {
       if (audioProvider.currentSong != song) {
-        List<Song> songs = snapshot.data as List<Song>;
-        debugPrint("Playing new song: ${song.name}");
+        final songs = items.whereType<Song>().toList();
         await audioProvider.setQueueAndPlay(songs, song);
       } else {
         if (audioProvider.playingNotifier.value == true) {
-          debugPrint("Pausing song");
           await audioProvider.pause();
         } else {
-          debugPrint("Playing song");
           await audioProvider.play();
         }
       }
     } catch (e) {
       debugPrint(e.toString());
-      List<Song> songs = snapshot.data as List<Song>;
+      final songs = items.whereType<Song>().toList();
       await audioProvider.setQueueAndPlay(songs, song);
     }
-  }
-
-  @override
-  Widget buildHeader(BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
-    var width = MediaQuery.of(context).size.width;
-    return Container(
-      height: height * 0.065,
-      width: width,
-      padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-      child: SearchHeader(title: 'Tracks', provider: provider),
-    );
   }
 }

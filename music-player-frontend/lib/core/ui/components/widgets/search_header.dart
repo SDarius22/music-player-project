@@ -1,19 +1,29 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+
 class SearchHeader extends StatefulWidget {
   const SearchHeader({
     super.key,
     required this.title,
-    required this.provider,
+    required this.sortFields,
+    required this.initialSortField,
+    required this.initialAscending,
+    required this.onQuery,
+    required this.onSortField,
+    required this.onAscending,
     this.clickedPlayAll,
     this.clickedShuffle,
   });
 
   final String title;
-  final QueryableProvider provider;
+  final Map<String, dynamic> sortFields;
+  final String initialSortField;
+  final bool initialAscending;
+  final void Function(String) onQuery;
+  final void Function(String) onSortField;
+  final void Function(bool) onAscending;
   final void Function()? clickedPlayAll;
   final void Function()? clickedShuffle;
 
@@ -25,14 +35,14 @@ class _SearchHeaderState extends State<SearchHeader> {
   FocusNode searchNode = FocusNode();
   Timer? _debounce;
   final TextEditingController _controller = TextEditingController();
-  String _sortField = "Name";
-  bool _isAscending = true;
+  late String _sortField;
+  late bool _isAscending;
 
   @override
   void initState() {
     super.initState();
-    _sortField = widget.provider.getSortField();
-    _isAscending = widget.provider.getFlag();
+    _sortField = widget.initialSortField;
+    _isAscending = widget.initialAscending;
   }
 
   @override
@@ -78,47 +88,37 @@ class _SearchHeaderState extends State<SearchHeader> {
                         ),
                         onPressed: () {
                           _controller.clear();
-                          widget.provider.setQuery("");
+                          widget.onQuery('');
                           searchNode.unfocus();
                         },
                       )
                       : null,
-              contentPadding: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.005),
+              contentPadding: EdgeInsets.symmetric(
+                vertical: MediaQuery.of(context).size.height * 0.005,
+              ),
             ),
             onChanged: (value) {
-              if (_debounce?.isActive ?? false) {
-                _debounce?.cancel();
-              }
+              if (_debounce?.isActive ?? false) _debounce?.cancel();
               _debounce = Timer(const Duration(milliseconds: 500), () {
-                widget.provider.setQuery(value);
+                widget.onQuery(value);
               });
             },
           ),
         ),
         IconButton(
           tooltip: "Play All",
-          onPressed: () async {},
-          icon: const Icon(
-            FluentIcons.play,
-            color: Colors.white,
-            size: 24,
-          ),
+          onPressed: widget.clickedPlayAll ?? () {},
+          icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
         ),
         IconButton(
           tooltip: "Shuffle",
-          onPressed: () async {},
-          icon: const Icon(
-            FluentIcons.shuffleOn,
-            color: Colors.white,
-            size: 24,
-          ),
+          onPressed: widget.clickedShuffle ?? () {},
+          icon: const Icon(FluentIcons.shuffleOn, color: Colors.white, size: 24),
         ),
         PopupMenuButton<String>(
           tooltip: "Sort",
           icon: Icon(
-            _isAscending
-                ? FluentIcons.sortAscending
-                : FluentIcons.sortDescending,
+            _isAscending ? FluentIcons.sortAscending : FluentIcons.sortDescending,
             color: Colors.white,
             size: 24,
           ),
@@ -127,54 +127,54 @@ class _SearchHeaderState extends State<SearchHeader> {
               MediaQuery.of(context).size.height * 0.015,
             ),
           ),
-          menuPadding: EdgeInsets.all(8),
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  enabled: false,
-                  child: Text(
-                    "Sort By",
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.grey),
+          menuPadding: const EdgeInsets.all(8),
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              enabled: false,
+              child: Text(
+                "Sort By",
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            const PopupMenuDivider(),
+            ...widget.sortFields.keys.map(
+              (field) => _buildSortMenuItem(context, field),
+            ),
+            const PopupMenuDivider(),
+            PopupMenuItem(
+              child: Row(
+                children: [
+                  Icon(
+                    _isAscending
+                        ? FluentIcons.sortAscending
+                        : FluentIcons.sortDescending,
+                    color: Colors.white,
+                    size: 16,
                   ),
-                ),
-                const PopupMenuDivider(),
-                ...widget.provider.sortFields.keys.map(
-                  (field) => _buildSortMenuItem(context, field),
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem(
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isAscending
-                            ? FluentIcons.sortAscending
-                            : FluentIcons.sortDescending,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        _isAscending ? "Ascending" : "Descending",
-                        style:
-                            Theme.of(context).textTheme.bodyMedium!,
-                      ),
-                    ],
+                  const SizedBox(width: 8),
+                  Text(
+                    _isAscending ? "Ascending" : "Descending",
+                    style: Theme.of(context).textTheme.bodyMedium!,
                   ),
-                  onTap: () {
-                    setState(() {
-                      _isAscending = !_isAscending;
-                      widget.provider.setFlag(_isAscending);
-                    });
-                  },
-                ),
-              ],
+                ],
+              ),
+              onTap: () {
+                setState(() {
+                  _isAscending = !_isAscending;
+                });
+                widget.onAscending(_isAscending);
+              },
+            ),
+          ],
         ),
       ],
     );
   }
 
   PopupMenuItem<String> _buildSortMenuItem(BuildContext context, String value) {
-    bool isSelected = _sortField == value;
+    final isSelected = _sortField == value;
     return PopupMenuItem(
       value: value,
       child: Row(
@@ -184,21 +184,22 @@ class _SearchHeaderState extends State<SearchHeader> {
             color: isSelected ? Colors.blue : Colors.transparent,
             size: 16,
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Text(
             value,
-            style:
-                isSelected
-                    ? Theme.of(context).textTheme.titleMedium
-                    : Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.grey),
+            style: isSelected
+                ? Theme.of(context).textTheme.titleMedium
+                : Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    color: Colors.grey,
+                  ),
           ),
         ],
       ),
       onTap: () {
         setState(() {
           _sortField = value;
-          widget.provider.setSortField(_sortField);
         });
+        widget.onSortField(value);
       },
     );
   }
