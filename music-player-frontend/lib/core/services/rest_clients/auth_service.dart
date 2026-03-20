@@ -31,8 +31,7 @@ class AuthService {
 
   bool get isLoggedIn => _cachedAccessToken != null;
 
-  Future<String?> get accessToken async {
-    _cachedAccessToken ??= await _storage.read(key: 'access_token');
+  String? get accessToken {
     return _cachedAccessToken;
   }
 
@@ -41,7 +40,7 @@ class AuthService {
   }
 
   Future<bool> get isAdmin async {
-    final token = await accessToken;
+    final token = accessToken;
     if (token == null) return false;
     final payload = _parseJwt(token);
     return payload['role'] == 'ADMIN';

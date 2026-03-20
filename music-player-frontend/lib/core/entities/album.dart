@@ -83,8 +83,6 @@ class Album with AbstractCollection implements BaseEntity {
     album.name = json['name'] ?? "Unknown Album";
     album.serverId = json['id'] ?? -1;
     if (json['photo'] != null) {
-      debugPrint("Decoded image for album ${album.name} (${album.serverId})");
-      debugPrint("Image size: ${json['photo'].length} bytes");
       album.imageBytes = Uint8List.fromList(base64Decode(json['photo']));
     }
     return album;

@@ -219,7 +219,9 @@ class SongService {
     // Resolve and persist artist first so album can reference it.
     Artist? resolvedArtist;
     if (serverSong.artist.target != null) {
-      resolvedArtist = _artistService.cacheServerArtist(serverSong.artist.target!);
+      resolvedArtist = _artistService.cacheServerArtist(
+        serverSong.artist.target!,
+      );
     }
 
     // Resolve and persist album, linking it to the resolved artist.

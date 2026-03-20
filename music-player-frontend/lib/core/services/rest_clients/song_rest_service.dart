@@ -197,8 +197,6 @@ class SongRestService extends AbstractRestService {
       if (response.statusCode == 200) {
         final dynamic decoded = jsonDecode(response.body);
 
-        // Expected: page envelope. If backend returns an array (older versions),
-        // adapt it into a single-page response.
         if (decoded is Map<String, dynamic>) {
           return SongPageDto.fromJson(decoded);
         }
