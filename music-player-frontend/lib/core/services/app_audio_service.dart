@@ -241,6 +241,7 @@ class AppAudioService {
     _isSwitchingSong = true;
     final song = _normalQueue[idx];
     currentSong = song;
+    await audioPlayer.stop();
     await audioPlayer.setAudioSource(_buildAudioSource(song));
     await audioPlayer.play();
     _isSwitchingSong = false;

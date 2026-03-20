@@ -10,6 +10,7 @@ import 'package:web/web.dart' as web;
 class WebP2PBridge {
   final ChunkService Function(int) chunkManagerFactory;
   final Map<int, ChunkService> _managers = {};
+  int? _currentSongId;
 
   WebP2PBridge(this.chunkManagerFactory) {
     _listenToServiceWorker();
@@ -43,10 +44,14 @@ class WebP2PBridge {
     final int songId = int.parse(data['songId'].toString());
     final String rangeStr = data['range'].toString();
 
+    _currentSongId = songId;
+
     if (!_managers.containsKey(songId)) {
       _managers[songId] = chunkManagerFactory(songId);
       await _managers[songId]!.loadManifest();
     }
+    if (_currentSongId != songId) return;
+
     final manager = _managers[songId]!;
 
     int requestedStart = 0;
@@ -70,6 +75,8 @@ class WebP2PBridge {
     if (requestedEnd >= manager.totalBytes) {
       requestedEnd = manager.totalBytes - 1;
     }
+
+    if (_currentSongId != songId) return;
 
     try {
       final (responseBytes, isP2P) = await _compileBytesForRange(
