@@ -24,17 +24,17 @@ jobs:
             artifact_name: music-player-linux
             artifact_path: music-player-frontend/music-player-linux.tar.gz
 
-          - os: windows-latest
-            target: windows
-            build_cmd: flutter build windows --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
-            artifact_name: music-player-windows
-            artifact_path: music-player-frontend/music-player-windows.zip
-
-          - os: macos-latest
-            target: macos
-            build_cmd: flutter build macos --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
-            artifact_name: music-player-macos
-            artifact_path: music-player-frontend/music-player-macos.zip
+#          - os: windows-latest
+#            target: windows
+#            build_cmd: flutter build windows --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
+#            artifact_name: music-player-windows
+#            artifact_path: music-player-frontend/music-player-windows.zip
+#
+#          - os: macos-latest
+#            target: macos
+#            build_cmd: flutter build macos --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
+#            artifact_name: music-player-macos
+#            artifact_path: music-player-frontend/music-player-macos.zip
 
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +46,8 @@ jobs:
       - if: matrix.target == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libjsoncpp-dev libmpv-dev mpv
+
 
       - working-directory: ./music-player-frontend
         run: flutter pub get
