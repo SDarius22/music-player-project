@@ -90,48 +90,35 @@ class EndDrawerWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    return Align(
-      alignment: Alignment.centerRight,
-      child: GlassContainer(
-        color: Colors.black.withValues(alpha: 0.55),
-        borderColor: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(size.height * 0.016),
-        blur: 48.0,
-        borderWidth: 1.0,
-        elevation: 8.0,
-        shadowColor: Colors.black.withValues(alpha: 0.35),
-        alignment: Alignment.topCenter,
-        child: SizedBox(
-          width: size.width * 0.5,
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: size.width * 0.025,
-              vertical: size.height * 0.035,
+    return GlassContainer(
+      color: Colors.black.withValues(alpha: 0.55),
+      borderColor: Colors.white.withValues(alpha: 0.08),
+      blur: 48.0,
+      borderWidth: 1.0,
+      elevation: 8.0,
+      shadowColor: Colors.black.withValues(alpha: 0.35),
+      alignment: Alignment.topCenter,
+      width: size.width * 0.7,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(size),
+            SizedBox(height: size.height * 0.025),
+            Divider(color: Colors.white.withValues(alpha: 0.1), thickness: 1),
+            SizedBox(height: size.height * 0.018),
+            ..._downloads.map(
+              (item) => _DownloadCard(
+                item: item,
+                size: size,
+                onTap:
+                    item.url.isEmpty
+                        ? null
+                        : () => _triggerDownload(item.url, item.filename),
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(size),
-                SizedBox(height: size.height * 0.025),
-                Divider(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  thickness: 1,
-                ),
-                SizedBox(height: size.height * 0.018),
-                ..._downloads.map(
-                  (item) => _DownloadCard(
-                    item: item,
-                    size: size,
-                    onTap:
-                        item.url.isEmpty
-                            ? null
-                            : () => _triggerDownload(item.url, item.filename),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -141,7 +128,7 @@ class EndDrawerWidget extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(size.height * 0.012),
+          padding: EdgeInsets.all(size.height * 0.01),
           decoration: BoxDecoration(
             color: Colors.indigo.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(size.height * 0.01),
@@ -152,7 +139,7 @@ class EndDrawerWidget extends StatelessWidget {
             size: size.height * 0.032,
           ),
         ),
-        SizedBox(width: size.width * 0.015),
+        SizedBox(width: size.width * 0.01),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
