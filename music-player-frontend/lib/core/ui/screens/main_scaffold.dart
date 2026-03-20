@@ -80,6 +80,10 @@ class _MainScaffoldState extends State<MainScaffold> {
             UniversalPlatform.isWeb
                 ? Drawer(
                   backgroundColor: Colors.transparent,
+                  width:
+                      !ResponsiveBreakpoints.of(context).isMobile
+                          ? width * 0.5
+                          : null,
                   child: EndDrawerWidget(),
                 )
                 : null,

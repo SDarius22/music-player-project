@@ -97,7 +97,6 @@ class EndDrawerWidget extends StatelessWidget {
       elevation: 8.0,
       shadowColor: Colors.black.withValues(alpha: 0.35),
       alignment: Alignment.topCenter,
-      width: size.width * 0.7,
       padding: EdgeInsets.symmetric(
         horizontal: size.width * 0.01,
         vertical: size.height * 0.0125,
