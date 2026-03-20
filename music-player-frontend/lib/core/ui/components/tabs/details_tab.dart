@@ -72,7 +72,7 @@ class DetailsTab extends StatelessWidget {
                           style:
                               MusicPlayerTheme.getTheme()
                                   .textTheme
-                                  .displaySmall!,
+                                  .headlineMedium!,
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -107,7 +107,7 @@ class DetailsTab extends StatelessWidget {
                                   style:
                                       MusicPlayerTheme.getTheme()
                                           .textTheme
-                                          .titleLarge!,
+                                          .titleMedium!,
                                 ),
                               ),
                             ),
@@ -143,7 +143,7 @@ class DetailsTab extends StatelessWidget {
                                   style:
                                       MusicPlayerTheme.getTheme()
                                           .textTheme
-                                          .titleLarge!,
+                                          .titleMedium!,
                                 ),
                               ),
                             ),

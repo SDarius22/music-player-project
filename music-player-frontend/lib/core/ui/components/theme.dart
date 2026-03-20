@@ -3,22 +3,22 @@ import 'package:flutter/material.dart';
 class MusicPlayerTheme {
   // ── Gradient anchor colors (exactly 4 — required by the mesh gradient) ──
   static const Color gradientViolet = Color(0xFF7C3AED); // deep violet
-  static const Color gradientPink   = Color(0xFFDB2777); // hot pink
-  static const Color gradientAmber  = Color(0xFFD97706); // warm amber
+  static const Color gradientPink = Color(0xFFDB2777); // hot pink
+  static const Color gradientAmber = Color(0xFFD97706); // warm amber
   static const Color gradientIndigo = Color(0xFF2563EB); // electric indigo
 
   // ── Surfaces ──
-  static const Color backgroundDark  = Color(0xFF07050E);
-  static const Color surfaceDark     = Color(0xFF100C1C);
+  static const Color backgroundDark = Color(0xFF07050E);
+  static const Color surfaceDark = Color(0xFF100C1C);
   static const Color surfaceElevated = Color(0xFF1A1430);
 
   // ── Text ──
-  static const Color textPrimary   = Color(0xFFFFFFFF);
+  static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFADA5C8);
 
   // ── Accent (lighter tints of the gradient for interactive states) ──
   static const Color accentViolet = Color(0xFFA78BFA);
-  static const Color accentPink   = Color(0xFFF472B6);
+  static const Color accentPink = Color(0xFFF472B6);
 
   // ── Gradients ──
   // Used as the default mesh-gradient background (4 colors required).
@@ -131,7 +131,6 @@ class MusicPlayerTheme {
       ),
 
       textTheme: const TextTheme(
-        // Display — large hero text
         displayLarge: TextStyle(
           fontFamily: 'Inter',
           fontSize: 48,
@@ -153,7 +152,6 @@ class MusicPlayerTheme {
           color: textPrimary,
           letterSpacing: -0.5,
         ),
-        // Headline — section titles
         headlineLarge: TextStyle(
           fontFamily: 'Inter',
           fontSize: 26,
@@ -174,7 +172,6 @@ class MusicPlayerTheme {
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
-        // Title — card/list item titles
         titleLarge: TextStyle(
           fontFamily: 'Inter',
           fontSize: 17,
@@ -193,7 +190,6 @@ class MusicPlayerTheme {
           fontWeight: FontWeight.w500,
           color: textPrimary,
         ),
-        // Body — readable content
         bodyLarge: TextStyle(
           fontFamily: 'Inter',
           fontSize: 16,
@@ -212,7 +208,6 @@ class MusicPlayerTheme {
           fontWeight: FontWeight.w400,
           color: textSecondary,
         ),
-        // Label — chips, badges, captions
         labelLarge: TextStyle(
           fontFamily: 'Inter',
           fontSize: 14,

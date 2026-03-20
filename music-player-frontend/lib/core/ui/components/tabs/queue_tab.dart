@@ -28,7 +28,7 @@ class QueueTab extends StatelessWidget {
             padding: EdgeInsets.only(right: width * 0.01),
             sliver: ListComponent(
               items: Provider.of<AudioProvider>(context).normalQueue,
-              itemExtent: height * 0.1,
+              itemExtent: height * 0.085,
               isSelected: (entity) {
                 return false;
               },

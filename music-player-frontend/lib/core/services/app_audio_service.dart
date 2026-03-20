@@ -73,7 +73,65 @@ class AppAudioService {
     });
   }
 
-  Future<void> play() => audioPlayer.play();
+  Future<void> play() {
+    debugPrint(
+      '[AppAudioService] play() called: playing=${audioPlayer.playing}, state=${audioPlayer.processingState}',
+    );
+    final future = audioPlayer.play();
+    unawaited(_retryIfStuck());
+    return future;
+  }
+
+  Future<void> _retryIfStuck() async {
+    const checkInterval = Duration(milliseconds: 500);
+    const maxStuckMs = 1000;
+    int stuckMs = 0;
+    Duration? prevPosition;
+
+    debugPrint(
+      '[AppAudioService] Starting _retryIfStuck: playing=${audioPlayer.playing}, isSwitching=$_isSwitchingSong, state=${audioPlayer.processingState}',
+    );
+
+    while (stuckMs < maxStuckMs) {
+      await Future.delayed(checkInterval);
+
+      if (!audioPlayer.playing || _isSwitchingSong) {
+        debugPrint(
+          '[_retryIfStuck] Early exit: playing=${audioPlayer.playing}, isSwitching=$_isSwitchingSong, state=${audioPlayer.processingState}',
+        );
+        return;
+      }
+
+      final state = audioPlayer.processingState;
+      if (state == ProcessingState.loading ||
+          state == ProcessingState.buffering) {
+        debugPrint(
+          '[AppAudioService] Detected loading/buffering state, resetting stuck timer',
+        );
+        prevPosition = null;
+        continue;
+      }
+
+      final pos = audioPlayer.position;
+      if (prevPosition != null && pos > prevPosition) return;
+      if (prevPosition != null) stuckMs += checkInterval.inMilliseconds;
+      prevPosition = pos;
+      debugPrint(
+        '[AppAudioService] Checking for stuck playback: position=$pos, prevPosition=$prevPosition, stuckMs=$stuckMs',
+      );
+    }
+
+    if (!audioPlayer.playing || _isSwitchingSong || _normalQueue.isEmpty) {
+      debugPrint(
+        '[AppAudioService] Playback stuck but player is not playing or queue is empty, not retrying',
+      );
+      return;
+    }
+    debugPrint(
+      '[AppAudioService] Playback stuck for ${maxStuckMs}ms, retrying',
+    );
+    await _loadAndPlayIndex(_currentIndex);
+  }
 
   Future<void> pause() => audioPlayer.pause();
 
@@ -214,6 +272,9 @@ class AppAudioService {
     if (_normalQueue.isNotEmpty) {
       final idx = _normalQueue.indexWhere((s) => s == currentSong);
       _currentIndex = idx < 0 ? 0 : idx;
+      debugPrint(
+        '[_initPlayer] sliderInSeconds=${_currentAudioSettings.sliderInSeconds}, durationInSeconds=${currentSong.durationInSeconds}, song="${currentSong.name}"',
+      );
       final source = _buildAudioSource(_normalQueue[_currentIndex]);
       await audioPlayer.setAudioSource(
         source,
@@ -227,6 +288,9 @@ class AppAudioService {
   }
 
   Future<void> _onSongCompleted() async {
+    debugPrint(
+      '[_onSongCompleted] called: queue=${_normalQueue.length}, isSwitching=$_isSwitchingSong, index=$_currentIndex',
+    );
     if (_normalQueue.isEmpty || _isSwitchingSong) return;
     if (_currentAudioSettings.shuffle) {
       _currentIndex = Random().nextInt(_normalQueue.length);
@@ -237,6 +301,7 @@ class AppAudioService {
   }
 
   Future<void> _loadAndPlayIndex(int idx) async {
+    debugPrint('[AppAudioService] _loadAndPlayIndex($idx) called');
     if (_normalQueue.isEmpty) return;
     await _initDone.future;
     _isSwitchingSong = true;
@@ -246,7 +311,7 @@ class AppAudioService {
       await audioPlayer.stop();
     }
     await audioPlayer.setAudioSource(_buildAudioSource(song));
-    await audioPlayer.play();
+    await play();
     _isSwitchingSong = false;
     _onSongStarted(song);
   }

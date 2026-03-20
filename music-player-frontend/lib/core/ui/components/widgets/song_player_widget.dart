@@ -6,9 +6,9 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/tabs/app_queue_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
+import 'package:music_player_frontend/core/ui/components/tabs/queue_tab.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/volume_widget.dart';
 import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -241,7 +241,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     audioProvider.currentSong.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       shadows: [
                         Shadow(
                           color: Colors.black.withValues(alpha: 0.75),
@@ -256,7 +256,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                         'Unknown Artist',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white70,
                       shadows: [
                         Shadow(

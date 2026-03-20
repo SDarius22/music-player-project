@@ -29,7 +29,6 @@ class DrawerWidget extends StatefulWidget {
 }
 
 class _DrawerWidgetState extends State<DrawerWidget> {
-  int _selected = 0;
   late AbstractAppStateProvider _appStateProvider;
 
   @override
@@ -44,7 +43,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "icon": Icons.home_rounded,
       "index": 0,
       "onTap": (BuildContext context) {
-        setState(() => _selected = 0);
+        setState(() => _appStateProvider.currentDrawerIndex = 0);
         _appStateProvider.innerNavigatorKey.currentState!.push(
           HomeScreen.route(),
         );
@@ -56,7 +55,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "icon": FluentIcons.album,
       "index": 1,
       "onTap": (BuildContext context) {
-        setState(() => _selected = 1);
+        setState(() => _appStateProvider.currentDrawerIndex = 1);
         _appStateProvider.innerNavigatorKey.currentState!.push(Albums.route());
       },
     },
@@ -66,7 +65,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "icon": FluentIcons.artists2,
       "index": 2,
       "onTap": (BuildContext context) {
-        setState(() => _selected = 2);
+        setState(() => _appStateProvider.currentDrawerIndex = 2);
         _appStateProvider.innerNavigatorKey.currentState!.push(Artists.route());
       },
     },
@@ -76,7 +75,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "icon": FluentIcons.music,
       "index": 3,
       "onTap": (BuildContext context) {
-        setState(() => _selected = 3);
+        setState(() => _appStateProvider.currentDrawerIndex = 3);
         _appStateProvider.innerNavigatorKey.currentState!.push(Tracks.route());
       },
     },
@@ -86,7 +85,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "icon": FluentIcons.playlists,
       "index": 4,
       "onTap": (BuildContext context) {
-        setState(() => _selected = 4);
+        setState(() => _appStateProvider.currentDrawerIndex = 4);
         _appStateProvider.innerNavigatorKey.currentState!.push(
           Playlists.route(),
         );
@@ -101,7 +100,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "icon": FluentIcons.download,
       "index": 6,
       "onTap": (BuildContext context) {
-        setState(() => _selected = 6);
+        setState(() => _appStateProvider.currentDrawerIndex = 6);
         context
             .read<AbstractAppStateProvider>()
             .innerNavigatorKey
@@ -115,7 +114,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "icon": Icons.bar_chart_rounded,
       "index": 7,
       "onTap": (BuildContext context) {
-        setState(() => _selected = 7);
+        setState(() => _appStateProvider.currentDrawerIndex = 7);
         context
             .read<AbstractAppStateProvider>()
             .innerNavigatorKey
@@ -132,7 +131,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     required bool isDrawerOpen,
   }) {
     final int itemIndex = item["index"];
-    final bool isSelected = _selected == itemIndex;
+    final bool isSelected = _appStateProvider.currentDrawerIndex == itemIndex;
 
     double horizontalPadding =
         isDrawerOpen
@@ -383,7 +382,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 cursor: SystemMouseCursors.click,
                 child: GestureDetector(
                   onTap: () {
-                    setState(() => _selected = 5);
+                    setState(() => _appStateProvider.currentDrawerIndex = 5);
                     _appStateProvider.innerNavigatorKey.currentState!.push(
                       UserSettingsScreen.route(),
                     );
@@ -392,7 +391,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   child: HoverContainer(
                     hoverColor: Colors.indigo.withValues(alpha: 0.2),
                     normalColor:
-                        _selected == 5
+                        _appStateProvider.currentDrawerIndex == 5
                             ? Colors.white.withValues(alpha: 0.15)
                             : Colors.transparent,
                     padding: EdgeInsets.symmetric(
