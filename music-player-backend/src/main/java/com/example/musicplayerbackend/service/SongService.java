@@ -40,7 +40,7 @@ public class SongService {
 
     @Transactional(readOnly = true)
     public Page<SongDto> getSongsVisibleToUser(String q, User user, Pageable pageable) {
-        return songRepository.findAllByNameContainingIgnoreCaseAndOwnerId(q == null ? "" : q, user.getId(), pageable)
+        return songRepository.findVisibleToUser(q == null ? "" : q, user.getId(), pageable)
                 .map(songMapper::toDto);
     }
 

@@ -170,9 +170,9 @@ class AppAudioService {
     if (!songs.equals(_normalQueue)) {
       debugPrint("updating queue with new songs");
       _normalQueue = List.from(songs);
-      _queuePlaylist.songs.clear();
-      _queuePlaylist.songsIds.clear();
-      playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
+      // _queuePlaylist.songs.clear();
+      // _queuePlaylist.songsIds.clear();
+      // playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
     }
 
     await setCurrentSongAndPlay(song);
@@ -239,17 +239,12 @@ class AppAudioService {
     await _initDone.future;
     final song = _normalQueue[idx];
     currentSong = song;
-    final source = await _buildAudioSource(song);
-    await audioPlayer.setAudioSource(
-      source,
-      preload: false,
-      initialPosition: Duration(seconds: 0),
-    );
+    await audioPlayer.setAudioSource(_buildAudioSource(song));
     await audioPlayer.play();
-    _onSongStarted(song);
+    // _onSongStarted(song);
   }
 
-  Future<AudioSource> _buildAudioSource(Song song) async {
+  AudioSource _buildAudioSource(Song song) {
     final bool isServerTrack = !song.isLocal;
 
     if (isServerTrack) {

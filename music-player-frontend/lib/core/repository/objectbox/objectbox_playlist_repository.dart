@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/database/objectBox.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
@@ -18,7 +19,12 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
 
   @override
   Playlist savePlaylist(Playlist playlist) {
-    playlist.id = _playlistBox.put(playlist);
+    try {
+      playlist.id = _playlistBox.put(playlist);
+    } catch (e) {
+      debugPrint("Failed to save playlist: $e");
+    }
+
     return playlist;
   }
 
