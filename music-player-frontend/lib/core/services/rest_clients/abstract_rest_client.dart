@@ -10,7 +10,7 @@ abstract class AbstractRestService {
   late final AuthService authService;
 
   Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
-    String? token = await authService.accessToken;
+    String? token = authService.accessToken;
 
     Future<http.Response> perform(String t) {
       return http.post(
@@ -35,7 +35,7 @@ abstract class AbstractRestService {
   }
 
   Future<http.Response> get(String endpoint) async {
-    String? token = await authService.accessToken;
+    String? token = authService.accessToken;
 
     Future<http.Response> perform(String t) {
       return http.get(
@@ -59,7 +59,7 @@ abstract class AbstractRestService {
   }
 
   Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
-    String? token = await authService.accessToken;
+    String? token = authService.accessToken;
 
     Future<http.Response> perform(String t) {
       return http.put(
@@ -84,7 +84,7 @@ abstract class AbstractRestService {
   }
 
   Future<http.Response> delete(String endpoint) async {
-    String? token = await authService.accessToken;
+    String? token = authService.accessToken;
 
     Future<http.Response> perform(String t) {
       return http.delete(
@@ -113,7 +113,7 @@ abstract class AbstractRestService {
     Map<String, String>? fields,
     List<http.MultipartFile>? files,
   }) async {
-    String? token = await authService.accessToken;
+    String? token = authService.accessToken;
 
     Future<http.Response> perform(String t) async {
       var request = http.MultipartRequest(
@@ -145,7 +145,7 @@ abstract class AbstractRestService {
     Map<String, String> fields,
     void Function(int sentBytes, int totalBytes) onProgress,
   ) async {
-    String? token = await authService.accessToken;
+    String? token = authService.accessToken;
     final totalBytes = await file.length();
 
     Future<http.Response> perform(String t) async {

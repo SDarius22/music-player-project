@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
@@ -437,7 +437,7 @@ class SongService {
     );
   }
 
-  CachedNetworkImage getCoverArt(int serverId) {
+  Widget getCoverArt(int serverId) {
     return _songRestService.fetchCoverArt(serverId);
   }
 }

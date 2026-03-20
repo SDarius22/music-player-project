@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:music_player_frontend/platforms/linux/ui/linux_app.dart';
+import 'package:music_player_frontend/platforms/linux/linux_app.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {

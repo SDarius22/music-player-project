@@ -21,15 +21,6 @@ class UserProvider with ChangeNotifier {
 
   String? get pendingEmail => _pendingEmail;
 
-  Future<void> initialize() async {
-    final token = await _authService.accessToken;
-    _status =
-        (token != null && token.isNotEmpty)
-            ? AuthStatus.authenticated
-            : AuthStatus.unauthenticated;
-    notifyListeners();
-  }
-
   void setPendingEmail(String email) {
     _pendingEmail = email.trim();
     notifyListeners();

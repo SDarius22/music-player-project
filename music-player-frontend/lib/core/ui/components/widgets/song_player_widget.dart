@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -30,7 +29,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     with TickerProviderStateMixin {
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   final ScrollController itemScrollController = ScrollController();
-  late CachedNetworkImage cachedCoverArt;
+  late Widget cachedCoverArt;
   late AbstractAppStateProvider appStateProvider;
   late AudioProvider audioProvider;
   final MiniPlayerController _lyricsPlayerController = MiniPlayerController();

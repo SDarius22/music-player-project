@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
@@ -12,7 +11,7 @@ import 'package:provider/provider.dart';
 
 class DetailsTab extends StatelessWidget {
   final double opacity;
-  final CachedNetworkImage image;
+  final Widget image;
   final MiniPlayerController miniPlayerController;
 
   const DetailsTab({

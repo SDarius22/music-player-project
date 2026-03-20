@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -87,22 +86,25 @@ class SongRestService extends AbstractRestService {
     return null;
   }
 
-  CachedNetworkImage fetchCoverArt(int songId) {
-    return CachedNetworkImage(
-      imageUrl: '$baseUrl/songs/$songId/cover',
-      httpHeaders: {'Authorization': 'Bearer ${authService.accessToken}'},
-      errorWidget: (context, url, error) {
-        debugPrint('Error fetching cover art: $error');
-        return Container(
-          color: Colors.black,
-          child: Icon(
-            FluentIcons.music,
-            color: Colors.white.withValues(alpha: 0.25),
-            size: 64,
-          ),
-        );
-      },
-    );
+  Widget fetchCoverArt(int songId) {
+    try {
+      return Image(
+        image: NetworkImage(
+          '$baseUrl/songs/$songId/cover',
+          headers: {'Authorization': 'Bearer ${authService.accessToken}'},
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error fetching cover art: $e');
+      return Container(
+        color: Colors.black,
+        child: Icon(
+          FluentIcons.music,
+          color: Colors.white.withValues(alpha: 0.25),
+          size: 64,
+        ),
+      );
+    }
   }
 
   Future<bool> uploadFullSong({

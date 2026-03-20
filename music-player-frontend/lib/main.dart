@@ -6,9 +6,9 @@ import 'package:flutter_fullscreen/flutter_fullscreen.dart';
 import 'package:flutter_single_instance/flutter_single_instance.dart';
 import 'package:music_player_frontend/core/database/initialization/db_init.dart';
 import 'package:music_player_frontend/local_libs/just_audio_media_kit/just_audio_media_kit.dart';
-import 'package:music_player_frontend/platforms/android/ui/android_app.dart';
-import 'package:music_player_frontend/platforms/linux/ui/linux_app.dart';
-import 'package:music_player_frontend/platforms/macos/ui/macos_app.dart';
+import 'package:music_player_frontend/platforms/android/android_app.dart';
+import 'package:music_player_frontend/platforms/linux/linux_app.dart';
+import 'package:music_player_frontend/platforms/macos/macos_app.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {

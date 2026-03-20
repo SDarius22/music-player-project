@@ -85,6 +85,8 @@ class Song implements BaseEntity {
     if (json['album'] is Map<String, dynamic>) {
       song.album.target = Album.fromJson(json['album'] as Map<String, dynamic>);
     }
+    song.fullyLoaded = true;
+    song.isLocal = false;
     return song;
   }
 

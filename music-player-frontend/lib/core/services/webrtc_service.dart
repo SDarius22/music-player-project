@@ -43,7 +43,7 @@ class WebRTCService {
   }
 
   Future<void> _init() async {
-    final token = await authService.accessToken;
+    final token = authService.accessToken;
     if (token != null) {
       _userId = _parseUserIdFromJwt(token);
       _listenToSignaling();
@@ -216,7 +216,9 @@ class WebRTCService {
   void _drainPendingRequests(String peerId, RTCDataChannel channel) {
     final pending = _pendingChunkRequests.remove(peerId);
     if (pending == null) return;
-    debugPrint('[P2P] DataChannel open with $peerId — draining ${pending.length} queued request(s)');
+    debugPrint(
+      '[P2P] DataChannel open with $peerId — draining ${pending.length} queued request(s)',
+    );
     for (final req in pending) {
       channel.send(
         RTCDataChannelMessage('REQUEST_CHUNK:${req.songId}:${req.chunkIndex}'),
@@ -233,7 +235,9 @@ class WebRTCService {
 
       final audioData = binary.sublist(8);
 
-      debugPrint('[P2P] Received chunk from peer — song=$songId chunk=$chunkIndex (${audioData.length} bytes)');
+      debugPrint(
+        '[P2P] Received chunk from peer — song=$songId chunk=$chunkIndex (${audioData.length} bytes)',
+      );
       onChunkReceived(songId, chunkIndex, audioData);
     } catch (e) {
       debugPrint("Error parsing binary P2P message: $e");

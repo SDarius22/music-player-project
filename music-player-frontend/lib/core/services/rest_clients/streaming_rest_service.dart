@@ -40,7 +40,7 @@ class StreamingRestService {
   }
 
   Future<http.Response> _getJson(String endpoint) async {
-    String? token = await _auth.accessToken;
+    String? token = _auth.accessToken;
 
     Future<http.Response> perform(String t) {
       return http.get(
@@ -62,7 +62,7 @@ class StreamingRestService {
   }
 
   Future<http.Response> _getBinary(String endpoint) async {
-    String? token = await _auth.accessToken;
+    String? token = _auth.accessToken;
 
     Future<http.Response> perform(String t) {
       return http.get(

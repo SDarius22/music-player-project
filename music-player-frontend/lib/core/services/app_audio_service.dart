@@ -61,6 +61,16 @@ class AppAudioService {
     _queuePlaylist = playlistService.getQueuePlaylist();
     _normalQueue = _queuePlaylist.songsList;
     _initPlayer();
+
+    audioPlayer.processingStateStream.listen((state) {
+      if (state == ProcessingState.completed) {
+        _onSongCompleted();
+      }
+    });
+
+    audioPlayer.errorStream.listen((error) {
+      debugPrint("Audio Player Error: $error");
+    });
   }
 
   Future<void> play() => audioPlayer.play();
@@ -170,7 +180,8 @@ class AppAudioService {
 
     if (!songs.equals(_normalQueue)) {
       debugPrint("updating queue with new songs");
-      _normalQueue = List.from(songs);
+      _normalQueue.clear();
+      _normalQueue.addAll(songs);
       _queuePlaylist.songs.clear();
       _queuePlaylist.songsIds.clear();
       playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
@@ -212,16 +223,6 @@ class AppAudioService {
       );
     }
 
-    audioPlayer.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
-        _onSongCompleted();
-      }
-    });
-
-    audioPlayer.errorStream.listen((error) {
-      debugPrint("Audio Player Error: $error");
-    });
-
     if (!_initDone.isCompleted) _initDone.complete();
   }
 
@@ -241,7 +242,9 @@ class AppAudioService {
     _isSwitchingSong = true;
     final song = _normalQueue[idx];
     currentSong = song;
-    await audioPlayer.stop();
+    if (!UniversalPlatform.isDesktop) {
+      await audioPlayer.stop();
+    }
     await audioPlayer.setAudioSource(_buildAudioSource(song));
     await audioPlayer.play();
     _isSwitchingSong = false;
@@ -250,6 +253,9 @@ class AppAudioService {
 
   AudioSource _buildAudioSource(Song song) {
     final bool isServerTrack = !song.isLocal;
+    debugPrint(
+      "Building audio source for song ${song.name} (isLocal: ${song.isLocal})",
+    );
 
     if (isServerTrack) {
       if (UniversalPlatform.isWeb) {
