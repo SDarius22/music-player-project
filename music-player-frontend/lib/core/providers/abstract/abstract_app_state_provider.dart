@@ -72,4 +72,8 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
     updateAppSettings();
     notifyListeners();
   }
+
+  Widget? getEndDrawer(BuildContext context) {
+    return null;
+  }
 }
