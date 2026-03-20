@@ -1,10 +1,8 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
+import 'package:web/web.dart' as web;
 
 class _PlatformDownload {
   final String platform;
@@ -78,10 +76,11 @@ class EndDrawerWidget extends StatelessWidget {
   void _triggerDownload(String url, String filename) {
     if (url.isEmpty) return;
     final anchor =
-        html.AnchorElement(href: url)
+        web.HTMLAnchorElement()
+          ..href = url
           ..setAttribute('download', filename)
           ..style.display = 'none';
-    html.document.body?.append(anchor);
+    web.document.body?.append(anchor);
     anchor.click();
     anchor.remove();
   }
