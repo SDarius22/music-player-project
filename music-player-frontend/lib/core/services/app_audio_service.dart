@@ -28,6 +28,7 @@ class AppAudioService {
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
 
   bool _initialized = false;
+  bool _isSwitchingSong = false;
   int _currentIndex = 0;
   final Completer<void> _initDone = Completer<void>();
 
@@ -225,7 +226,7 @@ class AppAudioService {
   }
 
   Future<void> _onSongCompleted() async {
-    if (_normalQueue.isEmpty) return;
+    if (_normalQueue.isEmpty || _isSwitchingSong) return;
     if (_currentAudioSettings.shuffle) {
       _currentIndex = Random().nextInt(_normalQueue.length);
     } else {
@@ -237,10 +238,12 @@ class AppAudioService {
   Future<void> _loadAndPlayIndex(int idx) async {
     if (_normalQueue.isEmpty) return;
     await _initDone.future;
+    _isSwitchingSong = true;
     final song = _normalQueue[idx];
     currentSong = song;
     await audioPlayer.setAudioSource(_buildAudioSource(song));
     await audioPlayer.play();
+    _isSwitchingSong = false;
     _onSongStarted(song);
   }
 

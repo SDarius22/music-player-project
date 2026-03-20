@@ -91,15 +91,17 @@ class SongRestService extends AbstractRestService {
     return CachedNetworkImage(
       imageUrl: '$baseUrl/songs/$songId/cover',
       httpHeaders: {'Authorization': 'Bearer ${authService.accessToken}'},
-      errorWidget:
-          (context, url, error) => Container(
-            color: Colors.black,
-            child: Icon(
-              FluentIcons.music,
-              color: Colors.white.withValues(alpha: 0.25),
-              size: 64,
-            ),
+      errorWidget: (context, url, error) {
+        debugPrint('Error fetching cover art: $error');
+        return Container(
+          color: Colors.black,
+          child: Icon(
+            FluentIcons.music,
+            color: Colors.white.withValues(alpha: 0.25),
+            size: 64,
           ),
+        );
+      },
     );
   }
 
