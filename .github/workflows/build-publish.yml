@@ -88,5 +88,5 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "./downloads/*"
-          target: "/var/www/music-frontend/downloads"
+          target: "/var/www/music-player-downloads/"
           strip_components: 1
