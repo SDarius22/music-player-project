@@ -24,7 +24,7 @@ jobs:
         run: flutter pub get
 
       - working-directory: ./music-player-frontend
-        run: flutter build web -t lib/main-web.dart --base-href /music-player/ --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
+        run: flutter build web -t lib/main_web.dart --base-href /music-player/ --release --dart-define=API_BASE_URL=https://www.bt-app.com/api/v1 --dart-define=WS_BASE_URL=wss://www.bt-app.com/ws/signaling
 
       - uses: appleboy/ssh-action@v1.0.0
         with:
