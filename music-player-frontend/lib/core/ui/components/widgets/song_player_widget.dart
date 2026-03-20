@@ -376,7 +376,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     audioProvider.currentSong.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       shadows: [
                         Shadow(
                           color: Colors.black.withValues(alpha: 0.75),
@@ -391,7 +391,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                         'Unknown Artist',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.white70,
                       shadows: [
                         Shadow(

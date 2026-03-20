@@ -3,11 +3,13 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/end_drawer_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 class MainScaffold extends StatefulWidget {
   static Route<dynamic> route() {
@@ -74,6 +76,13 @@ class _MainScaffoldState extends State<MainScaffold> {
                   ? DrawerWidget(mobileDrawer: true)
                   : SizedBox.shrink(),
         ),
+        endDrawer:
+            UniversalPlatform.isWeb
+                ? Drawer(
+                  backgroundColor: Colors.transparent,
+                  child: EndDrawerWidget(),
+                )
+                : null,
         body: Padding(
           padding: buildPadding(context),
           child: Stack(

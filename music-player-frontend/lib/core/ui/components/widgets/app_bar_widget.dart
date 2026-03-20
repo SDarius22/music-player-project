@@ -56,11 +56,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 provider.scaffoldKey.currentState?.openDrawer();
               }
             },
-            icon: Icon(
-              FluentIcons.menu,
-              size: 24,
-              color: Colors.white,
-            ),
+            icon: Icon(FluentIcons.menu, size: 24, color: Colors.white),
           ),
         if (UniversalPlatform.isDesktop) ...[
           Expanded(
@@ -142,12 +138,13 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                     .currentState
                     ?.openEndDrawer();
               },
-              icon: Icon(
-                FluentIcons.download,
-                size: 24,
-                color: Colors.white,
+              icon: Icon(FluentIcons.download, size: 24, color: Colors.white),
+              label: Text(
+                "Download App",
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: Colors.white),
               ),
-              label: const SizedBox.shrink(),
             ),
         ],
       ],
