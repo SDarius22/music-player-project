@@ -140,7 +140,7 @@ class AppAudioService {
     final insertAt = _normalQueue.isEmpty ? 0 : _currentIndex + 1;
 
     for (final song in songs.reversed) {
-      if (_normalQueue.any((s) => s.id == song.id)) continue;
+      if (_normalQueue.any((s) => s == song)) continue;
       _normalQueue.insert(insertAt, song);
       _queuePlaylist.songs.add(song);
       _queuePlaylist.songsIds.insert(insertAt, song.id);
@@ -150,7 +150,7 @@ class AppAudioService {
   }
 
   Future<void> removeFromQueue(Song song) async {
-    final idx = _normalQueue.indexWhere((s) => s.id == song.id);
+    final idx = _normalQueue.indexWhere((s) => s == song);
     if (idx == -1) return;
 
     _normalQueue.removeAt(idx);
@@ -170,9 +170,9 @@ class AppAudioService {
     if (!songs.equals(_normalQueue)) {
       debugPrint("updating queue with new songs");
       _normalQueue = List.from(songs);
-      // _queuePlaylist.songs.clear();
-      // _queuePlaylist.songsIds.clear();
-      // playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
+      _queuePlaylist.songs.clear();
+      _queuePlaylist.songsIds.clear();
+      playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
     }
 
     await setCurrentSongAndPlay(song);
@@ -181,7 +181,7 @@ class AppAudioService {
   Future<void> setCurrentSongAndPlay(Song song) async {
     currentSong = song;
     try {
-      final idx = _normalQueue.indexWhere((s) => s.id == song.id);
+      final idx = _normalQueue.indexWhere((s) => s == song);
       _currentIndex = idx < 0 ? 0 : idx;
       await _loadAndPlayIndex(_currentIndex);
     } catch (e) {
@@ -200,9 +200,9 @@ class AppAudioService {
     );
 
     if (_normalQueue.isNotEmpty) {
-      final idx = _normalQueue.indexWhere((s) => s.id == currentSong.id);
+      final idx = _normalQueue.indexWhere((s) => s == currentSong);
       _currentIndex = idx < 0 ? 0 : idx;
-      final source = await _buildAudioSource(_normalQueue[_currentIndex]);
+      final source = _buildAudioSource(_normalQueue[_currentIndex]);
       await audioPlayer.setAudioSource(
         source,
         initialPosition: Duration(
@@ -241,7 +241,7 @@ class AppAudioService {
     currentSong = song;
     await audioPlayer.setAudioSource(_buildAudioSource(song));
     await audioPlayer.play();
-    // _onSongStarted(song);
+    _onSongStarted(song);
   }
 
   AudioSource _buildAudioSource(Song song) {
