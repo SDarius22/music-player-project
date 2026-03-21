@@ -460,10 +460,10 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
         debugPrint("Jumping to current song index in queue");
         int currentSongIndex = audioProvider.currentIndexInNonShuffled;
         if (currentSongIndex > 15) {
-          itemScrollController.jumpTo(height * 0.1 * (currentSongIndex - 10));
+          itemScrollController.jumpTo(height * 0.085 * (currentSongIndex - 10));
         }
         itemScrollController.animateTo(
-          height * 0.1 * currentSongIndex,
+          height * 0.085 * currentSongIndex,
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
         );

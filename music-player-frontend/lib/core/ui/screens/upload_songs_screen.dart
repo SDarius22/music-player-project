@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
@@ -78,36 +80,82 @@ class _UploadSongsScreenState extends State<UploadSongsScreen> {
   Future<void> pickSongs() async {
     if (isBusy.value) return;
 
+    final selectionType = await showDialog<String>(
+      context: context,
+      builder:
+          (ctx) => SimpleDialog(
+            title: const Text('Select Source'),
+            children: [
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, 'files'),
+                child: const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Text('Pick specific files'),
+                ),
+              ),
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, 'dir'),
+                child: const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Text('Pick a folder'),
+                ),
+              ),
+            ],
+          ),
+    );
+
+    if (selectionType == null) return;
+
     isBusy.value = true;
     try {
+      final List<String> paths = [];
       final extensions = fileService.supportedAudioExtensions;
 
-      final result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: extensions,
-        withData: false,
-      );
+      if (selectionType == 'dir') {
+        final dirPath = await FilePicker.platform.getDirectoryPath();
+        if (dirPath != null) {
+          final dir = Directory(dirPath);
+          if (await dir.exists()) {
+            await for (final entity in dir.list(
+              recursive: true,
+              followLinks: false,
+            )) {
+              if (entity is File) {
+                paths.add(entity.path);
+              }
+            }
+          }
+        }
+      } else {
+        final result = await FilePicker.platform.pickFiles(
+          allowMultiple: true,
+          type: FileType.custom,
+          allowedExtensions: extensions,
+          withData: false,
+        );
 
-      if (result == null || result.files.isEmpty) return;
+        if (result != null) {
+          paths.addAll(result.files.map((f) => f.path).whereType<String>());
+        }
+      }
 
-      final paths =
-          result.files.map((f) => f.path).whereType<String>().toList();
+      if (paths.isEmpty) return;
 
       for (final path in paths) {
         if (!fileService.isSupportedAudioFile(path)) continue;
 
+        if (items.any((e) => e['path'] == path)) continue;
+
         try {
           final data = await fileService.retrieveSong(path, withImage: true);
 
-          final alreadyAdded = items.any((e) => e['path'] == path);
-          if (!alreadyAdded) {
-            data['progress'] = 0.0;
-            data['uploading'] = false;
-            items.add(data);
-          }
+          data['progress'] = 0.0;
+          data['uploading'] = false;
+          items.add(data);
+
+          if (items.length % 10 == 0 && mounted) setState(() {});
         } catch (_) {
-          // ignore single-file failures
+          // ignore single-file parsing failures
         }
       }
 
@@ -132,25 +180,31 @@ class _UploadSongsScreenState extends State<UploadSongsScreen> {
           item['progress'] = 0.0;
         });
 
-        final ok = await songRestService.uploadFullSong(
-          audioFilePath: item['path'],
-          name: item['title'],
-          artistName: item['artist'],
-          albumName: item['album'],
-          durationInSeconds: item['duration'],
-          trackNumber: item['trackNumber'],
-          discNumber: item['discNumber'],
-          releaseYear: item['year'],
-          coverArtBytes: item['image'],
-          onProgress: (sent, total) {
-            if (!mounted) return;
-            final p = total == 0 ? 0.0 : (sent / total).clamp(0.0, 1.0);
-            setState(() => item['progress'] = p);
-          },
-        );
-
-        setState(() => item['uploading'] = false);
-        if (ok) okCount += 1;
+        try {
+          final ok = await songRestService.uploadFullSong(
+            audioFilePath: item['path'],
+            name: item['title'],
+            artistName: item['artist'],
+            albumName: item['album'],
+            durationInSeconds: item['duration'],
+            trackNumber: item['trackNumber'],
+            discNumber: item['discNumber'],
+            releaseYear: item['year'],
+            coverArtBytes: item['image'],
+            onProgress: (sent, total) {
+              if (!mounted) return;
+              final p = total == 0 ? 0.0 : (sent / total).clamp(0.0, 1.0);
+              setState(() => item['progress'] = p);
+            },
+          );
+          setState(() => item['uploading'] = false);
+          if (ok) okCount += 1;
+        } catch (_) {
+          setState(() {
+            item['uploading'] = false;
+            item['progress'] = 0.0;
+          });
+        }
       }
 
       showToast('Uploaded $okCount/${items.length}');

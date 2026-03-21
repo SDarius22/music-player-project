@@ -61,26 +61,30 @@ class AlbumService {
         sort: sort,
       );
 
-      final resolved = <Album>[];
       for (final serverAlbum in serverPage.content) {
-        resolved.add(cacheServerAlbum(serverAlbum));
+        cacheServerAlbum(serverAlbum);
       }
 
-      return AlbumPageDto(
-        content: resolved,
-        page: serverPage.page,
-        size: serverPage.size,
-        totalPages: serverPage.totalPages,
-        totalElements: serverPage.totalElements,
-      );
+      if (serverPage.totalElements > 0) {
+        final content = _albumRepository.getAlbumsPaged(
+          query, sortField, ascending, page * size, size,
+        );
+        return AlbumPageDto(
+          content: content,
+          page: page,
+          size: size,
+          totalPages: serverPage.totalPages,
+          totalElements: serverPage.totalElements,
+        );
+      }
     } catch (e) {
       debugPrint('AlbumService: server fetch failed, using local: $e');
-      return _localPage(query, sortField, ascending, page, size);
     }
+    return _localPage(query, sortField, ascending, page, size);
   }
 
   Album cacheServerAlbum(Album serverAlbum) {
-    if (serverAlbum.serverId != -1) {
+    if (serverAlbum.serverId > 0) {
       final byServerId = _albumRepository.getAlbumByServerId(
         serverAlbum.serverId,
       );
@@ -96,7 +100,7 @@ class AlbumService {
 
     final byName = _albumRepository.getAlbumByName(serverAlbum.name);
     if (byName != null) {
-      if (byName.serverId == -1 && serverAlbum.serverId != -1) {
+      if (byName.serverId <= 0 && serverAlbum.serverId > 0) {
         byName.serverId = serverAlbum.serverId;
       }
       if (byName.imageBytes == null && serverAlbum.imageBytes != null) {

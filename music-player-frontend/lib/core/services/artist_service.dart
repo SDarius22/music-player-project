@@ -65,26 +65,30 @@ class ArtistService {
         sort: sort,
       );
 
-      final resolved = <Artist>[];
       for (final serverArtist in serverPage.content) {
-        resolved.add(cacheServerArtist(serverArtist));
+        cacheServerArtist(serverArtist);
       }
 
-      return ArtistPageDto(
-        content: resolved,
-        page: serverPage.page,
-        size: serverPage.size,
-        totalPages: serverPage.totalPages,
-        totalElements: serverPage.totalElements,
-      );
+      if (serverPage.totalElements > 0) {
+        final content = _artistRepository.getArtistsPaged(
+          query, sortField, ascending, page * size, size,
+        );
+        return ArtistPageDto(
+          content: content,
+          page: page,
+          size: size,
+          totalPages: serverPage.totalPages,
+          totalElements: serverPage.totalElements,
+        );
+      }
     } catch (e) {
       debugPrint('ArtistService: server fetch failed, using local: $e');
-      return _localPage(query, sortField, ascending, page, size);
     }
+    return _localPage(query, sortField, ascending, page, size);
   }
 
   Artist cacheServerArtist(Artist serverArtist) {
-    if (serverArtist.serverId != -1) {
+    if (serverArtist.serverId > 0) {
       final byServerId = _artistRepository.getArtistByServerId(
         serverArtist.serverId,
       );
@@ -97,7 +101,7 @@ class ArtistService {
 
     final byName = _artistRepository.getArtistByName(serverArtist.name);
     if (byName != null) {
-      if (byName.serverId == -1 && serverArtist.serverId != -1) {
+      if (byName.serverId <= 0 && serverArtist.serverId > 0) {
         byName.serverId = serverArtist.serverId;
         _artistRepository.updateArtist(byName);
       }

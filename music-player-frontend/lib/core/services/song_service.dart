@@ -58,54 +58,31 @@ class SongService {
     return _songRepository.getSongContaining(query);
   }
 
-  Future<List<Song>> getAllSongs({
-    bool preferServer = false,
-    bool fallbackToServer = false,
-  }) async {
-    if (!preferServer) {
-      final local = _songRepository.getAllSongs();
-      if (!fallbackToServer || local.isNotEmpty) {
-        return local;
-      }
+  Future<List<Song>> getAllSongs() async {
+    try {
       final serverSongs = await _songRestService.getAllSongs();
       _cacheServerSongs(serverSongs);
-      return _songRepository.getAllSongs();
+    } catch (e) {
+      debugPrint('SongService: server fetch failed for getAllSongs: $e');
     }
-
-    final serverSongs = await _songRestService.getAllSongs();
-    _cacheServerSongs(serverSongs);
     return _songRepository.getAllSongs();
   }
 
   Future<List<Song>> getSongs(
     String query,
     String sortField,
-    bool ascending, {
-    bool preferServer = false,
-    bool fallbackToServer = false,
-  }) async {
-    if (!preferServer) {
-      final local = _songRepository.getSongs(query, sortField, ascending);
-      if (!fallbackToServer || local.isNotEmpty) {
-        return local;
-      }
-
+    bool ascending,
+  ) async {
+    try {
       await searchSongsFromServer(
         query,
         page: 0,
         size: 200,
         sort: _toServerSort(sortField, ascending),
       );
-      return _songRepository.getSongs(query, sortField, ascending);
+    } catch (e) {
+      debugPrint('SongService: server fetch failed for getSongs: $e');
     }
-
-    await searchSongsFromServer(
-      query,
-      page: 0,
-      size: 200,
-      sort: _toServerSort(sortField, ascending),
-    );
-
     return _songRepository.getSongs(query, sortField, ascending);
   }
 
@@ -214,9 +191,8 @@ class SongService {
   }
 
   void _cacheServerSong(Song serverSong) {
-    if (serverSong.serverId == -1) return;
+    if (serverSong.serverId <= 0) return;
 
-    // Resolve and persist artist first so album can reference it.
     Artist? resolvedArtist;
     if (serverSong.artist.target != null) {
       resolvedArtist = _artistService.cacheServerArtist(
@@ -224,7 +200,6 @@ class SongService {
       );
     }
 
-    // Resolve and persist album, linking it to the resolved artist.
     Album? resolvedAlbum;
     if (serverSong.album.target != null) {
       final serverAlbum = serverSong.album.target!;
@@ -234,7 +209,16 @@ class SongService {
       resolvedAlbum = _albumService.cacheServerAlbum(serverAlbum);
     }
 
-    final existing = _songRepository.getSongByServerId(serverSong.serverId);
+    Song? existing = _songRepository.getSongByServerId(serverSong.serverId);
+
+    if (existing == null) {
+      final candidate = _songRepository.getSongContaining(serverSong.name);
+      final artistName = resolvedArtist?.name ?? serverSong.artist.target?.name;
+      final matches =
+          artistName == null || candidate.artist.target?.name == artistName;
+      if (matches) existing = candidate;
+    }
+
     if (existing == null) {
       serverSong.requiresSync = false;
       serverSong.artist.target = resolvedArtist;
@@ -249,6 +233,9 @@ class SongService {
     existing.discNumber = serverSong.discNumber;
     existing.year = serverSong.year;
     existing.requiresSync = false;
+    if (existing.serverId <= 0 && serverSong.serverId > 0) {
+      existing.serverId = serverSong.serverId;
+    }
 
     if (!existing.isLocal) {
       existing.path = '';
@@ -363,12 +350,51 @@ class SongService {
     bool ascending,
     int page,
     int pageSize,
-  ) {
-    return searchSongsPageFromServer(
+  ) async {
+    try {
+      final serverPage = await _songRestService.getSongsPage(
+        query: query,
+        page: page,
+        size: pageSize,
+        sort: _toServerSort(sortField, ascending),
+      );
+      _cacheServerSongs(serverPage.content);
+      if (serverPage.totalElements > 0) {
+        final content = _songRepository.getSongsPaged(
+          query,
+          sortField,
+          ascending,
+          page * pageSize,
+          pageSize,
+        );
+        return SongPageDto(
+          content: content,
+          page: page,
+          size: pageSize,
+          totalPages: serverPage.totalPages,
+          totalElements: serverPage.totalElements,
+        );
+      }
+    } catch (e) {
+      debugPrint('SongService: server fetch failed for getSongsPage: $e');
+    }
+    final localAll = _songRepository.getSongs(query, sortField, ascending);
+    final totalElements = localAll.length;
+    final totalPages =
+        totalElements == 0 ? 1 : (totalElements / pageSize).ceil();
+    final content = _songRepository.getSongsPaged(
       query,
+      sortField,
+      ascending,
+      page * pageSize,
+      pageSize,
+    );
+    return SongPageDto(
+      content: content,
       page: page,
       size: pageSize,
-      sort: _toServerSort(sortField, ascending),
+      totalPages: totalPages,
+      totalElements: totalElements,
     );
   }
 

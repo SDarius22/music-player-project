@@ -73,8 +73,6 @@ class _LoadingScreenState extends State<LoadingScreen>
     }
 
     final songProvider = context.read<SongProvider>();
-    songProvider.preferServer = true;
-    songProvider.fallbackToServer = true;
 
     if (isDesktop) {
       await songProvider.initialize(

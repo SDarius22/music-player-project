@@ -9,8 +9,6 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   final AbstractMusicScannerService _scannerService;
 
   bool _isInitialized = false;
-  bool _preferServer = false;
-  bool _fallbackToServer = false;
 
   SongProvider(this._songService, this._scannerService) {
     _scannerService.progressStream.listen((progress) {
@@ -23,14 +21,6 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   Map<String, dynamic> get sortFields => _songService.sortFields;
 
   String get defaultSortField => 'Title';
-
-  set preferServer(bool value) {
-    _preferServer = value;
-  }
-
-  set fallbackToServer(bool value) {
-    _fallbackToServer = value;
-  }
 
   int get totalSongsCount => _songService.getSongCount();
 
@@ -81,13 +71,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   }
 
   Future<List<Song>> getSongs(String query, String sortField, bool flag) async {
-    return await _songService.getSongs(
-      query,
-      sortField,
-      flag,
-      preferServer: _preferServer,
-      fallbackToServer: _fallbackToServer,
-    );
+    return await _songService.getSongs(query, sortField, flag);
   }
 
   Future<List<Song>> getSongsFromPaths(List<String> paths) async {
@@ -95,10 +79,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   }
 
   Future<List<Song>> getAllSongs() async {
-    return await _songService.getAllSongs(
-      preferServer: _preferServer,
-      fallbackToServer: _fallbackToServer,
-    );
+    return await _songService.getAllSongs();
   }
 
   Widget getCoverArt(int serverId) {
