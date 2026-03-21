@@ -5,7 +5,6 @@ import 'package:just_audio/just_audio.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/queue_tab.dart';
@@ -29,17 +28,11 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     with TickerProviderStateMixin {
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   final ScrollController itemScrollController = ScrollController();
-  late Widget cachedCoverArt;
   late AbstractAppStateProvider appStateProvider;
   late AudioProvider audioProvider;
   final MiniPlayerController _lyricsPlayerController = MiniPlayerController();
   final ValueNotifier<bool> _listView = ValueNotifier<bool>(false);
-
-  void _getCoverArtImage(Song currentSong, BuildContext context) {
-    cachedCoverArt = context.read<SongProvider>().getCoverArt(
-      currentSong.serverId,
-    );
-  }
+  double detailsOpacity = 0.0;
 
   @override
   void initState() {
@@ -66,7 +59,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
           debugPrint("Not showing player");
           return const SizedBox.shrink();
         }
-        _getCoverArtImage(audioProvider.currentSong, context);
         final ValueNotifier<double> playerExpandProgress =
             ValueNotifier<double>(getMinHeight(context));
 
@@ -201,6 +193,8 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     double normalized = (1.0 - (percentage / 0.25).clamp(0.0, 1.0));
     double progressBarOpacity = normalized;
 
+    detailsOpacity = 0.0;
+
     return GlassContainer(
       color: Colors.black.withValues(alpha: 0.4),
       borderColor: Colors.transparent,
@@ -215,15 +209,14 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             alignment: Alignment.center,
             margin: EdgeInsets.only(left: imageLeftMargin),
             padding: const EdgeInsets.all(1),
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.rectangle,
-                  borderRadius: getBorderRadius(context),
-                ),
-                child: cachedCoverArt,
-              ),
+            decoration: BoxDecoration(
+              shape: BoxShape.rectangle,
+              borderRadius: getBorderRadius(context),
+            ),
+            child: DetailsTab(
+              currentSong: audioProvider.currentSong,
+              miniPlayerController: appStateProvider.miniPlayerController,
+              opacity: detailsOpacity,
             ),
           ),
 
@@ -334,6 +327,8 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
 
     double opacity = (1.0 - (percentage / 0.45).clamp(0.0, 1.0));
 
+    detailsOpacity = 0.0;
+
     return GlassContainer(
       color: Colors.black.withValues(alpha: 0.3),
       borderColor: Colors.transparent,
@@ -351,15 +346,14 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
               top: imageTopMargin,
               bottom: imageTopMargin,
             ),
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(borderRadius),
-                ),
-                child: cachedCoverArt,
-              ),
+            decoration: BoxDecoration(
+              shape: BoxShape.rectangle,
+              borderRadius: BorderRadius.circular(borderRadius),
+            ),
+            child: DetailsTab(
+              currentSong: audioProvider.currentSong,
+              miniPlayerController: appStateProvider.miniPlayerController,
+              opacity: detailsOpacity,
             ),
           ),
           Opacity(
@@ -453,7 +447,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
               normalizedPercentage.clamp(0.0, 0.7) / 0.7,
             )!;
 
-    final detailsOpacity = ((percentage - 0.7) / 0.3).clamp(0.0, 1.0);
+    detailsOpacity = ((percentage - 0.7) / 0.3).clamp(0.0, 1.0);
 
     if (sidePanelsOpacity > 0.99) {
       if (itemScrollController.hasClients) {
@@ -507,9 +501,9 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                   constraints: BoxConstraints(maxWidth: width * 0.325),
                   margin: EdgeInsets.only(right: imageRightMargin),
                   child: DetailsTab(
-                    image: cachedCoverArt,
-                    opacity: detailsOpacity,
+                    currentSong: audioProvider.currentSong,
                     miniPlayerController: appStateProvider.miniPlayerController,
+                    opacity: detailsOpacity,
                   ),
                 ),
 
@@ -684,7 +678,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
       1.0,
     );
 
-    final detailsOpacity = ((percentage - 0.7) / 0.3).clamp(0.0, 1.0);
+    detailsOpacity = ((percentage - 0.7) / 0.3).clamp(0.0, 1.0);
 
     var minPadding = height * 0.02;
     var maxPadding =
@@ -769,7 +763,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                                 )
                                 : DetailsTab(
                                   key: const ValueKey<int>(2),
-                                  image: cachedCoverArt,
+                                  currentSong: audioProvider.currentSong,
                                   miniPlayerController:
                                       appStateProvider.miniPlayerController,
                                   opacity: detailsOpacity,

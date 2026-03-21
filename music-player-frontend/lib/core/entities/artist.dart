@@ -22,13 +22,16 @@ class Artist with AbstractCollection implements BaseEntity {
   set serverId(int value) => _serverId = value;
 
   bool requiresSync = false;
-  bool _isLocal = false;
 
   @override
-  bool get isLocal => _isLocal;
-
-  @override
-  set isLocal(bool value) => _isLocal = value;
+  bool get isLocal {
+    for (var song in _songs) {
+      if (!song.isLocal) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   @Unique()
   String _name = "Unknown artist";

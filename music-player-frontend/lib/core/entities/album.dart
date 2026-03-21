@@ -24,7 +24,6 @@ class Album with AbstractCollection implements BaseEntity {
   set serverId(int value) => _serverId = value;
 
   bool requiresSync = false;
-  bool _isLocal = false;
 
   String _name = "Unknown album";
 
@@ -45,10 +44,14 @@ class Album with AbstractCollection implements BaseEntity {
   set name(String value) => _name = value;
 
   @override
-  bool get isLocal => _isLocal;
-
-  @override
-  set isLocal(bool value) => _isLocal = value;
+  bool get isLocal {
+    for (var song in _songs) {
+      if (!song.isLocal) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   @override
   ToMany<Song> get songs => _songs;

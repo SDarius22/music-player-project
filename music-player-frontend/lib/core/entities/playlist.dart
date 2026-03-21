@@ -13,7 +13,6 @@ class Playlist with AbstractCollection implements BaseEntity {
   @Unique()
   String _name = "Unknown playlist";
   bool requiresSync = false;
-  bool _isLocal = false;
 
   @Index()
   @Unique()
@@ -26,10 +25,14 @@ class Playlist with AbstractCollection implements BaseEntity {
   set serverId(int value) => _serverId = value;
 
   @override
-  bool get isLocal => _isLocal;
-
-  @override
-  set isLocal(bool value) => _isLocal = value;
+  bool get isLocal {
+    for (var song in _songs) {
+      if (!song.isLocal) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   bool indestructible = false;
 

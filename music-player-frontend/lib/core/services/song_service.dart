@@ -213,10 +213,13 @@ class SongService {
 
     if (existing == null) {
       final candidate = _songRepository.getSongContaining(serverSong.name);
-      final artistName = resolvedArtist?.name ?? serverSong.artist.target?.name;
-      final matches =
-          artistName == null || candidate.artist.target?.name == artistName;
-      if (matches) existing = candidate;
+      if (candidate != null) {
+        final artistName =
+            resolvedArtist?.name ?? serverSong.artist.target?.name;
+        final matches =
+            artistName == null || candidate.artist.target?.name == artistName;
+        if (matches) existing = candidate;
+      }
     }
 
     if (existing == null) {

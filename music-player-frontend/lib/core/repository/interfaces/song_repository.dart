@@ -17,7 +17,7 @@ abstract class SongRepository {
 
   Song getSong(int id);
 
-  Song getSongContaining(String query);
+  Song? getSongContaining(String query);
 
   Song? getMostRecentPlayedSong();
 

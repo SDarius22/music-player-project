@@ -11,6 +11,7 @@ enum ImageWidgetType { asset, song, network, bytes }
 class ImageWidget extends StatefulWidget {
   final Widget? hoveredChild;
   final Widget? child;
+  final List<Widget> otherStackChildren;
   final BaseEntity entity;
   final bool fadeBottom;
 
@@ -20,6 +21,7 @@ class ImageWidget extends StatefulWidget {
     this.child,
     required this.entity,
     this.fadeBottom = false,
+    this.otherStackChildren = const [],
   });
 
   @override
@@ -28,19 +30,19 @@ class ImageWidget extends StatefulWidget {
 
 class _ImageWidgetState extends State<ImageWidget> {
   final ValueNotifier<bool> isHovered = ValueNotifier(false);
-  late Future<Widget> _imageFuture;
+  late Widget _imageWidget;
 
   @override
   void initState() {
     super.initState();
-    _imageFuture = _getImageWidget(context);
+    _imageWidget = _getImageWidget(context);
   }
 
   @override
   void didUpdateWidget(covariant ImageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.entity != widget.entity) {
-      _imageFuture = _getImageWidget(context);
+      _imageWidget = _getImageWidget(context);
     }
   }
 
@@ -81,12 +83,25 @@ class _ImageWidgetState extends State<ImageWidget> {
     return widget.child ?? const SizedBox.shrink();
   }
 
-  Future<Widget> _getImageWidget(BuildContext context) async {
+  Widget _getImageWidget(BuildContext context) {
     if (widget.entity.coverArt == null) {
-      if (widget.entity.serverId != -1) {
-        var songProvider = context.read<SongProvider>();
-        return songProvider.getCoverArt(widget.entity.serverId);
-      }
+      var songProvider = context.read<SongProvider>();
+      return songProvider.getCoverArt(widget.entity.serverId);
+    }
+    try {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          image: DecorationImage(
+            fit: BoxFit.cover,
+            image: MemoryImage(widget.entity.coverArt!),
+            onError: (exception, stackTrace) {
+              throw exception;
+            },
+          ),
+        ),
+      );
+    } catch (e) {
       return Container(
         color: Colors.black,
         child: Icon(
@@ -96,45 +111,24 @@ class _ImageWidgetState extends State<ImageWidget> {
         ),
       );
     }
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black,
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: MemoryImage(widget.entity.coverArt!),
-        ),
-      ),
-    );
   }
 
   Widget _buildImageLayer() {
-    return FutureBuilder<Widget>(
-      future: _imageFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(color: Colors.black);
-        } else if (snapshot.hasError || !snapshot.hasData) {
-          return Container(color: Colors.black);
-        } else {
-          final shouldFadeImageOnly = widget.fadeBottom && widget.child != null;
+    final shouldFadeImageOnly = widget.fadeBottom && widget.child != null;
 
-          if (!shouldFadeImageOnly) return snapshot.data!;
+    if (!shouldFadeImageOnly) return _imageWidget;
 
-          return ShaderMask(
-            blendMode: BlendMode.dstIn,
-            shaderCallback: (Rect bounds) {
-              return const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: <Color>[Colors.white, Colors.white, Colors.transparent],
-                stops: <double>[0.0, 2.0 / 3.0, 1.0],
-              ).createShader(bounds);
-            },
-            child: snapshot.data!,
-          );
-        }
+    return ShaderMask(
+      blendMode: BlendMode.dstIn,
+      shaderCallback: (Rect bounds) {
+        return const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Colors.white, Colors.white, Colors.transparent],
+          stops: <double>[0.0, 2.0 / 3.0, 1.0],
+        ).createShader(bounds);
       },
+      child: _imageWidget,
     );
   }
 
@@ -147,7 +141,11 @@ class _ImageWidgetState extends State<ImageWidget> {
         onExit: (event) => isHovered.value = false,
         child: Stack(
           fit: StackFit.expand,
-          children: [_buildImageLayer(), _buildForeground()],
+          children: [
+            _buildImageLayer(),
+            _buildForeground(),
+            ...widget.otherStackChildren,
+          ],
         ),
       ),
     );

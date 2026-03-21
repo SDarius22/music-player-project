@@ -7,6 +7,7 @@ import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/ui/components/triangle_clipper.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/text_scroll/custom_text_scroll.dart';
@@ -110,28 +111,57 @@ class CustomGridTile extends StatelessWidget {
                               builder: (_, song, _) {
                                 return CustomTextScroll(
                                   text: entity.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall!
-                                      .copyWith(
-                                        color:
-                                            song == (entity as Song)
-                                                ? Colors.blue
-                                                : Colors.white,
-                                      ),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleSmall!.copyWith(
+                                    color:
+                                        song == (entity as Song)
+                                            ? Colors.blue
+                                            : Colors.white,
+                                  ),
                                 );
                               },
                             )
                             : CustomTextScroll(
                               text: entity.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall!
+                              style: Theme.of(context).textTheme.titleSmall!
                                   .copyWith(color: Colors.white),
                             ),
                   ),
                 ],
               ),
+              otherStackChildren: [
+                if (entity.isLocal)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: ClipPath(
+                      clipper: TriangleClipper(),
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.center,
+                            end: Alignment.topRight,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.0),
+                              Colors.black.withValues(alpha: 0.75),
+                              Colors.black.withValues(alpha: 1.0),
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          ),
+                        ),
+                        padding: const EdgeInsets.only(top: 3.0, right: 3.0),
+                        alignment: Alignment.topRight,
+                        child: Icon(
+                          Icons.file_download_done_outlined,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
               child:
                   isSelected
                       ? ClipRect(
@@ -177,15 +207,14 @@ class CustomGridTile extends StatelessWidget {
                                       entity.name,
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall!
-                                          .copyWith(
-                                            color:
-                                                song == (entity as Song)
-                                                    ? Colors.blue
-                                                    : Colors.white,
-                                          ),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleSmall!.copyWith(
+                                        color:
+                                            song == (entity as Song)
+                                                ? Colors.blue
+                                                : Colors.white,
+                                      ),
                                     );
                                   },
                                 )
@@ -193,9 +222,7 @@ class CustomGridTile extends StatelessWidget {
                                   entity.name,
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall!
+                                  style: Theme.of(context).textTheme.titleSmall!
                                       .copyWith(color: Colors.white),
                                 ),
                       ),

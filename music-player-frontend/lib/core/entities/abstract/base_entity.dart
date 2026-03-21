@@ -12,6 +12,4 @@ abstract class BaseEntity {
   Uint8List? get coverArt;
 
   bool get isLocal;
-
-  set isLocal(bool value);
 }

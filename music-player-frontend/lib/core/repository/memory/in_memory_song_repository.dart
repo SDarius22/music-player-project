@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 
@@ -81,14 +82,10 @@ class InMemorySongRepository implements SongRepository {
   }
 
   @override
-  Song getSongContaining(String query) {
-    try {
-      return _byId.values.firstWhere(
-        (s) => s.path.toLowerCase().contains(query.toLowerCase()),
-      );
-    } catch (_) {
-      throw Exception('Song containing $query not found');
-    }
+  Song? getSongContaining(String query) {
+    return _byId.values.firstWhereOrNull(
+      (s) => s.path.toLowerCase().contains(query.toLowerCase()),
+    );
   }
 
   @override

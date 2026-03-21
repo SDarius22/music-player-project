@@ -63,15 +63,11 @@ class ObjectBoxSongRepository implements SongRepository {
   }
 
   @override
-  Song getSongContaining(String query) {
-    try {
-      return _songBox
-          .query(Song_.path.contains(query, caseSensitive: false))
-          .build()
-          .findFirst()!;
-    } catch (e) {
-      throw Exception('Song containing $query not found');
-    }
+  Song? getSongContaining(String query) {
+    return _songBox
+        .query(Song_.path.contains(query, caseSensitive: false))
+        .build()
+        .findFirst();
   }
 
   @override

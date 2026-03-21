@@ -22,7 +22,6 @@ class Song implements BaseEntity {
   set serverId(int value) => _serverId = value;
 
   bool requiresSync = true;
-  bool _isLocal = false;
 
   String path = "";
   String _name = "Unknown song";
@@ -49,10 +48,7 @@ class Song implements BaseEntity {
   set name(String value) => _name = value;
 
   @override
-  bool get isLocal => _isLocal;
-
-  @override
-  set isLocal(bool value) => _isLocal = value;
+  bool get isLocal => path.isNotEmpty;
 
   @override
   bool operator ==(Object other) {
@@ -86,7 +82,6 @@ class Song implements BaseEntity {
       song.album.target = Album.fromJson(json['album'] as Map<String, dynamic>);
     }
     song.fullyLoaded = true;
-    song.isLocal = false;
     return song;
   }
 
