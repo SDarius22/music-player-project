@@ -8,6 +8,7 @@ import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 class MainScaffold extends StatefulWidget {
   static Route<dynamic> route() {
@@ -48,13 +49,13 @@ class _MainScaffoldState extends State<MainScaffold> {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
 
-    if (width < 250 || height < 250) {
+    if (width < 200 || height < 200) {
       return Scaffold(
         body: Center(
           child: Text(
             "Your screen is too small to display the app. Please use a device with a larger screen.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 16),
+            style: TextStyle(color: Colors.white, fontSize: 12),
           ),
         ),
       );
@@ -111,17 +112,15 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   EdgeInsetsGeometry buildPadding(BuildContext context) {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
+    final addedTopPadding = UniversalPlatform.isDesktop ? kToolbarHeight : 0.0;
     final width = MediaQuery.of(context).size.width;
     if (isMobile) {
       return EdgeInsets.only(
         top:
-            width * 0.02 +
-            MediaQuery.of(context).padding.top +
-            kToolbarHeight +
-            width * 0.02,
+            width * 0.02 + MediaQuery.of(context).padding.top + addedTopPadding,
         left: width * 0.02,
         right: width * 0.02,
-        bottom: width * 0.02,
+        bottom: width * 0.02 + MediaQuery.of(context).padding.bottom,
       );
     }
 
@@ -151,6 +150,8 @@ class _MainScaffoldState extends State<MainScaffold> {
     try {
       final provider = context.read<AbstractAppStateProvider>();
       final isMobile = ResponsiveBreakpoints.of(context).isMobile;
+      final addedTopPadding =
+          !UniversalPlatform.isDesktop ? kToolbarHeight : 0.0;
       final width = MediaQuery.of(context).size.width;
       final height = MediaQuery.of(context).size.height;
 
@@ -172,7 +173,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
       if (isMobile) {
         return Padding(
-          padding: EdgeInsets.only(bottom: height * 0.075 + width * 0.02),
+          padding: EdgeInsets.only(
+            top: addedTopPadding,
+            bottom: height * 0.075 + width * 0.02,
+          ),
           child: navigatorWidget,
         );
       }

@@ -71,7 +71,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final height = MediaQuery.of(context).size.height;
           final width = MediaQuery.of(context).size.width;
-          if (height < 250 || width < 250) {
+          if (height < 200 || width < 200) {
             debugPrint("Screen too small for mini player, not showing player");
             return;
           }
@@ -286,7 +286,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             child: SizedBox(
               width: width * 0.25,
               height: height * 0.15,
-              child: _buildPlayerButtons(audioProvider),
+              child: _buildPlayerButtons(audioProvider, expanded: true),
             ),
           ),
 
@@ -336,7 +336,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
       blur: 45.0,
       elevation: 3.0,
       borderRadius: getBorderRadius(context),
-      margin: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       child: Row(
         children: [
           Container(
@@ -406,7 +405,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             child: SizedBox(
               width: width * 0.35,
               height: height * 0.15,
-              child: _buildMobilePlayerButtons(audioProvider),
+              child: _buildPlayerButtons(audioProvider),
             ),
           ),
         ],
@@ -623,7 +622,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
 
                   SizedBox(
                     width: width * 0.5,
-                    child: _buildPlayerButtons(audioProvider),
+                    child: _buildPlayerButtons(audioProvider, expanded: true),
                   ),
 
                   const Spacer(),
@@ -681,10 +680,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     detailsOpacity = ((percentage - 0.7) / 0.3).clamp(0.0, 1.0);
 
     var minPadding = height * 0.02;
-    var maxPadding =
-        MediaQuery.of(context).padding.top -
-        kToolbarHeight +
-        MediaQuery.of(context).size.width * 0.05;
+    var maxPadding = height * 0.025;
     final currentPadding =
         lerpDouble(minPadding, maxPadding, normalizedPercentage)!;
 
@@ -775,7 +771,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
 
                 Opacity(
                   opacity: progressBarOpacity,
-                  child: SizedBox(height: height * 0.05),
+                  child: SizedBox(height: height * 0.025),
                 ),
 
                 const Spacer(),
@@ -861,7 +857,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
 
                 Opacity(
                   opacity: progressBarOpacity,
-                  child: SizedBox(height: height * 0.025),
+                  child: SizedBox(height: height * 0.05),
                 ),
 
                 // Player Controls - Previous, Play/Pause, Next
@@ -871,7 +867,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: width * 0.9,
+                        width: width * 0.8,
                         child: _buildPlayerButtons(audioProvider),
                       ),
                     ],
@@ -881,9 +877,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                 SizedBox(
                   height:
                       MediaQuery.of(context).size.height * 0.1 +
-                      MediaQuery.of(context).padding.bottom -
-                      kBottomNavigationBarHeight +
-                      MediaQuery.of(context).size.height * 0.05,
+                      MediaQuery.of(context).padding.bottom,
                 ),
               ],
             ),
@@ -904,9 +898,9 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
           MediaQuery.of(context).size.height * 0.1 +
           MediaQuery.of(context).padding.bottom,
       maxHeight: MediaQuery.of(context).size.height,
-      minWidth: MediaQuery.of(context).size.width * 0.95,
+      minWidth: MediaQuery.of(context).size.width,
       maxWidth: MediaQuery.of(context).size.width,
-      borderRadius: BorderRadius.circular(height * 0.02),
+      borderRadius: getBorderRadius(context),
       controller: _lyricsPlayerController,
       builder: (_, percentage) {
         return Opacity(
@@ -917,7 +911,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             blur: 45.0,
             elevation: 0.0,
             borderWidth: 0.0,
-            borderRadius: BorderRadius.circular(height * 0.02),
+            borderRadius: getBorderRadius(context),
             padding: EdgeInsets.only(
               top: percentage < 0.35 ? 0 : MediaQuery.of(context).padding.top,
               bottom:
@@ -971,7 +965,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.of(context).padding.bottom,
                     ),
-                    child: _buildPlayerButtons(audioProvider),
+                    child: _buildPlayerButtons(audioProvider, expanded: true),
                   ),
                 ],
               ],
@@ -979,18 +973,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildMobilePlayerButtons(AudioProvider audioProvider) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        buildPreviousButton(context),
-        buildPlayPauseButton(context),
-        buildNextButton(context),
-      ],
     );
   }
 
@@ -1174,16 +1156,19 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     );
   }
 
-  Widget _buildPlayerButtons(AudioProvider audioProvider) {
+  Widget _buildPlayerButtons(
+    AudioProvider audioProvider, {
+    bool expanded = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        buildShuffleButton(context),
+        if (expanded) buildShuffleButton(context),
         buildPreviousButton(context),
         buildPlayPauseButton(context),
         buildNextButton(context),
-        buildRepeatButton(context),
+        if (expanded) buildRepeatButton(context),
       ],
     );
   }
