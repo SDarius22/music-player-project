@@ -112,7 +112,7 @@ class AppStateProvider extends AbstractAppStateProvider with TrayListener {
       ],
     );
 
-    trayManager.setIcon('assets/logo.png');
+    trayManager.setIcon('assets/logo.ico');
     trayManager.setTitle('Music Player${kDebugMode ? ' Debug' : ''}');
     trayManager.setContextMenu(menu);
   }

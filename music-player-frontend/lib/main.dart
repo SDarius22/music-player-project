@@ -9,6 +9,7 @@ import 'package:music_player_frontend/local_libs/just_audio_media_kit/just_audio
 import 'package:music_player_frontend/platforms/android/android_app.dart';
 import 'package:music_player_frontend/platforms/linux/linux_app.dart';
 import 'package:music_player_frontend/platforms/macos/macos_app.dart';
+import 'package:music_player_frontend/platforms/windows/windows_app.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
@@ -35,6 +36,12 @@ Future<void> runOnTargetPlatform() async {
       break;
     case 'windows':
       debugPrint('Running on Windows');
+      if (await FlutterSingleInstance().isFirstInstance()) {
+        await initializeDatabase();
+        appWindow.minSize = const Size(250, 250);
+        appWindow.maximize();
+        runApp(const WindowsApp());
+      }
       break;
     case 'linux':
       debugPrint('Running on Linux');
