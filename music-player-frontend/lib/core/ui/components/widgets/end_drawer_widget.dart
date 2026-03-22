@@ -46,8 +46,8 @@ const _downloads = [
     subtitle: 'Windows 10+  •  x64',
     icon: Icons.laptop_windows,
     color: Color(0xFF0078D7),
-    url: '',
-    // TODO: URL once builds are available
+    url:
+        'https://www.bt-app.com/music-player/downloads/music-player-windows/music-player-windows.zip',
     filename: 'music-player.zip',
   ),
   _PlatformDownload(
@@ -55,9 +55,9 @@ const _downloads = [
     subtitle: 'macOS 12+  •  Universal',
     icon: Icons.laptop_mac,
     color: Color(0xFFAAAAAA),
-    url: '',
-    // TODO: URL once builds are available
-    filename: 'music-player.dmg',
+    url:
+        'https://www.bt-app.com/music-player/downloads/music-player-macos/music-player-macos.zip',
+    filename: 'music-player.zip',
   ),
   _PlatformDownload(
     platform: 'iOS',
