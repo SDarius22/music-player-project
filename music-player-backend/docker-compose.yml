@@ -20,7 +20,7 @@ services:
       - /home/docker-data/music_data:/root/music-server
 
   pg-master:
-    image: bitnami/postgresql:18
+    image: registry.bitnami.com/bitnami/postgresql:18
     environment:
       - POSTGRESQL_REPLICATION_MODE=master
       - POSTGRESQL_REPLICATION_USER=repl_user
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   pg-slave:
-    image: bitnami/postgresql:18
+    image: registry.bitnami.com/bitnami/postgresql:18
     environment:
       - POSTGRESQL_REPLICATION_MODE=slave
       - POSTGRESQL_REPLICATION_USER=repl_user
