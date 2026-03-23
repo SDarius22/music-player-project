@@ -18,7 +18,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
       builder: (context, appBarOpacity, child) {
         return AnimatedOpacity(
           duration: const Duration(milliseconds: 100),
-          opacity: UniversalPlatform.isDesktopOrWeb ? 1.0 : appBarOpacity,
+          opacity: UniversalPlatform.isDesktop ? 1.0 : appBarOpacity,
           child: GlassContainer(
             height: MediaQuery.of(context).padding.top + kToolbarHeight,
             width: width,
