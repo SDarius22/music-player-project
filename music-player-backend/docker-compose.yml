@@ -1,5 +1,7 @@
 services:
   backend:
+    ports:
+      - "9000-9001:9000"
     image: ghcr.io/sdarius22/music-player-project/music-player-backend:latest
     environment:
       - DB_HOST=pg-master
