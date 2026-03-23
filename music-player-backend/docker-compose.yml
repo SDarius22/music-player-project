@@ -1,8 +1,6 @@
 services:
   backend:
     image: ghcr.io/sdarius22/music-player-project/music-player-backend:latest
-    deploy:
-      replicas: 2
     environment:
       - DB_HOST=pg-master
       - DB_PORT=5432
@@ -13,37 +11,43 @@ services:
       - MAIL_USER=${MAIL_USER}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - REDIS_HOST=redis
-    ports:
-      - "9000-9001:9000"
     restart: unless-stopped
     volumes:
       - /home/docker-data/music_data:/root/music-server
+    networks:
+      - backend-net
+    depends_on:
+      - pg-master
+      - redis
 
   pg-master:
-    image: registry.bitnami.com/bitnami/postgresql:18
+    image: postgres:18
     environment:
-      - POSTGRESQL_REPLICATION_MODE=master
-      - POSTGRESQL_REPLICATION_USER=repl_user
-      - POSTGRESQL_REPLICATION_PASSWORD=${DB_PASSWORD}
-      - POSTGRESQL_USERNAME=music_admin
-      - POSTGRESQL_PASSWORD=${DB_PASSWORD}
-      - POSTGRESQL_DATABASE=music_db
+      - POSTGRES_USER=music_admin
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=music_db
     volumes:
-      - /home/docker-data/postgres_master:/bitnami/postgresql
+      - /home/docker-data/postgres_data:/var/lib/postgresql
     restart: unless-stopped
+    networks:
+      - backend-net
 
   pg-slave:
-    image: registry.bitnami.com/bitnami/postgresql:18
+    image: postgres:18
+    user: postgres
     environment:
-      - POSTGRESQL_REPLICATION_MODE=slave
-      - POSTGRESQL_REPLICATION_USER=repl_user
-      - POSTGRESQL_REPLICATION_PASSWORD=${DB_PASSWORD}
-      - POSTGRESQL_MASTER_HOST=pg-master
-      - POSTGRESQL_MASTER_PORT_NUMBER=5432
-      - POSTGRESQL_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=music_admin
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - PGPASSWORD=${DB_PASSWORD}
     volumes:
-      - /home/docker-data/postgres_slave:/bitnami/postgresql
+      - /home/docker-data/postgres_slave:/var/lib/postgresql/data
+      - /home/docker-data/pg-slave-init.sh:/pg-slave-init.sh
+    command: bash /pg-slave-init.sh
     restart: unless-stopped
+    depends_on:
+      - pg-master
+    networks:
+      - backend-net
 
   pgadmin:
     image: dpage/pgadmin4
@@ -51,18 +55,35 @@ services:
       - PGADMIN_DEFAULT_EMAIL=darius.sala@bt-app.com
       - PGADMIN_DEFAULT_PASSWORD=${DB_PASSWORD}
     ports:
-      - "5050:80"
+      - "127.0.0.1:5050:80"
     restart: unless-stopped
+    networks:
+      - backend-net
 
   redis:
     image: redis:alpine
     restart: unless-stopped
+    networks:
+      - backend-net
 
   goaccess:
     image: allinurl/goaccess
-    ports:
-      - "7890:7890"
     volumes:
-      - /var/log/nginx:/srv/logs
-    command: goaccess /srv/logs/access.log -o /srv/report.html --real-time-html --log-format=COMBINED
+      - /var/log/nginx:/srv/logs:ro
+      - /home/docker-data/goaccess-report:/srv/report
+    ports:
+      - "127.0.0.1:7890:7890"
+    command: >
+      goaccess /srv/logs/access.log
+      --output=/srv/report/index.html
+      --real-time-html
+      --ws-url=wss://www.bt-app.com/goaccess-ws
+      --port=7890
+      --log-format=COMBINED
     restart: unless-stopped
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge

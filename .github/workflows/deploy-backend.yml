@@ -35,7 +35,7 @@ jobs:
 
       - working-directory: ./music-player-backend
         run: docker build -t ghcr.io/sdarius22/music-player-project/music-player-backend:latest .
-  
+
       - run: docker push ghcr.io/sdarius22/music-player-project/music-player-backend:latest
 
       - uses: appleboy/scp-action@v0.1.7
@@ -54,6 +54,9 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/docker-data/
+
+            mkdir -p goaccess-report
+
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
             docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
             
@@ -62,4 +65,4 @@ jobs:
             export MAIL_USER="${{ secrets.MAIL_USER }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
             
-            docker compose up -d --remove-orphans
+            docker compose up -d --remove-orphans --scale backend=2
