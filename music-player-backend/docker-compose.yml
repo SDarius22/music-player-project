@@ -75,13 +75,14 @@ services:
       - /home/docker-data/goaccess-report:/srv/report
     ports:
       - "127.0.0.1:7890:7890"
-    command: >
-      goaccess /srv/logs/access.log
-      --output=/srv/report/index.html
-      --real-time-html
-      --ws-url=wss://www.bt-app.com/goaccess-ws
-      --port=7890
-      --log-format=COMBINED
+    command: [
+      "goaccess", "/srv/logs/access.log",
+      "--output=/srv/report/index.html",
+      "--real-time-html",
+      "--ws-url=wss://www.bt-app.com/goaccess-ws",
+      "--port=7890",
+      "--log-format=COMBINED"
+    ]
     restart: unless-stopped
     networks:
       - backend-net
