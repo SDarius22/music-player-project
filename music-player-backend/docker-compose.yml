@@ -67,26 +67,28 @@ services:
     restart: unless-stopped
     networks:
       - backend-net
-
   goaccess:
     image: allinurl/goaccess
     volumes:
       - /var/log/nginx:/srv/logs:ro
       - /home/docker-data/goaccess-report:/srv/report
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     ports:
-      - "127.0.0.1:7890:7890"
+      - "127.0.0.1:7890:443"
     command: [
-      "goaccess", "/srv/logs/access.log",
+      "/srv/logs/access.log",
       "--output=/srv/report/index.html",
       "--real-time-html",
       "--ws-url=wss://www.bt-app.com/goaccess-ws",
-      "--port=7890",
-      "--log-format=COMBINED"
+      "--port=443",
+      "--log-format=COMBINED",
+      "--origin=https://www.bt-app.com",
+      "--ssl-cert=/etc/letsencrypt/live/www.bt-app.com/fullchain.pem",
+      "--ssl-key=/etc/letsencrypt/live/www.bt-app.com/privkey.pem"
     ]
     restart: unless-stopped
     networks:
       - backend-net
-
 networks:
   backend-net:
     driver: bridge
