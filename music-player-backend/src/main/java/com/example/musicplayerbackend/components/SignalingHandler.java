@@ -4,10 +4,12 @@ import com.example.musicplayerbackend.domain.ClientConnection;
 import com.example.musicplayerbackend.domain.PlaybackStateDto;
 import com.example.musicplayerbackend.domain.WebRTCMessage;
 import com.example.musicplayerbackend.service.PeerTrackingService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -27,12 +29,22 @@ public class SignalingHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper;
     private final PeerTrackingService peerTrackingService;
+    private final RedisTemplate<String, String> redisTemplate;
 
     private final Map<String, ClientConnection> registry = new ConcurrentHashMap<>();
     private final Map<Long, Set<String>> userIndex = new ConcurrentHashMap<>();
     private final Map<String, String> peerIndex = new ConcurrentHashMap<>();
 
     public void sendPlaybackStateChanged(Long userId, PlaybackStateDto state) {
+        try {
+            String message = objectMapper.writeValueAsString(Map.of("userId", userId, "state", state));
+            redisTemplate.convertAndSend("signaling:playback", message);
+        } catch (JsonProcessingException e) {
+            log.error("[SIGNALING] Failed to publish PLAYBACK_STATE_CHANGED to Redis: {}", e.getMessage());
+        }
+    }
+
+    public void deliverPlaybackStateChangedLocally(Long userId, PlaybackStateDto state) {
         Set<String> sessionIds = userIndex.getOrDefault(userId, Collections.emptySet());
         String payload;
         try {
@@ -45,7 +57,7 @@ public class SignalingHandler extends TextWebSocketHandler {
             log.error("[SIGNALING] Failed to serialize PLAYBACK_STATE_CHANGED: {}", e.getMessage());
             return;
         }
-        log.info("[SIGNALING] Sending PLAYBACK_STATE_CHANGED to user {} ({} session(s))", userId, sessionIds.size());
+        log.info("[SIGNALING] Delivering PLAYBACK_STATE_CHANGED to user {} ({} local session(s))", userId, sessionIds.size());
         for (String sessionId : sessionIds) {
             ClientConnection client = registry.get(sessionId);
             if (client != null && client.session().isOpen()) {
@@ -59,6 +71,10 @@ public class SignalingHandler extends TextWebSocketHandler {
     }
 
     public void sendSyncTrigger(Long userId) {
+        redisTemplate.convertAndSend("signaling:sync", String.valueOf(userId));
+    }
+
+    public void deliverSyncTriggerLocally(Long userId) {
         Set<String> sessionIds = userIndex.getOrDefault(userId, Collections.emptySet());
 
         String triggerMessage = """
@@ -69,7 +85,7 @@ public class SignalingHandler extends TextWebSocketHandler {
                     }
                 """;
 
-        log.info("[SIGNALING] Sending SYNC_TRIGGER to user {} ({} session(s))", userId, sessionIds.size());
+        log.info("[SIGNALING] Delivering SYNC_TRIGGER to user {} ({} local session(s))", userId, sessionIds.size());
         for (String sessionId : sessionIds) {
             ClientConnection client = registry.get(sessionId);
             if (client != null && client.session().isOpen()) {
