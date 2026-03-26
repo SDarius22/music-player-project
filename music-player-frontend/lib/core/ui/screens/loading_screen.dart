@@ -1,6 +1,5 @@
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:ipwhois/ipwhois.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
@@ -53,7 +52,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   void routeUser(BuildContext context) async {
     final userProvider = context.read<UserProvider>();
     await userProvider.tryAutoLogin();
-    userProvider.ipInfo ??= await getMyIpInfo();
+    await userProvider.fetchIpInfo();
     debugPrint("User IP info: ${userProvider.ipInfo}");
 
     if (!context.mounted) return;

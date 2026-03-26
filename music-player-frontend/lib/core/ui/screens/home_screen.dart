@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:ipwhois/ipwhois.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/home_provider.dart';
@@ -69,14 +68,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Selector<UserProvider, (String, IpInfo?)>(
+                    Selector<UserProvider, (String, String?)>(
                       selector:
                           (_, p) => (p.currentUser?.email ?? '', p.ipInfo),
                       builder: (context, data, _) {
                         final (email, ipInfo) = data;
                         final name =
                             email.isNotEmpty ? email.split('@').first : '';
-                        final ipAddress = ipInfo?.ip ?? '';
+                        final ipAddress = ipInfo ?? '';
 
                         return Text(
                           '${name.isNotEmpty ? '${_greeting()}, $name!' : _greeting()} ($ipAddress)',
