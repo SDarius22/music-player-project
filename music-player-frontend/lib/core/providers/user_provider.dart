@@ -33,7 +33,7 @@ class UserProvider with ChangeNotifier {
   Future<void> fetchIpInfo() async {
     try {
       final response = await http.get(
-        Uri.parse("https://api.ipify.org?format=json"),
+        Uri.parse("https://www.bt-app.com/my-ip"),
       );
       if (response.statusCode != 200) {
         ipInfo = "Failed to fetch IP info";
