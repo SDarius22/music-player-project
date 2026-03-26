@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:ipwhois/ipwhois.dart';
 import 'package:music_player_frontend/core/entities/user.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 
@@ -10,6 +11,7 @@ class UserProvider with ChangeNotifier {
   AuthStatus _status = AuthStatus.unknown;
   User? _currentUser;
   String? _pendingEmail;
+  IpInfo? ipInfo;
 
   UserProvider(this._authService);
 
