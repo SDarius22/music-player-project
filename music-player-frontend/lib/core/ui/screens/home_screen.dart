@@ -78,26 +78,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             email.isNotEmpty ? email.split('@').first : '';
                         final ipAddress = ipInfo?.ip ?? '';
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name.isNotEmpty
-                                  ? '${_greeting()}, $name!'
-                                  : _greeting(),
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (ipAddress.isNotEmpty)
-                              Text(
-                                ipAddress,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white54,
-                                ),
-                              ),
-                          ],
+                        return Text(
+                          '${name.isNotEmpty ? '${_greeting()}, $name!' : _greeting()} ($ipAddress)',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         );
                       },
                     ),

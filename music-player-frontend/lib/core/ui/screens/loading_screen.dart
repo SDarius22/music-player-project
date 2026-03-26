@@ -54,6 +54,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     final userProvider = context.read<UserProvider>();
     await userProvider.tryAutoLogin();
     userProvider.ipInfo ??= await getMyIpInfo();
+    debugPrint("User IP info: ${userProvider.ipInfo}");
 
     if (!context.mounted) return;
 
