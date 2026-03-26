@@ -74,6 +74,7 @@ dependencies:
   http: ^1.6.0
   web: ^1.1.1
   crypto: ^3.0.7
+  ipwhois: ^1.1.0
 
 dev_dependencies:
   flutter_test:

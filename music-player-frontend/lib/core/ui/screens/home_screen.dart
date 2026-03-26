@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:ipwhois/ipwhois.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/home_provider.dart';
@@ -68,19 +69,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Selector<UserProvider, String>(
-                      selector: (_, p) => p.currentUser?.email ?? '',
-                      builder: (context, email, _) {
+                    Selector<UserProvider, (String, IpInfo?)>(
+                      selector:
+                          (_, p) => (p.currentUser?.email ?? '', p.ipInfo),
+                      builder: (context, data, _) {
+                        final (email, ipInfo) = data;
                         final name =
                             email.isNotEmpty ? email.split('@').first : '';
-                        return Text(
-                          name.isNotEmpty
-                              ? '${_greeting()}, $name!'
-                              : _greeting(),
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        final ipAddress = ipInfo?.ip ?? '';
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name.isNotEmpty
+                                  ? '${_greeting()}, $name!'
+                                  : _greeting(),
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (ipAddress.isNotEmpty)
+                              Text(
+                                ipAddress,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white54,
+                                ),
+                              ),
+                          ],
                         );
                       },
                     ),

@@ -1,5 +1,6 @@
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:ipwhois/ipwhois.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
@@ -81,6 +82,16 @@ class _LoadingScreenState extends State<LoadingScreen>
     } else {
       await songProvider.initialize([]);
     }
+
+    userProvider.ipInfo ??= await getMyIpInfo();
+
+    // if (!context.mounted) return;
+    //
+    // final serverState =
+    //     await context.read<PlaybackRestService>().getPlaybackState();
+    // if (serverState != null && context.mounted) {
+    //   await context.read<AppAudioService>().restoreFromServerState(serverState);
+    // }
 
     if (context.mounted) {
       Navigator.pushReplacement(context, MainScaffold.route());
