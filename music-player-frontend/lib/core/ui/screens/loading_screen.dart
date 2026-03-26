@@ -53,6 +53,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   void routeUser(BuildContext context) async {
     final userProvider = context.read<UserProvider>();
     await userProvider.tryAutoLogin();
+    userProvider.ipInfo ??= await getMyIpInfo();
 
     if (!context.mounted) return;
 
@@ -82,8 +83,6 @@ class _LoadingScreenState extends State<LoadingScreen>
     } else {
       await songProvider.initialize([]);
     }
-
-    userProvider.ipInfo ??= await getMyIpInfo();
 
     // if (!context.mounted) return;
     //
