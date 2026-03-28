@@ -342,16 +342,16 @@ class AppAudioService {
     );
 
     if (isServerTrack) {
-      if (UniversalPlatform.isWeb) {
-        return AudioSource.uri(
-          Uri.parse('/music-player/p2p-stream/${song.serverId}'),
-          tag: Map<String, dynamic>.from({
-            "path": song.path,
-            "serverId": song.serverId,
-            "song": song,
-          }),
-        );
-      }
+      // if (UniversalPlatform.isWeb) {
+      //   return AudioSource.uri(
+      //     Uri.parse('/music-player/p2p-stream/${song.serverId}'),
+      //     tag: Map<String, dynamic>.from({
+      //       "path": song.path,
+      //       "serverId": song.serverId,
+      //       "song": song,
+      //     }),
+      //   );
+      // }
 
       return P2PChunkedAudioSource(
         songId: song.serverId,
@@ -405,9 +405,10 @@ class AppAudioService {
   Future<void> restoreFromServerState(PlaybackStateDto dto) async {
     if (dto.queueSongIds.isEmpty) return;
 
-    final resolvedQueue = (await Future.wait(
-      dto.queueSongIds.map((id) => songService.fetchSongByServerId(id)),
-    )).whereType<Song>().toList();
+    final resolvedQueue =
+        (await Future.wait(
+          dto.queueSongIds.map((id) => songService.fetchSongByServerId(id)),
+        )).whereType<Song>().toList();
 
     if (resolvedQueue.isEmpty) return;
 
