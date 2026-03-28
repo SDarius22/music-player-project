@@ -52,8 +52,6 @@ class _LoadingScreenState extends State<LoadingScreen>
   void routeUser(BuildContext context) async {
     final userProvider = context.read<UserProvider>();
     await userProvider.tryAutoLogin();
-    await userProvider.fetchIpInfo();
-    debugPrint("User IP info: ${userProvider.ipInfo}");
 
     if (!context.mounted) return;
 

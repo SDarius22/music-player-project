@@ -41,7 +41,9 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     audioProvider = context.read<AudioProvider>();
   }
 
-  bool get _isNotDesktop => !ResponsiveBreakpoints.of(context).isDesktop;
+  bool get _isNotDesktop =>
+      !ResponsiveBreakpoints.of(context).isDesktop &&
+      !ResponsiveBreakpoints.of(context).equals("4K");
 
   bool isMinimized(double percentage) {
     if (_isNotDesktop) return percentage < 0.45;

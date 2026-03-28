@@ -39,6 +39,14 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   }
 
   @override
+  Playlist? getPlaylistByServerId(int serverId) {
+    return _playlistBox
+        .query(Playlist_.serverId.equals(serverId))
+        .build()
+        .findFirst();
+  }
+
+  @override
   List<Playlist> getIndestructiblePlaylists() {
     return _playlistBox
         .query(Playlist_.indestructible.equals(true))

@@ -30,6 +30,14 @@ public class UserPlaybackState {
     @Builder.Default
     private Long positionMs = 0L;
 
+    @Column(name = "shuffle", nullable = false)
+    @Builder.Default
+    private Boolean shuffle = false;
+
+    @Column(name = "repeat", nullable = false)
+    @Builder.Default
+    private Boolean repeat = false;
+
     @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();

@@ -88,7 +88,7 @@ class SongRestService extends AbstractRestService {
     return null;
   }
 
-  CachedNetworkImage fetchCoverArt(int songId) {
+  Widget fetchCoverArt(int songId) {
     return CachedNetworkImage(
       imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
       imageUrl: '$baseUrl/songs/$songId/cover',

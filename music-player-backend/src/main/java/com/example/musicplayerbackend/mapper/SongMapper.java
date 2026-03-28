@@ -3,6 +3,7 @@ package com.example.musicplayerbackend.mapper;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongDto;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
 
@@ -12,11 +13,13 @@ import java.time.ZoneOffset;
 
 @Mapper(
         componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = {ArtistMapper.class, AlbumMapper.class},
         unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface SongMapper {
 
+    @Mapping(target = "artistId", source = "artist.id")
+    @Mapping(target = "albumId", source = "album.id")
+    @Mapping(target = "year", source = "releaseYear")
     SongDto toDto(Song song);
 
     Song toEntity(SongDto songDto);

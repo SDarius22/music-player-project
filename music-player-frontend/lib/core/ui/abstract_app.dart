@@ -32,6 +32,7 @@ import 'package:music_player_frontend/core/services/rest_clients/album_rest_serv
 import 'package:music_player_frontend/core/services/rest_clients/artist_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/playback_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/statistics_rest_service.dart';
@@ -161,6 +162,13 @@ abstract class AbstractApp extends StatelessWidget {
               authService: context.read<AuthService>(),
             ),
       ),
+      Provider<PlaybackRestService>(
+        create:
+            (context) => PlaybackRestService(
+              baseUrl: apiBaseUrl,
+              authService: context.read<AuthService>(),
+            ),
+      ),
       Provider<AlbumService>(
         create:
             (context) => AlbumService(
@@ -225,6 +233,7 @@ abstract class AbstractApp extends StatelessWidget {
 
                 return manager;
               },
+              playbackRestService: context.read<PlaybackRestService>(),
             ),
       ),
 

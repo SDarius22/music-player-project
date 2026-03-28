@@ -54,6 +54,14 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   Playlist? getPlaylist(int id) => _byId[id];
 
   @override
+  Playlist? getPlaylistByServerId(int serverId) {
+    for (final p in _byId.values) {
+      if (p.serverId == serverId) return p;
+    }
+    return null;
+  }
+
+  @override
   List<Playlist> getIndestructiblePlaylists() =>
       _byId.values.where((p) => p.indestructible == true).toList()
         ..sort((a, b) => a.name.compareTo(b.name));

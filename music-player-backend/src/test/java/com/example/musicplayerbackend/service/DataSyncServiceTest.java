@@ -1,125 +1,435 @@
-//package com.example.musicplayerbackend.service;
-//
-//import com.example.musicplayerbackend.data.SongRepository;
-//import com.example.musicplayerbackend.domain.Song;
-//import com.example.musicplayerbackend.domain.SongSyncDto;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.ArgumentCaptor;
-//import org.mockito.Captor;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//
-//import java.time.Instant;
-//import java.time.OffsetDateTime;
-//import java.time.ZoneOffset;
-//import java.time.temporal.ChronoUnit;
-//import java.util.Collection;
-//import java.util.List;
-//
-//import static org.junit.jupiter.api.Assertions.*;
-//import static org.mockito.Mockito.verify;
-//import static org.mockito.Mockito.when;
-//
-//@ExtendWith(MockitoExtension.class)
-//class DataSyncServiceTest {
-//
-//    private final long SONG_ID = 1;
-//
-//    @Mock
-//    private SongRepository songRepository;
-//
-//    @InjectMocks
-//    private DataSyncService dataSyncService;
-//
-//    @Captor
-//    private ArgumentCaptor<Collection<Song>> songCollectionCaptor;
-//
-//    private Song dbSong;
-//
-//    @BeforeEach
-//    void setUp() {
-//        dbSong = new Song();
-//        dbSong.setId(SONG_ID);
-//    }
-//
-//    @Test
-//    void shouldApplyAdditivePlayCountDelta() {
-//        SongSyncDto request = new SongSyncDto();
-//        request.setSongId(SONG_ID);
-//        request.setPlayCountDelta(3);
-//        request.setLikedByUser(false);
-//        request.setLastPlayed(OffsetDateTime.now(ZoneOffset.UTC));
-//
-//        when(songRepository.findAllById(List.of(SONG_ID))).thenReturn(List.of(dbSong));
-//
-//        dataSyncService.syn(List.of(request));
-//
-//        verify(songRepository).saveAll(songCollectionCaptor.capture());
-//
-//        List<Song> savedSongs = songCollectionCaptor.getValue().stream().toList();
-//        assertEquals(1, savedSongs.size());
-//
-//        Song savedSong = savedSongs.getFirst();
-//        assertEquals(13, savedSong.getPlayCount(), "Play count delta was not added correctly.");
-//    }
-//
-//    @Test
-//    void shouldUpdateStateIfClientTimestampIsNewer() {
-//        OffsetDateTime newerTime = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1);
-//
-//        SongSyncDto request = new SongSyncDto();
-//        request.setSongId(SONG_ID);
-//        request.setPlayCountDelta(0);
-//        request.setLikedByUser(true);
-//        request.setLastPlayed(newerTime);
-//
-//        when(songRepository.findAllById(List.of(SONG_ID))).thenReturn(List.of(dbSong));
-//
-//        dataSyncService.syncOfflineData(List.of(request));
-//
-//        verify(songRepository).saveAll(songCollectionCaptor.capture());
-//
-//        Song savedSong = songCollectionCaptor.getValue().stream().toList().getFirst();
-//        assertTrue(savedSong.getLikedByUser(), "Newer offline state was rejected incorrectly.");
-//        assertEquals(newerTime.toInstant(), savedSong.getLastPlayed(), "Last played timestamp was not updated.");
-//    }
-//
-//    @Test
-//    void shouldIgnoreStateIfClientTimestampIsOlder() {
-//        OffsetDateTime olderTime = OffsetDateTime.now(ZoneOffset.UTC).minusDays(10);
-//
-//        SongSyncDto request = new SongSyncDto();
-//        request.setSongId(SONG_ID);
-//        request.setPlayCountDelta(2);
-//        request.setLikedByUser(true);
-//        request.setLastPlayed(olderTime);
-//
-//        when(songRepository.findAllById(List.of(SONG_ID))).thenReturn(List.of(dbSong));
-//
-//        dataSyncService.syncOfflineData(List.of(request));
-//
-//        verify(songRepository).saveAll(songCollectionCaptor.capture());
-//
-//        Song savedSong = songCollectionCaptor.getValue().stream().toList().getFirst();
-//        assertEquals(12, savedSong.getPlayCount(), "Additive delta must still apply even if state is stale.");
-//        assertFalse(savedSong.getLikedByUser(), "Stale offline state overwrote newer database state.");
-//        assertNotEquals(olderTime.toInstant(), savedSong.getLastPlayed(), "Stale timestamp overwrote newer database timestamp.");
-//    }
-//
-//    @Test
-//    void shouldIgnoreUnknownSongsGracefully() {
-//        SongSyncDto request = new SongSyncDto();
-//        request.setSongId(999);
-//        request.setPlayCountDelta(5);
-//
-//        when(songRepository.findAllById(List.of(999))).thenReturn(List.of());
-//
-//        dataSyncService.syncOfflineData(List.of(request));
-//
-//        verify(songRepository).saveAll(songCollectionCaptor.capture());
-//        assertTrue(songCollectionCaptor.getValue().isEmpty(), "Service attempted to save an unknown entity.");
-//    }
-//}
+package com.example.musicplayerbackend.service;
+
+import com.example.musicplayerbackend.components.SignalingHandler;
+import com.example.musicplayerbackend.data.SongRepository;
+import com.example.musicplayerbackend.data.UserLibraryRepository;
+import com.example.musicplayerbackend.data.UserRepository;
+import com.example.musicplayerbackend.domain.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class DataSyncServiceTest {
+
+    @Mock
+    UserLibraryRepository userLibraryRepository;
+    @Mock
+    SongRepository songRepository;
+    @Mock
+    UserRepository userRepository;
+    @Mock
+    SignalingHandler signalingHandler;
+
+    @Captor
+    ArgumentCaptor<UserLibrary> libCaptor;
+
+    DataSyncService service;
+    User user;
+    Song song;
+
+    @BeforeEach
+    void setUp() {
+        service = new DataSyncService(userLibraryRepository, songRepository,
+                userRepository, signalingHandler);
+        user = User.builder().id(1L).email("u@t.com").role(Role.USER)
+                .provider(AuthProvider.LOCAL).build();
+        song = Song.builder().id(10L).name("Song").songType(ContentType.STREAMABLE).fileHash("h").build();
+    }
+
+    @Test
+    void shouldReturnAllEntriesWhenLastSyncTimeIsNull() {
+        UserLibrary entry = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(true).playCount(3L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of(entry));
+
+        SyncRequestDto req = new SyncRequestDto();
+        SyncResponseDto response = service.performSync(1L, req);
+
+        assertNotNull(response.getNewSyncTime());
+        assertEquals(1, response.getServerChanges().size());
+        assertEquals(10L, response.getServerChanges().getFirst().getSongId());
+    }
+
+    @Test
+    void shouldReturnOnlyUpdatedEntriesWhenLastSyncTimeIsSet() {
+        Instant lastSync = Instant.now().minusSeconds(60);
+        UserLibrary entry = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(1L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndLastUpdatedAfter(eq(1L), any()))
+                .thenReturn(List.of(entry));
+
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLastSyncTime(OffsetDateTime.ofInstant(lastSync, ZoneOffset.UTC));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).findByIdUserIdAndLastUpdatedAfter(eq(1L), any());
+    }
+
+    @Test
+    void shouldApplyLikedChangeWhenSyncing() {
+        UserLibraryID id = new UserLibraryID(1L, 10L);
+        UserLibrary existing = UserLibrary.builder()
+                .id(id).song(song).user(user)
+                .liked(false).playCount(0L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setLikedByUser(true);
+        change.setIsDeleted(false);
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertTrue(libCaptor.getValue().getLiked());
+    }
+
+    @Test
+    void shouldApplyPlayCountDeltaWhenSyncing() {
+        UserLibraryID id = new UserLibraryID(1L, 10L);
+        UserLibrary existing = UserLibrary.builder()
+                .id(id).song(song).user(user)
+                .liked(false).playCount(5L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setPlayCountDelta(3);
+        change.setIsDeleted(false);
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertEquals(8L, libCaptor.getValue().getPlayCount());
+    }
+
+    @Test
+    void shouldMarkEntryAsDeletedWhenSyncing() {
+        UserLibraryID id = new UserLibraryID(1L, 10L);
+        UserLibrary existing = UserLibrary.builder()
+                .id(id).song(song).user(user)
+                .liked(true).playCount(2L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setIsDeleted(true);
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertTrue(libCaptor.getValue().getIsDeleted());
+    }
+
+    @Test
+    void shouldCreateNewLibraryEntryWhenNotExists() {
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.empty());
+        when(songRepository.findById(10L)).thenReturn(Optional.of(song));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setLikedByUser(true);
+        change.setIsDeleted(false);
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertTrue(libCaptor.getValue().getLiked());
+    }
+
+    @Test
+    void shouldSkipChangeWhenSongNotFound() {
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.empty());
+        when(songRepository.findById(999L)).thenReturn(Optional.empty());
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(999L);
+        change.setIsDeleted(false);
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldTriggerSignalingWhenLocalChangesArePresent() {
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.empty());
+        when(songRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setIsDeleted(false);
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(signalingHandler).sendSyncTrigger(1L);
+    }
+
+    @Test
+    void shouldNotTriggerSignalingWhenNoLocalChanges() {
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+
+        SyncRequestDto req = new SyncRequestDto();
+        service.performSync(1L, req);
+
+        verify(signalingHandler, never()).sendSyncTrigger(any());
+    }
+
+    @Test
+    void shouldNotTriggerSignalingWhenLocalChangesIsEmptyList() {
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(new ArrayList<>()); // non-null but empty
+
+        service.performSync(1L, req);
+
+        verify(signalingHandler, never()).sendSyncTrigger(any());
+        verify(userLibraryRepository, never()).save(any());
+    }
+
+    // ── applyClientChanges branches ───────────────────────────────────────────
+
+    @Test
+    void shouldNotChangeLikedWhenLikedByUserIsNull() {
+        UserLibrary existing = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(0L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setLikedByUser(null); // null → no change
+        change.setIsDeleted(false);
+
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertFalse(libCaptor.getValue().getLiked()); // unchanged
+    }
+
+    @Test
+    void shouldNotChangePlayCountWhenDeltaIsZero() {
+        UserLibrary existing = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(7L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setPlayCountDelta(0); // zero → no increment
+        change.setIsDeleted(false);
+
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertEquals(7L, libCaptor.getValue().getPlayCount()); // unchanged
+    }
+
+    @Test
+    void shouldNotChangePlayCountWhenDeltaIsNegative() {
+        UserLibrary existing = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(5L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setPlayCountDelta(-3); // negative → no increment
+        change.setIsDeleted(false);
+
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertEquals(5L, libCaptor.getValue().getPlayCount()); // unchanged
+    }
+
+    @Test
+    void shouldSetLastPlayedWhenProvided() {
+        UserLibrary existing = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(0L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        OffsetDateTime played = OffsetDateTime.now(ZoneOffset.UTC).minusHours(1);
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setLastPlayed(played);
+        change.setIsDeleted(false);
+
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertNotNull(libCaptor.getValue().getLastPlayed());
+        assertEquals(played.toInstant(), libCaptor.getValue().getLastPlayed());
+    }
+
+    @Test
+    void shouldSetAddedAtWhenProvided() {
+        UserLibrary existing = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(0L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        OffsetDateTime addedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1);
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setAddedAt(addedAt);
+        change.setIsDeleted(false);
+
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertEquals(addedAt.toInstant(), libCaptor.getValue().getAddedAt());
+    }
+
+    @Test
+    void shouldUndeleteEntryWhenIsDeletedFalseOnPreviouslyDeletedEntry() {
+        UserLibrary existing = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(0L).isDeleted(true) // previously deleted
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of());
+        when(userRepository.getReferenceById(1L)).thenReturn(user);
+        when(userLibraryRepository.findById(any())).thenReturn(Optional.of(existing));
+        when(userLibraryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SongSyncDto change = new SongSyncDto();
+        change.setSongId(10L);
+        change.setIsDeleted(false); // un-delete
+
+        SyncRequestDto req = new SyncRequestDto();
+        req.setLocalChanges(List.of(change));
+        service.performSync(1L, req);
+
+        verify(userLibraryRepository).save(libCaptor.capture());
+        assertFalse(libCaptor.getValue().getIsDeleted()); // un-deleted
+    }
+
+    @Test
+    void shouldNotSetSongIdWhenMappingEntityToDtoWithNullSong() {
+        UserLibrary entry = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L))
+                .song(null) // null song
+                .user(user)
+                .liked(false).playCount(0L).isDeleted(false)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of(entry));
+
+        SyncRequestDto req = new SyncRequestDto();
+        SyncResponseDto response = service.performSync(1L, req);
+
+        assertEquals(1, response.getServerChanges().size());
+        assertNull(response.getServerChanges().getFirst().getSongId());
+    }
+
+    @Test
+    void shouldSetLastPlayedWhenMappingEntityToDtoAndLastPlayedNotNull() {
+        Instant played = Instant.now().minusSeconds(3600);
+        UserLibrary entry = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(0L).isDeleted(false)
+                .lastPlayed(played)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of(entry));
+
+        SyncRequestDto req = new SyncRequestDto();
+        SyncResponseDto response = service.performSync(1L, req);
+
+        assertNotNull(response.getServerChanges().getFirst().getLastPlayed());
+        assertEquals(played, response.getServerChanges().getFirst().getLastPlayed().toInstant());
+    }
+
+    @Test
+    void shouldSetAddedAtWhenMappingEntityToDtoAndAddedAtNotNull() {
+        Instant addedAt = Instant.now().minus(7, ChronoUnit.DAYS);
+        UserLibrary entry = UserLibrary.builder()
+                .id(new UserLibraryID(1L, 10L)).song(song).user(user)
+                .liked(false).playCount(0L).isDeleted(false)
+                .addedAt(addedAt)
+                .lastUpdated(Instant.now()).build();
+        when(userLibraryRepository.findByIdUserIdAndIsDeletedFalse(1L)).thenReturn(List.of(entry));
+
+        SyncRequestDto req = new SyncRequestDto();
+        SyncResponseDto response = service.performSync(1L, req);
+
+        assertNotNull(response.getServerChanges().getFirst().getAddedAt());
+        assertEquals(addedAt, response.getServerChanges().getFirst().getAddedAt().toInstant());
+    }
+}

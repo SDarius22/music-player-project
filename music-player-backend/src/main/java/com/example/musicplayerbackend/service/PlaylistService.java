@@ -42,6 +42,7 @@ public class PlaylistService {
         Playlist playlist = Playlist.builder()
                 .user(user)
                 .name(req.getName())
+                .playlistType(ContentType.USER_UPLOAD)
                 .coverImage(req.getCoverImage())
                 .songIdsJson(toJson(songIds))
                 .build();
@@ -97,6 +98,7 @@ public class PlaylistService {
         PlaylistDto dto = new PlaylistDto();
         dto.setId(p.getId());
         dto.setName(p.getName());
+        dto.setType(p.getPlaylistType() != null ? PlaylistDto.TypeEnum.fromValue(p.getPlaylistType().name()) : null);
         dto.setUserId(p.getUser().getId());
         dto.setSongIds(ids);
         dto.setHasCover(p.getCoverImage() != null && !p.getCoverImage().isBlank());
@@ -111,6 +113,7 @@ public class PlaylistService {
         PlaylistDetailDto dto = new PlaylistDetailDto();
         dto.setId(p.getId());
         dto.setName(p.getName());
+        dto.setType(p.getPlaylistType() != null ? PlaylistDetailDto.TypeEnum.fromValue(p.getPlaylistType().name()) : null);
         dto.setUserId(p.getUser().getId());
         dto.setSongs(songs);
         dto.setHasCover(p.getCoverImage() != null && !p.getCoverImage().isBlank());

@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:music_player_frontend/core/entities/user.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 
@@ -13,7 +10,6 @@ class UserProvider with ChangeNotifier {
   AuthStatus _status = AuthStatus.unknown;
   User? _currentUser;
   String? _pendingEmail;
-  String? ipInfo;
 
   UserProvider(this._authService);
 
@@ -27,23 +23,6 @@ class UserProvider with ChangeNotifier {
 
   void setPendingEmail(String email) {
     _pendingEmail = email.trim();
-    notifyListeners();
-  }
-
-  Future<void> fetchIpInfo() async {
-    try {
-      final response = await http.get(
-        Uri.parse("https://www.bt-app.com/my-ip"),
-      );
-      if (response.statusCode != 200) {
-        ipInfo = "Failed to fetch IP info";
-        notifyListeners();
-        return;
-      }
-      ipInfo = jsonDecode(response.body)['ip'] ?? "Unknown IP";
-    } catch (e) {
-      ipInfo = "Failed to fetch IP info";
-    }
     notifyListeners();
   }
 

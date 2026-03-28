@@ -42,6 +42,8 @@ public class PlaybackStateService {
         state.setQueueSongIds(toJson(queueIds));
         state.setCurrentSongId(req.getCurrentSongId());
         state.setPositionMs(req.getPositionMs() == null ? 0L : req.getPositionMs());
+        state.setShuffle(req.getShuffle() != null ? req.getShuffle() : false);
+        state.setRepeat(req.getRepeat() != null ? req.getRepeat() : false);
         state.setUpdatedAt(Instant.now());
 
         UserPlaybackState saved = stateRepository.save(state);
@@ -60,6 +62,8 @@ public class PlaybackStateService {
         dto.setQueueSongIds(fromJson(s.getQueueSongIds()));
         dto.setCurrentSongId(s.getCurrentSongId());
         dto.setPositionMs(s.getPositionMs());
+        dto.setShuffle(s.getShuffle());
+        dto.setRepeat(s.getRepeat());
         dto.setUpdatedAt(OffsetDateTime.ofInstant(s.getUpdatedAt(), ZoneOffset.UTC));
         return dto;
     }

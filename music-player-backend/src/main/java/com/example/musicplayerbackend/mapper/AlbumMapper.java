@@ -14,6 +14,7 @@ import org.mapstruct.ReportingPolicy;
 public interface AlbumMapper {
 
     @Mapping(target = "photo", source = "coverImage")
+    @Mapping(target = "type", expression = "java(album.getAlbumType() != null ? com.example.musicplayerbackend.domain.AlbumDto.TypeEnum.fromValue(album.getAlbumType().name()) : null)")
     AlbumDto toDto(Album album);
 
     Album toEntity(AlbumDto albumDto);

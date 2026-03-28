@@ -1,0 +1,198 @@
+package com.example.musicplayerbackend.integration;
+
+import com.example.musicplayerbackend.data.ChunkRepository;
+import com.example.musicplayerbackend.data.SongChunkRepository;
+import com.example.musicplayerbackend.data.SongRepository;
+import com.example.musicplayerbackend.data.UserRepository;
+import com.example.musicplayerbackend.domain.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.file.Path;
+import java.util.UUID;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+class StreamingControllerIntegrationTest extends BaseIntegrationTest {
+
+    @TempDir Path tempDir;
+
+    @Autowired UserRepository userRepository;
+    @Autowired SongRepository songRepository;
+    @Autowired ChunkRepository chunkRepository;
+    @Autowired SongChunkRepository songChunkRepository;
+
+    User testUser;
+    User otherUser;
+    Song publicSong;
+    Song privateSong;
+
+    @BeforeEach
+    void setUp() {
+        testUser = userRepository.save(buildUser("stream-test@example.com", Role.USER));
+        otherUser = userRepository.save(buildUser("stream-other@example.com", Role.USER));
+
+        publicSong = songRepository.save(Song.builder()
+                .name("Public Stream Song")
+                .songType(ContentType.STREAMABLE)
+                .fileHash(UUID.randomUUID().toString())
+                .build());
+
+        privateSong = songRepository.save(Song.builder()
+                .name("Private Stream Song")
+                .songType(ContentType.USER_UPLOAD)
+                .ownerId(testUser.getId())
+                .fileHash(UUID.randomUUID().toString())
+                .build());
+    }
+
+    @AfterEach
+    void tearDown() {
+        songChunkRepository.deleteAll();
+        chunkRepository.deleteAll();
+        songRepository.deleteAll();
+        userRepository.deleteAll();
+    }
+
+    // ── manifest ──────────────────────────────────────────────────────────────
+
+    @Test
+    void shouldReturn200ForPublicSongManifestWithNoChunks() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/manifest", publicSong.getId())
+                        .with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.songId").value(publicSong.getId()))
+                .andExpect(jsonPath("$.totalChunks").value(0));
+    }
+
+    @Test
+    void shouldReturn403WhenManifestPrivateSongOwnedByOther() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/manifest", privateSong.getId())
+                        .with(user(otherUser)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturn200ForManifestWhenPrivateSongOwnedBySelf() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/manifest", privateSong.getId())
+                        .with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.songId").value(privateSong.getId()));
+    }
+
+    @Test
+    void shouldReturn404WhenManifestSongNotFound() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/999999/manifest")
+                        .with(user(testUser)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn200WithChunkHashesWhenChunksExist() throws Exception {
+        byte[] data = "audio-bytes".getBytes();
+        File chunkFile = tempDir.resolve("chunk.bin").toFile();
+        try (FileOutputStream fos = new FileOutputStream(chunkFile)) { fos.write(data); }
+
+        Chunk chunk = chunkRepository.save(Chunk.builder()
+                .contentHash("test-hash-" + UUID.randomUUID())
+                .size(data.length)
+                .storagePath(chunkFile.getAbsolutePath())
+                .build());
+        songChunkRepository.save(SongChunk.builder()
+                .song(publicSong).chunk(chunk).orderIndex(0).build());
+
+        mockMvc.perform(get("/api/v1/stream/{id}/manifest", publicSong.getId())
+                        .with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalChunks").value(1))
+                .andExpect(jsonPath("$.hashes").isArray());
+    }
+
+    // ── chunk ─────────────────────────────────────────────────────────────────
+
+    @Test
+    void shouldReturn200WhenChunkExists() throws Exception {
+        byte[] data = "audio-chunk-data".getBytes();
+        File chunkFile = tempDir.resolve("chunk0.bin").toFile();
+        try (FileOutputStream fos = new FileOutputStream(chunkFile)) { fos.write(data); }
+
+        Chunk chunk = chunkRepository.save(Chunk.builder()
+                .contentHash("test-chunk-hash-" + java.util.UUID.randomUUID())
+                .size(data.length)
+                .storagePath(chunkFile.getAbsolutePath())
+                .build());
+        songChunkRepository.save(SongChunk.builder()
+                .song(publicSong).chunk(chunk).orderIndex(0).build());
+
+        mockMvc.perform(get("/api/v1/stream/{id}/chunk/0", publicSong.getId())
+                        .with(user(testUser)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldReturn403WhenChunkAccessIsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/chunk/0", privateSong.getId())
+                        .with(user(otherUser)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturn400WhenChunkIndexIsOutOfBounds() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/chunk/5", publicSong.getId())
+                        .with(user(testUser)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturn400WhenChunkIndexIsNegative() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/chunk/-1", publicSong.getId())
+                        .with(user(testUser)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ── prefix ────────────────────────────────────────────────────────────────
+
+    @Test
+    void shouldReturn200ForPrefixOfPublicSongWithNoChunks() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/prefix", publicSong.getId())
+                        .with(user(testUser)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldReturn403WhenPrefixAccessIsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/prefix", privateSong.getId())
+                        .with(user(otherUser)))
+                .andExpect(status().isForbidden());
+    }
+
+    // ── full stream ───────────────────────────────────────────────────────────
+
+    @Test
+    void shouldReturn403WhenFullStreamAccessIsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/full", privateSong.getId())
+                        .with(user(otherUser)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturn404WhenFullStreamSongNotFound() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/999999/full")
+                        .with(user(testUser)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn200ForFullStreamOfPublicSongWithNoChunks() throws Exception {
+        mockMvc.perform(get("/api/v1/stream/{id}/full", publicSong.getId())
+                        .with(user(testUser)))
+                .andExpect(status().isOk());
+    }
+}

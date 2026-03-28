@@ -85,10 +85,10 @@ public class SongController implements SongsApi {
     @Override
     public ResponseEntity<Resource> getSongCover(Long songId) {
         SongDto song = songService.getSongById(songId);
-        if (song.getAlbum() == null || song.getAlbum().getId() == null) {
+        if (song.getAlbumId() == null) {
             return ResponseEntity.notFound().build();
         }
-        byte[] bytes = albumService.getAlbumCover(song.getAlbum().getId());
+        byte[] bytes = albumService.getAlbumCover(song.getAlbumId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")

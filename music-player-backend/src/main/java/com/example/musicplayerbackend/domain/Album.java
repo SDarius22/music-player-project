@@ -23,6 +23,13 @@ public class Album {
 
     private String coverImage; // base64 encoded image
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private ContentType albumType = ContentType.STREAMABLE;
+
+    private Long ownerId; // null for streamable albums, user ID for user-uploaded albums
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "artist_id")
     private Artist artist;

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
+import 'package:music_player_frontend/core/dtos/playlist_page_dto.dart';
 import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 
@@ -12,6 +13,25 @@ class PlaylistRestService extends AbstractRestService {
   }) {
     super.baseUrl = baseUrl;
     super.authService = authService;
+  }
+
+  Future<PlaylistPageDto> getPlaylistsPage({
+    int page = 0,
+    int size = 50,
+  }) async {
+    try {
+      final endpoint = '/playlists?page=$page&size=$size';
+      final response = await get(endpoint);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return PlaylistPageDto.fromJson(decoded);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching playlists: $e');
+    }
+    return PlaylistPageDto(content: const [], page: page, size: size, totalPages: 0, totalElements: 0);
   }
 
   Future<Map<String, dynamic>?> createPlaylist(

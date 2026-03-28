@@ -1,6 +1,6 @@
 package com.example.musicplayerbackend.domain;
 
-public enum SongType {
+public enum ContentType {
     STREAMABLE,
     USER_UPLOAD
 }

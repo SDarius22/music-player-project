@@ -60,6 +60,9 @@ class Playlist with AbstractCollection implements BaseEntity {
 
   List<int> songsIds = [];
 
+  @Transient()
+  List<int> serverSongIds = [];
+
   List<Song> get songsList {
     try {
       return songsIds
@@ -71,6 +74,19 @@ class Playlist with AbstractCollection implements BaseEntity {
   }
 
   int _duration = -1;
+
+  Playlist();
+
+  factory Playlist.fromJson(Map<String, dynamic> json) {
+    final playlist = Playlist();
+    playlist.serverId = (json['id'] as num? ?? -1).toInt();
+    playlist.name = json['name'] as String? ?? 'Unknown Playlist';
+    playlist.serverSongIds =
+        (json['songIds'] as List<dynamic>? ?? [])
+            .map((e) => (e as num).toInt())
+            .toList();
+    return playlist;
+  }
 
   int get duration {
     if (_duration != -1) {

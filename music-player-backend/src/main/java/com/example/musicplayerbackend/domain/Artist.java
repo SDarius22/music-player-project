@@ -20,7 +20,14 @@ public class Artist {
 
     @Column(nullable = false)
     private String name;
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private ContentType artistType = ContentType.STREAMABLE;
+
+    private Long ownerId; // null for streamable artists, user ID for user-uploaded artists
+
     @OneToMany(mappedBy = "artist", fetch = FetchType.LAZY)
     private List<Album> albums;
 

@@ -32,7 +32,7 @@ public class Song {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SongType songType;
+    private ContentType songType;
 
     private Long ownerId; // null for streamable songs, user ID for user-uploaded songs
 

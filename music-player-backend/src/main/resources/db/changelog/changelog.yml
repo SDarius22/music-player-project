@@ -5,3 +5,7 @@ databaseChangeLog:
       file: db/changelog/changes/002-chunk-stats.sql
   - include:
       file: db/changelog/changes/003-playlists-and-playback-state.sql
+  - include:
+      file: db/changelog/changes/004-playback-state-shuffle-repeat.sql
+  - include:
+      file: db/changelog/changes/005-artist-album-playlist-type.sql

@@ -37,6 +37,11 @@ class Song implements BaseEntity {
   bool fullyLoaded = false;
   bool likedByUser = false;
 
+  @Transient()
+  int serverArtistId = 0;
+  @Transient()
+  int serverAlbumId = 0;
+
   @Property(type: PropertyType.dateNano)
   DateTime? lastPlayed;
   int playCount = 0;
@@ -73,14 +78,8 @@ class Song implements BaseEntity {
     song.trackNumber = json['trackNumber'] ?? 0;
     song.discNumber = json['discNumber'] ?? 0;
     song.year = json['year'] ?? 0;
-    if (json['artist'] is Map<String, dynamic>) {
-      song.artist.target = Artist.fromJson(
-        json['artist'] as Map<String, dynamic>,
-      );
-    }
-    if (json['album'] is Map<String, dynamic>) {
-      song.album.target = Album.fromJson(json['album'] as Map<String, dynamic>);
-    }
+    song.serverArtistId = json['artistId'] ?? 0;
+    song.serverAlbumId = json['albumId'] ?? 0;
     song.fullyLoaded = true;
     return song;
   }

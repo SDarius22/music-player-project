@@ -25,6 +25,11 @@ public class Playlist {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private ContentType playlistType = ContentType.USER_UPLOAD;
+
     @Column(name = "cover_image", columnDefinition = "TEXT")
     private String coverImage;
 

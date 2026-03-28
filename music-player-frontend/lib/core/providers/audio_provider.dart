@@ -76,6 +76,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       ),
     );
     await _audioService.pause();
+    _audioService.pushStateToServer();
   }
 
   @override
@@ -198,6 +199,8 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   void _startListeners() {
     _audioService.currentSongNotifier.addListener(() {
+      shuffleNotifier.value = _audioService.currentAudioSettings.shuffle;
+      repeatNotifier.value = _audioService.currentAudioSettings.repeat;
       _setColors();
       _changeMediaItem();
       notifyListeners();

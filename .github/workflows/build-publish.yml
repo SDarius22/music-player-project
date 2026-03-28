@@ -6,7 +6,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - working-directory: ./music-player-frontend
+        run: flutter pub get
+
+      - working-directory: ./music-player-frontend
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - working-directory: ./music-player-frontend
+        run: flutter test
+
   build:
+    needs: test
     name: Build on ${{ matrix.os }} for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -47,7 +67,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libjsoncpp-dev libmpv-dev mpv libayatana-appindicator3-dev
-
 
       - working-directory: ./music-player-frontend
         run: flutter pub get

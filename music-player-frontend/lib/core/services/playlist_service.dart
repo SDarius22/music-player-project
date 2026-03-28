@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:music_player_frontend/core/dtos/playlist_page_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
@@ -28,28 +30,66 @@ class PlaylistService {
 
   Map<String, dynamic> get sortFields => _playlistRepository.sortFields;
 
-  Playlist addPlaylist(
+  Future<Playlist> addPlaylist(
     String name,
     List<Song> songs,
     String whereToAdd,
     Uint8List? coverArt,
-  ) {
+  ) async {
     Playlist newPlaylist = Playlist();
     newPlaylist.name = name;
     newPlaylist.nextAdded = whereToAdd;
     newPlaylist.imageBytes = coverArt;
     addToPlaylist(newPlaylist, songs);
-    return _playlistRepository.savePlaylist(newPlaylist);
+    _playlistRepository.savePlaylist(newPlaylist);
+
+    try {
+      final serverSongIds = songs
+          .map((s) => s.serverId)
+          .where((id) => id > 0)
+          .toList();
+      final coverBase64 = coverArt != null ? base64Encode(coverArt) : null;
+      final result = await _playlistRestService.createPlaylist(
+        name, serverSongIds, coverBase64,
+      );
+      if (result != null) {
+        newPlaylist.serverId = (result['id'] as num).toInt();
+        _playlistRepository.savePlaylist(newPlaylist);
+      }
+    } catch (e) {
+      debugPrint('PlaylistService: failed to create playlist on server: $e');
+    }
+
+    return newPlaylist;
   }
 
-  Playlist updatePlaylist(Playlist playlist) {
+  Future<Playlist> updatePlaylist(Playlist playlist) async {
     if (playlist.indestructible) {
       final list = playlist.songsList;
       if (list.isNotEmpty) {
         playlist.imageBytes = list.first.coverArt;
       }
     }
-    return _playlistRepository.savePlaylist(playlist);
+    _playlistRepository.savePlaylist(playlist);
+
+    if (playlist.serverId > 0) {
+      try {
+        final serverSongIds = playlist.songs
+            .map((s) => s.serverId)
+            .where((id) => id > 0)
+            .toList();
+        final coverBase64 = playlist.imageBytes != null
+            ? base64Encode(playlist.imageBytes!)
+            : null;
+        await _playlistRestService.updatePlaylist(
+          playlist.serverId, playlist.name, serverSongIds, coverBase64,
+        );
+      } catch (e) {
+        debugPrint('PlaylistService: failed to update playlist on server: $e');
+      }
+    }
+
+    return playlist;
   }
 
   Playlist? getPlaylist(int playlistId) {
@@ -192,19 +232,114 @@ class PlaylistService {
     return _playlistRepository.getPlaylists(query, sortField, flag);
   }
 
-  List<Playlist> getPlaylistsPaged(
+  Future<PlaylistPageDto> getPlaylistsPage(
     String query,
     String sortField,
     bool ascending,
     int page,
-    int pageSize,
+    int size,
+  ) async {
+    try {
+      final serverPage = await _playlistRestService.getPlaylistsPage(
+        page: page,
+        size: size,
+      );
+
+      for (final serverPlaylist in serverPage.content) {
+        cacheServerPlaylist(serverPlaylist);
+      }
+
+      if (serverPage.totalElements > 0) {
+        final content = _playlistRepository.getPlaylistsPaged(
+          query, sortField, ascending, page * size, size,
+        );
+        return PlaylistPageDto(
+          content: content,
+          page: page,
+          size: size,
+          totalPages: serverPage.totalPages,
+          totalElements: serverPage.totalElements,
+        );
+      }
+    } catch (e) {
+      debugPrint('PlaylistService: server fetch failed, using local: $e');
+    }
+    return _localPage(query, sortField, ascending, page, size);
+  }
+
+  Playlist cacheServerPlaylist(Playlist serverPlaylist) {
+    if (serverPlaylist.serverId > 0) {
+      final byServerId = _playlistRepository.getPlaylistByServerId(
+        serverPlaylist.serverId,
+      );
+      if (byServerId != null) {
+        byServerId.name = serverPlaylist.name;
+        _resolveAndSetSongs(byServerId, serverPlaylist.serverSongIds);
+        _playlistRepository.savePlaylist(byServerId);
+        return byServerId;
+      }
+    }
+
+    final byName = _playlistRepository.getPlaylistByName(serverPlaylist.name);
+    if (byName != null && !byName.indestructible) {
+      if (byName.serverId <= 0 && serverPlaylist.serverId > 0) {
+        byName.serverId = serverPlaylist.serverId;
+      }
+      _resolveAndSetSongs(byName, serverPlaylist.serverSongIds);
+      _playlistRepository.savePlaylist(byName);
+      return byName;
+    }
+
+    _resolveAndSetSongs(serverPlaylist, serverPlaylist.serverSongIds);
+    return _playlistRepository.savePlaylist(serverPlaylist);
+  }
+
+  void _resolveAndSetSongs(Playlist playlist, List<int> serverSongIds) {
+    if (serverSongIds.isEmpty) return;
+    final resolved = serverSongIds
+        .map((sid) => _songRepository.getSongByServerId(sid))
+        .whereType<Song>()
+        .toList();
+    if (resolved.isNotEmpty) {
+      playlist.songs.clear();
+      playlist.songsIds.clear();
+      for (final song in resolved) {
+        playlist.songs.add(song);
+        playlist.songsIds.add(song.id);
+      }
+    }
+  }
+
+  PlaylistPageDto _localPage(
+    String query,
+    String sortField,
+    bool ascending,
+    int page,
+    int size,
   ) {
-    return _playlistRepository.getPlaylistsPaged(
-      query,
-      sortField,
-      ascending,
-      page * pageSize,
-      pageSize,
+    final all = _playlistRepository.getPlaylists(query, sortField, ascending);
+    final totalElements = all.length;
+    final totalPages = (totalElements / size).ceil();
+    final offset = page * size;
+    if (offset >= totalElements) {
+      return PlaylistPageDto(
+        content: const [],
+        page: page,
+        size: size,
+        totalPages: totalPages,
+        totalElements: totalElements,
+      );
+    }
+    final content = all.sublist(
+      offset,
+      (offset + size).clamp(0, totalElements),
+    );
+    return PlaylistPageDto(
+      content: content,
+      page: page,
+      size: size,
+      totalPages: totalPages,
+      totalElements: totalElements,
     );
   }
 
@@ -243,10 +378,17 @@ class PlaylistService {
     _playlistRepository.savePlaylist(playlist);
   }
 
-  void deletePlaylist(Playlist playlist) {
+  Future<void> deletePlaylist(Playlist playlist) async {
     if (playlist.indestructible) {
       debugPrint("Cannot delete indestructible playlist: ${playlist.name}");
       return;
+    }
+    if (playlist.serverId > 0) {
+      try {
+        await _playlistRestService.deletePlaylist(playlist.serverId);
+      } catch (e) {
+        debugPrint('PlaylistService: failed to delete playlist on server: $e');
+      }
     }
     _playlistRepository.deletePlaylist(playlist);
   }

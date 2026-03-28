@@ -68,17 +68,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Selector<UserProvider, (String, String?)>(
-                      selector:
-                          (_, p) => (p.currentUser?.email ?? '', p.ipInfo),
-                      builder: (context, data, _) {
-                        final (email, ipInfo) = data;
+                    Selector<UserProvider, String>(
+                      selector: (_, p) => p.currentUser?.email ?? '',
+                      builder: (context, email, _) {
                         final name =
                             email.isNotEmpty ? email.split('@').first : '';
-                        final ipAddress = ipInfo ?? '';
-
                         return Text(
-                          '${name.isNotEmpty ? '${_greeting()}, $name!' : _greeting()} ($ipAddress)',
+                          name.isNotEmpty
+                              ? '${_greeting()}, $name!'
+                              : _greeting(),
                           style: theme.textTheme.headlineMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,

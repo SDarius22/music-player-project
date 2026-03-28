@@ -22,6 +22,10 @@ class ArtistService {
     }
   }
 
+  Artist? getArtistByServerId(int serverId) {
+    return _artistRepository.getArtistByServerId(serverId);
+  }
+
   Artist getOrCreateArtist(String artistName) {
     Artist? existingArtist = _artistRepository.getArtistByName(artistName);
     if (existingArtist != null) {

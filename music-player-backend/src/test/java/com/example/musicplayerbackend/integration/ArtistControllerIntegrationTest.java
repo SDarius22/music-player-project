@@ -1,0 +1,102 @@
+package com.example.musicplayerbackend.integration;
+
+import com.example.musicplayerbackend.data.AlbumRepository;
+import com.example.musicplayerbackend.data.ArtistRepository;
+import com.example.musicplayerbackend.data.UserRepository;
+import com.example.musicplayerbackend.domain.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Base64;
+
+import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+class ArtistControllerIntegrationTest extends BaseIntegrationTest {
+
+    @Autowired ArtistRepository artistRepository;
+    @Autowired AlbumRepository albumRepository;
+    @Autowired UserRepository userRepository;
+
+    User testUser;
+    Artist artist;
+
+    @BeforeEach
+    void setUp() {
+        testUser = userRepository.save(buildUser("artist-test@example.com", Role.USER));
+        artist = artistRepository.save(Artist.builder().name("Test Artist").build());
+        albumRepository.save(Album.builder()
+                .name("Test Album")
+                .artist(artist)
+                .coverImage(Base64.getEncoder().encodeToString("img".getBytes()))
+                .build());
+    }
+
+    @AfterEach
+    void tearDown() {
+        albumRepository.deleteAll();
+        artistRepository.deleteAll();
+        userRepository.deleteById(testUser.getId());
+    }
+
+    @Test
+    void shouldReturn200WithArtistResults() throws Exception {
+        mockMvc.perform(get("/api/v1/artists").with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", not(empty())))
+                .andExpect(jsonPath("$.content[?(@.id == " + artist.getId() + ")].name",
+                        contains("Test Artist")));
+    }
+
+    @Test
+    void shouldFilterArtistsByQuery() throws Exception {
+        mockMvc.perform(get("/api/v1/artists").param("q", "Test").with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", not(empty())));
+    }
+
+    @Test
+    void shouldReturnEmptyArtistsWhenQueryMatchesNothing() throws Exception {
+        mockMvc.perform(get("/api/v1/artists").param("q", "zzznomatch").with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", empty()));
+    }
+
+    @Test
+    void shouldReturn200ForArtistById() throws Exception {
+        mockMvc.perform(get("/api/v1/artists/{id}", artist.getId()).with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(artist.getId()))
+                .andExpect(jsonPath("$.name").value("Test Artist"));
+    }
+
+    @Test
+    void shouldReturn404WhenArtistNotFound() throws Exception {
+        mockMvc.perform(get("/api/v1/artists/999999").with(user(testUser)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn200ForArtistCover() throws Exception {
+        mockMvc.perform(get("/api/v1/artists/{id}/cover", artist.getId()).with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/jpeg"));
+    }
+
+    @Test
+    void shouldReturn404WhenArtistCoverNotFound() throws Exception {
+        mockMvc.perform(get("/api/v1/artists/999999/cover").with(user(testUser)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnAlbumsForArtist() throws Exception {
+        mockMvc.perform(get("/api/v1/artists/{id}", artist.getId()).with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.albums", not(empty())));
+    }
+}

@@ -62,26 +62,27 @@ public class SongService {
         if (existingSong != null) {
             log.info("[SONG] Duplicate detected for fileHash={} — promoting existing song id={} to STREAMABLE", fileHash, existingSong.getId());
             existingSong.setOwnerId(null);
-            existingSong.setSongType(SongType.STREAMABLE);
+            existingSong.setSongType(ContentType.STREAMABLE);
             songRepository.save(existingSong);
             return;
         }
 
         Artist artist = artistRepository.findByName(artistName)
-                .orElseGet(() -> artistRepository.save(Artist.builder().name(artistName).build()));
+                .orElseGet(() -> artistRepository.save(Artist.builder().name(artistName).artistType(ContentType.STREAMABLE).build()));
 
         Album album = albumRepository.findByName(albumName)
                 .orElseGet(() -> albumRepository.save(
                         Album.builder()
                                 .name(albumName)
                                 .coverImage(photo)
+                                .albumType(ContentType.STREAMABLE)
                                 .build()));
 
         Song song = Song.builder()
                 .name(name)
                 .artist(artist)
                 .album(album)
-                .songType(SongType.STREAMABLE)
+                .songType(ContentType.STREAMABLE)
                 .durationInSeconds(duration)
                 .ownerId(null)
                 .discNumber(disc)
@@ -106,17 +107,17 @@ public class SongService {
             song = existingSongOpt.get();
         } else {
             Artist artist = artistRepository.findByName(request.getArtistName())
-                    .orElseGet(() -> artistRepository.save(Artist.builder().name(request.getArtistName()).build()));
+                    .orElseGet(() -> artistRepository.save(Artist.builder().name(request.getArtistName()).artistType(ContentType.USER_UPLOAD).ownerId(userId).build()));
 
             Album album = albumRepository.findByName(request.getAlbumName())
-                    .orElseGet(() -> albumRepository.save(Album.builder().name(request.getAlbumName()).build()));
+                    .orElseGet(() -> albumRepository.save(Album.builder().name(request.getAlbumName()).albumType(ContentType.USER_UPLOAD).ownerId(userId).build()));
 
             song = songRepository.save(Song.builder()
                     .name(request.getName())
                     .artist(artist)
                     .album(album)
                     .fileHash(request.getFileHash())
-                    .songType(SongType.USER_UPLOAD)
+                    .songType(ContentType.USER_UPLOAD)
                     .ownerId(userId)
                     .durationInSeconds(request.getDurationInSeconds())
                     .trackNumber(request.getTrackNumber())

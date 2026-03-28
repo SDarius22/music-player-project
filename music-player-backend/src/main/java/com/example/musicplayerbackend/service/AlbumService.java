@@ -43,7 +43,7 @@ public class AlbumService {
     }
 
     public AlbumPageDto getAlbums(String q, int page, int size, String sort) {
-        String query = (q == null || q.isBlank()) ? null : q;
+        String query = (q == null || q.isBlank()) ? "" : q;
         Pageable pageable = PageRequest.of(page, size, parseSort(sort));
         Page<Album> result = albumRepository.findAllByNameContainingIgnoreCase(query, pageable);
         List<AlbumDto> content = result.getContent().stream().map(albumMapper::toDto).toList();
@@ -69,6 +69,8 @@ public class AlbumService {
         dto.setId(album.getId());
         dto.setName(album.getName());
         dto.setPhoto(album.getCoverImage());
+        dto.setType(album.getAlbumType() != null ? AlbumDetailDto.TypeEnum.fromValue(album.getAlbumType().name()) : null);
+        dto.setOwnerId(album.getOwnerId());
         dto.setArtist(artistDto);
         dto.setSongs(songs);
         return dto;

@@ -22,7 +22,7 @@ public class ArtistService {
     private final AlbumMapper albumMapper;
 
     public ArtistPageDto getArtists(String q, int page, int size, String sort) {
-        String query = (q == null || q.isBlank()) ? null : q;
+        String query = (q == null || q.isBlank()) ? "" : q;
         Pageable pageable = PageRequest.of(page, size, parseSort(sort));
         Page<Artist> result = artistRepository.findAllByNameContainingIgnoreCase(query, pageable);
 
@@ -30,6 +30,8 @@ public class ArtistService {
             ArtistDto dto = new ArtistDto();
             dto.setId(a.getId());
             dto.setName(a.getName());
+            dto.setType(a.getArtistType() != null ? ArtistDto.TypeEnum.fromValue(a.getArtistType().name()) : null);
+            dto.setOwnerId(a.getOwnerId());
             return dto;
         }).toList();
 
@@ -47,6 +49,8 @@ public class ArtistService {
         ArtistDetailDto dto = new ArtistDetailDto();
         dto.setId(artist.getId());
         dto.setName(artist.getName());
+        dto.setType(artist.getArtistType() != null ? ArtistDetailDto.TypeEnum.fromValue(artist.getArtistType().name()) : null);
+        dto.setOwnerId(artist.getOwnerId());
         dto.setAlbums(albums);
         return dto;
     }

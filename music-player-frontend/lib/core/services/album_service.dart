@@ -22,6 +22,10 @@ class AlbumService {
     }
   }
 
+  Album? getAlbumByServerId(int serverId) {
+    return _albumRepository.getAlbumByServerId(serverId);
+  }
+
   Album getOrCreateAlbum(String albumName, int artistId, {Uint8List? image}) {
     Album? existingAlbum = _albumRepository.getAlbumByName(albumName);
     if (existingAlbum != null) {

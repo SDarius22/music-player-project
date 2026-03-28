@@ -144,6 +144,10 @@ class SongService {
     return await refreshServerSongs();
   }
 
+  Song? getSongByServerId(int serverId) {
+    return _songRepository.getSongByServerId(serverId);
+  }
+
   void updateSong(Song song) {
     _songRepository.updateSong(song);
   }
@@ -194,19 +198,13 @@ class SongService {
     if (serverSong.serverId <= 0) return;
 
     Artist? resolvedArtist;
-    if (serverSong.artist.target != null) {
-      resolvedArtist = _artistService.cacheServerArtist(
-        serverSong.artist.target!,
-      );
+    if (serverSong.serverArtistId > 0) {
+      resolvedArtist = _artistService.getArtistByServerId(serverSong.serverArtistId);
     }
 
     Album? resolvedAlbum;
-    if (serverSong.album.target != null) {
-      final serverAlbum = serverSong.album.target!;
-      if (resolvedArtist != null) {
-        serverAlbum.artist.target = resolvedArtist;
-      }
-      resolvedAlbum = _albumService.cacheServerAlbum(serverAlbum);
+    if (serverSong.serverAlbumId > 0) {
+      resolvedAlbum = _albumService.getAlbumByServerId(serverSong.serverAlbumId);
     }
 
     Song? existing = _songRepository.getSongByServerId(serverSong.serverId);
@@ -214,8 +212,7 @@ class SongService {
     if (existing == null) {
       final candidate = _songRepository.getSongContaining(serverSong.name);
       if (candidate != null) {
-        final artistName =
-            resolvedArtist?.name ?? serverSong.artist.target?.name;
+        final artistName = resolvedArtist?.name;
         final matches =
             artistName == null || candidate.artist.target?.name == artistName;
         if (matches) existing = candidate;
