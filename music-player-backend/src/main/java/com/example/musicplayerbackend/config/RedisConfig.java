@@ -12,7 +12,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
-
+    
     @Bean
     public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
         RedisTemplate<String, String> template = new RedisTemplate<>();
@@ -22,25 +22,36 @@ public class RedisConfig {
         template.setValueSerializer(str);
         template.setHashKeySerializer(str);
         template.setHashValueSerializer(str);
+        template.afterPropertiesSet();
         return template;
+    }
+
+    @Bean
+    public MessageListenerAdapter syncMessageListenerAdapter(RedisSignalingListener listener) {
+        MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onSyncTrigger");
+        adapter.setSerializer(new StringRedisSerializer());
+        adapter.afterPropertiesSet();
+        return adapter;
+    }
+
+    @Bean
+    public MessageListenerAdapter playbackMessageListenerAdapter(RedisSignalingListener listener) {
+        MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onPlaybackStateChanged");
+        adapter.setSerializer(new StringRedisSerializer());
+        adapter.afterPropertiesSet();
+        return adapter;
     }
 
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory factory,
-            RedisSignalingListener listener) {
-        StringRedisSerializer str = new StringRedisSerializer();
-
-        MessageListenerAdapter syncAdapter = new MessageListenerAdapter(listener, "onSyncTrigger");
-        syncAdapter.setSerializer(str);
-
-        MessageListenerAdapter playbackAdapter = new MessageListenerAdapter(listener, "onPlaybackStateChanged");
-        playbackAdapter.setSerializer(str);
+            MessageListenerAdapter syncMessageListenerAdapter,
+            MessageListenerAdapter playbackMessageListenerAdapter) {
 
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(factory);
-        container.addMessageListener(syncAdapter, new ChannelTopic("signaling:sync"));
-        container.addMessageListener(playbackAdapter, new ChannelTopic("signaling:playback"));
+        container.addMessageListener(syncMessageListenerAdapter, new ChannelTopic("signaling:sync"));
+        container.addMessageListener(playbackMessageListenerAdapter, new ChannelTopic("signaling:playback"));
         return container;
     }
 }
