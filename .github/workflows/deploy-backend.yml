@@ -12,6 +12,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./music-player-backend
 
     steps:
       - uses: actions/checkout@v3
@@ -21,8 +24,7 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
 
-      - working-directory: ./music-player-backend
-        run: ./mvnw test
+      - run: ./mvnw test
 
   build-and-deploy:
     needs: test
