@@ -22,6 +22,8 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   ValueNotifier<int> bufferedPositionNotifier = ValueNotifier<int>(0);
   ValueNotifier<double> volumeNotifier = ValueNotifier<double>(0.5);
   ValueNotifier<double> playbackSpeedNotifier = ValueNotifier<double>(1.0);
+  ValueNotifier<Duration> totalDurationNotifier =
+      ValueNotifier<Duration>(Duration.zero);
 
   ValueNotifier<Song> get currentSongNotifier =>
       _audioService.currentSongNotifier;
@@ -42,6 +44,9 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     volumeNotifier.value = _currentAudioSettings.volume;
 
     sliderNotifier.value = currentSong.durationInSeconds;
+    totalDurationNotifier.value = Duration(
+      seconds: currentSong.durationInSeconds,
+    );
 
     _startListeners();
     _setColors();
@@ -201,9 +206,21 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     _audioService.currentSongNotifier.addListener(() {
       shuffleNotifier.value = _audioService.currentAudioSettings.shuffle;
       repeatNotifier.value = _audioService.currentAudioSettings.repeat;
+      totalDurationNotifier.value = Duration(
+        seconds: currentSong.durationInSeconds,
+      );
       _setColors();
       _changeMediaItem();
       notifyListeners();
+    });
+
+    _audioService.audioPlayer.durationStream.listen((duration) {
+      if (duration == null || duration.inSeconds <= 0) return;
+      if (currentSong.durationInSeconds <= 0) {
+        currentSong.durationInSeconds = duration.inSeconds;
+        _audioService.songService.updateSong(currentSong);
+      }
+      totalDurationNotifier.value = duration;
     });
 
     _audioService.audioPlayer.positionStream.listen((Duration event) {

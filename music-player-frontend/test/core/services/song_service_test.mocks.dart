@@ -382,16 +382,31 @@ class MockSongRestService extends _i1.Mock implements _i14.SongRestService {
           as _i13.Future<_i2.Song?>);
 
   @override
-  _i4.CachedNetworkImage fetchCoverArt(int? songId) =>
+  _i4.CachedNetworkImage fetchCoverArt(
+    _i2.Song? song, {
+    void Function(_i18.Uint8List)? onBytesLoaded,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#fetchCoverArt, [songId]),
+            Invocation.method(
+              #fetchCoverArt,
+              [song],
+              {#onBytesLoaded: onBytesLoaded},
+            ),
             returnValue: _FakeCachedNetworkImage_2(
               this,
-              Invocation.method(#fetchCoverArt, [songId]),
+              Invocation.method(
+                #fetchCoverArt,
+                [song],
+                {#onBytesLoaded: onBytesLoaded},
+              ),
             ),
             returnValueForMissingStub: _FakeCachedNetworkImage_2(
               this,
-              Invocation.method(#fetchCoverArt, [songId]),
+              Invocation.method(
+                #fetchCoverArt,
+                [song],
+                {#onBytesLoaded: onBytesLoaded},
+              ),
             ),
           )
           as _i4.CachedNetworkImage);
@@ -480,37 +495,55 @@ class MockSongRestService extends _i1.Mock implements _i14.SongRestService {
           as _i13.Future<_i6.SongPageDto>);
 
   @override
-  _i13.Future<List<_i2.Song>> getRecommendations() =>
+  _i13.Future<_i6.SongPageDto> getRecommendations() =>
       (super.noSuchMethod(
             Invocation.method(#getRecommendations, []),
-            returnValue: _i13.Future<List<_i2.Song>>.value(<_i2.Song>[]),
-            returnValueForMissingStub: _i13.Future<List<_i2.Song>>.value(
-              <_i2.Song>[],
+            returnValue: _i13.Future<_i6.SongPageDto>.value(
+              _FakeSongPageDto_3(
+                this,
+                Invocation.method(#getRecommendations, []),
+              ),
+            ),
+            returnValueForMissingStub: _i13.Future<_i6.SongPageDto>.value(
+              _FakeSongPageDto_3(
+                this,
+                Invocation.method(#getRecommendations, []),
+              ),
             ),
           )
-          as _i13.Future<List<_i2.Song>>);
+          as _i13.Future<_i6.SongPageDto>);
 
   @override
-  _i13.Future<List<_i2.Song>> getForgottenFavourites() =>
+  _i13.Future<_i6.SongPageDto> getForgottenFavourites() =>
       (super.noSuchMethod(
             Invocation.method(#getForgottenFavourites, []),
-            returnValue: _i13.Future<List<_i2.Song>>.value(<_i2.Song>[]),
-            returnValueForMissingStub: _i13.Future<List<_i2.Song>>.value(
-              <_i2.Song>[],
+            returnValue: _i13.Future<_i6.SongPageDto>.value(
+              _FakeSongPageDto_3(
+                this,
+                Invocation.method(#getForgottenFavourites, []),
+              ),
+            ),
+            returnValueForMissingStub: _i13.Future<_i6.SongPageDto>.value(
+              _FakeSongPageDto_3(
+                this,
+                Invocation.method(#getForgottenFavourites, []),
+              ),
             ),
           )
-          as _i13.Future<List<_i2.Song>>);
+          as _i13.Future<_i6.SongPageDto>);
 
   @override
-  _i13.Future<List<_i2.Song>> getQuickDial() =>
+  _i13.Future<_i6.SongPageDto> getQuickDial() =>
       (super.noSuchMethod(
             Invocation.method(#getQuickDial, []),
-            returnValue: _i13.Future<List<_i2.Song>>.value(<_i2.Song>[]),
-            returnValueForMissingStub: _i13.Future<List<_i2.Song>>.value(
-              <_i2.Song>[],
+            returnValue: _i13.Future<_i6.SongPageDto>.value(
+              _FakeSongPageDto_3(this, Invocation.method(#getQuickDial, [])),
+            ),
+            returnValueForMissingStub: _i13.Future<_i6.SongPageDto>.value(
+              _FakeSongPageDto_3(this, Invocation.method(#getQuickDial, [])),
             ),
           )
-          as _i13.Future<List<_i2.Song>>);
+          as _i13.Future<_i6.SongPageDto>);
 
   @override
   _i13.Future<List<_i2.Song>> getAllSongs() =>
@@ -704,6 +737,15 @@ class MockArtistService extends _i1.Mock implements _i20.ArtistService {
           as _i8.Artist?);
 
   @override
+  _i13.Future<_i8.Artist?> fetchAndCacheArtistById(int? serverId) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchAndCacheArtistById, [serverId]),
+            returnValue: _i13.Future<_i8.Artist?>.value(),
+            returnValueForMissingStub: _i13.Future<_i8.Artist?>.value(),
+          )
+          as _i13.Future<_i8.Artist?>);
+
+  @override
   _i8.Artist getOrCreateArtist(String? artistName) =>
       (super.noSuchMethod(
             Invocation.method(#getOrCreateArtist, [artistName]),
@@ -851,6 +893,15 @@ class MockAlbumService extends _i1.Mock implements _i21.AlbumService {
             returnValueForMissingStub: null,
           )
           as _i10.Album?);
+
+  @override
+  _i13.Future<_i10.Album?> fetchAndCacheAlbumById(int? serverId) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchAndCacheAlbumById, [serverId]),
+            returnValue: _i13.Future<_i10.Album?>.value(),
+            returnValueForMissingStub: _i13.Future<_i10.Album?>.value(),
+          )
+          as _i13.Future<_i10.Album?>);
 
   @override
   _i10.Album getOrCreateAlbum(

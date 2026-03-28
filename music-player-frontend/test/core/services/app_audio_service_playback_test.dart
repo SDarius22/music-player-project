@@ -149,7 +149,7 @@ void main() {
         final service = buildService();
         await Future.delayed(Duration.zero);
 
-        when(mockSongService.getSongByServerId(any)).thenReturn(null);
+        when(mockSongService.fetchSongByServerId(any)).thenAnswer((_) async => null);
 
         const dto = PlaybackStateDto(
           queueSongIds: [10, 20, 30],
@@ -174,8 +174,8 @@ void main() {
 
         final songA = Song()..serverId = 10;
         final songB = Song()..serverId = 20;
-        when(mockSongService.getSongByServerId(10)).thenReturn(songA);
-        when(mockSongService.getSongByServerId(20)).thenReturn(songB);
+        when(mockSongService.fetchSongByServerId(10)).thenAnswer((_) async => songA);
+        when(mockSongService.fetchSongByServerId(20)).thenAnswer((_) async => songB);
         when(
           mockAudioPlayer.setAudioSource(
             any,
@@ -212,8 +212,8 @@ void main() {
 
         final songA = Song()..serverId = 10;
         final songB = Song()..serverId = 20;
-        when(mockSongService.getSongByServerId(10)).thenReturn(songA);
-        when(mockSongService.getSongByServerId(20)).thenReturn(songB);
+        when(mockSongService.fetchSongByServerId(10)).thenAnswer((_) async => songA);
+        when(mockSongService.fetchSongByServerId(20)).thenAnswer((_) async => songB);
         when(
           mockAudioPlayer.setAudioSource(
             any,

@@ -172,17 +172,18 @@ void main() {
       verifyNever(mockPlaylistRepo.deletePlaylist(any));
     });
 
-    test('calls REST deletePlaylist before local delete when serverId > 0',
-        () async {
-      final playlist = makePlaylist(name: 'Remote', serverId: 42);
-      when(mockRestService.deletePlaylist(42))
-          .thenAnswer((_) async => true);
+    test(
+      'calls REST deletePlaylist before local delete when serverId > 0',
+      () async {
+        final playlist = makePlaylist(name: 'Remote', serverId: 42);
+        when(mockRestService.deletePlaylist(42)).thenAnswer((_) async => true);
 
-      await service.deletePlaylist(playlist);
+        await service.deletePlaylist(playlist);
 
-      verify(mockRestService.deletePlaylist(42)).called(1);
-      verify(mockPlaylistRepo.deletePlaylist(playlist)).called(1);
-    });
+        verify(mockRestService.deletePlaylist(42)).called(1);
+        verify(mockPlaylistRepo.deletePlaylist(playlist)).called(1);
+      },
+    );
 
     test('skips REST when serverId <= 0 and deletes locally', () async {
       final playlist = makePlaylist(name: 'Local Only');
@@ -195,8 +196,9 @@ void main() {
 
     test('still does local delete when REST throws', () async {
       final playlist = makePlaylist(name: 'Remote Fail', serverId: 7);
-      when(mockRestService.deletePlaylist(7))
-          .thenThrow(Exception('network error'));
+      when(
+        mockRestService.deletePlaylist(7),
+      ).thenThrow(Exception('network error'));
 
       await service.deletePlaylist(playlist);
 
@@ -282,8 +284,9 @@ void main() {
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
         return inv.positionalArguments[0] as Playlist;
       });
-      when(mockRestService.createPlaylist(any, any, any))
-          .thenAnswer((_) async => {'id': 99});
+      when(
+        mockRestService.createPlaylist(any, any, any),
+      ).thenAnswer((_) async => {'id': 99});
 
       final result = await service.addPlaylist('My List', [song], 'last', null);
 
@@ -296,48 +299,52 @@ void main() {
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
         return inv.positionalArguments[0] as Playlist;
       });
-      when(mockRestService.createPlaylist(any, any, any))
-          .thenThrow(Exception('server down'));
+      when(
+        mockRestService.createPlaylist(any, any, any),
+      ).thenThrow(Exception('server down'));
 
-      final result =
-          await service.addPlaylist('Offline', [], 'last', null);
+      final result = await service.addPlaylist('Offline', [], 'last', null);
 
       expect(result.name, 'Offline');
       // serverId should remain default (not set) since REST failed
       expect(result.serverId, lessThanOrEqualTo(0));
     });
 
-    test('passes empty song ID list to REST when songs have no server IDs',
-        () async {
-      final song = makeSong(id: 1, serverId: -1);
-      song.serverId = -1;
-      when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
-        return inv.positionalArguments[0] as Playlist;
-      });
-      when(mockRestService.createPlaylist(any, any, any))
-          .thenAnswer((_) async => {'id': 5});
+    test(
+      'passes empty song ID list to REST when songs have no server IDs',
+      () async {
+        final song = makeSong(id: 1, serverId: -1);
+        song.serverId = -1;
+        when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
+          return inv.positionalArguments[0] as Playlist;
+        });
+        when(
+          mockRestService.createPlaylist(any, any, any),
+        ).thenAnswer((_) async => {'id': 5});
 
-      await service.addPlaylist('No Server Songs', [song], 'last', null);
+        await service.addPlaylist('No Server Songs', [song], 'last', null);
 
-      final captured =
-          verify(mockRestService.createPlaylist(any, captureAny, any))
-              .captured;
-      expect(captured.first as List<int>, isEmpty);
-    });
+        final captured =
+            verify(
+              mockRestService.createPlaylist(any, captureAny, any),
+            ).captured;
+        expect(captured.first as List<int>, isEmpty);
+      },
+    );
 
     test('encodes coverArt as base64 and passes to REST', () async {
       final cover = Uint8List.fromList([1, 2, 3]);
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
         return inv.positionalArguments[0] as Playlist;
       });
-      when(mockRestService.createPlaylist(any, any, any))
-          .thenAnswer((_) async => {'id': 1});
+      when(
+        mockRestService.createPlaylist(any, any, any),
+      ).thenAnswer((_) async => {'id': 1});
 
       await service.addPlaylist('With Cover', [], 'last', cover);
 
       final captured =
-          verify(mockRestService.createPlaylist(any, any, captureAny))
-              .captured;
+          verify(mockRestService.createPlaylist(any, any, captureAny)).captured;
       expect(captured.first, isNotNull);
     });
   });
@@ -348,31 +355,31 @@ void main() {
 
   group('updatePlaylist', () {
     test(
-        'indestructible playlist: sets imageBytes from first song coverArt when songs not empty',
-        () async {
-      final cover = Uint8List.fromList([10, 20, 30]);
-      final song = makeSong(id: 1);
+      'indestructible playlist: sets imageBytes from first song coverArt when songs not empty',
+      () async {
+        final song = makeSong(id: 1);
 
-      // song.coverArt comes from album; we need to provide it via album.
-      // Since Song.coverArt => album.target?.coverArt and we can't set that easily,
-      // we test the branch by checking savePlaylist is called.
-      // Instead, create a real scenario using a subclass workaround is impractical;
-      // just verify savePlaylist was invoked and the service doesn't throw.
-      final playlist = makePlaylist(indestructible: true);
-      playlist.songs.add(song);
-      playlist.songsIds.add(song.id);
-      when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
-        return inv.positionalArguments[0] as Playlist;
-      });
+        // song.coverArt comes from album; we need to provide it via album.
+        // Since Song.coverArt => album.target?.coverArt and we can't set that easily,
+        // we test the branch by checking savePlaylist is called.
+        // Instead, create a real scenario using a subclass workaround is impractical;
+        // just verify savePlaylist was invoked and the service doesn't throw.
+        final playlist = makePlaylist(indestructible: true);
+        playlist.songs.add(song);
+        playlist.songsIds.add(song.id);
+        when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
+          return inv.positionalArguments[0] as Playlist;
+        });
 
-      await service.updatePlaylist(playlist);
+        await service.updatePlaylist(playlist);
 
-      verify(mockPlaylistRepo.savePlaylist(playlist)).called(greaterThanOrEqualTo(1));
-    });
+        verify(
+          mockPlaylistRepo.savePlaylist(playlist),
+        ).called(greaterThanOrEqualTo(1));
+      },
+    );
 
-    test(
-        'indestructible playlist: no image change when songs empty',
-        () async {
+    test('indestructible playlist: no image change when songs empty', () async {
       final playlist = makePlaylist(indestructible: true);
       playlist.imageBytes = Uint8List.fromList([1, 2, 3]);
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
@@ -391,8 +398,9 @@ void main() {
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
         return inv.positionalArguments[0] as Playlist;
       });
-      when(mockRestService.updatePlaylist(any, any, any, any))
-          .thenAnswer((_) async => true);
+      when(
+        mockRestService.updatePlaylist(any, any, any, any),
+      ).thenAnswer((_) async => true);
 
       await service.updatePlaylist(playlist);
 
@@ -416,10 +424,14 @@ void main() {
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
         return inv.positionalArguments[0] as Playlist;
       });
-      when(mockRestService.updatePlaylist(any, any, any, any))
-          .thenThrow(Exception('network error'));
+      when(
+        mockRestService.updatePlaylist(any, any, any, any),
+      ).thenThrow(Exception('network error'));
 
-      expect(() async => await service.updatePlaylist(playlist), returnsNormally);
+      expect(
+        () async => await service.updatePlaylist(playlist),
+        returnsNormally,
+      );
     });
   });
 
@@ -429,93 +441,104 @@ void main() {
 
   group('getPlaylistsPage', () {
     test(
-        'server success with totalElements > 0: caches and returns local paged content with server totals',
-        () async {
-      final serverPlaylist = makePlaylist(serverId: 11, name: 'Server PL');
-      serverPlaylist.serverId = 11;
-      final serverPage = PlaylistPageDto(
-        content: [serverPlaylist],
-        page: 0,
-        size: 10,
-        totalPages: 1,
-        totalElements: 1,
-      );
-      when(mockRestService.getPlaylistsPage(
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-      )).thenAnswer((_) async => serverPage);
+      'server success with totalElements > 0: caches and returns local paged content with server totals',
+      () async {
+        final serverPlaylist = makePlaylist(serverId: 11, name: 'Server PL');
+        serverPlaylist.serverId = 11;
+        final serverPage = PlaylistPageDto(
+          content: [serverPlaylist],
+          page: 0,
+          size: 10,
+          totalPages: 1,
+          totalElements: 1,
+        );
+        when(
+          mockRestService.getPlaylistsPage(
+            page: anyNamed('page'),
+            size: anyNamed('size'),
+          ),
+        ).thenAnswer((_) async => serverPage);
 
-      // cacheServerPlaylist will call getPlaylistByServerId and getPlaylistByName
-      when(mockPlaylistRepo.getPlaylistByServerId(11)).thenReturn(null);
-      when(mockPlaylistRepo.getPlaylistByName('Server PL')).thenReturn(null);
-      when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
-        return inv.positionalArguments[0] as Playlist;
-      });
+        // cacheServerPlaylist will call getPlaylistByServerId and getPlaylistByName
+        when(mockPlaylistRepo.getPlaylistByServerId(11)).thenReturn(null);
+        when(mockPlaylistRepo.getPlaylistByName('Server PL')).thenReturn(null);
+        when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
+          return inv.positionalArguments[0] as Playlist;
+        });
 
-      final localContent = [makePlaylist(name: 'Cached PL')];
-      when(mockPlaylistRepo.getPlaylistsPaged(any, any, any, any, any))
-          .thenReturn(localContent);
+        final localContent = [makePlaylist(name: 'Cached PL')];
+        when(
+          mockPlaylistRepo.getPlaylistsPaged(any, any, any, any, any),
+        ).thenReturn(localContent);
 
-      final result =
-          await service.getPlaylistsPage('', 'name', true, 0, 10);
+        final result = await service.getPlaylistsPage('', 'name', true, 0, 10);
 
-      expect(result.content, equals(localContent));
-      expect(result.totalElements, 1);
-      expect(result.totalPages, 1);
-    });
+        expect(result.content, equals(localContent));
+        expect(result.totalElements, 1);
+        expect(result.totalPages, 1);
+      },
+    );
 
-    test('server success but totalElements == 0: falls through to local',
-        () async {
-      final serverPage = PlaylistPageDto(
-        content: [],
-        page: 0,
-        size: 10,
-        totalPages: 0,
-        totalElements: 0,
-      );
-      when(mockRestService.getPlaylistsPage(
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-      )).thenAnswer((_) async => serverPage);
+    test(
+      'server success but totalElements == 0: falls through to local',
+      () async {
+        final serverPage = PlaylistPageDto(
+          content: [],
+          page: 0,
+          size: 10,
+          totalPages: 0,
+          totalElements: 0,
+        );
+        when(
+          mockRestService.getPlaylistsPage(
+            page: anyNamed('page'),
+            size: anyNamed('size'),
+          ),
+        ).thenAnswer((_) async => serverPage);
 
-      final localPlaylists = [makePlaylist(name: 'Local PL')];
-      when(mockPlaylistRepo.getPlaylists(any, any, any))
-          .thenReturn(localPlaylists);
+        final localPlaylists = [makePlaylist(name: 'Local PL')];
+        when(
+          mockPlaylistRepo.getPlaylists(any, any, any),
+        ).thenReturn(localPlaylists);
 
-      final result =
-          await service.getPlaylistsPage('', 'name', true, 0, 10);
+        final result = await service.getPlaylistsPage('', 'name', true, 0, 10);
 
-      expect(result.totalElements, 1);
-      expect(result.content, equals(localPlaylists));
-    });
+        expect(result.totalElements, 1);
+        expect(result.content, equals(localPlaylists));
+      },
+    );
 
     test('server throws: returns local page', () async {
-      when(mockRestService.getPlaylistsPage(
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-      )).thenThrow(Exception('timeout'));
+      when(
+        mockRestService.getPlaylistsPage(
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+        ),
+      ).thenThrow(Exception('timeout'));
 
       final localPlaylists = [makePlaylist(), makePlaylist()];
-      when(mockPlaylistRepo.getPlaylists(any, any, any))
-          .thenReturn(localPlaylists);
+      when(
+        mockPlaylistRepo.getPlaylists(any, any, any),
+      ).thenReturn(localPlaylists);
 
-      final result =
-          await service.getPlaylistsPage('', 'name', true, 0, 10);
+      final result = await service.getPlaylistsPage('', 'name', true, 0, 10);
 
       expect(result.totalElements, 2);
     });
 
     test('local page with offset > total: returns empty content', () async {
-      when(mockRestService.getPlaylistsPage(
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-      )).thenThrow(Exception('timeout'));
+      when(
+        mockRestService.getPlaylistsPage(
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+        ),
+      ).thenThrow(Exception('timeout'));
 
-      when(mockPlaylistRepo.getPlaylists(any, any, any))
-          .thenReturn([makePlaylist()]);
+      when(
+        mockPlaylistRepo.getPlaylists(any, any, any),
+      ).thenReturn([makePlaylist()]);
 
-      final result =
-          await service.getPlaylistsPage('', 'name', true, 5, 10);
+      final result = await service.getPlaylistsPage('', 'name', true, 5, 10);
 
       expect(result.content, isEmpty);
     });
@@ -545,63 +568,77 @@ void main() {
     });
 
     test(
-        'found by name (not indestructible, no serverId): links serverId, saves',
-        () {
-      final existing = makePlaylist(id: 2, name: 'By Name');
-      final serverPlaylist = makePlaylist(name: 'By Name', serverId: 20);
-      serverPlaylist.serverId = 20;
+      'found by name (not indestructible, no serverId): links serverId, saves',
+      () {
+        final existing = makePlaylist(id: 2, name: 'By Name');
+        final serverPlaylist = makePlaylist(name: 'By Name', serverId: 20);
+        serverPlaylist.serverId = 20;
 
-      when(mockPlaylistRepo.getPlaylistByServerId(20)).thenReturn(null);
-      when(mockPlaylistRepo.getPlaylistByName('By Name')).thenReturn(existing);
-      when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
-        return inv.positionalArguments[0] as Playlist;
-      });
+        when(mockPlaylistRepo.getPlaylistByServerId(20)).thenReturn(null);
+        when(
+          mockPlaylistRepo.getPlaylistByName('By Name'),
+        ).thenReturn(existing);
+        when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
+          return inv.positionalArguments[0] as Playlist;
+        });
 
-      final result = service.cacheServerPlaylist(serverPlaylist);
+        final result = service.cacheServerPlaylist(serverPlaylist);
 
-      expect(existing.serverId, 20);
-      verify(mockPlaylistRepo.savePlaylist(existing)).called(1);
-      expect(result, same(existing));
-    });
+        expect(existing.serverId, 20);
+        verify(mockPlaylistRepo.savePlaylist(existing)).called(1);
+        expect(result, same(existing));
+      },
+    );
 
     test(
-        'found by name (not indestructible, already has serverId): no re-link',
-        () {
-      final existing = makePlaylist(id: 3, name: 'Has ServerId', serverId: 99);
-      existing.serverId = 99;
-      final serverPlaylist = makePlaylist(name: 'Has ServerId', serverId: 20);
-      serverPlaylist.serverId = 20;
+      'found by name (not indestructible, already has serverId): no re-link',
+      () {
+        final existing = makePlaylist(
+          id: 3,
+          name: 'Has ServerId',
+          serverId: 99,
+        );
+        existing.serverId = 99;
+        final serverPlaylist = makePlaylist(name: 'Has ServerId', serverId: 20);
+        serverPlaylist.serverId = 20;
 
-      when(mockPlaylistRepo.getPlaylistByServerId(20)).thenReturn(null);
-      when(mockPlaylistRepo.getPlaylistByName('Has ServerId'))
-          .thenReturn(existing);
-      when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
-        return inv.positionalArguments[0] as Playlist;
-      });
+        when(mockPlaylistRepo.getPlaylistByServerId(20)).thenReturn(null);
+        when(
+          mockPlaylistRepo.getPlaylistByName('Has ServerId'),
+        ).thenReturn(existing);
+        when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
+          return inv.positionalArguments[0] as Playlist;
+        });
 
-      service.cacheServerPlaylist(serverPlaylist);
+        service.cacheServerPlaylist(serverPlaylist);
 
-      expect(existing.serverId, 99);
-    });
+        expect(existing.serverId, 99);
+      },
+    );
 
-    test('found by name but IS indestructible: skips that match, saves as new',
-        () {
-      final indestructible =
-          makePlaylist(name: 'Favorites', indestructible: true);
-      final serverPlaylist = makePlaylist(name: 'Favorites', serverId: 30);
-      serverPlaylist.serverId = 30;
+    test(
+      'found by name but IS indestructible: skips that match, saves as new',
+      () {
+        final indestructible = makePlaylist(
+          name: 'Favorites',
+          indestructible: true,
+        );
+        final serverPlaylist = makePlaylist(name: 'Favorites', serverId: 30);
+        serverPlaylist.serverId = 30;
 
-      when(mockPlaylistRepo.getPlaylistByServerId(30)).thenReturn(null);
-      when(mockPlaylistRepo.getPlaylistByName('Favorites'))
-          .thenReturn(indestructible);
-      when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
-        return inv.positionalArguments[0] as Playlist;
-      });
+        when(mockPlaylistRepo.getPlaylistByServerId(30)).thenReturn(null);
+        when(
+          mockPlaylistRepo.getPlaylistByName('Favorites'),
+        ).thenReturn(indestructible);
+        when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
+          return inv.positionalArguments[0] as Playlist;
+        });
 
-      service.cacheServerPlaylist(serverPlaylist);
+        service.cacheServerPlaylist(serverPlaylist);
 
-      verify(mockPlaylistRepo.savePlaylist(serverPlaylist)).called(1);
-    });
+        verify(mockPlaylistRepo.savePlaylist(serverPlaylist)).called(1);
+      },
+    );
 
     test('not found at all: saves as new', () {
       final serverPlaylist = makePlaylist(name: 'Brand New', serverId: 50);
@@ -656,28 +693,30 @@ void main() {
       verifyNever(mockSongRepo.getSongByServerId(any));
     });
 
-    test('serverSongIds with unresolved (null from repo): filters them out',
-        () {
-      final song = makeSong(id: 7, serverId: 200);
-      final existing = makePlaylist(id: 1, name: 'Partial', serverId: 10);
-      existing.serverId = 10;
+    test(
+      'serverSongIds with unresolved (null from repo): filters them out',
+      () {
+        final song = makeSong(id: 7, serverId: 200);
+        final existing = makePlaylist(id: 1, name: 'Partial', serverId: 10);
+        existing.serverId = 10;
 
-      final serverPlaylist = makePlaylist(name: 'Partial', serverId: 10);
-      serverPlaylist.serverId = 10;
-      serverPlaylist.serverSongIds = [200, 999];
+        final serverPlaylist = makePlaylist(name: 'Partial', serverId: 10);
+        serverPlaylist.serverId = 10;
+        serverPlaylist.serverSongIds = [200, 999];
 
-      when(mockPlaylistRepo.getPlaylistByServerId(10)).thenReturn(existing);
-      when(mockSongRepo.getSongByServerId(200)).thenReturn(song);
-      when(mockSongRepo.getSongByServerId(999)).thenReturn(null);
-      when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
-        return inv.positionalArguments[0] as Playlist;
-      });
+        when(mockPlaylistRepo.getPlaylistByServerId(10)).thenReturn(existing);
+        when(mockSongRepo.getSongByServerId(200)).thenReturn(song);
+        when(mockSongRepo.getSongByServerId(999)).thenReturn(null);
+        when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
+          return inv.positionalArguments[0] as Playlist;
+        });
 
-      service.cacheServerPlaylist(serverPlaylist);
+        service.cacheServerPlaylist(serverPlaylist);
 
-      expect(existing.songsIds, contains(7));
-      expect(existing.songsIds.length, 1);
-    });
+        expect(existing.songsIds, contains(7));
+        expect(existing.songsIds.length, 1);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -686,10 +725,14 @@ void main() {
 
   group('getFavoritesPlaylist', () {
     test('returns favorites playlist when found', () {
-      final favorites =
-          makePlaylist(id: 2, name: 'Favorites', indestructible: true);
-      when(mockPlaylistRepo.getPlaylistByName('Favorites'))
-          .thenReturn(favorites);
+      final favorites = makePlaylist(
+        id: 2,
+        name: 'Favorites',
+        indestructible: true,
+      );
+      when(
+        mockPlaylistRepo.getPlaylistByName('Favorites'),
+      ).thenReturn(favorites);
 
       final result = service.getFavoritesPlaylist();
 
@@ -717,10 +760,13 @@ void main() {
 
   group('updateRecentlyPlayedPlaylist', () {
     test('updates recently played with songs from repo', () {
-      final recentlyPlayed =
-          makePlaylist(name: 'Recently Played', indestructible: true);
-      when(mockPlaylistRepo.getIndestructiblePlaylists())
-          .thenReturn([recentlyPlayed]);
+      final recentlyPlayed = makePlaylist(
+        name: 'Recently Played',
+        indestructible: true,
+      );
+      when(
+        mockPlaylistRepo.getIndestructiblePlaylists(),
+      ).thenReturn([recentlyPlayed]);
       final songs = [makeSong(id: 3), makeSong(id: 4)];
       when(mockSongRepo.getRecentlyPlayedSongs(50)).thenReturn(songs);
       when(mockPlaylistRepo.savePlaylist(any)).thenReturn(recentlyPlayed);
@@ -734,8 +780,7 @@ void main() {
     test('does nothing gracefully when playlist not found', () {
       when(mockPlaylistRepo.getIndestructiblePlaylists()).thenReturn([]);
 
-      expect(
-          () => service.updateRecentlyPlayedPlaylist(), returnsNormally);
+      expect(() => service.updateRecentlyPlayedPlaylist(), returnsNormally);
       verifyNever(mockSongRepo.getRecentlyPlayedSongs(any));
     });
   });
@@ -746,10 +791,10 @@ void main() {
 
   group('updateFavoritesPlaylist', () {
     test('updates favorites with songs from repo', () {
-      final favorites =
-          makePlaylist(name: 'Favorites', indestructible: true);
-      when(mockPlaylistRepo.getIndestructiblePlaylists())
-          .thenReturn([favorites]);
+      final favorites = makePlaylist(name: 'Favorites', indestructible: true);
+      when(
+        mockPlaylistRepo.getIndestructiblePlaylists(),
+      ).thenReturn([favorites]);
       final songs = [makeSong(id: 5), makeSong(id: 6)];
       when(mockSongRepo.getFavoriteSongs()).thenReturn(songs);
       when(mockPlaylistRepo.savePlaylist(any)).thenReturn(favorites);
@@ -848,7 +893,10 @@ void main() {
 
   group('getNormalPlaylists', () {
     test('delegates to repository', () {
-      final list = [makePlaylist(name: 'Normal 1'), makePlaylist(name: 'Normal 2')];
+      final list = [
+        makePlaylist(name: 'Normal 1'),
+        makePlaylist(name: 'Normal 2'),
+      ];
       when(mockPlaylistRepo.getNormalPlaylists()).thenReturn(list);
 
       expect(service.getNormalPlaylists(), equals(list));
@@ -871,8 +919,9 @@ void main() {
   group('watchPlaylists', () {
     test('delegates to repository', () {
       final controller = StreamController<List<Playlist>>();
-      when(mockPlaylistRepo.watchPlaylists())
-          .thenAnswer((_) => controller.stream);
+      when(
+        mockPlaylistRepo.watchPlaylists(),
+      ).thenAnswer((_) => controller.stream);
 
       final stream = service.watchPlaylists();
 

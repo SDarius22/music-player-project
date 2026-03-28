@@ -626,19 +626,17 @@ void main() {
       verify(mockRepo.saveSong(serverSong)).called(1);
     });
 
-    test('uses candidate found by name when artistName matches', () async {
+    test('saves as new when not found by serverId (no candidate lookup)', () async {
       final serverSong = makeSong(serverId: 7, name: 'Match');
-      final candidate = makeSong(id: 20);
-      candidate.path = '/music/Match.mp3'; // path contains name for getSongContaining
 
       when(mockRestService.getAllSongs()).thenAnswer((_) async => [serverSong]);
       when(mockRepo.getSongByServerId(7)).thenReturn(null);
-      when(mockRepo.getSongContaining('Match')).thenReturn(candidate);
-      when(mockRepo.getAllSongs()).thenReturn([candidate]);
+      when(mockRepo.saveSong(any)).thenReturn(serverSong);
+      when(mockRepo.getAllSongs()).thenReturn([]);
 
       await service.getAllSongs();
 
-      verify(mockRepo.updateSong(candidate)).called(1);
+      verify(mockRepo.saveSong(serverSong)).called(1);
     });
 
     test('saves as new when candidate artist name does not match', () async {
@@ -662,15 +660,14 @@ void main() {
       verify(mockRepo.saveSong(serverSong)).called(1);
     });
 
-    test('links serverId to existing song when existing.serverId <= 0',
+    test('links serverId when existing song found directly by serverId',
         () async {
       final serverSong = makeSong(serverId: 9, name: 'Link Me');
       final existing = makeSong(id: 40);
       existing.serverId = -1;
 
       when(mockRestService.getAllSongs()).thenAnswer((_) async => [serverSong]);
-      when(mockRepo.getSongByServerId(9)).thenReturn(null);
-      when(mockRepo.getSongContaining('Link Me')).thenReturn(existing);
+      when(mockRepo.getSongByServerId(9)).thenReturn(existing);
       when(mockRepo.getAllSongs()).thenReturn([existing]);
 
       await service.getAllSongs();

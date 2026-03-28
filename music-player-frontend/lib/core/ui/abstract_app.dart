@@ -6,7 +6,6 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/providers/home_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
@@ -235,10 +234,6 @@ abstract class AbstractApp extends StatelessWidget {
               },
               playbackRestService: context.read<PlaybackRestService>(),
             ),
-      ),
-
-      ChangeNotifierProvider<HomeProvider>(
-        create: (context) => HomeProvider(context.read<SongRestService>()),
       ),
 
       ChangeNotifierProvider<AlbumProvider>(

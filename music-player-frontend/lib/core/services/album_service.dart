@@ -26,6 +26,12 @@ class AlbumService {
     return _albumRepository.getAlbumByServerId(serverId);
   }
 
+  Future<Album?> fetchAndCacheAlbumById(int serverId) async {
+    final serverAlbum = await _albumRestService.getAlbumById(serverId);
+    if (serverAlbum == null) return null;
+    return cacheServerAlbum(serverAlbum);
+  }
+
   Album getOrCreateAlbum(String albumName, int artistId, {Uint8List? image}) {
     Album? existingAlbum = _albumRepository.getAlbumByName(albumName);
     if (existingAlbum != null) {

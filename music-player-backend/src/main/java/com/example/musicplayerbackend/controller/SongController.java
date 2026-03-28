@@ -60,21 +60,24 @@ public class SongController implements SongsApi {
     }
 
     @Override
-    public ResponseEntity<List<SongDto>> getRecommendations() {
+    public ResponseEntity<SongPageDto> getRecommendations() {
         User user = getCurrentUser();
-        return ResponseEntity.ok(recommendationService.getRecommendations(user.getId()));
+        List<SongDto> songs = recommendationService.getRecommendations(user.getId());
+        return ResponseEntity.ok(new SongPageDto(songs, 0, songs.size(), (long) songs.size(), 1));
     }
 
     @Override
-    public ResponseEntity<List<SongDto>> getForgottenFavourites() {
+    public ResponseEntity<SongPageDto> getForgottenFavourites() {
         User user = getCurrentUser();
-        return ResponseEntity.ok(recommendationService.getForgottenFavourites(user.getId()));
+        List<SongDto> songs = recommendationService.getForgottenFavourites(user.getId());
+        return ResponseEntity.ok(new SongPageDto(songs, 0, songs.size(), (long) songs.size(), 1));
     }
 
     @Override
-    public ResponseEntity<List<SongDto>> getQuickDial() {
+    public ResponseEntity<SongPageDto> getQuickDial() {
         User user = getCurrentUser();
-        return ResponseEntity.ok(recommendationService.getQuickDial(user.getId()));
+        List<SongDto> songs = recommendationService.getQuickDial(user.getId());
+        return ResponseEntity.ok(new SongPageDto(songs, 0, songs.size(), (long) songs.size(), 1));
     }
 
     @Override

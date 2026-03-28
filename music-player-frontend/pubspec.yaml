@@ -55,6 +55,7 @@ dependencies:
   scaffold_gradient_background: ^1.0.3+1
   sliding_up_panel: ^2.0.0+1
   auto_size_text: ^3.0.0
+  shimmer: ^3.0.0
 
   # desktop
   desktop_drop: ^0.7.0
@@ -74,7 +75,6 @@ dependencies:
   http: ^1.6.0
   web: ^1.1.1
   crypto: ^3.0.7
-  ipwhois: ^1.1.0
 
 dev_dependencies:
   flutter_test:

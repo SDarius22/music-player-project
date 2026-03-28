@@ -538,18 +538,9 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                 padding: EdgeInsets.symmetric(horizontal: width * 0.03),
                 child:
                     sidePanelsOpacity > 0.99
-                        ? FutureBuilder(
-                          future: audioProvider.getDuration(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                child: LinearProgressIndicator(
-                                  color: Colors.white,
-                                  backgroundColor: Colors.white24,
-                                ),
-                              );
-                            }
+                        ? ValueListenableBuilder(
+                          valueListenable: audioProvider.totalDurationNotifier,
+                          builder: (context, totalDuration, _) {
                             return ValueListenableBuilder(
                               valueListenable: audioProvider.sliderNotifier,
                               builder: (context, value, child) {
@@ -561,10 +552,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                                             .bufferedPositionNotifier
                                             .value,
                                   ),
-                                  total:
-                                      snapshot.hasData
-                                          ? snapshot.data as Duration
-                                          : Duration.zero,
+                                  total: totalDuration,
                                   progressBarColor:
                                       appStateProvider.colors.first,
                                   baseBarColor: appStateProvider.colors.last
@@ -804,28 +792,15 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                   opacity: progressBarOpacity,
                   child:
                       sidePanelsOpacity > 0.99
-                          ? FutureBuilder(
-                            future: audioProvider.getDuration(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                  child: LinearProgressIndicator(
-                                    color: Colors.white,
-                                    backgroundColor: Colors.white24,
-                                  ),
-                                );
-                              }
+                          ? ValueListenableBuilder(
+                            valueListenable: audioProvider.totalDurationNotifier,
+                            builder: (context, totalDuration, _) {
                               return ValueListenableBuilder(
                                 valueListenable: audioProvider.sliderNotifier,
                                 builder: (context, value, child) {
                                   return ProgressBar(
                                     progress: Duration(milliseconds: value),
-                                    total:
-                                        snapshot.hasData
-                                            ? snapshot.data as Duration
-                                            : Duration.zero,
-
+                                    total: totalDuration,
                                     progressBarColor:
                                         appStateProvider.colors.first,
                                     baseBarColor: appStateProvider.colors.last

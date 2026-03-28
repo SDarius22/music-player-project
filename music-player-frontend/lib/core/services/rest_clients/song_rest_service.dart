@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
@@ -14,6 +15,7 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:shimmer/shimmer.dart';
 
 class SongRestService extends AbstractRestService {
   SongRestService({required String baseUrl, required AuthService authService}) {
@@ -88,11 +90,54 @@ class SongRestService extends AbstractRestService {
     return null;
   }
 
-  Widget fetchCoverArt(int songId) {
+  CachedNetworkImage fetchCoverArt(
+    Song song, {
+    void Function(Uint8List)? onBytesLoaded,
+  }) {
     return CachedNetworkImage(
+      cacheKey:
+          'cover_${song.album.target?.serverId ?? (song.serverAlbumId <= 0 ? song.serverId : song.serverAlbumId)}',
       imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
-      imageUrl: '$baseUrl/songs/$songId/cover',
+      imageUrl: '$baseUrl/songs/${song.serverId}/cover',
       httpHeaders: {'Authorization': 'Bearer ${authService.accessToken}'},
+      fit: BoxFit.cover,
+      imageBuilder:
+          onBytesLoaded != null
+              ? (context, imageProvider) {
+                imageProvider
+                    .resolve(const ImageConfiguration())
+                    .addListener(
+                      ImageStreamListener(
+                        (info, _) {
+                          info.image
+                              .toByteData(format: ui.ImageByteFormat.png)
+                              .then((data) {
+                                if (data != null) {
+                                  onBytesLoaded(data.buffer.asUint8List());
+                                }
+                              });
+                        },
+                        onError: (e, st) {
+                          debugPrint('Error loading cover art image: $e');
+                        },
+                      ),
+                    );
+                return Image(image: imageProvider, fit: BoxFit.cover);
+              }
+              : null,
+      placeholder:
+          (context, url) => Shimmer.fromColors(
+            baseColor: Colors.grey[800]!,
+            highlightColor: Colors.grey[700]!,
+            child: Container(
+              color: Colors.black,
+              child: Icon(
+                FluentIcons.music,
+                color: Colors.white.withValues(alpha: 0.25),
+                size: 64,
+              ),
+            ),
+          ),
       errorWidget: (context, url, error) {
         debugPrint('Error fetching cover art: $error');
         return Container(
@@ -235,49 +280,40 @@ class SongRestService extends AbstractRestService {
     );
   }
 
-  Future<List<Song>> getRecommendations() async {
+  Future<SongPageDto> getRecommendations() async {
     try {
       final response = await get('/songs/recommendations');
       if (response.statusCode == 200) {
-        final List<dynamic> decoded = jsonDecode(response.body);
-        return decoded
-            .map((e) => Song.fromJson(e as Map<String, dynamic>))
-            .toList();
+        return SongPageDto.fromJson(jsonDecode(response.body));
       }
     } catch (e) {
       debugPrint('Error fetching recommendations: $e');
     }
-    return [];
+    return SongPageDto(content: [], page: 0, size: 0, totalPages: 0, totalElements: 0);
   }
 
-  Future<List<Song>> getForgottenFavourites() async {
+  Future<SongPageDto> getForgottenFavourites() async {
     try {
       final response = await get('/songs/forgotten');
       if (response.statusCode == 200) {
-        final List<dynamic> decoded = jsonDecode(response.body);
-        return decoded
-            .map((e) => Song.fromJson(e as Map<String, dynamic>))
-            .toList();
+        return SongPageDto.fromJson(jsonDecode(response.body));
       }
     } catch (e) {
       debugPrint('Error fetching forgotten favourites: $e');
     }
-    return [];
+    return SongPageDto(content: [], page: 0, size: 0, totalPages: 0, totalElements: 0);
   }
 
-  Future<List<Song>> getQuickDial() async {
+  Future<SongPageDto> getQuickDial() async {
     try {
       final response = await get('/songs/quick-dial');
       if (response.statusCode == 200) {
-        final List<dynamic> decoded = jsonDecode(response.body);
-        return decoded
-            .map((e) => Song.fromJson(e as Map<String, dynamic>))
-            .toList();
+        return SongPageDto.fromJson(jsonDecode(response.body));
       }
     } catch (e) {
       debugPrint('Error fetching quick dial: $e');
     }
-    return [];
+    return SongPageDto(content: [], page: 0, size: 0, totalPages: 0, totalElements: 0);
   }
 
   Future<List<Song>> getAllSongs() async {

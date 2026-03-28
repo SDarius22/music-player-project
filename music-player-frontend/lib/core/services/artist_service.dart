@@ -26,6 +26,12 @@ class ArtistService {
     return _artistRepository.getArtistByServerId(serverId);
   }
 
+  Future<Artist?> fetchAndCacheArtistById(int serverId) async {
+    final serverArtist = await _artistRestService.getArtistById(serverId);
+    if (serverArtist == null) return null;
+    return cacheServerArtist(serverArtist);
+  }
+
   Artist getOrCreateArtist(String artistName) {
     Artist? existingArtist = _artistRepository.getArtistByName(artistName);
     if (existingArtist != null) {

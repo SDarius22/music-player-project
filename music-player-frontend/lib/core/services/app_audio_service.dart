@@ -34,6 +34,7 @@ class AppAudioService {
   bool _isSwitchingSong = false;
   int _currentIndex = 0;
   final Completer<void> _initDone = Completer<void>();
+  Timer? _positionSaveTimer;
 
   List<Song> _normalQueue = [];
   Playlist _queuePlaylist = Playlist();
@@ -71,6 +72,10 @@ class AppAudioService {
       if (state == ProcessingState.completed) {
         _onSongCompleted();
       }
+    });
+
+    _positionSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (this.audioPlayer.playing) pushStateToServer();
     });
 
     this.audioPlayer.errorStream.listen((error) {
@@ -153,7 +158,10 @@ class AppAudioService {
     await _loadAndPlayIndex(_currentIndex);
   }
 
-  Future<void> seek(Duration position) => audioPlayer.seek(position);
+  Future<void> seek(Duration position) async {
+    await audioPlayer.seek(position);
+    pushStateToServer();
+  }
 
   Future<void> stop() => audioPlayer.stop();
 
@@ -375,10 +383,11 @@ class AppAudioService {
 
   void pushStateToServer() {
     if (playbackRestService == null) return;
-    final queueIds = _normalQueue
-        .where((s) => !s.isLocal && s.serverId > 0)
-        .map((s) => s.serverId)
-        .toList();
+    final queueIds =
+        _normalQueue
+            .where((s) => !s.isLocal && s.serverId > 0)
+            .map((s) => s.serverId)
+            .toList();
     final currentId =
         (!currentSong.isLocal && currentSong.serverId > 0)
             ? currentSong.serverId
@@ -396,38 +405,34 @@ class AppAudioService {
   Future<void> restoreFromServerState(PlaybackStateDto dto) async {
     if (dto.queueSongIds.isEmpty) return;
 
-    final resolvedQueue = dto.queueSongIds
-        .map((id) => songService.getSongByServerId(id))
-        .whereType<Song>()
-        .toList();
+    final resolvedQueue = (await Future.wait(
+      dto.queueSongIds.map((id) => songService.fetchSongByServerId(id)),
+    )).whereType<Song>().toList();
 
     if (resolvedQueue.isEmpty) return;
 
-    // Apply shuffle and repeat settings
     _currentAudioSettings.shuffle = dto.shuffle;
     _currentAudioSettings.repeat = dto.repeat;
     settingsService.updateAudioSettings(_currentAudioSettings);
     await audioPlayer.setLoopMode(dto.repeat ? LoopMode.one : LoopMode.off);
 
-    // Replace queue locally
     _normalQueue.clear();
     _normalQueue.addAll(resolvedQueue);
     _queuePlaylist.songs.clear();
     _queuePlaylist.songsIds.clear();
     playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
 
-    // Resolve current song
     Song current = resolvedQueue.first;
     if (dto.currentSongId != null) {
-      final matches =
-          resolvedQueue.where((s) => s.serverId == dto.currentSongId);
+      final matches = resolvedQueue.where(
+        (s) => s.serverId == dto.currentSongId,
+      );
       if (matches.isNotEmpty) current = matches.first;
     }
     final idx = resolvedQueue.indexOf(current);
     _currentIndex = idx < 0 ? 0 : idx;
     currentSong = current;
 
-    // Load audio source at saved position without auto-playing
     await _initDone.future;
     await audioPlayer.setAudioSource(
       _buildAudioSource(current),
@@ -489,6 +494,7 @@ class AppAudioService {
   }
 
   Future<void> dispose() async {
+    _positionSaveTimer?.cancel();
     await audioPlayer.dispose();
   }
 }

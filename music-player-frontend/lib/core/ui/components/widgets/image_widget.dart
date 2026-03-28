@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 enum ImageWidgetType { asset, song, network, bytes }
@@ -84,33 +83,8 @@ class _ImageWidgetState extends State<ImageWidget> {
   }
 
   Widget _getImageWidget(BuildContext context) {
-    if (widget.entity.coverArt == null) {
-      var songProvider = context.read<SongProvider>();
-      return songProvider.getCoverArt(widget.entity.serverId);
-    }
-    try {
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          color: Colors.black,
-          image: DecorationImage(
-            fit: BoxFit.cover,
-            image: MemoryImage(widget.entity.coverArt!),
-            onError: (exception, stackTrace) {
-              throw exception;
-            },
-          ),
-        ),
-      );
-    } catch (e) {
-      return Container(
-        color: Colors.black,
-        child: Icon(
-          FluentIcons.music,
-          color: Colors.white.withValues(alpha: 0.25),
-          size: MediaQuery.of(context).size.height * 0.0125,
-        ),
-      );
-    }
+    var songProvider = context.read<SongProvider>();
+    return songProvider.getCoverArt(widget.entity.serverId);
   }
 
   Widget _buildImageLayer() {

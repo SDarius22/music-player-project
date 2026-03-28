@@ -63,14 +63,13 @@ class JustAudioMediaKit extends JustAudioPlatform {
 
   /// Initializes the plugin if the platform we're running on is marked
   /// as true, otherwise it will leave everything unchanged.
-  ///
-  /// Can also be safely called from Web, even though it'll have no effect.
   static void ensureInitialized({
     bool linux = true,
     bool windows = true,
     bool android = false,
     bool iOS = false,
     bool macOS = false,
+    bool web = false,
 
     /// The path to the libmpv dynamic library.
     /// The name of the library is generally `libmpv.so` on GNU/Linux and `libmpv-2.dll` on Windows.
@@ -80,7 +79,8 @@ class JustAudioMediaKit extends JustAudioPlatform {
         (UniversalPlatform.isWindows && windows) ||
         (UniversalPlatform.isAndroid && android) ||
         (UniversalPlatform.isIOS && iOS) ||
-        (UniversalPlatform.isMacOS && macOS)) {
+        (UniversalPlatform.isMacOS && macOS) ||
+        (UniversalPlatform.isWeb && web)) {
       registerWith();
       MediaKit.ensureInitialized(libmpv: libmpv);
     }

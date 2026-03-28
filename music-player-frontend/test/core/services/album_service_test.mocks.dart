@@ -251,6 +251,15 @@ class MockAlbumRestService extends _i1.Mock implements _i8.AlbumRestService {
           as _i7.Future<_i4.AlbumPageDto>);
 
   @override
+  _i7.Future<_i2.Album?> getAlbumById(int? albumId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAlbumById, [albumId]),
+            returnValue: _i7.Future<_i2.Album?>.value(),
+            returnValueForMissingStub: _i7.Future<_i2.Album?>.value(),
+          )
+          as _i7.Future<_i2.Album?>);
+
+  @override
   _i7.Future<_i10.Uint8List?> getAlbumCover(int? albumId) =>
       (super.noSuchMethod(
             Invocation.method(#getAlbumCover, [albumId]),

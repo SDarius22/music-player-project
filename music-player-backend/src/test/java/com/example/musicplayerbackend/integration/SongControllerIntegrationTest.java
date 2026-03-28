@@ -220,7 +220,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturn200ForRecommendations() throws Exception {
         mockMvc.perform(get("/api/v1/songs/recommendations").with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     // ── GET /songs/forgotten ──────────────────────────────────────────────────
@@ -229,7 +229,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturn200ForForgottenFavourites() throws Exception {
         mockMvc.perform(get("/api/v1/songs/forgotten").with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     // ── GET /songs/quick-dial ─────────────────────────────────────────────────
@@ -238,7 +238,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturn200ForQuickDial() throws Exception {
         mockMvc.perform(get("/api/v1/songs/quick-dial").with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     // ── POST /songs/negotiate ─────────────────────────────────────────────────

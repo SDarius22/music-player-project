@@ -10,6 +10,18 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   bool _isInitialized = false;
 
+  List<Song> _recommendations = [];
+  List<Song> _forgottenFavourites = [];
+  List<Song> _quickDial = [];
+  bool _homeLoading = false;
+  bool _homeLoaded = false;
+
+  List<Song> get recommendations => _recommendations;
+  List<Song> get forgottenFavourites => _forgottenFavourites;
+  List<Song> get quickDial => _quickDial;
+  bool get homeLoading => _homeLoading;
+  bool get homeLoaded => _homeLoaded;
+
   SongProvider(this._songService, this._scannerService) {
     _scannerService.progressStream.listen((progress) {
       debugPrint("Music scan progress: $progress");
@@ -98,5 +110,33 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   void runSync() async {
     _songService.runSync();
     notifyListeners();
+  }
+
+  Future<void> loadHomeData() async {
+    if (_homeLoading) return;
+    _homeLoading = true;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait([
+        _songService.getQuickDial(),
+        _songService.getRecommendations(),
+        _songService.getForgottenFavourites(),
+      ]);
+      _quickDial = results[0];
+      _recommendations = results[1];
+      _forgottenFavourites = results[2];
+    } catch (e) {
+      debugPrint('SongProvider: failed to load home data: $e');
+    }
+
+    _homeLoading = false;
+    _homeLoaded = true;
+    notifyListeners();
+  }
+
+  Future<void> refreshHomeData() async {
+    _homeLoaded = false;
+    await loadHomeData();
   }
 }

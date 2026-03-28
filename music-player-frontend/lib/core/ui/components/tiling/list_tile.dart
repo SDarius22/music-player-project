@@ -102,7 +102,9 @@ class CustomListTile extends StatelessWidget {
                           builder: (_, audioProvider, _) {
                             return CustomTextScroll(
                               text: entity.name,
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(
                                 color:
                                     audioProvider.currentSong ==
                                             (entity as Song)
@@ -122,7 +124,9 @@ class CustomListTile extends StatelessWidget {
                         )
                         : CustomTextScroll(
                           text: entity.name,
-                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium!.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             shadows: [
@@ -138,8 +142,12 @@ class CustomListTile extends StatelessWidget {
                       Consumer<AudioProvider>(
                         builder: (_, audioProvider, _) {
                           return CustomTextScroll(
-                            text: (entity as Song).artist.target.toString(),
-                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                            text:
+                                (entity as Song).artist.target?.name ??
+                                'Unknown Artist',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall!.copyWith(
                               color:
                                   audioProvider.currentSong == (entity as Song)
                                       ? Colors.blue

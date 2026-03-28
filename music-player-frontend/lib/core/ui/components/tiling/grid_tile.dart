@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -131,7 +132,7 @@ class CustomGridTile extends StatelessWidget {
                 ],
               ),
               otherStackChildren: [
-                if (entity.isLocal)
+                if (!kIsWeb && entity.isLocal)
                   Align(
                     alignment: Alignment.topRight,
                     child: ClipPath(

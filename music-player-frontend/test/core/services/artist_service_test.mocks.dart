@@ -251,6 +251,15 @@ class MockArtistRestService extends _i1.Mock implements _i8.ArtistRestService {
           as _i7.Future<_i4.ArtistPageDto>);
 
   @override
+  _i7.Future<_i2.Artist?> getArtistById(int? artistId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getArtistById, [artistId]),
+            returnValue: _i7.Future<_i2.Artist?>.value(),
+            returnValueForMissingStub: _i7.Future<_i2.Artist?>.value(),
+          )
+          as _i7.Future<_i2.Artist?>);
+
+  @override
   _i7.Future<_i10.Uint8List?> getArtistCover(int? artistId) =>
       (super.noSuchMethod(
             Invocation.method(#getArtistCover, [artistId]),

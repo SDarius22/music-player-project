@@ -138,8 +138,12 @@ class DetailsTab extends StatelessWidget {
                             iconAlignment: IconAlignment.end,
                             label: CustomTextScroll(
                               text:
-                                  audioProvider.currentSong.artist.target
-                                      .toString(),
+                                  audioProvider
+                                      .currentSong
+                                      .artist
+                                      .target
+                                      ?.name ??
+                                  'Unknown Artist',
                               style:
                                   MusicPlayerTheme.getTheme()
                                       .textTheme
@@ -174,8 +178,12 @@ class DetailsTab extends StatelessWidget {
                             ),
                             label: CustomTextScroll(
                               text:
-                                  audioProvider.currentSong.album.target
-                                      .toString(),
+                                  audioProvider
+                                      .currentSong
+                                      .album
+                                      .target
+                                      ?.name ??
+                                  'Unknown Album',
                               style:
                                   MusicPlayerTheme.getTheme()
                                       .textTheme

@@ -3,10 +3,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/providers/home_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HomeProvider>().load();
+      context.read<SongProvider>().loadHomeData();
     });
   }
 
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return GlassScaffold(
       body: RefreshIndicator(
-        onRefresh: () => context.read<HomeProvider>().refresh(),
+        onRefresh: () => context.read<SongProvider>().refreshHomeData(),
         color: Colors.white,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -90,9 +90,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            Consumer<HomeProvider>(
+            Consumer<SongProvider>(
               builder: (context, home, _) {
-                if (home.loading && !home.loaded) {
+                if (home.homeLoading && !home.homeLoaded) {
                   return const SliverFillRemaining(
                     child: Center(
                       child: CircularProgressIndicator(color: Colors.white),
@@ -125,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           songs: home.forgottenFavourites,
                           cardStyle: _CardStyle.square,
                         ),
-                      if (!home.loading &&
+                      if (!home.homeLoading &&
                           home.quickDial.isEmpty &&
                           home.recommendations.isEmpty &&
                           home.forgottenFavourites.isEmpty)
@@ -464,9 +464,15 @@ class _SquareCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: _CoverImage(song: song, size: width),
+        Container(
+          width: width,
+          height: width,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.black,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: ImageWidget(entity: song),
         ),
         SizedBox(height: width * 0.05),
         Text(
@@ -514,9 +520,15 @@ class _WideCard extends StatelessWidget {
         height: height,
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              child: _CoverImage(song: song, size: height),
+            Container(
+              width: height,
+              height: height,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.black,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: ImageWidget(entity: song),
             ),
             Expanded(
               child: Padding(
@@ -549,50 +561,6 @@ class _WideCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _CoverImage extends StatelessWidget {
-  final Song song;
-  final double size;
-
-  const _CoverImage({required this.song, required this.size});
-
-  Widget _getImage(BuildContext context) {
-    if (song.coverArt == null) {
-      if (song.serverId != -1) {
-        var songProvider = context.read<SongProvider>();
-        return songProvider.getCoverArt(song.serverId);
-      }
-      return Container(
-        color: Colors.black,
-        child: Icon(
-          FluentIcons.music,
-          color: Colors.white.withValues(alpha: 0.25),
-          size: 64,
-        ),
-      );
-    }
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black,
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: MemoryImage(song.coverArt!),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      color: Colors.indigo.withValues(alpha: 0.3),
-      child: _getImage(context),
     );
   }
 }

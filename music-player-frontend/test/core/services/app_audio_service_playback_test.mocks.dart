@@ -266,6 +266,15 @@ class MockSongService extends _i1.Mock implements _i12.SongService {
           as _i2.Song?);
 
   @override
+  _i13.Future<_i2.Song?> fetchSongByServerId(int? serverId) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchSongByServerId, [serverId]),
+            returnValue: _i13.Future<_i2.Song?>.value(),
+            returnValueForMissingStub: _i13.Future<_i2.Song?>.value(),
+          )
+          as _i13.Future<_i2.Song?>);
+
+  @override
   void updateSong(_i2.Song? song) => super.noSuchMethod(
     Invocation.method(#updateSong, [song]),
     returnValueForMissingStub: null,
@@ -431,6 +440,39 @@ class MockSongService extends _i1.Mock implements _i12.SongService {
             ),
           )
           as _i13.Future<_i3.SongPageDto>);
+
+  @override
+  _i13.Future<List<_i2.Song>> getRecommendations() =>
+      (super.noSuchMethod(
+            Invocation.method(#getRecommendations, []),
+            returnValue: _i13.Future<List<_i2.Song>>.value(<_i2.Song>[]),
+            returnValueForMissingStub: _i13.Future<List<_i2.Song>>.value(
+              <_i2.Song>[],
+            ),
+          )
+          as _i13.Future<List<_i2.Song>>);
+
+  @override
+  _i13.Future<List<_i2.Song>> getForgottenFavourites() =>
+      (super.noSuchMethod(
+            Invocation.method(#getForgottenFavourites, []),
+            returnValue: _i13.Future<List<_i2.Song>>.value(<_i2.Song>[]),
+            returnValueForMissingStub: _i13.Future<List<_i2.Song>>.value(
+              <_i2.Song>[],
+            ),
+          )
+          as _i13.Future<List<_i2.Song>>);
+
+  @override
+  _i13.Future<List<_i2.Song>> getQuickDial() =>
+      (super.noSuchMethod(
+            Invocation.method(#getQuickDial, []),
+            returnValue: _i13.Future<List<_i2.Song>>.value(<_i2.Song>[]),
+            returnValueForMissingStub: _i13.Future<List<_i2.Song>>.value(
+              <_i2.Song>[],
+            ),
+          )
+          as _i13.Future<List<_i2.Song>>);
 
   @override
   _i4.Widget getCoverArt(int? serverId) =>

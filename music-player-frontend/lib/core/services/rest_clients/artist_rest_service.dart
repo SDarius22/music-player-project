@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/dtos/artist_page_dto.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 
@@ -49,6 +50,18 @@ class ArtistRestService extends AbstractRestService {
       totalPages: 0,
       totalElements: 0,
     );
+  }
+
+  Future<Artist?> getArtistById(int artistId) async {
+    try {
+      final response = await get('/artists/$artistId');
+      if (response.statusCode == 200) {
+        return Artist.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      }
+    } catch (e) {
+      debugPrint('Error fetching artist $artistId: $e');
+    }
+    return null;
   }
 
   Future<Uint8List?> getArtistCover(int artistId) async {
