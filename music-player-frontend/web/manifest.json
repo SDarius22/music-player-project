@@ -1,11 +1,11 @@
 {
-    "name": "music_player_frontend",
-    "short_name": "music_player_frontend",
+    "name": "Music Player",
+    "short_name": "Music Player",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Music Player",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

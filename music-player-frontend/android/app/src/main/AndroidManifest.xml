@@ -20,7 +20,7 @@
     <application
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:label="music_player_frontend"
+        android:label="Music Player"
         android:networkSecurityConfig="@xml/network_security_config">
         <activity
             android:name="com.ryanheise.audioservice.AudioServiceActivity"
