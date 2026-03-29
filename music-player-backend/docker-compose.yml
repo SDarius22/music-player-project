@@ -100,4 +100,4 @@ services:
 
 networks:
   backend-net:
-    driver: bridge
+    driver: overlay
