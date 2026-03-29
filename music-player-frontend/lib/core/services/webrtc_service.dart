@@ -104,6 +104,7 @@ class WebRTCService {
         'targetId': 'SERVER',
         'songId': songId,
         'payload': {},
+        'userId': authService.userId,
       }),
     );
   }
@@ -283,14 +284,11 @@ class WebRTCService {
           break;
 
         case 'PEER_BUFFER_MAP':
-          Map<String, dynamic> map = payload;
-          for (String peerId in map.keys) {
+          final discoveredSongId = (signal['songId'] as num).toInt();
+          final Map<String, dynamic> map = payload;
+          for (final peerId in map.keys) {
             _peerLibraries.putIfAbsent(peerId, () => {});
-
-            final songList = map[peerId] as List<dynamic>? ?? [];
-            for (var songId in songList) {
-              _peerLibraries[peerId]!.add(int.parse(songId.toString()));
-            }
+            _peerLibraries[peerId]!.add(discoveredSongId);
 
             if (!_peerConnections.containsKey(peerId)) {
               _createPeerConnection(peerId, true);

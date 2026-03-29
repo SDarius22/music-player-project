@@ -214,26 +214,35 @@ abstract class AbstractApp extends StatelessWidget {
       ),
 
       Provider<AppAudioService>(
-        create:
-            (context) => AppAudioService(
-              context.read<SongService>(),
-              context.read<SettingsService>(),
-              context.read<PlaylistService>(),
-              context.read<AuthService>(),
-              (int songId) {
-                final manager = ChunkService(
-                  songId: songId,
-                  cacheRepo: context.read<ChunkCacheRepository>(),
-                  streamingClient: context.read<StreamingRestService>(),
-                  webrtcManager: context.read<WebRTCService>(),
-                );
+        create: (context) {
+          final chunkServiceCache = <int, ChunkService>{};
+          return AppAudioService(
+            context.read<SongService>(),
+            context.read<SettingsService>(),
+            context.read<PlaylistService>(),
+            context.read<AuthService>(),
+            (int songId) {
+              final cached = chunkServiceCache[songId];
+              if (cached != null) return cached;
 
-                context.read<ActiveChunkRouter>().registerManager(manager);
+              final manager = ChunkService(
+                songId: songId,
+                cacheRepo: context.read<ChunkCacheRepository>(),
+                streamingClient: context.read<StreamingRestService>(),
+                webrtcManager: context.read<WebRTCService>(),
+              );
 
-                return manager;
-              },
-              playbackRestService: context.read<PlaybackRestService>(),
-            ),
+              if (chunkServiceCache.length >= 5) {
+                chunkServiceCache.remove(chunkServiceCache.keys.first);
+              }
+              chunkServiceCache[songId] = manager;
+              context.read<ActiveChunkRouter>().registerManager(manager);
+
+              return manager;
+            },
+            playbackRestService: context.read<PlaybackRestService>(),
+          );
+        },
       ),
 
       ChangeNotifierProvider<AlbumProvider>(
