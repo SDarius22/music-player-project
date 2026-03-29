@@ -1,8 +1,8 @@
 services:
   backend:
-    ports:
-      - "9000-9001:9000"
     image: ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+    ports:
+      - "9000:9000"
     environment:
       - DB_HOST=pg-master
       - DB_PORT=5432
@@ -13,7 +13,6 @@ services:
       - MAIL_USER=${MAIL_USER}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - REDIS_HOST=redis
-    restart: unless-stopped
     volumes:
       - /home/docker-data/music_data:/root/music-server
     networks:
@@ -21,6 +20,14 @@ services:
     depends_on:
       - pg-master
       - redis
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
 
   pg-master:
     image: postgres:18
@@ -67,6 +74,7 @@ services:
     restart: unless-stopped
     networks:
       - backend-net
+
   goaccess:
     image: allinurl/goaccess
     volumes:
@@ -89,6 +97,7 @@ services:
     restart: unless-stopped
     networks:
       - backend-net
+
 networks:
   backend-net:
     driver: bridge

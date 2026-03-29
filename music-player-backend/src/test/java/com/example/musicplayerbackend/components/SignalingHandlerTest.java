@@ -352,8 +352,8 @@ class SignalingHandlerTest {
     }
 
     @Test
-    void shouldDoNothingWhenOfferTargetIsNotInPeerIndex() throws Exception {
-        // targetId not registered — peerIndex.get returns null
+    void shouldPublishToRedisWhenOfferTargetIsNotInLocalPeerIndex() throws Exception {
+        // targetId not registered locally — falls back to Redis pub/sub
         String payload = objectMapper.writeValueAsString(Map.of(
                 "type", "OFFER",
                 "senderId", "peer-A",
@@ -363,11 +363,12 @@ class SignalingHandlerTest {
 
         assertDoesNotThrow(() -> handler.handleTextMessage(session, new TextMessage(payload)));
         verify(session, never()).sendMessage(any(TextMessage.class));
+        verify(redisTemplate).convertAndSend(eq("signaling:webrtc"), anyString());
     }
 
     @Test
-    void shouldDoNothingWhenOfferTargetSessionIsClosed() throws Exception {
-        // Register session2 as peer-C but mark it closed
+    void shouldPublishToRedisWhenOfferTargetSessionIsClosed() throws Exception {
+        // Register session2 as peer-C but mark it closed — falls back to Redis pub/sub
         String registerPayload = objectMapper.writeValueAsString(Map.of(
                 "type", "SYNC_TRIGGER",
                 "senderId", "peer-C",
@@ -385,6 +386,7 @@ class SignalingHandlerTest {
         handler.handleTextMessage(session, new TextMessage(offerPayload));
 
         verify(session2, never()).sendMessage(any(TextMessage.class));
+        verify(redisTemplate).convertAndSend(eq("signaling:webrtc"), anyString());
     }
 
     @Test

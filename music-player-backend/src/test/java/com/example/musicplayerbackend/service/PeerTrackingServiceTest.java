@@ -1,20 +1,49 @@
 package com.example.musicplayerbackend.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Testcontainers
 class PeerTrackingServiceTest {
 
+    @Container
+    @SuppressWarnings("resource")
+    static final GenericContainer<?> redis =
+            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
+
     PeerTrackingService service;
+    RedisTemplate<String, String> redisTemplate;
 
     @BeforeEach
     void setUp() {
-        service = new PeerTrackingService();
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(redis.getHost(), redis.getMappedPort(6379));
+        factory.afterPropertiesSet();
+
+        StringRedisSerializer str = new StringRedisSerializer();
+        redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(factory);
+        redisTemplate.setKeySerializer(str);
+        redisTemplate.setValueSerializer(str);
+        redisTemplate.setHashKeySerializer(str);
+        redisTemplate.setHashValueSerializer(str);
+        redisTemplate.afterPropertiesSet();
+
+        // Flush between tests for isolation
+        redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+
+        service = new PeerTrackingService(redisTemplate, new ObjectMapper());
     }
 
     @Test
@@ -88,7 +117,6 @@ class PeerTrackingServiceTest {
         service.registerPeerChunks(1, "peer-A", Set.of(0));
         service.unregisterPeer("peer-A");
 
-        // After removing the only peer, the song entry should also be cleaned up
         assertTrue(service.getPeerBufferMapsForSong(1).isEmpty());
     }
 

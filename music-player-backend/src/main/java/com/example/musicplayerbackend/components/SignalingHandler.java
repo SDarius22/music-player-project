@@ -203,14 +203,28 @@ public class SignalingHandler extends TextWebSocketHandler {
     }
 
     private void routeToTarget(WebRTCMessage signal) throws Exception {
+        if (routeToTargetLocally(signal)) {
+            return;
+        }
+        // Target not on this instance — route via Redis pub/sub
+        redisTemplate.convertAndSend("signaling:webrtc", objectMapper.writeValueAsString(signal));
+    }
+
+    public boolean routeToTargetLocally(WebRTCMessage signal) {
         String targetSessionId = peerIndex.get(signal.targetId());
+        if (targetSessionId == null) {
+            return false;
+        }
 
-        if (targetSessionId != null) {
-            ClientConnection targetClient = registry.get(targetSessionId);
-
-            if (targetClient != null && targetClient.session().isOpen()) {
+        ClientConnection targetClient = registry.get(targetSessionId);
+        if (targetClient != null && targetClient.session().isOpen()) {
+            try {
                 targetClient.session().sendMessage(new TextMessage(objectMapper.writeValueAsString(signal)));
+                return true;
+            } catch (IOException e) {
+                log.error("[SIGNALING] Failed to route {} to session {}: {}", signal.type(), targetSessionId, e.getMessage());
             }
         }
+        return false;
     }
 }

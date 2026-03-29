@@ -46,6 +46,16 @@ class AuthService {
     return payload['role'] == 'ADMIN';
   }
 
+  int? get userId {
+    final token = accessToken;
+    if (token == null) return null;
+    final payload = _parseJwt(token);
+    final id = payload['userId'];
+    if (id is int) return id;
+    if (id is num) return id.toInt();
+    return null;
+  }
+
   Map<String, dynamic> _parseJwt(String token) {
     final parts = token.split('.');
     if (parts.length != 3) {

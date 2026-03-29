@@ -39,6 +39,7 @@ public class JWTService {
     public String generateAccessToken(User user) {
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("role", user.getRole());
+        extraClaims.put("userId", user.getId());
         return generateToken(extraClaims, user, jwtExpiration);
     }
 

@@ -1001,12 +1001,11 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
         final ProcessingState processingState = values[0] as ProcessingState;
         final bool isPlaying = values[1] as bool;
 
-        if (processingState == ProcessingState.buffering) {
-          debugPrint("Buffering...");
-        }
-
-        if (processingState == ProcessingState.loading) {
-          debugPrint("Loading...");
+        if (processingState == ProcessingState.loading ||
+            processingState == ProcessingState.buffering) {
+          debugPrint(
+            "Processing state is ${processingState == ProcessingState.loading ? "loading" : "buffering"}, showing progress indicator",
+          );
           return Container(
             width: 28,
             height: 28,

@@ -72,6 +72,8 @@ jobs:
 
             mkdir -p goaccess-report
 
+            docker info --format '{{.Swarm.LocalNodeState}}' | grep -q active || docker swarm init
+
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
             docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
 
@@ -80,4 +82,4 @@ jobs:
             export MAIL_USER="${{ secrets.MAIL_USER }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
 
-            docker compose up -d --remove-orphans --scale backend=2
+            docker stack deploy -c docker-compose.yml --with-registry-auth music-player

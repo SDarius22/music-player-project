@@ -15,8 +15,6 @@ class WebRTCService {
   onChunkRequested;
   final VoidCallback? onSyncTrigger;
 
-  int? _userId;
-
   final Map<String, RTCPeerConnection> _peerConnections = {};
   final Map<String, RTCDataChannel> _dataChannels = {};
   final Map<String, List<RTCIceCandidate>> _iceQueues = {};
@@ -39,36 +37,7 @@ class WebRTCService {
     required this.onChunkRequested,
     this.onSyncTrigger,
   }) {
-    _init();
-  }
-
-  Future<void> _init() async {
-    final token = authService.accessToken;
-    if (token != null) {
-      _userId = _parseUserIdFromJwt(token);
-      _listenToSignaling();
-    }
-  }
-
-  int _parseUserIdFromJwt(String token) {
-    try {
-      final parts = token.split('.');
-      if (parts.length != 3) return 0;
-
-      final payload = parts[1];
-      final normalized = base64Url.normalize(payload);
-      final resp = utf8.decode(base64Url.decode(normalized));
-      final payloadMap = jsonDecode(resp);
-
-      if (payloadMap['id'] is int) return payloadMap['id'];
-      if (payloadMap['sub'] is String) {
-        return int.tryParse(payloadMap['sub']) ?? 0;
-      }
-
-      return 0;
-    } catch (e) {
-      return 0;
-    }
+    _listenToSignaling();
   }
 
   bool get isConnected => _dataChannels.isNotEmpty;
@@ -96,8 +65,6 @@ class WebRTCService {
       }
     }
 
-    // Do NOT check _peerConnections here: createPeerConnection() is async so
-    // the peer may be in _peerLibraries before it appears in _peerConnections.
     for (final peerId in _peerLibraries.keys) {
       if (_peerLibraries[peerId]?.contains(songId) == true) {
         _pendingChunkRequests.putIfAbsent(peerId, () => []);
@@ -111,8 +78,10 @@ class WebRTCService {
   }
 
   void registerCache(int songId, List<int> chunkIndices) {
-    if (_userId == null) return;
-
+    if (!authService.isLoggedIn) return;
+    debugPrint(
+      '[P2P] Registering cache with server — song=$songId chunks=${chunkIndices.length}',
+    );
     signalingSocket.sink.add(
       jsonEncode({
         'type': 'REGISTER_CACHE',
@@ -120,12 +89,13 @@ class WebRTCService {
         'targetId': 'SERVER',
         'songId': songId,
         'payload': chunkIndices,
+        'userId': authService.userId,
       }),
     );
   }
 
   void discoverPeers(int songId) {
-    if (_userId == null) return;
+    if (!authService.isLoggedIn) return;
 
     signalingSocket.sink.add(
       jsonEncode({
@@ -285,7 +255,7 @@ class WebRTCService {
     required String targetId,
     required Map<String, dynamic> payload,
   }) {
-    if (_userId == null) return;
+    if (!authService.isLoggedIn) return;
 
     signalingSocket.sink.add(
       jsonEncode({
@@ -293,6 +263,7 @@ class WebRTCService {
         'senderId': myDeviceId,
         'targetId': targetId,
         'payload': payload,
+        'userId': authService.userId,
       }),
     );
   }
