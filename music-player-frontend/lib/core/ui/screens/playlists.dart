@@ -7,18 +7,19 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
-import 'package:music_player_frontend/core/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
+import 'package:music_player_frontend/core/ui/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/playlist_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Playlists(provider: context.read<PlaylistProvider>());
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) =>
+          Playlists(provider: context.read<PlaylistProvider>()),
+      settings: const RouteSettings(name: "/playlists"),
     );
   }
 
@@ -78,8 +79,14 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
       onSelected: (String value) {},
       itemBuilder: (context) {
         return [
-          const PopupMenuItem<String>(value: 'add', child: Text("Add to Playlist")),
-          const PopupMenuItem<String>(value: 'playNext', child: Text("Play Next")),
+          const PopupMenuItem<String>(
+            value: 'add',
+            child: Text("Add to Playlist"),
+          ),
+          const PopupMenuItem<String>(
+            value: 'playNext',
+            child: Text("Play Next"),
+          ),
           const PopupMenuItem<String>(value: 'select', child: Text("Select")),
         ];
       },

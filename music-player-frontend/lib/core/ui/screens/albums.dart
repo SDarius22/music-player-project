@@ -5,19 +5,19 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
-import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
+import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Albums extends MultipleEntitiesScreen<AlbumProvider> {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) =>
+          Albums(provider: context.read<AlbumProvider>()),
       settings: const RouteSettings(name: "/albums"),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Albums(provider: context.read<AlbumProvider>());
-      },
     );
   }
 
@@ -63,7 +63,10 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
           case 'playNext':
             Album album = entity as Album;
             album.songs.sort((a, b) => b.trackNumber.compareTo(a.trackNumber));
-            var audioProvider = Provider.of<AudioProvider>(context, listen: false);
+            var audioProvider = Provider.of<AudioProvider>(
+              context,
+              listen: false,
+            );
             audioProvider.addNextToQueue(album.songs);
             break;
           case 'select':
@@ -82,8 +85,14 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
       },
       itemBuilder: (context) {
         return [
-          const PopupMenuItem<String>(value: 'add', child: Text("Add to Playlist")),
-          const PopupMenuItem<String>(value: 'playNext', child: Text("Play Next")),
+          const PopupMenuItem<String>(
+            value: 'add',
+            child: Text("Add to Playlist"),
+          ),
+          const PopupMenuItem<String>(
+            value: 'playNext',
+            child: Text("Play Next"),
+          ),
           const PopupMenuItem<String>(value: 'select', child: Text("Select")),
         ];
       },

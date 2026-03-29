@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -13,14 +12,16 @@ import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 enum _PlaylistAction { add, export, editToggle, delete }
 
 class PlaylistScreen extends EntityScreen {
   static Route<void> route({required Playlist playlist}) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return PlaylistScreen(entity: playlist as BaseEntity);
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) =>
+          PlaylistScreen(entity: playlist),
+      settings: RouteSettings(name: "/playlist/${playlist.id}"),
     );
   }
 
@@ -131,14 +132,12 @@ class PlaylistScreen extends EntityScreen {
               height: height * 0.045,
               child: ElevatedButton.icon(
                 onPressed: () => handleAction(_PlaylistAction.editToggle),
-                icon: Icon(
-                  FluentIcons.check,
-                  size: 20,
-                  color: Colors.white,
-                ),
+                icon: Icon(FluentIcons.check, size: 20, color: Colors.white),
                 label: Text(
                   "Done",
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium!.copyWith(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: width * 0.01),
@@ -239,11 +238,7 @@ class PlaylistScreen extends EntityScreen {
                   debugPrint("Back");
                   Navigator.pop(context);
                 },
-                icon: Icon(
-                  FluentIcons.back,
-                  size: 20,
-                  color: Colors.white,
-                ),
+                icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
               ),
               const Spacer(),
               IconButton(
@@ -256,11 +251,7 @@ class PlaylistScreen extends EntityScreen {
                   );
                   await audioProvider.setQueueAndPlay(songs, songs.first);
                 },
-                icon: Icon(
-                  FluentIcons.play,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
               ),
               IconButton(
                 tooltip: "Shuffle",
@@ -319,7 +310,9 @@ class PlaylistScreen extends EntityScreen {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium!.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     )
@@ -337,7 +330,9 @@ class PlaylistScreen extends EntityScreen {
                                             right: width * 0.01,
                                           ),
                                           hintText: "Playlist Name",
-                                          hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                          hintStyle: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium!.copyWith(
                                             color: Colors.grey.shade600,
                                           ),
                                           border: OutlineInputBorder(
@@ -347,9 +342,10 @@ class PlaylistScreen extends EntityScreen {
                                           ),
                                         ),
                                         textAlign: TextAlign.center,
-                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          color: Colors.white,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium!
+                                            .copyWith(color: Colors.white),
                                         onChanged: (value) {
                                           playlist.name = value;
                                         },
@@ -488,9 +484,12 @@ class PlaylistScreen extends EntityScreen {
                                                           ? "${song.name.toString().substring(0, 60)}..."
                                                           : song.name
                                                               .toString(),
-                                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                        color: Colors.white,
-                                                      ),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium!
+                                                          .copyWith(
+                                                            color: Colors.white,
+                                                          ),
                                                     ),
                                                     SizedBox(
                                                       height: height * 0.001,
@@ -503,9 +502,12 @@ class PlaylistScreen extends EntityScreen {
                                                           ? "${song.artist.toString().substring(0, 60)}..."
                                                           : song.artist
                                                               .toString(),
-                                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                                        color: Colors.white,
-                                                      ),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall!
+                                                          .copyWith(
+                                                            color: Colors.white,
+                                                          ),
                                                     ),
                                                   ],
                                                 ),
@@ -514,9 +516,12 @@ class PlaylistScreen extends EntityScreen {
                                                   song.durationInSeconds == 0
                                                       ? "??:??"
                                                       : "${song.durationInSeconds ~/ 60}:${(song.durationInSeconds % 60).toString().padLeft(2, '0')}",
-                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                    color: Colors.white,
-                                                  ),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium!
+                                                      .copyWith(
+                                                        color: Colors.white,
+                                                      ),
                                                 ),
                                               ],
                                             ),

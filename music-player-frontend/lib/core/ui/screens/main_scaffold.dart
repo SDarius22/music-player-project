@@ -4,6 +4,7 @@ import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
@@ -12,11 +13,9 @@ import 'package:universal_platform/universal_platform.dart';
 
 class MainScaffold extends StatefulWidget {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
-      settings: const RouteSettings(name: "/"),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const MainScaffold();
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => const MainScaffold(),
+      settings: const RouteSettings(name: "/main"),
     );
   }
 
@@ -161,12 +160,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           controller: MaterialApp.createMaterialHeroController(),
           child: Navigator(
             key: provider.innerNavigatorKey,
-            onGenerateRoute:
-                (_) => PageRouteBuilder(
-                  pageBuilder: (_, _, _) => const SizedBox.shrink(),
-                  transitionDuration: Duration(milliseconds: 300),
-                  reverseTransitionDuration: Duration(milliseconds: 300),
-                ),
+            onGenerateRoute: (_) => HomeScreen.route(),
           ),
         ),
       );

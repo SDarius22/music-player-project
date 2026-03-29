@@ -7,6 +7,7 @@ import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
@@ -16,13 +17,9 @@ const double _mobileBreakpoint = 600;
 
 class HomeScreen extends StatefulWidget {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
-      settings: const RouteSettings(name: '/home'),
-      transitionDuration: const Duration(milliseconds: 300),
-      reverseTransitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return FadeTransition(opacity: animation, child: const HomeScreen());
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => const HomeScreen(),
+      settings: const RouteSettings(name: "/home"),
     );
   }
 

@@ -10,13 +10,13 @@ import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_platform/universal_platform.dart';
 
+import 'abstract/route_builder.dart';
+
 class WelcomeScreen extends StatefulWidget {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => const WelcomeScreen(),
       settings: const RouteSettings(name: "/welcome"),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const WelcomeScreen();
-      },
     );
   }
 

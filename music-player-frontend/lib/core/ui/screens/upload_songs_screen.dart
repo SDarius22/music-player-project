@@ -7,13 +7,13 @@ import 'package:music_player_frontend/core/services/rest_clients/song_rest_servi
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 class UploadSongsScreen extends StatefulWidget {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => const UploadSongsScreen(),
       settings: const RouteSettings(name: "/upload-songs"),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const UploadSongsScreen();
-      },
     );
   }
 

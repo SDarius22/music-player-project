@@ -7,13 +7,13 @@ import 'package:music_player_frontend/core/ui/screens/login_register_screen.dart
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 class UserSettingsScreen extends StatefulWidget {
   static Route<void> route() {
-    return PageRouteBuilder(
-      settings: const RouteSettings(name: "/settings"),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const UserSettingsScreen();
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => const UserSettingsScreen(),
+      settings: const RouteSettings(name: "/user_settings"),
     );
   }
 
@@ -63,7 +63,9 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
               },
               child: Text(
                 "Login / Register",
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: Colors.white),
               ),
             );
           },
@@ -81,7 +83,9 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
         ),
         "subtitle": Text(
           "Set the playback speed to a certain value",
-          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.grey.shade300),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall!.copyWith(color: Colors.grey.shade300),
         ),
         "trailing": SizedBox(
           width: MediaQuery.of(context).size.width * 0.15,
@@ -99,9 +103,9 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                   activeTrackColor: MusicPlayerTheme.gradientViolet,
                   inactiveTrackColor: Colors.white,
                   valueIndicatorColor: Colors.white,
-                  valueIndicatorTextStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
-                    color: Colors.black,
-                  ),
+                  valueIndicatorTextStyle: Theme.of(
+                    context,
+                  ).textTheme.bodySmall!.copyWith(color: Colors.black),
                   valueIndicatorShape: const PaddleSliderValueIndicatorShape(),
                 ),
                 child: Slider(

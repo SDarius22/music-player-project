@@ -5,18 +5,13 @@ import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 class StatisticsScreen extends StatefulWidget {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
-      settings: const RouteSettings(name: '/statistics'),
-      transitionDuration: const Duration(milliseconds: 300),
-      reverseTransitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return FadeTransition(
-          opacity: animation,
-          child: const StatisticsScreen(),
-        );
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => const StatisticsScreen(),
+      settings: const RouteSettings(name: "/statistics"),
     );
   }
 

@@ -7,19 +7,17 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class AddOrExportScreen extends StatefulWidget {
   static Route route({List<Song> songs = const [], bool export = false}) {
-    return PageRouteBuilder(
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) =>
+          AddOrExportScreen(songs: songs, export: export),
       settings: RouteSettings(name: export ? "/export" : "/add"),
-      transitionDuration: const Duration(milliseconds: 300),
-      reverseTransitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return AddOrExportScreen(songs: songs, export: export);
-      },
     );
   }
 
@@ -136,17 +134,12 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
             debugPrint("Back");
             Navigator.pop(context);
           },
-          icon: Icon(
-            FluentIcons.back,
-            size: 20,
-            color: Colors.white,
-          ),
+          icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
         ),
         SizedBox(width: width * 0.01),
         Text(
           "Choose one or more playlists to ${widget.export ? 'export' : 'add to'}",
-          style:
-              Theme.of(context).textTheme.headlineMedium,
+          style: Theme.of(context).textTheme.headlineMedium,
         ),
         const Spacer(),
         ElevatedButton(
@@ -190,8 +183,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
           },
           child: Text(
             "Done",
-            style:
-                Theme.of(context).textTheme.headlineMedium,
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
         ),
       ],
@@ -231,8 +223,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                 return Center(
                   child: Text(
                     "Error loading playlists",
-                    style:
-                        Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 );
               }
@@ -241,8 +232,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
                 return Center(
                   child: Text(
                     "No playlists found",
-                    style:
-                        Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 );
               }

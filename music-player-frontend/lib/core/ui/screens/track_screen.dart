@@ -1,6 +1,5 @@
 import 'package:duration/duration.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
@@ -11,12 +10,14 @@ import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 class TrackScreen extends EntityScreen {
   static Route<void> route({required Song song}) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return TrackScreen(entity: song as BaseEntity, liked: song.likedByUser);
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) =>
+          TrackScreen(entity: song, liked: song.likedByUser),
+      settings: RouteSettings(name: "/track/${song.id}"),
     );
   }
 
@@ -48,22 +49,14 @@ class TrackScreen extends EntityScreen {
                   debugPrint("Back");
                   Navigator.pop(context);
                 },
-                icon: Icon(
-                  FluentIcons.back,
-                  size: 20,
-                  color: Colors.white,
-                ),
+                icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
               ),
               const Spacer(),
               IconButton(
                 onPressed: () {
                   debugPrint("Add ${song.name}");
                 },
-                icon: Icon(
-                  FluentIcons.add,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                icon: Icon(FluentIcons.add, color: Colors.white, size: 24),
               ),
               IconButton(
                 onPressed: () async {
@@ -74,11 +67,7 @@ class TrackScreen extends EntityScreen {
                   );
                   await audioProvider.setQueueAndPlay([song], song);
                 },
-                icon: Icon(
-                  FluentIcons.play,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
               ),
               ValueListenableBuilder(
                 valueListenable: likeNotifier,
@@ -138,7 +127,9 @@ class TrackScreen extends EntityScreen {
                       SizedBox(height: height * 0.01),
                       Text(
                         song.name,
-                        style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium!.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -179,7 +170,9 @@ class TrackScreen extends EntityScreen {
                           delegate: SliverChildListDelegate([
                             Text(
                               "Track Details",
-                              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -187,49 +180,54 @@ class TrackScreen extends EntityScreen {
                             SizedBox(height: height * 0.01),
                             Text(
                               "Song Name:",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               song.name,
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Artist:",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               song.artist.target?.name ?? "Unknown Artist",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Album:",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               song.album.target?.name ?? "Unknown Album",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Duration:",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -238,15 +236,16 @@ class TrackScreen extends EntityScreen {
                               Duration(
                                 seconds: song.durationInSeconds,
                               ).pretty(),
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                             SizedBox(height: height * 0.01),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Year:",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -255,41 +254,38 @@ class TrackScreen extends EntityScreen {
                               song.year > 0
                                   ? song.year.toString()
                                   : "Unknown year",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                             SizedBox(height: height * 0.01),
                             Text(
                               "Extra Info:",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               "Track: ${song.trackNumber} / Disc: ${song.discNumber}",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                             Text(
                               "Play Count: ${song.playCount}",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                             Text(
                               "Last Played: ${song.lastPlayed != null ? song.lastPlayed!.toLocal().toString() : "Never"}",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                             Text(
                               "Path: ${song.path}",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
                             ),
                           ]),
                         ),

@@ -5,18 +5,20 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/artist_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 class Artists extends MultipleEntitiesScreen<ArtistProvider> {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Artists(provider: context.read<ArtistProvider>());
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) =>
+          Artists(provider: context.read<ArtistProvider>()),
+      settings: const RouteSettings(name: "/artists"),
     );
   }
 
@@ -59,7 +61,10 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             break;
           case 'playNext':
             Artist artist = entity as Artist;
-            var audioProvider = Provider.of<AudioProvider>(context, listen: false);
+            var audioProvider = Provider.of<AudioProvider>(
+              context,
+              listen: false,
+            );
             audioProvider.addNextToQueue(artist.songs);
             break;
           case 'select':
@@ -78,8 +83,14 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
       },
       itemBuilder: (context) {
         return [
-          const PopupMenuItem<String>(value: 'add', child: Text("Add to Playlist")),
-          const PopupMenuItem<String>(value: 'playNext', child: Text("Play Next")),
+          const PopupMenuItem<String>(
+            value: 'add',
+            child: Text("Add to Playlist"),
+          ),
+          const PopupMenuItem<String>(
+            value: 'playNext',
+            child: Text("Play Next"),
+          ),
           const PopupMenuItem<String>(value: 'select', child: Text("Select")),
         ];
       },

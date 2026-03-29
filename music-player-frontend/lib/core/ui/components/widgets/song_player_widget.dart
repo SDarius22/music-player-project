@@ -793,7 +793,8 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                   child:
                       sidePanelsOpacity > 0.99
                           ? ValueListenableBuilder(
-                            valueListenable: audioProvider.totalDurationNotifier,
+                            valueListenable:
+                                audioProvider.totalDurationNotifier,
                             builder: (context, totalDuration, _) {
                               return ValueListenableBuilder(
                                 valueListenable: audioProvider.sliderNotifier,
@@ -1000,8 +1001,12 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
         final ProcessingState processingState = values[0] as ProcessingState;
         final bool isPlaying = values[1] as bool;
 
-        if (processingState == ProcessingState.loading ||
-            processingState == ProcessingState.buffering) {
+        if (processingState == ProcessingState.buffering) {
+          debugPrint("Buffering...");
+        }
+
+        if (processingState == ProcessingState.loading) {
+          debugPrint("Loading...");
           return Container(
             width: 28,
             height: 28,

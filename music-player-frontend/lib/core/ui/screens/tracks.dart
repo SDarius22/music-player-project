@@ -13,12 +13,14 @@ import 'package:music_player_frontend/core/ui/screens/track_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 class Tracks extends MultipleEntitiesScreen<SongProvider> {
   static Route<dynamic> route() {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Tracks(provider: context.read<SongProvider>());
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) =>
+          Tracks(provider: context.read<SongProvider>()),
+      settings: const RouteSettings(name: "/tracks"),
     );
   }
 
@@ -111,10 +113,19 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
       },
       itemBuilder: (context) {
         return [
-          const PopupMenuItem<String>(value: 'add', child: Text("Add to Playlist")),
-          const PopupMenuItem<String>(value: 'playNext', child: Text("Play Next")),
+          const PopupMenuItem<String>(
+            value: 'add',
+            child: Text("Add to Playlist"),
+          ),
+          const PopupMenuItem<String>(
+            value: 'playNext',
+            child: Text("Play Next"),
+          ),
           const PopupMenuItem<String>(value: 'select', child: Text("Select")),
-          const PopupMenuItem<String>(value: 'details', child: Text("Track Details")),
+          const PopupMenuItem<String>(
+            value: 'details',
+            child: Text("Track Details"),
+          ),
         ];
       },
     );

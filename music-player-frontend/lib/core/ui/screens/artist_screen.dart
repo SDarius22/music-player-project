@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 class ArtistScreen extends EntityScreen {
   static Route<void> route({required Artist artist}) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return ArtistScreen(entity: artist as BaseEntity);
-      },
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => ArtistScreen(entity: artist),
+      settings: RouteSettings(name: "/artist/${artist.id}"),
     );
   }
 
@@ -41,11 +41,7 @@ class ArtistScreen extends EntityScreen {
                   debugPrint("Back");
                   Navigator.pop(context);
                 },
-                icon: Icon(
-                  FluentIcons.back,
-                  size: 20,
-                  color: Colors.white,
-                ),
+                icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
               ),
               const Spacer(),
               IconButton(
@@ -62,11 +58,7 @@ class ArtistScreen extends EntityScreen {
                     AddOrExportScreen.route(songs: artist.songs),
                   );
                 },
-                icon: Icon(
-                  FluentIcons.add,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                icon: Icon(FluentIcons.add, color: Colors.white, size: 24),
               ),
               IconButton(
                 tooltip: "Play",
@@ -82,11 +74,7 @@ class ArtistScreen extends EntityScreen {
                     artist.songs.first,
                   );
                 },
-                icon: Icon(
-                  FluentIcons.play,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
               ),
               IconButton(
                 tooltip: "Shuffle",
@@ -131,8 +119,7 @@ class ArtistScreen extends EntityScreen {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                        style:
-                            Theme.of(context).textTheme.bodyMedium,
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
                   ),

@@ -7,6 +7,7 @@ import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/playback_rest_service.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/main_scaffold.dart';
 import 'package:music_player_frontend/core/ui/screens/welcome_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/animated_background.dart';
@@ -17,11 +18,9 @@ class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
 
   static Route<void> route() {
-    return PageRouteBuilder(
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => const LoadingScreen(),
       settings: const RouteSettings(name: "/loading"),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const LoadingScreen();
-      },
     );
   }
 

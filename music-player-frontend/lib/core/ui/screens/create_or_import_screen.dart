@@ -16,24 +16,21 @@ import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 class CreateOrImportScreen extends StatefulWidget {
   static Route<void> route({
     String playlistName = "",
     List<String> playlistPaths = const [],
     bool import = false,
   }) {
-    return PageRouteBuilder(
-      settings: RouteSettings(
-        name: import == true ? "/import" : "/create",
-        arguments: const [String, List<String>, bool],
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) => CreateOrImportScreen(
+        playlistName: playlistName,
+        playlistPaths: playlistPaths,
+        import: import,
       ),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return CreateOrImportScreen(
-          playlistName: playlistName,
-          playlistPaths: playlistPaths,
-          import: import,
-        );
-      },
+      settings: RouteSettings(name: import ? "/import" : "/create"),
     );
   }
 

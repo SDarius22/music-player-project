@@ -5,17 +5,18 @@ import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
+import 'abstract/route_builder.dart';
+
 enum AuthMode { login, register }
 
 class LoginRegisterScreen extends StatefulWidget {
   static Route<void> route({required AuthMode mode}) {
-    return PageRouteBuilder(
+    return buildFadeRoute(
+      (context, animation, secondaryAnimation) =>
+          LoginRegisterScreen(mode: mode),
       settings: RouteSettings(
         name: mode == AuthMode.login ? "/login" : "/register",
       ),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const LoginRegisterScreen(mode: AuthMode.login);
-      },
     );
   }
 
