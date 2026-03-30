@@ -1,0 +1,136 @@
+@startuml db_schema
+!theme plain
+hide circle
+skinparam linetype ortho
+skinparam defaultFontName monospaced
+
+title Database Schema — music_library
+
+entity "users" as users {
+  * id : BIGINT <<PK>>
+  --
+  * email : VARCHAR(255) <<UNIQUE>>
+  * role : VARCHAR(50) [USER | ADMIN]
+  * provider : VARCHAR(50) [LOCAL | GOOGLE]
+  created_at : TIMESTAMPTZ
+}
+
+entity "artists" as artists {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255)
+  * artist_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
+  owner_id : BIGINT
+}
+
+entity "albums" as albums {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255)
+  cover_image : TEXT
+  * album_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
+  owner_id : BIGINT
+  artist_id : BIGINT <<FK>>
+}
+
+entity "songs" as songs {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255)
+  * file_hash : VARCHAR(255) <<UNIQUE>>
+  * song_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
+  owner_id : BIGINT
+  artist_id : BIGINT <<FK>>
+  album_id : BIGINT <<FK>>
+  duration_in_seconds : INT
+  track_number : INT
+  disc_number : INT
+  release_year : INT
+}
+
+entity "chunks" as chunks {
+  * id : BIGINT <<PK>>
+  --
+  * content_hash : VARCHAR(64) <<UNIQUE>>
+  * size : INT
+  * storage_path : VARCHAR(255)
+}
+
+entity "song_chunks" as song_chunks {
+  * id : BIGINT <<PK>>
+  --
+  * song_id : BIGINT <<FK>>
+  * chunk_id : BIGINT <<FK>>
+  * order_index : INT
+}
+
+entity "user_library" as user_library {
+  * user_id : BIGINT <<PK, FK>>
+  * song_id : BIGINT <<PK, FK>>
+  --
+  liked : BOOLEAN
+  play_count : BIGINT
+  last_played : TIMESTAMPTZ
+  added_at : TIMESTAMPTZ
+  is_downloaded_locally : BOOLEAN
+  last_updated : TIMESTAMPTZ
+  is_deleted : BOOLEAN
+}
+
+entity "user_playback_state" as user_playback_state {
+  * user_id : BIGINT <<PK, FK>>
+  --
+  queue_song_ids : TEXT [JSON array]
+  current_song_id : BIGINT <<FK, nullable>>
+  position_ms : BIGINT
+  shuffle : BOOLEAN
+  repeat : BOOLEAN
+  updated_at : TIMESTAMPTZ
+}
+
+entity "playlists" as playlists {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : BIGINT <<FK>>
+  * name : VARCHAR(255)
+  * playlist_type : VARCHAR(50)
+  cover_image : TEXT
+  song_ids : TEXT [JSON array]
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity "verification_codes" as verification_codes {
+  * id : BIGINT <<PK>>
+  --
+  * email : VARCHAR(255)
+  * code : VARCHAR(255)
+  * expiry_date : TIMESTAMPTZ
+}
+
+entity "chunk_stats" as chunk_stats {
+  * id : BIGINT <<PK>>
+  --
+  * timestamp : TIMESTAMPTZ
+  user_id : BIGINT <<FK, nullable>>
+  song_id : BIGINT
+  song_name : VARCHAR(255)
+  p2p_chunks : INT
+  server_chunks : INT
+  total_chunks : INT
+  p2p_percentage : DOUBLE PRECISION
+}
+
+artists ||--o{ albums : "has"
+artists ||--o{ songs : "has"
+albums ||--o{ songs : "contains"
+songs ||--o{ song_chunks : "split into"
+chunks ||--o{ song_chunks : "referenced by"
+users ||--o{ user_library : "owns"
+songs ||--o{ user_library : "in"
+users ||--|| user_playback_state : "has"
+songs |o--o{ user_playback_state : "current song"
+users ||--o{ playlists : "owns"
+users ||--o{ chunk_stats : "generates"
+
+@enduml

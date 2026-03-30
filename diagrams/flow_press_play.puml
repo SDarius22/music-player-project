@@ -1,0 +1,132 @@
+@startuml flow_press_play
+!theme plain
+skinparam defaultFontName monospaced
+
+title User Flow — Press Play (P2P + Server Fallback)
+
+actor User
+participant "AudioProvider" as audioProv
+participant "AppAudioService" as audioSvc
+participant "P2PChunkedAudioSource" as p2pSource
+participant "ChunkService" as chunkSvc
+participant "WebRTCService" as webrtc
+participant "Backend\n(Signaling WS)" as sigServer
+participant "Peer\n(RTCDataChannel)" as peer
+participant "Backend\n(Streaming REST)" as streamServer
+participant "RAM Cache\n(last 15 chunks)" as ram
+participant "Disk Cache" as disk
+
+== Song Load ==
+
+User -> audioProv: tap Play
+audioProv -> audioSvc: play()
+audioSvc -> audioSvc: _loadAndPlayIndex(idx)
+audioSvc -> audioSvc: _buildAudioSource(song)\n→ P2PChunkedAudioSource [desktop]\n→ AudioSource.uri(...) [web]
+audioSvc -> audioSvc: audioPlayer.setAudioSource(source)
+audioSvc -> audioSvc: audioPlayer.play()
+
+note over audioSvc
+  Background: _retryIfStuck()
+  polls every 500ms;
+  if position stalls > 1s → reload source
+end note
+
+== Manifest Fetch + Peer Discovery ==
+
+p2pSource -> chunkSvc: loadManifest()
+chunkSvc -> streamServer: GET /stream/{id}/manifest
+streamServer --> chunkSvc: ChunkManifestDto\n(totalChunks, chunkSize, hashes[])
+
+chunkSvc -> webrtc: discoverPeers(songId)
+webrtc -> sigServer: WS DISCOVER_PEERS {songId}
+sigServer -> sigServer: PeerTrackingService\n.getPeerBufferMapsForSong()\n(reads Redis peer:chunks:{songId})
+sigServer --> webrtc: WS PEER_BUFFER_MAP {peerId → [cachedIndices]}
+
+alt peers available for this song
+  webrtc -> sigServer: WS OFFER → peerId
+  sigServer --> peer: WS OFFER
+  peer --> sigServer: WS ANSWER
+  sigServer --> webrtc: WS ANSWER
+  webrtc <-> peer: ICE candidate exchange
+  note over webrtc, peer: RTCDataChannel open\n(binary + text messages)
+end
+
+chunkSvc -> webrtc: registerCache(songId, alreadyCachedIndices)
+webrtc -> sigServer: WS REGISTER_CACHE
+
+== Chunk Streaming Loop ==
+
+loop for each chunk index N (driven by AudioPlayer reads)
+
+  p2pSource -> chunkSvc: getChunk(N)
+
+  chunkSvc -> ram: lookup chunk N
+  alt RAM hit
+    ram --> chunkSvc: bytes (instant)
+
+  else RAM miss
+    chunkSvc -> disk: read chunk N
+    alt disk hit
+      disk --> chunkSvc: bytes
+
+    else disk miss — fetch from network
+
+      alt N < 8 (bootstrap: always server)
+        note over chunkSvc, streamServer
+          First 8 chunks always fetched
+          from server to guarantee fast
+          playback start
+        end note
+        chunkSvc -> streamServer: GET /stream/{id}/chunk/{N}
+        streamServer --> chunkSvc: chunk bytes [server]
+
+      else peers available
+        chunkSvc -> webrtc: requestChunk(songId, N)\n(stores Completer, awaits with 1s timeout)
+        webrtc -> peer: DataChannel text\n"REQUEST_CHUNK:{songId}:{N}"
+        peer -> peer: look up chunk N\nin local cache
+        peer -> webrtc: DataChannel binary\n[songId:4B BE][chunkIdx:4B BE][data…]
+
+        alt peer responds within 1s
+          webrtc --> chunkSvc: bytes [P2P]
+        else timeout or peer error
+          chunkSvc -> streamServer: GET /stream/{id}/chunk/{N}
+          streamServer --> chunkSvc: bytes [server fallback]
+        end
+
+      else no peers known
+        chunkSvc -> streamServer: GET /stream/{id}/chunk/{N}
+        streamServer --> chunkSvc: bytes [server]
+      end
+
+      chunkSvc -> chunkSvc: verify SHA-256 vs manifest hash
+      alt hash mismatch (P2P corruption)
+        chunkSvc -> streamServer: GET /stream/{id}/chunk/{N}
+        streamServer --> chunkSvc: bytes [server retry]
+        chunkSvc -> chunkSvc: re-verify SHA-256
+      end
+
+      chunkSvc -> disk: save chunk N
+      chunkSvc -> ram: add to hot cache (evict oldest if > 15)
+
+    end
+  end
+
+  chunkSvc --> p2pSource: chunk bytes
+  p2pSource -> p2pSource: slice bytes to requested range
+  p2pSource -> chunkSvc: prefetch N+1 … N+16 (async, non-blocking)
+  p2pSource --> audioSvc: yield bytes to AudioPlayer
+
+end
+
+== Stats Report (end of song / periodic) ==
+
+chunkSvc -> chunkSvc: tally p2pCount vs serverCount
+chunkSvc -> streamServer: POST /statistics\n{p2pChunks, serverChunks, p2pPercentage, ...}
+
+note over audioSvc
+  Every 30s while playing:
+  pushStateToServer() → PUT /playback
+  (queue, position, shuffle, repeat)
+end note
+
+@enduml
