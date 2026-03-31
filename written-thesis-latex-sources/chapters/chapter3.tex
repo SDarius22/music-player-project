@@ -1,0 +1,676 @@
+\chapter{System Implementation}
+\label{chap:ch3}
+
+\tolerance=9999
+\emergencystretch=3em
+
+\par This chapter presents the concrete implementation of the peer-assisted music streaming system,
+describing how the architectural concepts introduced in the previous chapter are realised in code.
+The discussion proceeds from the data model and server-side components through to the client-side
+streaming pipeline, and concludes with a set of annotated flow diagrams that highlight the
+decision-making logic embedded in each major subsystem.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Backend Data Model and Storage Layer}
+\label{sec:data-model}
+
+\par The persistence layer is built on PostgreSQL and managed through Liquibase changesets,
+keeping the schema under version control and decoupled from the JPA entity definitions.
+The JPA DDL mode is set to \texttt{validate-only}, so every structural change must be
+expressed as a new changeset rather than relying on automatic schema generation.
+
+\subsection{Content-Addressed Chunk Storage}
+\label{subsec:chunk-storage}
+
+\par The central design decision for audio storage is to decompose each song into fixed-size
+\emph{chunks} of exactly 65\,536 bytes (64~KiB) and to store them independently.
+Each chunk is represented by the \texttt{Chunk} entity, whose most important field is
+\texttt{contentHash}, a 256-bit SHA-256 digest of the raw audio bytes.
+The hash serves a dual purpose: it acts as a natural deduplication key, so that two songs
+sharing an identical segment only ever store one physical file, and it provides an integrity
+fingerprint that both server and client can verify before using the data.
+
+\par The \texttt{storagePath} field records the filesystem location of the corresponding file,
+and the \texttt{size} field caches the byte count for range-request arithmetic.
+The \texttt{SongChunk} join entity binds a \texttt{Song} to its constituent \texttt{Chunk}
+objects via an ordered \texttt{orderIndex} column, preserving the sequential structure of the
+audio file.  The relationship is illustrated in Figure~\ref{fig:chunk-model}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    entity/.style={rectangle, draw, rounded corners=3pt,
+                   minimum width=3.2cm, minimum height=0.9cm,
+                   font=\small\ttfamily},
+    field/.style={rectangle, draw=gray!50, minimum width=3.2cm,
+                  minimum height=0.7cm, font=\footnotesize\ttfamily,
+                  fill=gray!8},
+    lbl/.style={font=\scriptsize, midway, above}
+]
+  % Song
+  \node[entity, fill=blue!10] (song) at (0,0) {Song};
+  \node[field, below=0pt of song, yshift=-0.05cm] (s1) {id : Long};
+  \node[field, below=0pt of s1] (s2) {fileHash : String};
+  \node[field, below=0pt of s2] (s3) {durationInSeconds : int};
+  \node[field, below=0pt of s3] (s4) {ownerId : Long?};
+
+  % SongChunk
+  \node[entity, fill=orange!15] (sc) at (5.5,0) {SongChunk};
+  \node[field, below=0pt of sc, yshift=-0.05cm] (c1) {id : Long};
+  \node[field, below=0pt of c1] (c2) {orderIndex : Integer};
+
+  % Chunk
+  \node[entity, fill=green!10] (ch) at (11,0) {Chunk};
+  \node[field, below=0pt of ch, yshift=-0.05cm] (ch1) {id : Long};
+  \node[field, below=0pt of ch1] (ch2) {contentHash : String};
+  \node[field, below=0pt of ch2] (ch3) {storagePath : String};
+  \node[field, below=0pt of ch3] (ch4) {size : Integer};
+
+  % Arrows
+  \draw[-{Stealth}] (s4.east) -- node[above, font=\scriptsize]{1..*} (c1.west);
+  \draw[-{Stealth}] (c2.east) -- node[above, font=\scriptsize]{*..1} (ch1.west);
+\end{tikzpicture}
+\caption{Simplified entity relationship between \texttt{Song}, \texttt{SongChunk}, and \texttt{Chunk}.}
+\label{fig:chunk-model}
+\end{figure}
+
+\par Because chunks are content-addressed, the upload pipeline hashes each 64~KiB block
+before writing it to disk.  If an identical hash already exists in the database the physical
+file is reused and only a new \texttt{SongChunk} row is inserted.  This strategy is
+particularly effective for music libraries where intros, outros, and silence segments repeat
+across many tracks.
+
+\subsection{User Library and Soft Deletion}
+\label{subsec:user-library}
+
+\par Each user's relationship to a song is captured by the \texttt{UserLibrary} entity, which
+uses a composite primary key of \texttt{(userId, songId)}.  Engagement fields---\texttt{liked},
+\texttt{playCount}, \texttt{lastPlayed}, and \texttt{addedAt}---are stored alongside a
+\texttt{lastUpdated} timestamp that drives the incremental synchronisation protocol described
+in Section~\ref{sec:data-sync}.  Deletion is implemented as a soft flag (\texttt{isDeleted})
+so that the sync engine can propagate removal events to other devices without losing the
+record itself.
+
+\par The \texttt{ownerId} field on \texttt{Song} distinguishes between platform-owned catalogue
+tracks (nullable owner) and user-uploaded files (set owner).  The streaming service enforces
+this at the query level: requests for user-uploaded songs are rejected if the authenticated
+user does not match \texttt{ownerId}, providing simple but effective access control.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Server-Side Streaming Service}
+\label{sec:streaming-service}
+
+\par The \texttt{StreamingService} exposes three retrieval modes to REST clients: a manifest
+endpoint, a per-chunk endpoint, and a prefix endpoint.  All three are generated from the
+OpenAPI specification in \texttt{api.yml}; the service class implements the generated
+controller interface and contains the business logic.
+
+\subsection{Chunk Manifest}
+\label{subsec:manifest}
+
+\par Before a client can stream a song it fetches the \emph{chunk manifest}: a lightweight
+JSON document that describes the song's chunk count, individual chunk size, total byte length,
+and, critically, an ordered list of SHA-256 hashes, one per chunk.
+The manifest allows the client to verify every chunk it receives regardless of whether that
+chunk arrived from the origin server or from a peer.  Generating the manifest requires a single
+database join (\texttt{Song} $\rightarrow$ \texttt{SongChunk} $\rightarrow$ \texttt{Chunk})
+ordered by \texttt{orderIndex}, after which the service projects the \texttt{contentHash}
+fields into the response DTO.
+
+\subsection{Prefix Delivery}
+\label{subsec:prefix}
+
+\par To guarantee that playback can begin immediately (before any peer connection is
+established) the server supports a \emph{prefix endpoint} that returns the first
+$N$ bytes of a song as a single binary response.  The default prefix size is
+512\,000 bytes (approximately 500~KiB), which corresponds to the first eight 64~KiB chunks.
+The implementation iterates through the ordered \texttt{SongChunk} list, opens each
+chunk file, appends bytes to a buffer, and returns once the \texttt{bytesNeeded}
+threshold is reached.  The choice of eight chunks as the prefix boundary is not
+arbitrary: it is exactly the threshold used by the client-side \texttt{ChunkService}
+to decide whether to attempt a peer fetch, ensuring that the server-delivered prefix
+and the subsequent peer-assisted stream are seamlessly contiguous.
+
+\subsection{Per-Chunk and Full-Stream Endpoints}
+\label{subsec:per-chunk}
+
+\par Individual chunk retrieval (\texttt{getSongChunk}) simply looks up the
+\texttt{SongChunk} for the requested \texttt{(songId, chunkIndex)} pair, opens the
+physical file at \texttt{storagePath}, and returns the raw bytes.
+The full-stream endpoint assembles a \texttt{SequenceInputStream} over all chunk
+files and is provided as a compatibility fallback for clients that cannot support
+the chunked protocol, for example certain browser-embedded players.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Peer Registry with Redis}
+\label{sec:peer-registry}
+
+\par The server must know, at the moment a client requests peer discovery, which
+other clients hold which chunks.  This state is ephemeral (it exists only while
+clients are connected) and must be shared across multiple server instances in a
+horizontally-scaled deployment.  Redis was chosen for this purpose because it
+provides the required atomicity primitives (hash operations, set operations) with
+sub-millisecond latency.
+
+\par The \texttt{PeerTrackingService} maintains two data structures in Redis for
+each active peer:
+
+\begin{itemize}
+  \item \textbf{Chunk index}: a Redis \emph{hash} keyed as \texttt{peer:chunks:\{songId\}},
+        mapping each peer identifier to a JSON-serialised \texttt{Set<Integer>} of chunk
+        indices that the peer has locally cached.
+  \item \textbf{Song index}: a Redis \emph{set} keyed as \texttt{peer:songs:\{peerId\}},
+        recording which song IDs the peer has registered chunks for.  This reverse
+        index enables efficient cleanup on disconnection.
+\end{itemize}
+
+\par When a peer announces a new set of cached chunks (message type
+\texttt{REGISTER\_CACHE}), the service fetches the existing entry for that
+\texttt{(songId, peerId)} pair, computes the union with the incoming indices,
+and writes the result back.  This incremental merge avoids requiring peers to
+retransmit their full cache state on every update.
+
+\par On disconnection, \texttt{unregisterPeer} iterates the song index to enumerate
+every song the peer had cached, removes the peer's entry from each chunk hash, and
+then deletes the song index itself, leaving no stale entries in Redis.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{WebSocket Signaling Server}
+\label{sec:signaling}
+
+\par WebRTC connections between clients require out-of-band signaling to exchange
+Session Description Protocol (SDP) offers and answers as well as Interactive
+Connectivity Establishment (ICE) candidates.  The \texttt{SignalingHandler}
+implements the Spring \texttt{TextWebSocketHandler} interface and acts as this
+signaling relay, while also serving as the delivery channel for server-initiated
+events such as synchronisation triggers and playback state changes.
+
+\subsection{Connection State}
+\label{subsec:conn-state}
+
+\par The handler maintains three in-memory concurrent maps:
+
+\begin{itemize}
+  \item \texttt{registry}: maps each WebSocket session ID to a \texttt{ClientConnection}
+        record, which bundles the \texttt{WebSocketSession}, the peer identifier, and the optional authenticated user ID.
+  \item \texttt{userIndex}: maps each user ID to the set of session IDs belonging to
+        that user, allowing server events to fan out to all of a user's connected devices.
+  \item \texttt{peerIndex}: maps each peer identifier to its session ID, enabling direct
+        routing when the target peer is hosted by this server instance.
+\end{itemize}
+
+\par When a new connection arrives, a preliminary \texttt{ClientConnection} is created with placeholder identifiers.  The first incoming message that carries a \texttt{senderId} and \texttt{userId} promotes the connection to a fully identified state, populating both indexes.
+
+\subsection{Message Routing}
+\label{subsec:msg-routing}
+
+\par The five message types the handler processes are:
+
+\begin{itemize}
+  \item \textbf{\texttt{REGISTER\_CACHE}}: Delivered by a peer after it has cached one
+        or more chunks.  The payload is a set of integer chunk indices.  The handler
+        delegates to \texttt{PeerTrackingService.register\-PeerChunks}.
+
+  \item \textbf{\texttt{DISCOVER\_PEERS}}: A request for the chunk maps of all other
+        peers that hold data for a given song.  The handler calls
+        \texttt{PeerTrackingService.getPeer\-BufferMapsForSong}, filters out the
+        requesting peer's own entry, and replies with a \texttt{PEER\_BUFFER\_MAP} message.
+
+  \item \textbf{\texttt{OFFER} / \texttt{ANSWER} / \texttt{ICE\_CANDIDATE}}: WebRTC
+        signaling messages that carry a \texttt{targetId} field.  The handler attempts to
+        route the message to the target peer locally via \texttt{peerIndex}; if the target
+        session is not present on this instance, the message is published to the Redis
+        \texttt{signaling:webrtc} channel so that a \texttt{RedisSignaling\-Listener}
+        on another instance can deliver it.
+\end{itemize}
+
+\par The Redis pub/sub bridge is what enables horizontal scaling: each server instance runs a \texttt{RedisSignalingListener} that subscribes to three channels: 
+\texttt{signaling:webrtc}, \texttt{signaling:sync}, and \texttt{signaling:playback},
+and delivers arriving messages to the locally connected sessions they target.
+Figure~\ref{fig:signaling-flow} illustrates the cross-instance routing path.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=1.4cm and 2.8cm,
+  box/.style={rectangle, draw, rounded corners=4pt,
+              minimum width=2.6cm, minimum height=0.85cm,
+              font=\small, align=center},
+  redis/.style={box, fill=red!15},
+  srv/.style={box, fill=blue!12},
+  cli/.style={box, fill=green!12},
+  arr/.style={-{Stealth}, thick}
+]
+  \node[cli]  (peerA) {Peer A\\(Client)};
+  \node[srv, right=of peerA] (srv1) {Server\\Instance 1};
+  \node[redis, right=of srv1] (redis) {Redis\\Pub/Sub};
+  \node[srv, right=of redis] (srv2) {Server\\Instance 2};
+  \node[cli, right=of srv2] (peerB) {Peer B\\(Client)};
+
+  \draw[arr] (peerA) -- node[above, font=\scriptsize]{OFFER} (srv1);
+  \draw[arr] (srv1)  -- node[above, font=\scriptsize]{publish} (redis);
+  \draw[arr] (redis) -- node[above, font=\scriptsize]{subscribe} (srv2);
+  \draw[arr] (srv2)  -- node[above, font=\scriptsize]{OFFER} (peerB);
+\end{tikzpicture}%
+}
+\caption{Cross-instance WebRTC signal routing via Redis pub/sub.}
+\label{fig:signaling-flow}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Data Synchronisation Service}
+\label{sec:data-sync}
+
+\par The \texttt{DataSyncService} implements a bidirectional, timestamp-based
+synchronisation protocol that keeps the user's library consistent across devices
+without requiring a full reload of the catalogue.
+
+\par A client sends a \texttt{SyncRequestDto} containing an optional
+\texttt{lastSyncTime} ISO-8601 timestamp and a list of \texttt{localChanges}: each
+a \texttt{SongSyncDto} encoding a song's updated engagement fields (\texttt{liked},
+\texttt{playCountDelta}, \texttt{lastPlayed}, \texttt{isDeleted}).  The service
+applies these changes to the corresponding \texttt{UserLibrary} rows inside a single
+transaction, then queries for all \texttt{UserLibrary} entries with
+\texttt{lastUpdated > lastSyncTime} to collect server-side changes.
+The response carries both sets of changes and a new \texttt{syncTimestamp} that the
+client stores locally for use in the next synchronisation call.
+
+\par After the write phase completes, the service invokes
+\texttt{SignalingHandler.sendSyncTrigger(userId)}, publishing a notification to the
+Redis \texttt{signaling:sync} channel.  All other devices belonging to the same user
+receive this trigger via the pub/sub bridge and initiate their own sync request,
+propagating library changes across devices in near real time.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Client-Side Chunk Retrieval}
+\label{sec:chunk-service}
+
+\par On the client the \texttt{ChunkService} class encapsulates the full logic for
+obtaining a single chunk, regardless of whether that chunk originates from the server, a peer, or a local cache.  Each \texttt{ChunkService} instance is bound to one song and is created by \texttt{AppAudioService} the first time a song is queued for playback.
+
+\subsection{Caching Architecture}
+\label{subsec:caching}
+
+\par Three caching layers are stacked in order of access speed:
+
+\begin{enumerate}
+  \item \textbf{Hot RAM cache}: a map of at most 15 entries keyed by chunk index.
+        Entries are evicted using a least-recently-used policy when the map exceeds
+        capacity.  This layer absorbs repeated reads for the same chunk that occur
+        when the audio player issues overlapping range requests.
+
+  \item \textbf{Disk cache}: a \texttt{ChunkCacheRepository} that stores chunks as
+        binary files under a per-song directory.  Writes are asynchronous; the chunk
+        is placed in the RAM cache first and persisted in the background.
+
+  \item \textbf{Active request deduplication}: a map from chunk index to a
+        \texttt{Future<Uint8List>}.  If two callers concurrently request the same chunk,
+        the second caller attaches to the existing future rather than issuing a duplicate
+        network or peer request.
+\end{enumerate}
+
+\subsection{Fetch Decision Logic}
+\label{subsec:fetch-logic}
+
+\par The core method \texttt{\_fetchChunkLogic(int index)} implements a three-branch
+decision tree, illustrated in Figure~\ref{fig:chunk-fetch-flow}:
+
+\begin{enumerate}
+  \item If $\texttt{index} < 8$, the chunk belongs to the \emph{server prefix} and
+        is always fetched from the origin server.  This guarantees that playback can
+        begin while peer connections are still being negotiated.
+
+  \item Otherwise, if at least one peer with the requested chunk index is known,
+        a P2P request is issued through \texttt{WebRTCService} with a timeout of
+        one second.  If the peer responds in time, the data is integrity-verified
+        against the SHA-256 hash from the manifest.  A verification failure causes
+        an immediate fallback to the server, and if the server copy also fails
+        verification, a \texttt{ChunkIntegrityException} is thrown to halt playback.
+
+  \item If no suitable peer exists, or if the peer request times out, the chunk is
+        fetched from the origin server.
+\end{enumerate}
+
+\par Every successfully fetched chunk is written to both the disk cache and the RAM
+cache, and the peer registry is updated via a \texttt{REGISTER\_CACHE} WebSocket
+message so that other peers can subsequently discover this device as a source.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=0.85cm and 0.1cm,
+  startstop/.style={ellipse, draw, fill=gray!20,
+                    minimum width=2.4cm, minimum height=0.7cm, font=\small},
+  decision/.style={diamond, draw, fill=yellow!20, aspect=2.2,
+                   minimum width=3.2cm, font=\small, align=center},
+  process/.style={rectangle, draw, fill=blue!10, rounded corners=3pt,
+                  minimum width=3.6cm, minimum height=0.75cm,
+                  font=\small, align=center},
+  good/.style={rectangle, draw, fill=green!15, rounded corners=3pt,
+               minimum width=3.6cm, minimum height=0.75cm,
+               font=\small, align=center},
+  bad/.style={rectangle, draw, fill=red!15, rounded corners=3pt,
+              minimum width=3.6cm, minimum height=0.75cm,
+              font=\small, align=center},
+  arr/.style={-{Stealth}}
+]
+  \node[startstop] (start) {getChunk(index)};
+
+  \node[decision, below=of start] (inCache) {In RAM\\cache?};
+  \node[good, right=2.8cm of inCache] (returnCache) {Return cached data};
+
+  \node[decision, below=of inCache] (isPrefix) {index $<$ 8?};
+  \node[process, right=2.8cm of isPrefix] (fetchServer1) {Fetch from\\server};
+
+  \node[decision, below=of isPrefix] (hasPeers) {Peers with\\this chunk?};
+  \node[process, right=2.8cm of hasPeers] (fetchServer2) {Fetch from\\server};
+
+  \node[process, below=of hasPeers] (p2pReq)  {Request chunk\\via WebRTC};
+  \node[decision, below=of p2pReq]  (timeout) {Response\\within 1 s?};
+  \node[process, right=2.8cm of timeout] (fetchServer3) {Fetch from\\server};
+
+  \node[decision, below=of timeout] (verify) {Hash OK?};
+  \node[bad, right=2.8cm of verify] (integrity) {Integrity\\error};
+
+  \node[good, below=of verify] (cache) {Cache \&\\return data};
+
+  % edges
+  \draw[arr] (start)      -- (inCache);
+  \draw[arr] (inCache)    -- node[left, font=\scriptsize]{No}  (isPrefix);
+  \draw[arr] (inCache)    -- node[above, font=\scriptsize]{Yes} (returnCache);
+  \draw[arr] (isPrefix)   -- node[left, font=\scriptsize]{No}  (hasPeers);
+  \draw[arr] (isPrefix)   -- node[above, font=\scriptsize]{Yes} (fetchServer1);
+  \draw[arr] (fetchServer1.south) |- (verify.east);
+  \draw[arr] (hasPeers)   -- node[left, font=\scriptsize]{No}  (p2pReq);
+  \draw[arr] (hasPeers)   -- node[above, font=\scriptsize]{No peers} (fetchServer2);
+  \draw[arr] (fetchServer2.south) |- (verify.east);
+  \draw[arr] (p2pReq)     -- (timeout);
+  \draw[arr] (timeout)    -- node[left, font=\scriptsize]{Yes} (verify);
+  \draw[arr] (timeout)    -- node[above, font=\scriptsize]{No}  (fetchServer3);
+  \draw[arr] (fetchServer3.south) |- (verify.east);
+  \draw[arr] (verify)     -- node[left, font=\scriptsize]{OK}  (cache);
+  \draw[arr] (verify)     -- node[above, font=\scriptsize]{Fail} (integrity);
+\end{tikzpicture}
+\caption{Chunk fetch decision flow inside \texttt{ChunkService.\_fetchChunkLogic}.}
+\label{fig:chunk-fetch-flow}
+\end{figure}
+
+\subsection{Look-Ahead Prefetching}
+\label{subsec:prefetch}
+
+\par To prevent starvation of the audio decoder, the \texttt{ChunkService} maintains
+a \texttt{\_preloadAhead} constant of 16.  After each call to \texttt{getChunk(i)},
+the service asynchronously initiates fetches for chunks $i+1$ through $i+15$, subject
+to the deduplication map preventing re-issuance.  These prefetch operations run
+concurrently using \texttt{Future.wait}, so the one-second P2P timeout limits only
+the latency of a single chunk, not the aggregate prefetch window.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{P2P Audio Source and Range Request Handling}
+\label{sec:audio-source}
+
+\par The Flutter \texttt{just\_audio} library consumes audio through an abstract
+\texttt{AudioSource} interface.  For P2P streaming the application provides
+\texttt{P2PChunkedAudioSource}, which extends \texttt{StreamAudioSource} and
+translates HTTP-style range requests into calls to \texttt{ChunkService.getChunk}.
+
+\par When the audio player issues a range request for bytes $[s, e)$, the source:
+
+\begin{enumerate}
+  \item Clamps the range to $[0, \texttt{totalBytes})$.
+  \item Computes the first and last chunk indices:
+        $i_{\min} = \lfloor s / 65536 \rfloor$,
+        $i_{\max} = \lfloor (e-1) / 65536 \rfloor$.
+  \item Iterates from $i_{\min}$ to $i_{\max}$, awaiting each chunk future in turn
+        while simultaneously scheduling a speculative fetch for chunk $i + 1$ to
+        overlap network latency with audio decoding.
+  \item For each chunk, computes the byte-level slice:
+        $\texttt{sliceStart} = \max(0,\ s - i \cdot 65536)$,
+        $\texttt{sliceEnd} = \min(|\texttt{chunk}|,\ e - i \cdot 65536)$,
+        and yields the sub-list to the output stream.
+\end{enumerate}
+
+\par The response object declares \texttt{rangeRequestsSupported: true} and sets the
+\texttt{Content-Length} header to $e - s$, allowing the audio player to issue
+fine-grained seeks without re-downloading the entire file.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{WebRTC Peer Management}
+\label{sec:webrtc}
+
+\par The \texttt{WebRTCService} on the client side manages the lifecycle of all
+peer-to-peer connections.  It is constructed with references to the signaling
+WebSocket and two callbacks: \texttt{onChunkReceived} (invoked when binary chunk
+data arrives over a data channel) and \texttt{onChunkRequested} (invoked when a
+peer requests a chunk that this device may be able to serve).
+
+\subsection{Connection Establishment}
+\label{subsec:conn-establish}
+
+\par Peer connections are established using the standard WebRTC offer/answer
+handshake.  When a \texttt{PEER\_BUFFER\_MAP} response arrives, the service
+iterates the map and calls \texttt{\_createPeerConnection(peerId, initiator: true)}
+for each newly discovered peer.  This method:
+
+\begin{enumerate}
+  \item Creates an \texttt{RTCPeerConnection} with the configured STUN servers
+        (\texttt{stun.l.\allowbreak google.com:\allowbreak 19302} and
+        \texttt{stun1.l.\allowbreak google.com:\allowbreak 19302}).
+  \item Creates an ordered, reliable \texttt{RTCDataChannel} labelled
+        \texttt{"chunk-channel"}.
+  \item Generates an SDP offer, sets it as the local description, and transmits
+        it to the signaling server as an \texttt{OFFER} message.
+\end{enumerate}
+
+\par The remote peer receives the offer, creates a mirrored connection with
+\texttt{initiator: false}, sets the remote description, and replies with an
+\texttt{ANSWER} message.  Both sides then exchange \texttt{ICE\_CANDIDATE} messages
+until connectivity is established.  ICE candidates that arrive before the remote
+description is set are queued in \texttt{\_iceQueues} and applied once the
+description is available.
+
+\subsection{Chunk Exchange Protocol}
+\label{subsec:chunk-protocol}
+
+\par Once the data channel is open, chunk requests and responses follow a simple
+binary protocol.  A \emph{request} is sent as a UTF-8 text message with the format:
+
+\begin{center}
+  \texttt{REQUEST\_CHUNK:\{songId\}:\{chunkIndex\}}
+\end{center}
+
+\par A \emph{response} is a binary message whose first eight bytes form a header:
+bytes 0–3 contain the \texttt{songId} as a big-endian 32-bit unsigned integer,
+bytes 4–7 contain the \texttt{chunkIndex} in the same encoding, and the remaining
+bytes are the raw audio data.  The receiving side strips the header and delivers the
+payload bytes to the appropriate \texttt{ChunkService} via the
+\texttt{resolvePeerRequest(chunkIndex, data)} callback.
+
+\par If a chunk request arrives while the data channel is still in the
+\texttt{connecting} state, the request is enqueued in
+\texttt{\_pending\-ChunkRequests} and flushed via
+\texttt{\_drain\-Pending\-Requests} as soon as the channel transitions to
+\texttt{open}.  This prevents race conditions during the brief window between
+peer discovery and channel readiness.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Audio Service and Playback State Management}
+\label{sec:audio-service}
+
+\par \texttt{AppAudioService} is the top-level coordinator for audio playback on the
+client.  It owns the \texttt{just\_audio} \texttt{AudioPlayer} (or the
+\texttt{media\_kit} equivalent on Linux and Windows), manages the song queue, and
+bridges playback events to the data synchronisation and peer registry subsystems.
+
+\subsection{Queue and Audio Source Selection}
+\label{subsec:queue}
+
+\par When the user starts a song, \texttt{setQueueAndPlay} atomically replaces the
+queue and calls \texttt{\_buildAudioSource(song)}.  The factory branches on three
+cases: if the song has a local file path, a \texttt{Uri.file} source is returned;
+if the platform is web, a server-side stream URL is used; otherwise a \texttt{P2PChunkedAudioSource} is constructed, which triggers a
+\texttt{ChunkService} instantiation and a manifest fetch.
+
+\subsection{Proactive Prefix Caching}
+\label{subsec:proactive-cache}
+
+\par To reduce the latency of switching to the next song in the queue, the service
+runs \texttt{\_proactivelyCachePrefixes} each time a new song begins.  This method
+inspects the next five songs in the queue and, for each one, issues a server
+prefix fetch for the first eight chunks.  Because the prefix is a single HTTP call
+returning 500~KiB, it can be stored in the disk cache well before the user reaches
+that position in the queue, making the subsequent peer-negotiation phase overlap
+with warm cache hits rather than cold fetches.
+
+\subsection{Stuck-Playback Detection}
+\label{subsec:stuck}
+
+\par Network jitter or slow peer responses can occasionally stall the audio decoder
+without triggering a formal error state.  \texttt{AppAudioService} runs a watchdog
+timer that samples the playback position every 500 milliseconds.  If the position
+has not advanced after two consecutive samples (i.e., a 1000-millisecond window)
+while the player is nominally in the \texttt{playing} state, the service pauses,
+seeks to the current position, and resumes.  This sequence forces the player to
+re-issue range requests, which in turn triggers fresh chunk fetches that may select
+a different peer or fall through to the server, resolving the stall.
+
+\subsection{Persistent Playback State}
+\label{subsec:playback-state}
+
+\par Every 30 seconds while playback is active, \texttt{push\-State\-To\-Server}
+serialises the current queue as a JSON array of song IDs, the playback position in
+milliseconds, and the shuffle and repeat flags into a \texttt{PlaybackStateDto},
+which is sent to the \texttt{PlaybackRestService} REST endpoint.  On application
+startup, \texttt{restore\-From\-Server\-State} fetches the last saved state and
+reconstructs the queue and position, enabling seamless handoff between devices and
+resumption after application restarts.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{End-to-End Flows}
+\label{sec:flows}
+
+\par This section consolidates the subsystem descriptions above into three end-to-end flow diagrams that emphasise the temporal ordering of operations and the interactions between components.
+
+\subsection{Playback Initialisation Flow}
+\label{subsec:flow-init}
+
+\par Figure~\ref{fig:flow-init} shows the sequence of operations from the moment a
+user selects a song to the moment audio begins playing.  The critical property is that playback starts after the server prefix completes (typically within one round-trip time) while peer connection establishment continues asynchronously in the background.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=0.7cm,
+  box/.style={rectangle, draw, fill=blue!8, rounded corners=3pt,
+              minimum width=10cm, minimum height=0.7cm,
+              font=\small, align=flush left, text width=9.6cm,
+              inner sep=4pt},
+  phase/.style={rectangle, draw=none, fill=gray!15, rounded corners=2pt,
+                minimum width=10cm, minimum height=0.55cm,
+                font=\small\bfseries, align=center},
+  arr/.style={-{Stealth}, thick, gray!60}
+]
+  \node[phase]                  (p1) {Phase 1: Manifest \& Prefix};
+  \node[box, below=0.1cm of p1] (s1) {1. User selects song → \texttt{AppAudioService.setQueueAndPlay}};
+  \node[box, below=0.2cm of s1] (s2) {2. \texttt{P2PChunkedAudioSource} created → \texttt{ChunkService} instantiated};
+  \node[box, below=0.2cm of s2] (s3) {3. \texttt{ChunkService.loadManifest()} → HTTP GET /manifest};
+  \node[box, below=0.2cm of s3] (s4) {4. Server returns hash list, chunk count, total bytes};
+  \node[box, below=0.2cm of s4] (s5) {5. Client fetches server prefix (chunks 0–7, 512 KiB) in parallel};
+
+  \node[phase, below=0.4cm of s5] (p2) {Phase 2: Peer Discovery (async)};
+  \node[box, below=0.1cm of p2]  (s6) {6. \texttt{ChunkService} sends \texttt{DISCOVER\_PEERS} over WebSocket};
+  \node[box, below=0.2cm of s6]  (s7) {7. Server queries Redis, returns \texttt{PEER\_BUFFER\_MAP}};
+  \node[box, below=0.2cm of s7]  (s8) {8. \texttt{WebRTCService} initiates \texttt{RTCPeerConnection} per peer};
+  \node[box, below=0.2cm of s8]  (s9) {9. OFFER/ANSWER/ICE exchanged via signaling server};
+
+  \node[phase, below=0.4cm of s9]  (p3) {Phase 3: Streaming};
+  \node[box, below=0.1cm of p3]   (s10) {10. Audio player issues range request → \texttt{P2PChunkedAudioSource.request()}};
+  \node[box, below=0.2cm of s10]  (s11) {11. Chunks 0–7: served from RAM/disk prefix cache};
+  \node[box, below=0.2cm of s11]  (s12) {12. Chunks 8+: P2P first (1 s timeout), server fallback};
+  \node[box, below=0.2cm of s12]  (s13) {13. Each chunk verified against manifest hash, cached, registered};
+
+  \draw[arr] (s1.south) -- (s2.north);
+  \draw[arr] (s2.south) -- (s3.north);
+  \draw[arr] (s3.south) -- (s4.north);
+  \draw[arr] (s4.south) -- (s5.north);
+  \draw[arr] (s6.south) -- (s7.north);
+  \draw[arr] (s7.south) -- (s8.north);
+  \draw[arr] (s8.south) -- (s9.north);
+  \draw[arr] (s10.south) -- (s11.north);
+  \draw[arr] (s11.south) -- (s12.north);
+  \draw[arr] (s12.south) -- (s13.north);
+\end{tikzpicture}
+\caption{Playback initialisation flow from song selection to streaming.}
+\label{fig:flow-init}
+\end{figure}
+
+\subsection{Chunk Delivery Decision Flow}
+\label{subsec:flow-chunk}
+
+\par The chunk delivery path (Figure~\ref{fig:chunk-fetch-flow}, reproduced schematically here for emphasis) is the innermost hot path of the system.  Its design reflects two competing constraints: \emph{latency} (the audio decoder cannot buffer ahead if chunk fetches are slow) and \emph{server cost} (the goal is to minimise origin-server bandwidth).
+The prefix threshold of eight chunks resolves this tension by guaranteeing a baseline supply of data from a reliable source while exploiting the observation that WebRTC connections take on the order of hundreds of milliseconds to negotiate, longer than it takes to drain the eight-chunk prefix at typical decoding rates.
+
+\par The one-second P2P timeout was chosen empirically to balance the risk of peer
+starvation against the benefit of peer offloading.  If a peer is temporarily unavailable, the one-second wait is short enough that the audio player's internal buffer (fed by the 16-chunk lookahead) absorbs the latency without an audible glitch.
+
+\subsection{Library Synchronisation Flow}
+\label{subsec:flow-sync}
+
+\par Figure~\ref{fig:flow-sync} shows the multi-device library sync triggered by a user action such as liking a song or deleting a track from the library.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=1.1cm and 3.0cm,
+  box/.style={rectangle, draw, rounded corners=3pt,
+              minimum width=2.8cm, minimum height=0.8cm,
+              font=\small, align=center},
+  devA/.style={box, fill=blue!12},
+  server/.style={box, fill=orange!15},
+  redis/.style={box, fill=red!12},
+  devB/.style={box, fill=green!12},
+  arr/.style={-{Stealth}, thick}
+]
+  % Column headers
+  \node[devA]    (a1) {Device A\\Action};
+  \node[server, right=2.4cm of a1]  (srv) {Server};
+  \node[redis, right=2.4cm of srv]  (red) {Redis};
+  \node[devB, right=2.4cm of red]   (b1)  {Device B};
+
+  % Steps
+  \node[devA, below=of a1]   (a2) {POST /sync\\localChanges};
+  \node[server, below=of srv] (sv2) {Apply changes\\Query deltas};
+  \node[server, below=of sv2] (sv3) {Publish\\SYNC\_TRIGGER};
+  \node[redis, below=1.8cm of red]  (r1)  {Broadcast to\\all instances};
+  \node[devB, below=3.0cm of b1]   (b2)  {Receive trigger\\POST /sync};
+  \node[devB, below=of b2]   (b3)  {Apply server\\deltas locally};
+
+  % Arrows
+  \draw[arr] (a2.east)  -- node[above,font=\scriptsize]{HTTP}   (sv2.west);
+  \draw[arr] (sv2.south)-- (sv3.north);
+  \draw[arr] (sv3.east) -- node[above,font=\scriptsize]{pub}    (r1.west);
+  \draw[arr] (r1.east)  -- node[above,font=\scriptsize]{sub}    (b2.west);
+  \draw[arr] (b2.south) -- (b3.north);
+  % Response arrow
+  \draw[arr] (sv2.west) to[bend right=15]
+              node[below,font=\scriptsize]{SyncResponse} (a2.south);
+\end{tikzpicture}%
+}
+\caption{Multi-device library synchronisation triggered by a user action on Device A.}
+\label{fig:flow-sync}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Delivery Statistics and Observability}
+\label{sec:stats}
+
+\par To validate the effectiveness of the peer-assisted approach, the system records
+per-session delivery statistics in the \texttt{ChunkStat} entity.  Each row captures
+\texttt{p2pChunks}, \texttt{serverChunks}, \texttt{totalChunks}, and a derived
+\texttt{p2p\-Percentage}.  The \texttt{ChunkService} accumulates counts as each chunk is fetched and fires the \texttt{\_onFully\-Received} callback when the last chunk of a song has been delivered, passing a \texttt{ChunkDelivery\-Stats} value object that the \texttt{AppAudioService} forwards to the REST statistics endpoint.
+
+\par These records allow an operator to observe, for a given deployment, what fraction of total data volume is served by peers rather than the origin server.  Under favourable conditions (an audience that contains several listeners of the same song) the peer offload ratio should approach the theoretical maximum of
+$(N - 1) / N$ for a swarm of $N$ simultaneous listeners sharing the same track,
+limited in practice by the prefix requirement and connection churn.

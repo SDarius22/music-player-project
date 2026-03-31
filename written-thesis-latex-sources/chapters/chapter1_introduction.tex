@@ -1,0 +1,498 @@
+\chapter{Introduction}
+
+%\chapter*{Introducere}
+\label{intro}
+
+\indent \par The adoption of on-demand multimedia streaming has fundamentally changed how content is consumed. However, the economics of delivering this content are reaching a breaking point. Traditionally, streaming platforms rely entirely on centralized Cloud Computing and CDNs (Content Delivery Networks). A request to listen to a song means a fractional bandwidth fee (called 'egress') for the provider, a cost that scales into massive financial burdens as the user base grows.
+
+\par Initially, this problem was manageable. The rapid growth of AI has quickly changed the industry and cloud computing has become a huge financial struggle. Modern streaming services rely heavily on machine learning for real-time content recommendation, user sentiment analysis, adaptive bitrate optimization and predictive analytics. This significantly improves the user experience, but the costs associated are unprecedented. 
+
+
+\par Back in 2018, Spotify signed a deal with Google to spend a minimum of \$447 million on the Google Cloud Platform during the first three years of service. \cite{spotify_google} Considering the fact that in 2018, Spotify Premium cost \$9.99, compared to today's \$12.99 \cite{spotify_prices} (entering the 3rd year of consecutive increases), it's safe to say that the inflation caused by the pandemic and the AI hype have caused the clouding computing prices to sky-rocket, thing that both reduces profits and increases prices for the end consumer (see Figure \ref{fig:spotify_economics_indexed}). To prevent streaming from becoming economically unviable, we will take a look at possible improvements that can be brought to the existing cloud infrastructure, making it cheaper for the provider with little to no user impact.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=12cm, height=7cm,
+            xmin=2018, xmax=2025,
+            ymin=90, ymax=140,
+            xtick={2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025},
+            x tick label style={/pgf/number format/1000 sep=},
+            ytick={90, 100, 110, 120, 130, 140},
+            ylabel={Relative Index (Base 100 = 2018)},
+            xlabel={Year},
+            title={Relative Growth: Premium Price vs. Gross Margin (2018-2025)},
+            legend pos=north west,
+            grid=both,
+            grid style={dashed, gray!30}
+        ]
+        
+        % Price Indexed: (Current Price / 9.99) * 100
+        \addplot[
+            color=blue,
+            mark=square*,
+            thick
+        ] coordinates {
+            (2018, 100.0)
+            (2019, 100.0)
+            (2020, 100.0)
+            (2021, 100.0)
+            (2022, 100.0)
+            (2023, 110.0) % 10.99 / 9.99
+            (2024, 120.0) % 11.99 / 9.99
+            (2025, 130.0) % 12.99 / 9.99
+        };
+        \addlegendentry{Price Growth Index}
+
+        % Margin Indexed: (Current Margin / 25.7) * 100
+        \addplot[
+            color=red,
+            mark=*,
+            thick,
+            dashed
+        ] coordinates {
+            (2018, 100.0)
+            (2019, 98.8)  % 25.4 / 25.7
+            (2020, 99.2)  % 25.5 / 25.7
+            (2021, 104.3) % 26.8 / 25.7
+            (2022, 96.9)  % 24.9 / 25.7
+            (2023, 99.6)  % 25.6 / 25.7
+            (2024, 117.1) % 30.1 / 25.7
+            (2025, 120.6) % 31.0 / 25.7
+        };
+        \addlegendentry{Margin Growth Index}
+        
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Relative growth index of Spotify's Premium Price \cite{spotify_prices} and Gross Profit Margin \cite{spotify_gross_margin}, normalized to a base value of 100 in the year 2018.}
+    \label{fig:spotify_economics_indexed}
+\end{figure}
+
+\par In an effort to ease the load on centralized infrastructure, the academic community has considerably explored decoupled network models. Translating these theoretical architectures into functional systems, however, requires navigating complex technical limitations. Below is an overview of current methods that address the core subproblems of distributed streaming, from the perspective of both the provider and the consumer.
+
+\section{Achieving Near-Instant Playback (Latency Mitigation)}
+\indent \par The most critical objective for any contemporary streaming service is the rigorous minimization of startup latency. In the modern streaming landscape, the expectation of immediacy must be met with zero-tolerance for significant wait times between initiating playback and content appearing on screen.
+
+\par An unacceptable user experience is defined by the scenario where an end user is subjected to substantial delay. For instance, a fifteen-minute wait time is deemed "frustrating" and "unbearable" by end users, so a 'download-first' approach is fundamentally flawed in a streaming context. Research on Quality of Experience (QoE) extensively corroborates this, as demonstrated by Krishnan and Sitaraman in their large-scale measurement study, users begin abandoning streaming content rapidly if startup delays exceed just two seconds, highlighting the severe penalty of latency \cite{quality_impact}.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=12cm, height=7cm,
+            xlabel={Startup Delay (Seconds)},
+            ylabel={Viewer Abandonment Rate (\%)},
+            xmin=0, xmax=20,
+            ymin=0, ymax=80,
+            grid=both,
+            grid style={dashed, gray!30},
+            title={Impact of Startup Latency on User Abandonment},
+            legend pos=north west
+        ]
+        
+        \addplot[
+            color=red,
+            mark=*,
+            thick
+        ] coordinates {
+            (0, 0)
+            (1, 0.5)
+            (2, 2)
+            (3, 8)
+            (4, 14)
+            (5, 20)
+            (6, 25)
+            (7, 31)
+            (8, 36)
+            (9, 42)
+            (10, 48)
+            (15, 57)
+            (20, 63)
+        };
+        \addlegendentry{Abandonment Rate}
+        
+        \draw[dashed, thick, blue] (axis cs:2,0) -- (axis cs:2,60) node[midway, right, font=\footnotesize] {Critical Threshold};
+        
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Viewer abandonment rate as a function of startup delay\cite{quality_impact}.}
+    \label{fig:latency_abandonment}
+\end{figure}
+
+\par Instead, the architectural focus should shift towards sophisticated progressive download and adaptive streaming methodologies. The user should perceive a near-instant playback, with a seamless transition from clicking to consuming content. The most popular strategies for mitigating playback latency in a Peer-to-Peer streaming system are Prefix Caching and Predictive Pre-Fetching.
+
+\subsection{Prefix Caching}
+\indent \par The Prefix Caching method involves the server immediately streaming the critical portion of the content to the client while the P2P connection is established in the background for the remainder. "By storing the first few seconds of popular video clips, a multimedia proxy can shield users from the delay, throughput, and loss properties of the path...".\cite{prefix_caching} 
+
+\par This method offers almost zero startup delay, with the user having the ability to consume content instantly from a reliable server source, masking the P2P connection startup time. It also absorbs the initial high-demand burst, while still being a fail-safe mechanism, allowing the server to continue streaming the entire track if peers are unavailable. However, this method has its downsides as Prefix Caching introduces server storage and byte-range complexity, carrying a buffering risk during the transition from the server prefix to the peer-supplied chunks. In other words, the system must achieve synchronization and a seamless transition to avoid audible artifacts like "clicks" or silence.
+
+\subsection{Predictive Pre-Fetching}
+\indent \par On the other hand, Predictive Pre-Fetching is, at least on paper, a good alternative to Prefix Caching. This method relies on using predictive models to determine the user's next choice, then downloads the entire thing in the background before the user gets to consume it.
+
+\par While this solves the buffering issue, keeps the almost zero start-up delay, and could even work offline (if the connection went down after the content was pre-fetched), predictive Pre-Fetching brings other problems to the table. For instance, it will bloat the client's storage by caching content that the user might not even consume, it will use an excessive amount of bandwidth utilization, and might drive the clients away with bad predictions, leading to wasted resources on both client-side and cloud-side. As evaluated by Wu et al., while pre-fetching can theoretically eliminate startup delays, its efficacy is heavily limited by the accuracy of the prediction models, often resulting in severe network and storage overhead when the user 'deviates' from the predicted path \cite{limits_prefetching}.
+
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2cm,
+        box/.style={draw, rectangle, minimum width=3cm, minimum height=1.2cm, align=center, fill=gray!10, rounded corners},
+        arrow/.style={->, >=Stealth, thick},
+        label_text/.style={font=\footnotesize\itshape}
+    ]
+        \node[font=\bfseries] (title_prefix) at (0, 3.5) {Prefix Caching Model};
+        \node[box] (server_prefix) at (-2, 2) {Master Server\\(5\% Prefix)};
+        \node[box] (peer_prefix) at (2, 2) {P2P System\\(95\% Suffix)};
+        \node[box, fill=blue!10] (buffer_prefix) at (0, 0) {Client Audio Buffer\\(Instant Playback)};
+        
+        \draw[arrow] (server_prefix) -- node[left, label_text] {Immediate TCP} (buffer_prefix);
+        \draw[arrow, dashed] (peer_prefix) -- node[right, label_text] {Background UDP} (buffer_prefix);
+
+        \node[font=\bfseries] (title_predict) at (8, 3.5) {Predictive Pre-Fetching Model};
+        \node[box] (network_predict) at (8, 2) {Network Sources\\(Server or Peers)};
+        \node[box, fill=red!10] (storage_predict) at (8, 0) {Client Persistent Storage\\(Full 100\% File Cache)};
+        \node[box, fill=blue!10] (buffer_predict) at (8, -2.5) {Client Audio Buffer\\(Eventual Playback)};
+
+        \draw[arrow] (network_predict) -- node[right, label_text] {Idle Background Download} (storage_predict);
+        \draw[arrow] (storage_predict) -- node[right, label_text] {Local Disk Read} (buffer_predict);
+        \draw[thick, dotted, gray] (4, -3.5) -- (4, 4);
+
+    \end{tikzpicture}
+    \caption{Data-flow comparison of Prefix Caching vs Predictive Pre-Fetching.}
+    \label{fig:caching_comparison}
+\end{figure}
+
+\indent \par These strategies present a fundamental trade-off between server and peer dependence, network efficiency, and storage usage. A more advanced solution should explore a hybrid approach between the two, trying to integrate the strengths of both and minimizing their weaknesses, feat which I will try to achieve in this paper.
+
+
+\section{Bridging Native And Browser Environments (Connectivity)}
+\indent \par A fundamental requirement for achieving good results with the Peer-Assisted Streaming is seamless connectivity across different environments, both native and web alike. The application must operate with equal reliability on both robust networking environments, like the native raw TCP and UDP sockets \cite{top_down_cn}, and dynamic networking environments, such as the web browser sandbox, with strict operational limits. As detailed by Kurose and Ross, native operating systems expose the sockets API, grating applications direct, unrestricted access to the transport layer for custom implementation \cite{top_down_cn}.
+
+\par Designing a system that relies on distinct networking protocols guarantees a brittle architecture. The browser environment adds severe technical constraints thanks to the security sandboxing. As such, a web application is strictly prohibited from opening network sockets to untrusted peers, preventing malicious exploitation \cite{webrtc_security}. To mitigate this risk, the browser security model inherently restricts arbitrary network access. As Rescorla states in his proposed WebRTC security architecture, "pretty much anyone (i.e. unauthenticated entities) else generally cannot be trusted", without explicit protocol-level cryptographic safeguards \cite{webrtc_security}. An architecture that fails to unify these environments is fundamentally flawed in this context, as cross-platform P2P streaming becomes technically impossible.
+
+\par Ideally, the architectural focus must shift towards communication protocols capable of traversing complex network topologies without violating security models. The system must maintain a unified peer 'swarm' regardless of underlying hardware or platform. The most popular strategy for bridging environments is the Web Real-Time Communication (WebRTC), but we'll also take into consideration the 'Relay-Only' (TURN/Proxy Servers) approach.
+
+\subsection{Web Real-Time Communication (WebRTC)}
+\indent \par WebRTC offers the advantage of must-have security via Datagram Transport Layer Security (DTLS) and includes built-in Network Address Translation (NAT) traversal mechanisms like Interactive Connectivity Establishment (ICE, not to be confused with whatever USA is doing nowadays) and Session Traversal Utilities for NAT (STUN). 
+
+\par This allows for devices on private networks to communicate with each other over the public internet, all with support which eliminates the need for plugins. This solution is not perfect though, as it introduces a significant connection overhead which results in a slow startup latency, with the addition of high CPU resource consumption for the consumer and additional infrastructure overhead in the form of a separate Signaling Server to coordinate the connection setup (see Figure \ref{fig:webrtc_architecture}). "The mean latency for the first experiment (without packet loss) is around 200 ms, whilst in the second experiment is around 400 ms" were the testing results found by researchers at Universidad Rey Juan Carlos, referencing even the fact that the UDP protocol "losses scalability" when a large number of clients are introduced into the system \cite{webrtc_testing}.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2.5cm,
+        client/.style={draw, rectangle, minimum width=2.5cm, minimum height=1.5cm, align=center, fill=blue!10, rounded corners},
+        server/.style={draw, rectangle, minimum width=2.5cm, minimum height=1.5cm, align=center, fill=gray!20, rounded corners},
+        arrow/.style={->, >=Stealth, thick},
+        biarrow/.style={<->, >=Stealth, thick},
+        label_text/.style={font=\footnotesize\itshape}
+    ]
+
+        \node[client] (peerA) at (0, 0) {Peer A\\(NAT A)};
+        \node[client] (peerB) at (8, 0) {Peer B\\(NAT B)};
+        
+        \node[server] (signaling) at (4, 3) {Signaling Server\\(SDP Exchange)};
+        \node[server] (stun) at (4, -3) {STUN Server\\(IP Discovery)};
+
+        \draw[biarrow, dashed] (peerA) -- node[above left, label_text] {WebSocket} (signaling);
+        \draw[biarrow, dashed] (peerB) -- node[above right, label_text] {WebSocket} (signaling);
+
+        \draw[biarrow, dotted] (peerA) -- node[below left, label_text] {UDP Binding} (stun);
+        \draw[biarrow, dotted] (peerB) -- node[below right, label_text] {UDP Binding} (stun);
+
+        \draw[biarrow, draw=green!60!black, line width=1.5pt] (peerA) -- node[above, font=\bfseries\footnotesize] {Direct WebRTC Media (DTLS/SRTP)} (peerB);
+
+    \end{tikzpicture}
+    \caption{WebRTC architecture.}
+    \label{fig:webrtc_architecture}
+\end{figure}
+
+\subsection{'Relay-Only' (TURN/Proxy Servers)}
+\indent \par Conversely, 'Relay-Only' guarantees 100\% connectivity and NAT traversal by routing all P2P traffic though Traversal Using Relays around NAT (TURN) or proxy servers (see Figure \ref{fig:turn_architecture}). TURN provides a reliable data relay mechanism for peers situated behind highly restrictive symmetric NATs or strict enterprise firewalls that outright block direct UDP communication \cite{relays_turn}.
+
+\par While this method simplifies client-side implementation and facilitates connection monitoring, it will highly increase financial cost for the provider, due to the absorbance of the full bandwidth expense for all relayed traffic. This fundamentally undermines the goal of this paper and the cost-saving purpose of P2P in the first place and adding a single point of failure for the entire P2P component, which must be avoided in the case of content streaming.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=3cm,
+        client/.style={draw, rectangle, minimum width=3cm, minimum height=1.5cm, align=center, fill=blue!10, rounded corners, font=\bfseries},
+        server/.style={draw, rectangle, minimum width=3.5cm, minimum height=2cm, align=center, fill=red!10, rounded corners, font=\bfseries},
+        arrow/.style={->, >=Stealth, thick, draw=red!60!black, line width=1.5pt},
+        label_text/.style={font=\small\itshape, align=center, fill=white, inner sep=2pt}
+    ]
+        \node[client] (peerA) at (0, 0) {Peer A\\(Symmetric NAT)};
+        \node[client] (peerB) at (10, 0) {Peer B\\(Symmetric NAT)};
+        \node[server] (turn) at (5, 2) {TURN Server\\(Centralized Bandwidth Proxy)};
+
+        \draw[arrow] (peerA) to[bend left=25] node[above, label_text, pos=0.0] {1. Upload Media} (turn);
+        \draw[arrow] (turn) to[bend left=20] node[above, label_text, pos=0.0] {2. Relay to B} (peerB);
+        \draw[arrow] (peerB) to[bend left=20] node[below, label_text, pos=0.5] {3. Upload Media} (turn);
+        \draw[arrow] (turn) to[bend left=20] node[below, label_text, pos=0.5] {4. Relay to A} (peerA);
+
+    \end{tikzpicture}
+    \caption{Relay-Only (TURN) architecture.}
+    \label{fig:turn_architecture}
+\end{figure}
+
+
+\indent \par Ultimately, these strategies present a clear trade-off between guaranteed network traversal, client-side resource consumption and bandwidth usage. Therefore, a robust architecture must explore a hybrid fallback mechanism, with WebRTC as the primary cost-cutting solution for P2P content streaming, and using a Master Server as the immediate, reliable fallback when direct traversal fails. The inherent startup delay can be perfectly masked by the latency mitigation strategy discussed in the previous section, which ensures a seamless cost-effective user experience.
+
+
+\section{Balancing Efficiency and Device Constraints (Storage Strategy)}
+\indent \par A critical architectural decision in distributed content streaming is determining if, how and when the data is retained on the consumer device. This choice needs a careful balance between maximizing networking efficiency of both consumer and provider, storage constraints and battery constraints of the consumer device. The primary methodologies for client-side retention are Mobile Edge Caching and Ephemeral RAM Caching, each presenting distinct trade-offs regarding device impact and networking utility. 
+
+\subsection{Mobile Edge Caching}
+\indent \par The Mobile Edge Caching approach involves semi-permanently storing data on the persistent storage of the client. By storing content locally, the device transitions into a potential edge peer, capable of both consuming data and serving cached data to other devices. 
+
+\par The main advantage of this strategy is the substantial reduction of redundant network traffic and centralized infrastructure costs. By retaining data on the client's persistent storage, the system ensures that a media file is downloaded from the cloud only once. Any subsequent playback by the user is served immediately from the local disk, completely bypassing network requests. This, in turn, turns the user into a 'node' in the P2P network, which enables other peers to also retrieve data from this node, offloading expensive egress bandwidth for the provider.
+
+\par However, these networking benefits introduce a few drawbacks. While the downloading operation conserves energy, the uploading operation can significantly drain the client's battery life. Asadi et al. highlight this specific duality in their survey of Device-to-Device communication, noting that while D2D offloading significantly alleviates congestion and network traffic, the energy consumption burden is strictly shifted to the cooperating user equipment, risking rapid battery depletion: "if the protocol forces the UE to wake up very often to listen for pairing requests or to transmit the discovery messages frequently, the battery life of the UE may significantly reduces" \cite{d2d_survey}. Additionally, mobile edge peers are volatile, and might lose the network connection or have the application be terminated by the operating system, creating a risk of mid-stream interruptions for the downloading client. Finally, to prevent local storage exhaustion, this approach requires a complex cache eviction policy, such as an autonomous deletion of older media based on age, size, or playing frequency.
+
+\subsection{Ephemeral RAM Caching}
+\indent \par On the contrary, Ephemeral RAM Caching involves the data chunks for the currently playing media being held strictly within the client's device's Random Access Memory (RAM). The data is instantly evicted from the RAM as soon as the track finishes or is skipped by the user. 
+
+\par The primary advantage of this method is the zero data saved in the persistent storage. Because of this, the concerns regarding the exhaustion of the storage capacity are completely eliminated. Also, from a development perspective, this drastically simplifies implementation by removing the need for complex storage management, eviction heuristics or storage permission requests.
+
+\par Despite these simplifications, this method actively undermines the foundation of P2P network. The redundancy of downloading the same exact data multiple times is a waste of bandwidth, and any attempt to mitigate this is immediately met with RAM limitations, such as client RAM capacity or termination from the OS when using excessive RAM. Furthermore, as examined by Liang et al. in their analysis of mobile memory management, operating systems employ aggressive mechanisms like the Low Memory Killer (LMK) and background reclaim daemons (kswapd) that systematically target and terminate background applications to relieve memory pressure \cite{apps_performance_diffs}. Most critically though, because the data is transient, the device can almost never be reliably used as a 'node' to other peers, effectively neutralizing the utility of the P2P system.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2cm,
+        client/.style={draw, rectangle, minimum width=2.8cm, minimum height=1.2cm, align=center, fill=gray!10, rounded corners},
+        storage/.style={draw, cylinder, aspect=0.3, minimum width=2.5cm, minimum height=1.5cm, align=center, fill=blue!10, shape border rotate=90},
+        ram/.style={draw, rectangle, minimum width=2.5cm, minimum height=1.5cm, align=center, fill=red!10, dashed},
+        arrow/.style={->, >=Stealth, thick}
+    ]
+        \node[font=\bfseries] (title_edge) at (0, 4.5) {Mobile Edge Caching};
+        
+        \node[client] (net_edge) at (0, 3) {Network Download};
+        \node[storage] (disk) at (0, 0.5) {Persistent\\Disk Storage};
+        
+        \node[client] (play_edge) at (-2.5, -2) {Audio Player};
+        \node[client, fill=green!10] (peer_edge) at (2.5, -2) {Other P2P Peers};
+
+        \draw[arrow] (net_edge) -- (disk);
+        
+        \draw[arrow] (disk.south) -- (0, -0.5) -- (-2.5, -0.5) -- (play_edge.north);
+        \draw[arrow] (disk.south) -- (0, -0.5) -- (2.5, -0.5) -- node[right, font=\footnotesize\itshape, align=left] {Served as\\Edge Node} (peer_edge.north);
+
+        \node[font=\bfseries] (title_ram) at (9, 4.5) {Ephemeral RAM Caching};
+        
+        \node[client] (net_ram) at (9, 3) {Network Download};
+        \node[ram] (ram_node) at (9, 0.5) {Volatile\\RAM Buffer};
+        
+        \node[client] (play_ram) at (6.5, -2) {Audio Player};
+        \node[client, fill=gray!30, text=gray] (peer_ram) at (11.5, -2) {Other P2P Peers};
+
+        \draw[arrow] (net_ram) -- (ram_node);
+        
+        \draw[arrow] (ram_node.south) -- (9, -0.5) -- (6.5, -0.5) -- (play_ram.north);
+        \draw[arrow, dashed, draw=red!70] (ram_node.south) -- (9, -0.5) -- (11.5, -0.5) -- node[midway, text=red, font=\Huge\bfseries] {$\times$} (peer_ram.north);
+        
+        \node[font=\footnotesize\itshape, text=red, align=center] at (11.5, -3) {Data evicted;\\Cannot serve};
+
+        \draw[thick, dotted, gray] (4.5, -3.5) -- (4.5, 5);
+
+    \end{tikzpicture}
+    \caption{Data flow comparison of Mobile Edge Caching vs Ephemeral RAM Caching.}
+    \label{fig:storage_comparison}
+\end{figure}
+\indent \par The selection of a storage strategy highlights the fundamental tension between maximizing the collective efficiency of the P2P network and the storage capacity as a whole. A purely ephemeral approach renders the P2P architecture useless (see Figure \ref{fig:storage_comparison}, therefore a successful implementation must establish an intelligent edge caching model.
+
+
+\section{Syncing and Integrity (Data Structure)}
+\indent \par Determining the optimal granularity for data transmission is another fundamental requirement for a distributed media delivery system. This decision determines how the media file is segmented and exchanged across the network, directly impacting accuracy, fault tolerance, and feasibility of the parallel downloading. The two primary methods evaluated for this architecture are Chunk-Based Synchronization and Continuous Byte-Stream transmission.
+
+
+\subsection{Chunk-Based Synchronization}
+\indent \par Under the chunk-based synchronization model, the complete file is deterministically segmented into small, fixed-sized pieces. Data transfer and P2P exchange is then obtained strictly at the granularity of these chunks. This approach provides robust data verification and fault tolerance, ensuring integrity using a unique cryptographic checksum for each chunk and being able to re-download only specific chunks in case of of corruption (see Figure \ref{fig:chunk_based_sync}). This significantly improves recovery speed and enables the use of parallel downloading, the client being able to request different chunks from multiple peers, drastically increasing overall download throughput. As established by Cohen's foundational architecture for BitTorrent, distributing data in cryptographically verified pieces not only guarantees file integrity against malicious or faulty nodes, but enables 'swarming', where a client concurrently downloads disjoint chunks from a multitude of independent sources \cite{bittorent}.  This approach also facilitates de-duplication, as the network can identify and share identical chunks across the peers. 
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.5cm,
+        peer/.style={draw, circle, minimum size=1.2cm, align=center, fill=green!10, font=\footnotesize\bfseries},
+        client/.style={draw, rectangle, minimum width=3cm, minimum height=1.5cm, align=center, fill=blue!10, rounded corners, font=\bfseries},
+        arrow/.style={->, >=Stealth, thick},
+        error_arrow/.style={->, >=Stealth, thick, dashed, draw=red},
+        label_text/.style={font=\scriptsize\itshape, align=center, text=red}
+    ]
+
+        \node[peer] (peer1) at (0, 3) {Peer 1};
+        \node[peer] (peer2) at (3, 3) {Peer 2};
+        \node[peer] (peer3) at (6, 3) {Peer 3};
+                \node[client] (client_chunk) at (3, 0) {Client Buffer\\(Reassembly \& Verification)};
+        
+        \draw[arrow] (peer1.south) -- node[left, font=\scriptsize] {Chunk 1 (OK)} (client_chunk.north west);
+        \draw[error_arrow] (peer2.south) -- node[right, font=\scriptsize, align=left, text=red] {Chunk 2 (Corrupted)} (client_chunk.north);
+        \draw[arrow] (peer3.south) -- node[right, font=\scriptsize] {Chunk 3 (OK)} (client_chunk.north east);
+        
+        \node[label_text] at (3, -1.5) {Fault Isolated: Only Chunk 2 is discarded\\and re-requested from another peer.};
+
+    \end{tikzpicture}
+    \caption{Chunk-Based Synchronization, corruption is isolated to individual segments.}
+    \label{fig:chunk_based_sync}
+\end{figure}
+
+\par However, this approach introduces a substantial protocol overhead. Every individual chunk requires its own request and response, each with their individual transport headers and request identifiers. These headers can consume a noticeable percentage of the available bandwidth. Furthermore, the client device must maintain a complex, real-time state map, to track which chunks are currently fully downloaded, in transit, or missing, adding significant client-side computational complexity. Finally, reassembling these chunks in the correct sequence to ensure seamless, gapless playback introduces strict buffer management challenges at the application layer. As demonstrated by Zhang et al. in their implementation of a data-driven P2P streaming network, this approach requires an active exchange of local "Buffer Maps" between nodes, as well as aggressive chunk scheduling algorithms to ensure pieces arrive before their strict playback deadlines \cite{coolstreaming}.
+
+\subsection{Continuous Byte-Stream}
+\indent \par As an alternative, the continuous byte-stream approach treats the entire file as a single, contiguous pipe of data, mirroring traditional HTTP progressive streaming. The main advantage of this method is the low protocol overhead. Because the data is transmitted as a single continuous stream, the system avoids attaching repetitive headers, request IDs, or checksums. Additionally, the playback logic is drastically simplified, as the media player simply pulls data sequentially from a linear stream buffer without requiring complex reordering.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2cm,
+        peer/.style={draw, circle, minimum size=1.5cm, align=center, fill=purple!10, font=\footnotesize\bfseries},
+        client/.style={draw, rectangle, minimum width=3cm, minimum height=1.5cm, align=center, fill=purple!10, rounded corners, font=\bfseries},
+        arrow/.style={->, >=Stealth, ultra thick},
+        label_text/.style={font=\scriptsize\itshape, align=center, text=red}
+    ]
+
+        \node[peer] (peer_source) at (0, 4.5) {Single Source\\Peer};
+        
+        \node[client] (client_stream) at (0, 0) {Client Buffer\\(Linear Read)};
+        
+        \draw[arrow] (peer_source.south) -- node[left, font=\scriptsize, align=right, text=black] {Monolithic Byte-Stream\\(No parallelism)} (client_stream.north);
+        
+        \draw[ultra thick, red] (-0.3, 2.2) -- (0.3, 1.6);
+        \draw[ultra thick, red] (-0.3, 1.6) -- (0.3, 2.2);
+        \node[font=\bfseries, text=red, right] at (0.5, 1.9) {Data Corruption};
+        
+        \draw[ultra thick, red, dashed, ->, >=Stealth] (0, 1.5) -- (client_stream.north);
+        
+        \node[label_text] at (0, -1.5) {Fragile Integrity: A single error invalidates\\the entire stream from that point onward.};
+
+    \end{tikzpicture}
+    \caption{Continuous Byte-Stream fragile single point of failure}
+    \label{fig:continuous_stream_failure}
+\end{figure}
+
+\par Despite the simplicity, this method is fundamentally incompatible with the core mechanics of a robust peer-assisted network. The monolithic structure inherently prevents parallel downloading, restricting the client to a single peer at any given moment. However, the most critical part of this approach is the fragile integrity and lack of fault tolerance (see Figure \ref{fig:continuous_stream_failure}). If even one single byte within the stream is corrupted or lost (which is extremely likely over a P2P connection, as session length varies from one minute to one hour for a peer \cite{measurement_p2p}), the integrity of the entire file from that point onward is compromised. Without granular checksums to isolate the error, the client is often forced to discard the received buffer and restart the download from scratch, resulting in an unacceptable user experience.
+
+\indent \par Ultimately, the fault tolerance and parallel throughput of chunk-based synchronization are strictly necessary for a functioning P2P system, rendering the protocol overhead and client-side complexity an unavoidable but acceptable architectural trade-off.
+
+
+\section{Managing Quality and Source Selection (Flow Control)}
+\indent \par Fluctuating network conditions in a streaming context demands the resilience of the distributed system, usually done through a flow control mechanism. This mechanism should continuously evaluate prevailing network metrics and decide whether to prioritize consistent media fidelity or maximum connection reliability, preventing playback stalls, with the two dominant solutions being the Adaptive Bitrate and the Adaptive Routing.
+
+\subsection{Adaptive Bitrate}
+\indent \par The Adaptive Bitrate (ABR) method dynamically alters the quality (and therefore the bitrate) of the content being streamed in real-time, determined by the client's connection speed and current buffer health. This approach is the established industry standard for centralized video streaming services such as YouTube and Netflix. As detailed by Stockhammer in the foundational specification of DASH (Dynamic Adaptive Streaming over HTTP), ABR breaks media into segments encoded at multiple distinct bitrates, allowing the client to independently request the optimal representation to match fluctuating bandwidth \cite{standards_streaming_http}.
+
+
+\par Its primary advantage is a guaranteed Quality of Experience (QoE) regarding playback continuity. By autonomously reducing the bitrate when bandwidth dips, the system ensures the media never pauses to re-buffer, perfectly matching the data rate to the network capacity and ensuring efficient resource utilization.
+
+\par However, despite its prevalence in the industry, ABR introduces highly noticeable changes in the quality, bringing the overall consumer experience down. More critically, from a provider perspective, it introduces extreme P2P complexity. To facilitate sharing, the client must manage a multidimensional chunk map that tracks both the chunk ID and its specific quality level, rendering peer discovery and de-duplication nearly impossible. Furthermore, the Master Server must compute and store multiple complete copies of every media file, exponentially increasing centralized storage costs. Figure \ref{fig:abr_fragmentation} shows an accurate illustration of the downsides of this method.
+ 
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.5cm,
+        peer/.style={draw, circle, minimum size=1.5cm, align=center, fill=gray!10, font=\footnotesize\bfseries},
+        chunk/.style={draw, rectangle, minimum width=2.5cm, minimum height=0.6cm, align=center, font=\scriptsize\bfseries},
+        arrow/.style={->, >=Stealth, thick},
+        label_text/.style={font=\scriptsize\itshape, align=center, text=red}
+    ]
+
+        \node[draw, rectangle, fill=blue!10, minimum width=4.5cm, minimum height=4cm, rounded corners] (server_box) at (0, 3.2) {};
+        
+        \node[align=center, font=\bfseries] (server_text) at (0, 4.6) {Master Server\\(Storage Bloat)};
+
+        \node[chunk, fill=green!20] (high) at (0, 3.7) {Chunk 1 (1080p)};
+        \node[chunk, fill=yellow!20] (med) at (0, 2.9) {Chunk 1 (720p)};
+        \node[chunk, fill=red!20] (low) at (0, 2.1) {Chunk 1 (360p)};
+
+        \node[peer] (peer1) at (-3.5, -1) {Peer A};
+        \node[peer] (peer2) at (3.5, -1) {Peer B};
+        
+        \node[chunk, fill=red!20] (peer1_chunk) at (-3.5, -2.5) {Chunk 1 (360p)};
+        \node[chunk, fill=green!20] (peer2_chunk) at (3.5, -2.5) {Chunk 1 (1080p)};
+
+        \draw[arrow, dashed, draw=red] (low.west) to[bend right=20] node[left, font=\scriptsize, align=center, xshift=-0.1cm] {Slow\\Network} (peer1.north);
+        \draw[arrow, dashed, draw=green!60!black] (high.east) to[bend left=20] node[right, font=\scriptsize, align=center, xshift=0.1cm] {Fast\\Network} (peer2.north);
+
+        \draw[<->, >=Stealth, ultra thick, draw=red] (peer1_chunk.east) -- node[above, font=\bfseries] {Hash Mismatch} node[below, font=\scriptsize\itshape] {Cannot Share} (peer2_chunk.west);
+
+    \end{tikzpicture}
+    \caption{Adaptive Bitrate example of failing peer-to-peer de-duplication.}
+    \label{fig:abr_fragmentation}
+\end{figure}
+
+\subsection{Adaptive Routing}
+\indent \par Alternatively, Adaptive Routing dictates that the chosen quality remains strictly constant for the entire duration of the playback. If the current peer cannot sustain the required data flow, the system does not drop the quality, it immediately switches the download source. The client dynamically reroutes its chunk requests to a faster peer or, as an absolute last resort, falls back to the central Master Server to maintain the established bitrate (see Figure \ref{fig:adaptive_routing_switch}).
+
+\par The most significant benefit of this approach is consistent quality. The user's experience is defined strictly by the fidelity they initially selected, maintaining client control regardless of network fluctuations. Architecturally, fixed-bitrate routing simplifies de-duplication and checksum verification. Because the quality is immutable, a specific chunk is mathematically identical across the entire P2P network, ensuring that cryptographic checksums always match and facilitating peer discovery logic.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2cm,
+        peer_red/.style={draw, circle, minimum size=1.5cm, align=center, fill=red!10, font=\footnotesize\bfseries},
+        peer_green/.style={draw, circle, minimum size=1.5cm, align=center, fill=green!10, font=\footnotesize\bfseries},
+        client/.style={draw, rectangle, minimum width=3cm, minimum height=1.5cm, align=center, fill=blue!10, rounded corners, font=\bfseries},
+        arrow/.style={->, >=Stealth, thick},
+        fail_arrow/.style={->, >=Stealth, thick, dashed, draw=red},
+        label_text/.style={font=\scriptsize\itshape, align=left}
+    ]
+        \node[peer_red] (peer1) at (-2.5, 3) {Peer 1\\(Failing)};
+        \node[peer_green] (peer2) at (2.5, 3) {Peer 2\\(Healthy)};
+        \node[draw, rectangle, fill=gray!20, minimum width=2cm, minimum height=1cm, align=center, rounded corners, font=\scriptsize\bfseries] (server) at (6, 3) {Master Server\\(Failsafe)};
+
+        \node[client] (client_routing) at (0, 0) {Client Buffer\\(Fixed Quality)};
+        
+        \draw[fail_arrow] (peer1.south) -- node[left, label_text, text=red] {Throughput Drop\\Detected} (client_routing.north west);
+        \draw[arrow, draw=green!60!black] (peer2.south) -- node[right, label_text, text=green!40!black] {Preemptive\\Source Switch} (client_routing.north east);
+        \draw[arrow, dotted, draw=gray] (server.south) |- node[above right, font=\scriptsize, pos=0.8] {Standby HTTP Fallback} (client_routing.east);
+        
+        \node[draw, rectangle, fill=yellow!20, font=\scriptsize\bfseries] at (0, -1.5) {Chunk N (Universal Hash)};
+
+    \end{tikzpicture}
+    \caption{Adaptive Routing data source switching.}
+    \label{fig:adaptive_routing_switch}
+\end{figure}
+
+\par However, this strict adherence to quality increases the risk of playback interruption. When a peer fails, the system must execute a rapid, high-stakes switch to a new source. If the routing switch takes too long, or if the replacement source also possesses insufficient bandwidth, the playback will stall and force a re-buffer. As Magharei et al. demonstrated in their comparative study of P2P streaming architectures, maintaining continuous playback under these strict constraints requires a mesh-pull mechanism; the client must maintain a dynamic pool of standby neighbors and employ an aggressive chunk scheduling algorithm to preemptively request missing segments before the active playback buffer drains completely \cite{live_p2p_approaches}. To mitigate this, the client must employ far more stringent buffer management, utilizing sophisticated predictive algorithms to detect failing peer performance and preemptively switch sources before the buffer drains completely. Additionally, this method places a heavier reliance on the central server to act as the ultimate failsafe. If multiple peers fail simultaneously, the server must possess the robustness to absorb the resulting influx of fallback traffic.
+
+\indent \par Ultimately, for a chunk-based peer-assisted architecture, the necessity of universal chunk de-duplication makes Adaptive Routing the only viable choice. The system must accept the burden of aggressive predictive buffer management to preserve the mathematical integrity of the distributed file segments.
+
+
+
+\section{Proposed Architecture and Thesis Objective}
+\indent \par The analysis of these five fundamental domains (latency mitigation, network connectivity, storage retention, data integrity, and flow control) reveals that no single isolated solution can achieve a robust peer-assisted streaming environment. Each architectural decision inherently constrains the others. For instance, the necessity of cryptographic chunk verification for P2P integrity explicitly prohibits Adaptive Bitrate streaming, while the requirement for secure cross-platform browser connectivity enforces WebRTC, which in turn necessitates a server-side prefix cache to mask its connection latency.
+
+\par Therefore, the objective of this thesis is to design, implement, and evaluate a cross-platform media streaming application that synthesizes these optimal trade-offs into a unified system. Built utilizing Flutter for the client-side application and Java Spring Boot for the backend orchestration, the proposed architecture will employ a hybrid latency mitigation strategy: utilizing server-side Prefix Caching to guarantee near-instant playback, while establishing a WebRTC mesh network in the background, with further optimization using Predictive Pre-Fetching to achieve the prefix caching without using the master server.
+
+\par To guarantee integrity across this distributed network, data will be structured using Chunk-Based Synchronization, enabling parallel swarming and conflict resolution. This data will be retained via intelligent Mobile Edge Caching to maximize network offloading and enable local music playback. Finally, playback stability will be governed by Adaptive Routing, preemptively switching peer sources to maintain a constant, high-fidelity bitrate without stalling the buffer.
+
+\par By systematically addressing these interconnected challenges, this paper aims to demonstrate that a decentralized, peer-assisted model can match the Quality of Experience (QoE) of traditional centralized streaming platforms while drastically reducing server-side egress costs and infrastructure reliance.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        component/.style={draw, rectangle, minimum width=3.5cm, minimum height=1.5cm, align=center, fill=blue!10, rounded corners, font=\footnotesize\bfseries},
+        server/.style={draw, rectangle, minimum width=4cm, minimum height=1.5cm, align=center, fill=gray!20, rounded corners, font=\footnotesize\bfseries},
+        arrow/.style={->, >=Stealth, thick},
+        biarrow/.style={<->, >=Stealth, thick},
+        label_text/.style={font=\scriptsize\itshape, align=center, fill=white, inner sep=4pt, rounded corners}
+    ]
+
+        \node[component, fill=purple!10] (client) at (0, 0) {Flutter Client\\(Buffer \& Adaptive Routing)};
+        \node[server] (backend) at (0, 4.5) {Spring Boot Backend\\(Signaling \& Prefix Cache)};
+        \node[component, fill=yellow!20] (storage) at (-4.5, -3.5) {Mobile Edge Storage\\(Chunk-Based Integrity)};
+        \node[component, fill=green!10] (swarm) at (4.5, -3.5) {WebRTC Swarm\\(Parallel Downloading)};
+
+
+        \draw[arrow] (backend.south) -- node[pos=0.5, right=0.2cm, label_text, align=left] {1. HTTP Prefix Stream} (client.north);
+        \draw[biarrow, dashed] (backend.south west) to[bend right=35] node[pos=0.5, left=0.2cm, label_text, align=right] {Signaling Path} (client.north west);
+
+        \draw[biarrow] (client.south) -- node[pos=0.5, label_text] {Local Read/Write Access} (storage.north east);
+        
+        \draw[biarrow, draw=green!60!black] (client.south) -- node[pos=0.5, label_text, text=green!40!black] {2. WebRTC P2P\\(Chunk Pulls)} (swarm.north west);
+
+    \end{tikzpicture}
+    \caption{High-level overview of the proposed architecture.}
+    \label{fig:proposed_architecture_overview_diagonal}
+\end{figure}
