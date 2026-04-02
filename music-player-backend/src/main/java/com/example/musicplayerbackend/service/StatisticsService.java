@@ -27,26 +27,29 @@ public class StatisticsService {
 
     @Transactional
     public void record(ChunkStatDto dto, Long userId) {
-        int total = (dto.getP2pChunks() == null ? 0 : dto.getP2pChunks())
-                + (dto.getServerChunks() == null ? 0 : dto.getServerChunks());
-        double pct = total > 0
-                ? (dto.getP2pChunks() == null ? 0 : dto.getP2pChunks()) * 100.0 / total
-                : 0.0;
+        int local = dto.getLocalChunks() == null ? 0 : dto.getLocalChunks();
+        int localCached = dto.getLocalCachedChunks() == null ? 0 : dto.getLocalCachedChunks();
+        int p2p = dto.getP2pChunks() == null ? 0 : dto.getP2pChunks();
+        int server = dto.getServerChunks() == null ? 0 : dto.getServerChunks();
+        int total = local + localCached + p2p + server;
+        double pct = total > 0 ? p2p * 100.0 / total : 0.0;
 
         ChunkStat stat = ChunkStat.builder()
                 .timestamp(Instant.now())
                 .userId(userId)
                 .songId(dto.getSongId())
                 .songName(dto.getSongName())
-                .p2pChunks(dto.getP2pChunks() == null ? 0 : dto.getP2pChunks())
-                .serverChunks(dto.getServerChunks() == null ? 0 : dto.getServerChunks())
+                .localChunks(local)
+                .localCachedChunks(localCached)
+                .p2pChunks(p2p)
+                .serverChunks(server)
                 .totalChunks(total)
                 .p2pPercentage(pct)
                 .build();
 
         chunkStatRepository.save(stat);
-        log.debug("[STATS] Recorded chunk stat: userId={}, song='{}', p2p={}%, total={}",
-                userId, dto.getSongName(), String.format("%.1f", pct), total);
+        log.debug("[STATS] Recorded chunk stat: userId={}, song='{}', local={}, cached={}, p2p={}%, total={}",
+                userId, dto.getSongName(), local, localCached, String.format("%.1f", pct), total);
     }
 
     private ChunkStatDto toDto(ChunkStat stat) {
@@ -58,6 +61,8 @@ public class StatisticsService {
         dto.setUserId(stat.getUserId());
         dto.setSongId(stat.getSongId());
         dto.setSongName(stat.getSongName());
+        dto.setLocalChunks(stat.getLocalChunks());
+        dto.setLocalCachedChunks(stat.getLocalCachedChunks());
         dto.setP2pChunks(stat.getP2pChunks());
         dto.setServerChunks(stat.getServerChunks());
         dto.setTotalChunks(stat.getTotalChunks());

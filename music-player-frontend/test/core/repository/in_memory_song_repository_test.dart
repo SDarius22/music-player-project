@@ -306,7 +306,9 @@ void main() {
     });
 
     test('clamps at end of list', () {
-      for (int i = 0; i < 5; i++) repo.saveSong(makeSong());
+      for (int i = 0; i < 5; i++) {
+        repo.saveSong(makeSong());
+      }
       final page = repo.getSongsPaged('', 'Title', true, 3, 10);
       expect(page.length, 2);
     });

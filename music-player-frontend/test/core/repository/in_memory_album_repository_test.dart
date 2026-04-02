@@ -82,19 +82,23 @@ void main() {
 
     // Note: ascending=false uses .reversed which doesn't mutate — actual sort
     // remains ascending due to the implementation bug. Test actual behavior:
-    test('ascending=false: actual order unchanged (implementation returns ascending)',
-        () {
-      repo.saveAlbum(makeAlbum(name: 'Alpha'));
-      repo.saveAlbum(makeAlbum(name: 'Zeta'));
-      final result = repo.getAlbums('', 'Name', false);
-      // The .reversed call in the impl doesn't mutate, so list stays ascending
-      expect(result.first.name, 'Alpha');
-    });
+    test(
+      'ascending=false: actual order unchanged (implementation returns ascending)',
+      () {
+        repo.saveAlbum(makeAlbum(name: 'Alpha'));
+        repo.saveAlbum(makeAlbum(name: 'Zeta'));
+        final result = repo.getAlbums('', 'Name', false);
+        // The .reversed call in the impl doesn't mutate, so list stays ascending
+        expect(result.first.name, 'Alpha');
+      },
+    );
   });
 
   group('getAlbumsPaged', () {
     test('returns correct page slice', () {
-      for (int i = 1; i <= 5; i++) repo.saveAlbum(makeAlbum(name: 'Album $i'));
+      for (int i = 1; i <= 5; i++) {
+        repo.saveAlbum(makeAlbum(name: 'Album $i'));
+      }
       expect(repo.getAlbumsPaged('', 'Name', true, 0, 2).length, 2);
     });
 
@@ -104,7 +108,9 @@ void main() {
     });
 
     test('clamps at end', () {
-      for (int i = 0; i < 3; i++) repo.saveAlbum(makeAlbum());
+      for (int i = 0; i < 3; i++) {
+        repo.saveAlbum(makeAlbum());
+      }
       expect(repo.getAlbumsPaged('', 'Name', true, 2, 10).length, 1);
     });
   });

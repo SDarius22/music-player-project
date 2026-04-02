@@ -26,6 +26,12 @@ public class ChunkStat {
     private String songName;
 
     @Column(nullable = false)
+    private Integer localChunks;
+
+    @Column(nullable = false)
+    private Integer localCachedChunks;
+
+    @Column(nullable = false)
     private Integer p2pChunks;
 
     @Column(nullable = false)

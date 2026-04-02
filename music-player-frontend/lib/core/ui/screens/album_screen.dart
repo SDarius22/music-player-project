@@ -91,107 +91,208 @@ class AlbumScreen extends EntityScreen {
           ),
         ),
         Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Hero(
-                        tag: album.name,
-                        child: Container(
-                          height: height * 0.5,
-                          width: height * 0.5,
-                          padding: EdgeInsets.only(bottom: height * 0.01),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              MediaQuery.of(context).size.height * 0.015,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+              if (isMobile) {
+                final imageSize = constraints.maxWidth * 0.45;
+                return Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * 0.05,
+                        vertical: height * 0.02,
+                      ),
+                      child: Column(
+                        children: [
+                          Hero(
+                            tag: album.name,
+                            child: Container(
+                              height: imageSize,
+                              width: imageSize,
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: ImageWidget(entity: album),
+                              ),
                             ),
-                            child: ImageWidget(entity: album),
                           ),
+                          Text(
+                            album.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style:
+                                Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            album.artist.target?.name ?? "Unknown Artist",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "${album.songs.length} Songs | ${Duration(seconds: album.durationInSeconds).pretty()}",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: GlassContainer(
+                        margin: EdgeInsets.only(
+                          left: width * 0.05,
+                          right: width * 0.05,
+                          bottom: height * 0.025,
+                        ),
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderColor: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        blur: 45.0,
+                        borderWidth: 0.0,
+                        elevation: 3.0,
+                        shadowColor: Colors.black.withValues(alpha: 0.20),
+                        child: CustomScrollView(
+                          slivers: [
+                            SliverPadding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: height * 0.01,
+                                horizontal: width * 0.01,
+                              ),
+                              sliver: ListComponent(
+                                items: album.songs,
+                                itemExtent: height * 0.1,
+                                isSelected: (entity) => false,
+                                onTap: (entity) async {
+                                  var audioProvider = Provider.of<AudioProvider>(
+                                    context,
+                                    listen: false,
+                                  );
+                                  await audioProvider.setQueueAndPlay(
+                                    album.songs,
+                                    entity as Song,
+                                  );
+                                },
+                                onLongPress: (entity) {},
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        album.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Hero(
+                            tag: album.name,
+                            child: Container(
+                              height: height * 0.5,
+                              width: height * 0.5,
+                              padding: EdgeInsets.only(bottom: height * 0.01),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  MediaQuery.of(context).size.height * 0.015,
+                                ),
+                                child: ImageWidget(entity: album),
+                              ),
+                            ),
+                          ),
+                          Text(
+                            album.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          SizedBox(height: height * 0.005),
+                          Text(
+                            album.artist.target?.name ?? "Unknown Artist",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          SizedBox(height: height * 0.005),
+                          Text(
+                            "${album.songs.length} Songs | ${Duration(seconds: album.durationInSeconds).pretty()}",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                       ),
-                      SizedBox(height: height * 0.005),
-                      Text(
-                        album.artist.target?.name ?? "Unknown Artist",
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                  Expanded(
+                    child: GlassContainer(
+                      margin: EdgeInsets.only(
+                        top: height * 0.025,
+                        bottom: height * 0.025,
+                        right: width * 0.05,
                       ),
-                      SizedBox(height: height * 0.005),
-                      Text(
-                        "${album.songs.length} Songs | ${Duration(seconds: album.durationInSeconds).pretty()}",
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      color: Colors.black.withValues(alpha: 0.4),
+                      borderColor: Colors.transparent,
+                      borderRadius: BorderRadius.circular(
+                        MediaQuery.of(context).size.height * 0.015,
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: GlassContainer(
-                  margin: EdgeInsets.only(
-                    top: height * 0.025,
-                    bottom: height * 0.025,
-                    right: width * 0.05,
-                  ),
-                  color: Colors.black.withValues(alpha: 0.4),
-                  borderColor: Colors.transparent,
-                  borderRadius: BorderRadius.circular(
-                    MediaQuery.of(context).size.height * 0.015,
-                  ),
-                  blur: 45.0,
-                  borderWidth: 0.0,
-                  elevation: 3.0,
-                  shadowColor: Colors.black.withValues(alpha: 0.20),
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverPadding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: height * 0.01,
-                          horizontal: width * 0.01,
-                        ),
-                        sliver: ListComponent(
-                          items: album.songs,
-                          itemExtent: height * 0.1,
-                          isSelected: (entity) {
-                            return false;
-                          },
-                          onTap: (entity) async {
-                            debugPrint("Tapped on ${entity.name}");
-                            var audioProvider = Provider.of<AudioProvider>(
-                              context,
-                              listen: false,
-                            );
-                            await audioProvider.setQueueAndPlay(
-                              album.songs,
-                              entity as Song,
-                            );
-                          },
-                          onLongPress: (entity) {
-                            debugPrint("Long pressed on ${entity.name}");
-                          },
-                        ),
+                      blur: 45.0,
+                      borderWidth: 0.0,
+                      elevation: 3.0,
+                      shadowColor: Colors.black.withValues(alpha: 0.20),
+                      child: CustomScrollView(
+                        slivers: [
+                          SliverPadding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: height * 0.01,
+                              horizontal: width * 0.01,
+                            ),
+                            sliver: ListComponent(
+                              items: album.songs,
+                              itemExtent: height * 0.1,
+                              isSelected: (entity) {
+                                return false;
+                              },
+                              onTap: (entity) async {
+                                debugPrint("Tapped on ${entity.name}");
+                                var audioProvider = Provider.of<AudioProvider>(
+                                  context,
+                                  listen: false,
+                                );
+                                await audioProvider.setQueueAndPlay(
+                                  album.songs,
+                                  entity as Song,
+                                );
+                              },
+                              onLongPress: (entity) {
+                                debugPrint("Long pressed on ${entity.name}");
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ],

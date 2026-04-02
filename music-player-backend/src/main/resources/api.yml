@@ -1458,6 +1458,10 @@ components:
           format: int64
         songName:
           type: string
+        localChunks:
+          type: integer
+        localCachedChunks:
+          type: integer
         p2pChunks:
           type: integer
         serverChunks:

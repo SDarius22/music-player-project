@@ -7,6 +7,7 @@ import 'package:music_player_frontend/core/dtos/playback_state_dto.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/p2p_chunked_source.dart';
@@ -29,6 +30,12 @@ class AppAudioService {
 
   ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
+
+  void Function(int songId, String songName)? _onWebSongChange;
+
+  void setWebSongChangeCallback(void Function(int songId, String songName) callback) {
+    _onWebSongChange = callback;
+  }
 
   bool _initialized = false;
   bool _isSwitchingSong = false;
@@ -343,6 +350,7 @@ class AppAudioService {
 
     if (isServerTrack) {
       if (UniversalPlatform.isWeb) {
+        _onWebSongChange?.call(song.serverId, song.name);
         return AudioSource.uri(
           Uri.parse('/music-player/p2p-stream/${song.serverId}'),
           tag: Map<String, dynamic>.from({
@@ -487,6 +495,16 @@ class AppAudioService {
     playlistService.updateMostPlayedPlaylist();
     playlistService.updateRecentlyPlayedPlaylist();
     _proactivelyCachePrefixes();
+
+    if (song.isLocal) {
+      ChunkStatsService.instance.report(
+        ChunkDeliveryStats(
+          songId: song.id,
+          songName: song.name,
+          localChunks: 1,
+        ),
+      );
+    }
   }
 
   void updateSliderInSeconds(int seconds) {

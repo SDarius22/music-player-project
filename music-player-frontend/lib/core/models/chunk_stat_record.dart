@@ -4,6 +4,8 @@ class ChunkStatRecord {
   final int? userId;
   final int? songId;
   final String? songName;
+  final int localChunks;
+  final int localCachedChunks;
   final int p2pChunks;
   final int serverChunks;
   final int totalChunks;
@@ -15,6 +17,8 @@ class ChunkStatRecord {
     this.userId,
     this.songId,
     this.songName,
+    this.localChunks = 0,
+    this.localCachedChunks = 0,
     required this.p2pChunks,
     required this.serverChunks,
     required this.totalChunks,
@@ -30,6 +34,8 @@ class ChunkStatRecord {
       userId: json['userId'] as int?,
       songId: json['songId'] as int?,
       songName: json['songName'] as String?,
+      localChunks: json['localChunks'] as int? ?? 0,
+      localCachedChunks: json['localCachedChunks'] as int? ?? 0,
       p2pChunks: json['p2pChunks'] as int? ?? 0,
       serverChunks: json['serverChunks'] as int? ?? 0,
       totalChunks: json['totalChunks'] as int? ?? 0,

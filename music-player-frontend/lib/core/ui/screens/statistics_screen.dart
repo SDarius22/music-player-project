@@ -202,6 +202,8 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalChunks = records.fold(0, (s, r) => s + r.totalChunks);
     final totalP2p = records.fold(0, (s, r) => s + r.p2pChunks);
+    final totalCached = records.fold(0, (s, r) => s + r.localCachedChunks);
+    final totalLocal = records.fold(0, (s, r) => s + r.localChunks);
     final avgP2p =
         records.isEmpty
             ? 0.0
@@ -217,7 +219,8 @@ class _SummaryCard extends StatelessWidget {
         ),
       ),
       padding: EdgeInsets.all(width * 0.02),
-      child: Row(
+      child: Wrap(
+        alignment: WrapAlignment.spaceAround,
         children: [
           _StatBadge(
             label: 'Avg P2P',
@@ -228,6 +231,16 @@ class _SummaryCard extends StatelessWidget {
             label: 'P2P Chunks',
             value: totalP2p.toString(),
             color: Colors.blueAccent,
+          ),
+          _StatBadge(
+            label: 'Cached Chunks',
+            value: totalCached.toString(),
+            color: Colors.amberAccent,
+          ),
+          _StatBadge(
+            label: 'Local Files',
+            value: totalLocal.toString(),
+            color: Colors.purpleAccent,
           ),
           _StatBadge(
             label: 'Total Chunks',
@@ -253,7 +266,8 @@ class _StatBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Column(
         children: [
           Text(
@@ -287,13 +301,10 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pct = record.p2pPercentage;
-    final barColor =
-        pct >= 70
-            ? Colors.greenAccent
-            : pct >= 40
-            ? Colors.orangeAccent
-            : Colors.redAccent;
+    final isLocalFile = record.localChunks > 0 &&
+        record.p2pChunks == 0 &&
+        record.serverChunks == 0 &&
+        record.localCachedChunks == 0;
 
     final ts = record.timestamp.toLocal();
     final dateStr =
@@ -327,36 +338,50 @@ class _StatRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(
-                '${pct.toStringAsFixed(1)}% P2P',
-                style: TextStyle(
-                  color: barColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+              if (isLocalFile)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'Local',
+                    style: TextStyle(
+                      color: Colors.purpleAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  '${record.p2pPercentage.toStringAsFixed(1)}% P2P',
+                  style: TextStyle(
+                    color: _p2pColor(record.p2pPercentage),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
             ],
           ),
-          SizedBox(height: width * 0.008),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: pct / 100,
-              backgroundColor: Colors.white12,
-              valueColor: AlwaysStoppedAnimation<Color>(barColor),
-              minHeight: 6,
-            ),
-          ),
+          if (!isLocalFile) ...[
+            SizedBox(height: width * 0.008),
+            _DeliveryBar(record: record, width: width),
+          ],
           SizedBox(height: width * 0.008),
           Row(
             children: [
-              Text(
-                '${record.p2pChunks} P2P · ${record.serverChunks} server · ${record.totalChunks} total',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white38,
+              Expanded(
+                child: Text(
+                  isLocalFile
+                      ? 'Played from local file'
+                      : _chunkBreakdown(record),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white38,
+                  ),
                 ),
               ),
-              const Spacer(),
               Text(
                 dateStr,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -366,6 +391,84 @@ class _StatRow extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Color _p2pColor(double pct) {
+    if (pct >= 70) return Colors.greenAccent;
+    if (pct >= 40) return Colors.orangeAccent;
+    return Colors.redAccent;
+  }
+
+  String _chunkBreakdown(ChunkStatRecord r) {
+    final parts = <String>[];
+    if (r.p2pChunks > 0) parts.add('${r.p2pChunks} P2P');
+    if (r.serverChunks > 0) parts.add('${r.serverChunks} server');
+    if (r.localCachedChunks > 0) parts.add('${r.localCachedChunks} cached');
+    if (r.localChunks > 0) parts.add('${r.localChunks} local');
+    parts.add('${r.totalChunks} total');
+    return parts.join(' · ');
+  }
+}
+
+class _DeliveryBar extends StatelessWidget {
+  final ChunkStatRecord record;
+  final double width;
+
+  const _DeliveryBar({required this.record, required this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = record.totalChunks;
+    if (total == 0) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: const LinearProgressIndicator(
+          value: 0,
+          backgroundColor: Colors.white12,
+          minHeight: 6,
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        height: 6,
+        child: Row(
+          children: [
+            if (record.p2pChunks > 0)
+              Flexible(
+                flex: record.p2pChunks,
+                child: Container(color: Colors.greenAccent),
+              ),
+            if (record.localCachedChunks > 0)
+              Flexible(
+                flex: record.localCachedChunks,
+                child: Container(color: Colors.amberAccent),
+              ),
+            if (record.localChunks > 0)
+              Flexible(
+                flex: record.localChunks,
+                child: Container(color: Colors.purpleAccent),
+              ),
+            if (record.serverChunks > 0)
+              Flexible(
+                flex: record.serverChunks,
+                child: Container(color: Colors.redAccent.withValues(alpha: 0.7)),
+              ),
+            // Fill remaining with background if needed
+            if (record.p2pChunks == 0 &&
+                record.localCachedChunks == 0 &&
+                record.localChunks == 0 &&
+                record.serverChunks == 0)
+              Flexible(
+                flex: 1,
+                child: Container(color: Colors.white12),
+              ),
+          ],
+        ),
       ),
     );
   }

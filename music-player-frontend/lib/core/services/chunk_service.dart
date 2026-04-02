@@ -8,6 +8,8 @@ import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_rep
 import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
 
+enum _ChunkSource { localCached, p2p, server }
+
 class ChunkService {
   final int songId;
   final ChunkCacheRepository cacheRepo;
@@ -22,7 +24,7 @@ class ChunkService {
   final Map<int, Completer<Uint8List>> _p2pCompleters = {};
   final Map<int, Uint8List> _hotRamCache = {};
 
-  final Map<int, bool> _deliveredBy = {};
+  final Map<int, _ChunkSource> _deliveredBy = {};
   String? _songName;
   void Function(ChunkDeliveryStats)? _onFullyReceived;
 
@@ -77,6 +79,7 @@ class ChunkService {
     final cachedData = await cacheRepo.readChunk(songId, index);
     if (cachedData != null) {
       _addToHotCache(index, cachedData);
+      _recordDelivery(index, _ChunkSource.localCached);
       return cachedData;
     }
 
@@ -118,7 +121,7 @@ class ChunkService {
 
   Future<Uint8List> _fetchChunkLogic(int index) async {
     Uint8List data;
-    bool isP2P = false;
+    _ChunkSource source = _ChunkSource.server;
 
     if (index < 8) {
       data = await _streamingClient.downloadChunkFallback(songId, index);
@@ -127,7 +130,7 @@ class ChunkService {
         data = await _requestFromPeer(
           index,
         ).timeout(const Duration(seconds: 1));
-        isP2P = true;
+        source = _ChunkSource.p2p;
         debugPrint('[P2P] song=$songId chunk=$index — served by peer');
       } catch (_) {
         _p2pCompleters.remove(index);
@@ -142,7 +145,7 @@ class ChunkService {
 
     if (_verifyIntegrity(index, data)) {
       _saveToCache(index, data);
-      _recordDelivery(index, isP2P);
+      _recordDelivery(index, source);
       return data;
     } else {
       if (index >= 8) {
@@ -152,7 +155,7 @@ class ChunkService {
         );
         if (_verifyIntegrity(index, serverData)) {
           _saveToCache(index, serverData);
-          _recordDelivery(index, false);
+          _recordDelivery(index, _ChunkSource.server);
           return serverData;
         }
       }
@@ -160,18 +163,23 @@ class ChunkService {
     }
   }
 
-  void _recordDelivery(int index, bool isP2P) {
+  void _recordDelivery(int index, _ChunkSource source) {
     if (_deliveredBy.containsKey(index)) return;
-    _deliveredBy[index] = isP2P;
+    _deliveredBy[index] = source;
 
     final total = manifest?.totalChunks ?? 0;
     if (total > 0 && _deliveredBy.length == total && _onFullyReceived != null) {
-      final p2pCount = _deliveredBy.values.where((v) => v).length;
-      final serverCount = _deliveredBy.values.where((v) => !v).length;
+      final localCachedCount =
+          _deliveredBy.values.where((v) => v == _ChunkSource.localCached).length;
+      final p2pCount =
+          _deliveredBy.values.where((v) => v == _ChunkSource.p2p).length;
+      final serverCount =
+          _deliveredBy.values.where((v) => v == _ChunkSource.server).length;
       _onFullyReceived!(
         ChunkDeliveryStats(
           songId: songId,
           songName: _songName ?? 'Unknown',
+          localCachedChunks: localCachedCount,
           p2pChunks: p2pCount,
           serverChunks: serverCount,
         ),
@@ -190,9 +198,13 @@ class ChunkService {
     _p2pCompleters.remove(chunkIndex)?.complete(data);
   }
 
-  /// Returns true if the chunk was served by a peer, false if by server,
+  /// Returns true if the chunk was served by a peer, false otherwise,
   /// or null if the chunk has not been fetched yet.
-  bool? wasServedByP2P(int chunkIndex) => _deliveredBy[chunkIndex];
+  bool? wasServedByP2P(int chunkIndex) {
+    final source = _deliveredBy[chunkIndex];
+    if (source == null) return null;
+    return source == _ChunkSource.p2p;
+  }
 
   bool _verifyIntegrity(int index, Uint8List data) {
     if (manifest == null || index >= manifest!.hashes.length) return false;

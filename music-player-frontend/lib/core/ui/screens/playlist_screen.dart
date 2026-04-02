@@ -223,6 +223,143 @@ class PlaylistScreen extends EntityScreen {
       );
     }
 
+    Widget buildSongList(double itemExtent) {
+      return ValueListenableBuilder(
+        valueListenable: editMode,
+        builder: (context, value, child) {
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            reverseDuration: const Duration(milliseconds: 500),
+            child: value == false
+                ? CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: height * 0.01,
+                          horizontal: width * 0.01,
+                        ),
+                        sliver: ListComponent(
+                          items: songs,
+                          itemExtent: itemExtent,
+                          isSelected: (entity) => false,
+                          onTap: (entity) async {
+                            debugPrint("Tapped on ${entity.name}");
+                            final audioProvider = Provider.of<AudioProvider>(
+                              context,
+                              listen: false,
+                            );
+                            await audioProvider.setQueueAndPlay(
+                              songs,
+                              entity as Song,
+                            );
+                          },
+                          onLongPress: (entity) {
+                            debugPrint("Long pressed on ${entity.name}");
+                          },
+                        ),
+                      ),
+                    ],
+                  )
+                : ValueListenableBuilder(
+                    valueListenable: orderChanged,
+                    builder: (context, value2, child) {
+                      return ReorderableListView.builder(
+                        key: const ValueKey("Edit List"),
+                        padding: EdgeInsets.only(right: width * 0.01),
+                        itemBuilder: (context, int index) {
+                          final Song song = songs[index];
+                          return AnimatedContainer(
+                            key: Key('$index'),
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOut,
+                            height: itemExtent,
+                            child: Container(
+                              padding: EdgeInsets.only(
+                                left: width * 0.0075,
+                                right: width * 0.025,
+                                top: height * 0.0075,
+                                bottom: height * 0.0075,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                  width * 0.01,
+                                ),
+                                color: const Color(0xFF0E0E0E),
+                              ),
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      width * 0.01,
+                                    ),
+                                    child: ImageWidget(
+                                      entity: song,
+                                      hoveredChild: IconButton(
+                                        onPressed: () {
+                                          orderChanged.value =
+                                              !orderChanged.value;
+                                        },
+                                        icon: Icon(
+                                          FluentIcons.trash,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: width * 0.01),
+                                  Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        song.name.toString().length > 60
+                                            ? "${song.name.toString().substring(0, 60)}..."
+                                            : song.name.toString(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium!
+                                            .copyWith(color: Colors.white),
+                                      ),
+                                      SizedBox(height: height * 0.001),
+                                      Text(
+                                        song.artist.toString().length > 60
+                                            ? "${song.artist.toString().substring(0, 60)}..."
+                                            : song.artist.toString(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall!
+                                            .copyWith(color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    song.durationInSeconds == 0
+                                        ? "??:??"
+                                        : "${song.durationInSeconds ~/ 60}:${(song.durationInSeconds % 60).toString().padLeft(2, '0')}",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium!
+                                        .copyWith(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        itemCount: songs.length,
+                        onReorder: (int oldIndex, int newIndex) {},
+                      );
+                    },
+                  ),
+          );
+        },
+      );
+    }
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -268,279 +405,233 @@ class PlaylistScreen extends EntityScreen {
           ),
         ),
         Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Hero(
-                        tag: playlist.name,
-                        child: ValueListenableBuilder(
-                          valueListenable: editMode,
-                          builder: (context, value, child) {
-                            return Container(
-                              height: height * 0.5,
-                              width: height * 0.5,
-                              padding: EdgeInsets.only(bottom: height * 0.01),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(
-                                  width * 0.01,
-                                ),
-                                child: ImageWidget(entity: playlist),
-                              ),
-                            );
-                          },
-                        ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+
+              if (isMobile) {
+                final imageSize = constraints.maxWidth * 0.45;
+                return Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * 0.05,
+                        vertical: height * 0.02,
                       ),
-                      ValueListenableBuilder(
-                        valueListenable: editMode,
-                        builder: (context, value, child) {
-                          return AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 500),
-                            child:
-                                value == false
+                      child: Column(
+                        children: [
+                          Hero(
+                            tag: playlist.name,
+                            child: ValueListenableBuilder(
+                              valueListenable: editMode,
+                              builder: (context, value, child) {
+                                return Container(
+                                  height: imageSize,
+                                  width: imageSize,
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: ImageWidget(entity: playlist),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          ValueListenableBuilder(
+                            valueListenable: editMode,
+                            builder: (context, value, child) {
+                              return AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 500),
+                                child: value == false
                                     ? Text(
-                                      playlist.name,
-                                      key: const ValueKey("Playlist Name"),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium!.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                    : SizedBox(
-                                      key: const ValueKey("Playlist Name Edit"),
-                                      width: width * 0.2,
-                                      child: TextFormField(
-                                        initialValue: playlist.name,
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.only(
-                                            top: height * 0.008,
-                                            bottom: height * 0.008,
-                                            left: width * 0.01,
-                                            right: width * 0.01,
-                                          ),
-                                          hintText: "Playlist Name",
-                                          hintStyle: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium!.copyWith(
-                                            color: Colors.grey.shade600,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              width * 0.005,
-                                            ),
-                                          ),
-                                        ),
+                                        playlist.name,
+                                        key: const ValueKey("Playlist Name"),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium!
-                                            .copyWith(color: Colors.white),
-                                        onChanged: (value) {
-                                          playlist.name = value;
-                                        },
-                                      ),
-                                    ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: GlassContainer(
-                  margin: EdgeInsets.only(
-                    top: height * 0.025,
-                    bottom: height * 0.025,
-                    right: width * 0.05,
-                  ),
-                  color: Colors.black.withValues(alpha: 0.4),
-                  borderColor: Colors.transparent,
-                  borderRadius: BorderRadius.circular(
-                    MediaQuery.of(context).size.height * 0.015,
-                  ),
-                  blur: 45.0,
-                  borderWidth: 0.0,
-                  elevation: 3.0,
-                  shadowColor: Colors.black.withValues(alpha: 0.20),
-                  child: ValueListenableBuilder(
-                    valueListenable: editMode,
-                    builder: (context, value, child) {
-                      return AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 500),
-                        reverseDuration: const Duration(milliseconds: 500),
-                        child:
-                            value == false
-                                ? CustomScrollView(
-                                  slivers: [
-                                    SliverPadding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: height * 0.01,
-                                        horizontal: width * 0.01,
-                                      ),
-                                      sliver: ListComponent(
-                                        items: songs,
-                                        itemExtent: height * 0.125,
-                                        isSelected: (entity) => false,
-                                        onTap: (entity) async {
-                                          debugPrint(
-                                            "Tapped on ${entity.name}",
-                                          );
-                                          final audioProvider =
-                                              Provider.of<AudioProvider>(
-                                                context,
-                                                listen: false,
-                                              );
-                                          await audioProvider.setQueueAndPlay(
-                                            songs,
-                                            entity as Song,
-                                          );
-                                        },
-                                        onLongPress: (entity) {
-                                          debugPrint(
-                                            "Long pressed on ${entity.name}",
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                )
-                                : ValueListenableBuilder(
-                                  valueListenable: orderChanged,
-                                  builder: (context, value2, child) {
-                                    return ReorderableListView.builder(
-                                      key: const ValueKey("Edit List"),
-                                      padding: EdgeInsets.only(
-                                        right: width * 0.01,
-                                      ),
-                                      itemBuilder: (context, int index) {
-                                        final Song song = songs[index];
-                                        return AnimatedContainer(
-                                          key: Key('$index'),
-                                          duration: const Duration(
-                                            milliseconds: 500,
-                                          ),
-                                          curve: Curves.easeInOut,
-                                          height: height * 0.125,
-                                          child: Container(
-                                            padding: EdgeInsets.only(
-                                              left: width * 0.0075,
-                                              right: width * 0.025,
-                                              top: height * 0.0075,
-                                              bottom: height * 0.0075,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium!.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : SizedBox(
+                                        key: const ValueKey(
+                                          "Playlist Name Edit",
+                                        ),
+                                        width: constraints.maxWidth * 0.7,
+                                        child: TextFormField(
+                                          initialValue: playlist.name,
+                                          decoration: InputDecoration(
+                                            isDense: true,
+                                            contentPadding: EdgeInsets.symmetric(
+                                              vertical: height * 0.008,
+                                              horizontal: width * 0.03,
                                             ),
-                                            decoration: BoxDecoration(
+                                            hintText: "Playlist Name",
+                                            hintStyle: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium!.copyWith(
+                                              color: Colors.grey.shade600,
+                                            ),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium!
+                                              .copyWith(color: Colors.white),
+                                          onChanged: (value) {
+                                            playlist.name = value;
+                                          },
+                                        ),
+                                      ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: GlassContainer(
+                        margin: EdgeInsets.only(
+                          left: width * 0.05,
+                          right: width * 0.05,
+                          bottom: height * 0.025,
+                        ),
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderColor: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        blur: 45.0,
+                        borderWidth: 0.0,
+                        elevation: 3.0,
+                        shadowColor: Colors.black.withValues(alpha: 0.20),
+                        child: buildSongList(height * 0.125),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Hero(
+                            tag: playlist.name,
+                            child: ValueListenableBuilder(
+                              valueListenable: editMode,
+                              builder: (context, value, child) {
+                                return Container(
+                                  height: height * 0.5,
+                                  width: height * 0.5,
+                                  padding:
+                                      EdgeInsets.only(bottom: height * 0.01),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      width * 0.01,
+                                    ),
+                                    child: ImageWidget(entity: playlist),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          ValueListenableBuilder(
+                            valueListenable: editMode,
+                            builder: (context, value, child) {
+                              return AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 500),
+                                child: value == false
+                                    ? Text(
+                                        playlist.name,
+                                        key: const ValueKey("Playlist Name"),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium!.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : SizedBox(
+                                        key: const ValueKey(
+                                          "Playlist Name Edit",
+                                        ),
+                                        width: width * 0.2,
+                                        child: TextFormField(
+                                          initialValue: playlist.name,
+                                          decoration: InputDecoration(
+                                            isDense: true,
+                                            contentPadding: EdgeInsets.only(
+                                              top: height * 0.008,
+                                              bottom: height * 0.008,
+                                              left: width * 0.01,
+                                              right: width * 0.01,
+                                            ),
+                                            hintText: "Playlist Name",
+                                            hintStyle: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium!.copyWith(
+                                              color: Colors.grey.shade600,
+                                            ),
+                                            border: OutlineInputBorder(
                                               borderRadius:
                                                   BorderRadius.circular(
-                                                    width * 0.01,
+                                                    width * 0.005,
                                                   ),
-                                              color: const Color(0xFF0E0E0E),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        width * 0.01,
-                                                      ),
-                                                  child: ImageWidget(
-                                                    entity: song,
-                                                    hoveredChild: IconButton(
-                                                      onPressed: () {
-                                                        orderChanged.value =
-                                                            !orderChanged.value;
-                                                      },
-                                                      icon: Icon(
-                                                        FluentIcons.trash,
-                                                        color: Colors.white,
-                                                        size: 20,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(width: width * 0.01),
-                                                Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      song.name
-                                                                  .toString()
-                                                                  .length >
-                                                              60
-                                                          ? "${song.name.toString().substring(0, 60)}..."
-                                                          : song.name
-                                                              .toString(),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium!
-                                                          .copyWith(
-                                                            color: Colors.white,
-                                                          ),
-                                                    ),
-                                                    SizedBox(
-                                                      height: height * 0.001,
-                                                    ),
-                                                    Text(
-                                                      song.artist
-                                                                  .toString()
-                                                                  .length >
-                                                              60
-                                                          ? "${song.artist.toString().substring(0, 60)}..."
-                                                          : song.artist
-                                                              .toString(),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall!
-                                                          .copyWith(
-                                                            color: Colors.white,
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const Spacer(),
-                                                Text(
-                                                  song.durationInSeconds == 0
-                                                      ? "??:??"
-                                                      : "${song.durationInSeconds ~/ 60}:${(song.durationInSeconds % 60).toString().padLeft(2, '0')}",
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium!
-                                                      .copyWith(
-                                                        color: Colors.white,
-                                                      ),
-                                                ),
-                                              ],
                                             ),
                                           ),
-                                        );
-                                      },
-                                      itemCount: songs.length,
-                                      onReorder:
-                                          (int oldIndex, int newIndex) {},
-                                    );
-                                  },
-                                ),
-                      );
-                    },
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium!
+                                              .copyWith(color: Colors.white),
+                                          onChanged: (value) {
+                                            playlist.name = value;
+                                          },
+                                        ),
+                                      ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              SizedBox(width: width * 0.025),
-            ],
+                  Expanded(
+                    child: GlassContainer(
+                      margin: EdgeInsets.only(
+                        top: height * 0.025,
+                        bottom: height * 0.025,
+                        right: width * 0.05,
+                      ),
+                      color: Colors.black.withValues(alpha: 0.4),
+                      borderColor: Colors.transparent,
+                      borderRadius: BorderRadius.circular(
+                        MediaQuery.of(context).size.height * 0.015,
+                      ),
+                      blur: 45.0,
+                      borderWidth: 0.0,
+                      elevation: 3.0,
+                      shadowColor: Colors.black.withValues(alpha: 0.20),
+                      child: buildSongList(height * 0.125),
+                    ),
+                  ),
+                  SizedBox(width: width * 0.025),
+                ],
+              );
+            },
           ),
         ),
       ],

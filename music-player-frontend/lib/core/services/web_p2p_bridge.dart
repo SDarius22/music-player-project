@@ -10,10 +10,16 @@ import 'package:web/web.dart' as web;
 class WebP2PBridge {
   final ChunkService Function(int) chunkManagerFactory;
   final Map<int, ChunkService> _managers = {};
+  final Map<int, String> _songNames = {};
   int? _currentSongId;
 
   WebP2PBridge(this.chunkManagerFactory) {
     _listenToServiceWorker();
+  }
+
+  void notifySong(int songId, String songName) {
+    _songNames[songId] = songName;
+    _managers[songId]?.configureSongInfo(songName, ChunkStatsService.instance.report);
   }
 
   void _listenToServiceWorker() {
@@ -49,6 +55,12 @@ class WebP2PBridge {
     if (!_managers.containsKey(songId)) {
       _managers[songId] = chunkManagerFactory(songId);
       await _managers[songId]!.loadManifest();
+      if (_songNames.containsKey(songId)) {
+        _managers[songId]!.configureSongInfo(
+          _songNames[songId]!,
+          ChunkStatsService.instance.report,
+        );
+      }
     }
     if (_currentSongId != songId) return;
 
@@ -110,7 +122,7 @@ class WebP2PBridge {
     final int songId = (data['songId'] as num).toInt();
     final int p2pRanges = (data['p2pRanges'] as num).toInt();
     final int serverRanges = (data['serverRanges'] as num).toInt();
-    final String songName = data['songName'] as String? ?? 'Unknown';
+    final String songName = data['songName'] as String? ?? _songNames[songId] ?? 'Unknown';
 
     ChunkStatsService.instance.report(
       ChunkDeliveryStats(

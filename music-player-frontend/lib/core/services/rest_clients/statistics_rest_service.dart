@@ -33,6 +33,8 @@ class StatisticsRestService extends AbstractRestService {
       final response = await post('/statistics', {
         'songId': stats.songId,
         'songName': stats.songName,
+        'localChunks': stats.localChunks,
+        'localCachedChunks': stats.localCachedChunks,
         'p2pChunks': stats.p2pChunks,
         'serverChunks': stats.serverChunks,
       });

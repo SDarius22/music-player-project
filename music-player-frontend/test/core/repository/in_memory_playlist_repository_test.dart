@@ -111,8 +111,7 @@ void main() {
     test('indestructible playlists come before normal ones', () {
       repo.savePlaylist(makePlaylist(name: 'Normal B'));
       repo.savePlaylist(makePlaylist(name: 'Normal A'));
-      repo.savePlaylist(
-          makePlaylist(name: 'Queue', indestructible: true));
+      repo.savePlaylist(makePlaylist(name: 'Queue', indestructible: true));
 
       final result = repo.getAllPlaylists();
 
@@ -176,7 +175,9 @@ void main() {
     });
 
     test('clamps at end', () {
-      for (int i = 0; i < 3; i++) repo.savePlaylist(makePlaylist());
+      for (int i = 0; i < 3; i++) {
+        repo.savePlaylist(makePlaylist());
+      }
       expect(repo.getPlaylistsPaged('', 'Name', true, 2, 10).length, 1);
     });
   });

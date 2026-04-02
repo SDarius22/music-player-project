@@ -103,7 +103,9 @@ void main() {
     });
 
     test('clamps at end', () {
-      for (int i = 0; i < 3; i++) repo.saveArtist(makeArtist());
+      for (int i = 0; i < 3; i++) {
+        repo.saveArtist(makeArtist());
+      }
       expect(repo.getArtistsPaged('', 'Name', true, 2, 10).length, 1);
     });
   });
