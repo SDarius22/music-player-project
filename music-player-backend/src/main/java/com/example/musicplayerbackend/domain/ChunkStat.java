@@ -25,13 +25,11 @@ public class ChunkStat {
     private Long songId;
     private String songName;
 
-    @Builder.Default
     @Column(nullable = false)
-    private Integer localChunks = 0;
+    private Integer localChunks;
 
-    @Builder.Default
     @Column(nullable = false)
-    private Integer localCachedChunks = 0;
+    private Integer localCachedChunks;
 
     @Column(nullable = false)
     private Integer p2pChunks;

@@ -29,6 +29,8 @@ class ChunkStatRepositoryTest extends BaseRepositoryTest {
         double percentage = total > 0 ? (double) p2p / total * 100.0 : 0.0;
         return ChunkStat.builder()
                 .timestamp(Instant.now())
+                .localChunks(0)
+                .localCachedChunks(0)
                 .p2pChunks(p2p)
                 .serverChunks(server)
                 .totalChunks(total)
@@ -67,6 +69,8 @@ class ChunkStatRepositoryTest extends BaseRepositoryTest {
                 .userId(user.getId())
                 .songId(100L)
                 .songName("Bohemian Rhapsody")
+                .localChunks(0)
+                .localCachedChunks(0)
                 .p2pChunks(3)
                 .serverChunks(7)
                 .totalChunks(10)

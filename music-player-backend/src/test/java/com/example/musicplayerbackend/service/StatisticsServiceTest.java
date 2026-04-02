@@ -37,6 +37,7 @@ class StatisticsServiceTest {
     void shouldReturnAllStatsAsDtos() {
         ChunkStat stat = ChunkStat.builder()
                 .id(1L).userId(10L).songId(20L).songName("Test Song")
+                .localChunks(0).localCachedChunks(0)
                 .p2pChunks(8).serverChunks(2).totalChunks(10)
                 .p2pPercentage(80.0).timestamp(Instant.now())
                 .build();
@@ -61,6 +62,7 @@ class StatisticsServiceTest {
     void shouldMapNullTimestampToNull() {
         ChunkStat stat = ChunkStat.builder()
                 .id(2L).userId(1L).songId(1L).songName("No Time")
+                .localChunks(0).localCachedChunks(0)
                 .p2pChunks(0).serverChunks(0).totalChunks(0)
                 .p2pPercentage(0.0).timestamp(null) // null timestamp
                 .build();
