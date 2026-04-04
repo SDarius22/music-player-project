@@ -29,7 +29,7 @@ const _downloads = [
     icon: Icons.android,
     color: Color(0xFF3DDC84),
     url:
-        'https://www.bt-app.com/music-player/downloads/music-player-android/app-release.apk',
+        'https://music.bt-app.com/downloads/music-player-android/app-release.apk',
     filename: 'music-player.apk',
   ),
   _PlatformDownload(
@@ -38,7 +38,7 @@ const _downloads = [
     icon: Icons.terminal,
     color: Color(0xFFF7941D),
     url:
-        'https://www.bt-app.com/music-player/downloads/music-player-linux/music-player-linux.tar.gz',
+        'https://music.bt-app.com/downloads/music-player-linux/music-player-linux.tar.gz',
     filename: 'music-player.tar.gz',
   ),
   _PlatformDownload(
@@ -47,7 +47,7 @@ const _downloads = [
     icon: Icons.laptop_windows,
     color: Color(0xFF0078D7),
     url:
-        'https://www.bt-app.com/music-player/downloads/music-player-windows/music-player-windows.zip',
+        'https://music.bt-app.com/downloads/music-player-windows/music-player-windows.zip',
     filename: 'music-player.zip',
   ),
   _PlatformDownload(
@@ -56,7 +56,7 @@ const _downloads = [
     icon: Icons.laptop_mac,
     color: Color(0xFFAAAAAA),
     url:
-        'https://www.bt-app.com/music-player/downloads/music-player-macos/music-player-macos.zip',
+        'https://music.bt-app.com/downloads/music-player-macos/music-player-macos.zip',
     filename: 'music-player.zip',
   ),
   _PlatformDownload(
