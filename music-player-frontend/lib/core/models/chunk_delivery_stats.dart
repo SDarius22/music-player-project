@@ -1,5 +1,5 @@
 class ChunkDeliveryStats {
-  final int songId;
+  final String fileHash;
   final String songName;
   final int localChunks;
   final int localCachedChunks;
@@ -7,7 +7,7 @@ class ChunkDeliveryStats {
   final int serverChunks;
 
   const ChunkDeliveryStats({
-    required this.songId,
+    required this.fileHash,
     required this.songName,
     this.localChunks = 0,
     this.localCachedChunks = 0,

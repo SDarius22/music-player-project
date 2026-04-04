@@ -62,11 +62,11 @@ class StreamingServiceTest {
         Song song = streamableSong(1L);
         Chunk chunk = chunkWithFile("data".getBytes());
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        ChunkManifestDto manifest = service.getSongManifest(1L, 99L);
+        ChunkManifestDto manifest = service.getSongManifest("hash-1", 99L);
 
-        assertEquals(1L, manifest.getSongId());
+        assertEquals("hash-1", manifest.getFileHash());
         assertEquals(1, manifest.getTotalChunks());
         assertEquals(65536, manifest.getChunkSize());
         assertEquals(List.of("h"), manifest.getHashes());
@@ -76,10 +76,10 @@ class StreamingServiceTest {
     void shouldThrow403WhenManifestPrivateSongOwnedByOther() {
         Song song = streamableSong(1L);
         song.setOwnerId(5L); // owned by user 5
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getSongManifest(1L, 99L)); // user 99 requests
+                () -> service.getSongManifest("hash-1", 99L)); // user 99 requests
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -89,9 +89,9 @@ class StreamingServiceTest {
         song.setOwnerId(5L);
         Chunk chunk = chunkWithFile("data".getBytes());
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        ChunkManifestDto manifest = service.getSongManifest(1L, 5L);
+        ChunkManifestDto manifest = service.getSongManifest("hash-1", 5L);
 
         assertNotNull(manifest);
     }
@@ -99,9 +99,9 @@ class StreamingServiceTest {
     @Test
     void shouldReturnEmptyManifestWhenNoChunks() {
         Song song = streamableSong(2L);
-        when(songRepository.findById(2L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-2")).thenReturn(Optional.of(song));
 
-        ChunkManifestDto manifest = service.getSongManifest(2L, 99L);
+        ChunkManifestDto manifest = service.getSongManifest("hash-2", 99L);
 
         assertEquals(0, manifest.getTotalChunks());
         assertEquals(0L, manifest.getTotalBytes());
@@ -120,9 +120,9 @@ class StreamingServiceTest {
         }
         song.getChunks().add(songChunk(song, c1, 0));
         song.getChunks().add(songChunk(song, c2, 1));
-        when(songRepository.findById(3L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-3")).thenReturn(Optional.of(song));
 
-        ChunkManifestDto manifest = service.getSongManifest(3L, 99L);
+        ChunkManifestDto manifest = service.getSongManifest("hash-3", 99L);
 
         assertEquals(2, manifest.getTotalChunks());
         assertEquals((long) c1.getSize() + 500L, manifest.getTotalBytes());
@@ -130,8 +130,8 @@ class StreamingServiceTest {
 
     @Test
     void shouldThrow404WhenManifestSongNotFound() {
-        when(songRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResponseStatusException.class, () -> service.getSongManifest(1L, 1L));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> service.getSongManifest("hash-1", 1L));
     }
 
     @Test
@@ -140,9 +140,9 @@ class StreamingServiceTest {
         Song song = streamableSong(1L);
         Chunk chunk = chunkWithFile(data);
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        Resource resource = service.getSongChunk(1L, 0, 99L);
+        Resource resource = service.getSongChunk("hash-1", 0, 99L);
 
         assertNotNull(resource);
         assertTrue(resource.exists());
@@ -153,10 +153,10 @@ class StreamingServiceTest {
         Song song = streamableSong(1L);
         Chunk chunk = chunkWithFile("x".getBytes());
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getSongChunk(1L, 5, 99L));
+                () -> service.getSongChunk("hash-1", 5, 99L));
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
 
@@ -165,10 +165,10 @@ class StreamingServiceTest {
         Song song = streamableSong(1L);
         Chunk chunk = chunkWithFile("x".getBytes());
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getSongChunk(1L, -1, 99L));
+                () -> service.getSongChunk("hash-1", -1, 99L));
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
 
@@ -178,10 +178,10 @@ class StreamingServiceTest {
         Chunk chunk = Chunk.builder().id(1L).contentHash("h").size(10)
                 .storagePath("/nonexistent/path/chunk").build();
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getSongChunk(1L, 0, 99L));
+                () -> service.getSongChunk("hash-1", 0, 99L));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
     }
 
@@ -189,17 +189,17 @@ class StreamingServiceTest {
     void shouldThrow403WhenChunkAccessIsForbidden() {
         Song song = streamableSong(1L);
         song.setOwnerId(5L);
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        assertThrows(ResponseStatusException.class, () -> service.getSongChunk(1L, 0, 99L));
+        assertThrows(ResponseStatusException.class, () -> service.getSongChunk("hash-1", 0, 99L));
     }
 
     @Test
     void shouldReturnEmptyPrefixResourceWhenNoChunks() {
         Song song = streamableSong(1L);
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        Resource resource = service.getSongPrefix(1L, 100, 99L);
+        Resource resource = service.getSongPrefix("hash-1", 100, 99L);
 
         assertNotNull(resource);
     }
@@ -210,9 +210,9 @@ class StreamingServiceTest {
         byte[] data = new byte[1000];
         Chunk chunk = chunkWithFile(data);
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        Resource resource = service.getSongPrefix(1L, 500, 99L);
+        Resource resource = service.getSongPrefix("hash-1", 500, 99L);
 
         assertNotNull(resource);
     }
@@ -221,9 +221,9 @@ class StreamingServiceTest {
     void shouldThrow403WhenPrefixAccessIsForbidden() {
         Song song = streamableSong(1L);
         song.setOwnerId(5L);
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        assertThrows(ResponseStatusException.class, () -> service.getSongPrefix(1L, 100, 99L));
+        assertThrows(ResponseStatusException.class, () -> service.getSongPrefix("hash-1", 100, 99L));
     }
 
     @Test
@@ -232,10 +232,10 @@ class StreamingServiceTest {
         byte[] data = new byte[100];
         Chunk chunk = chunkWithFile(data);
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
         // 0 → falls to default (512000), data (100) <= 512000 → plain ByteArrayResource
-        Resource resource = service.getSongPrefix(1L, 0, 99L);
+        Resource resource = service.getSongPrefix("hash-1", 0, 99L);
 
         assertNotNull(resource);
     }
@@ -246,10 +246,10 @@ class StreamingServiceTest {
         byte[] data = new byte[100];
         Chunk chunk = chunkWithFile(data);
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
         // negative → falls to default (512000), data (100) <= 512000 → plain ByteArrayResource
-        Resource resource = service.getSongPrefix(1L, -1, 99L);
+        Resource resource = service.getSongPrefix("hash-1", -1, 99L);
 
         assertNotNull(resource);
     }
@@ -261,9 +261,9 @@ class StreamingServiceTest {
         byte[] data = new byte[100];
         Chunk chunk = chunkWithFile(data);
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        Resource resource = service.getSongPrefix(1L, 1000, 99L);
+        Resource resource = service.getSongPrefix("hash-1", 1000, 99L);
 
         assertNotNull(resource);
         assertNull(resource.getFilename()); // plain ByteArrayResource has no filename
@@ -276,9 +276,9 @@ class StreamingServiceTest {
         byte[] data = new byte[1000];
         Chunk chunk = chunkWithFile(data);
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        Resource resource = service.getSongPrefix(1L, 100, 99L);
+        Resource resource = service.getSongPrefix("hash-1", 100, 99L);
 
         assertEquals("prefix.mp3", resource.getFilename());
     }
@@ -289,9 +289,9 @@ class StreamingServiceTest {
         byte[] data = new byte[512];
         Chunk chunk = chunkWithFile(data);
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        Resource resource = service.getSongPrefix(1L, null, 99L);
+        Resource resource = service.getSongPrefix("hash-1", null, 99L);
 
         assertNotNull(resource);
     }
@@ -302,10 +302,10 @@ class StreamingServiceTest {
         Chunk chunk = Chunk.builder().id(1L).contentHash("h").size(10)
                 .storagePath("/nonexistent/path/missing-chunk").build();
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getFullStream(1L, 99L));
+                () -> service.getFullStream("hash-1", 99L));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
     }
 
@@ -313,15 +313,15 @@ class StreamingServiceTest {
     void shouldThrow403WhenFullStreamAccessIsForbidden() {
         Song song = streamableSong(1L);
         song.setOwnerId(5L);
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        assertThrows(ResponseStatusException.class, () -> service.getFullStream(1L, 99L));
+        assertThrows(ResponseStatusException.class, () -> service.getFullStream("hash-1", 99L));
     }
 
     @Test
     void shouldThrow404WhenFullStreamSongNotFound() {
-        when(songRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResponseStatusException.class, () -> service.getFullStream(1L, 1L));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> service.getFullStream("hash-1", 1L));
     }
 
     @Test
@@ -329,9 +329,9 @@ class StreamingServiceTest {
         Song song = streamableSong(1L);
         Chunk chunk = chunkWithFile("audio".getBytes());
         song.getChunks().add(songChunk(song, chunk, 0));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        Resource resource = service.getFullStream(1L, 99L);
+        Resource resource = service.getFullStream("hash-1", 99L);
 
         assertNotNull(resource);
     }
@@ -343,9 +343,9 @@ class StreamingServiceTest {
         Chunk c2 = chunkWithFile("part2".getBytes());
         song.getChunks().add(songChunk(song, c1, 0));
         song.getChunks().add(songChunk(song, c2, 1));
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        Resource resource = service.getFullStream(1L, 99L);
+        Resource resource = service.getFullStream("hash-1", 99L);
 
         byte[] bytes = resource.getInputStream().readAllBytes();
         assertArrayEquals("part1part2".getBytes(), bytes);

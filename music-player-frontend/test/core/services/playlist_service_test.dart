@@ -40,10 +40,10 @@ void main() {
     return p;
   }
 
-  Song makeSong({int id = 1, int serverId = 1}) {
+  Song makeSong({int id = 1, String fileHash = 'hash1'}) {
     final s = Song();
     s.id = id;
-    s.serverId = serverId;
+    s.fileHash = fileHash;
     s.name = 'Song $id';
     return s;
   }
@@ -280,7 +280,7 @@ void main() {
 
   group('addPlaylist', () {
     test('creates playlist locally and stores returned server ID', () async {
-      final song = makeSong(id: 1, serverId: 10);
+      final song = makeSong(id: 1, fileHash: 'hash10');
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
         return inv.positionalArguments[0] as Playlist;
       });
@@ -292,7 +292,9 @@ void main() {
 
       expect(result.name, 'My List');
       expect(result.serverId, 99);
-      verify(mockRestService.createPlaylist('My List', [10], null)).called(1);
+      verify(
+        mockRestService.createPlaylist('My List', ['hash10'], null),
+      ).called(1);
     });
 
     test('gracefully handles REST failure', () async {
@@ -311,10 +313,12 @@ void main() {
     });
 
     test(
-      'passes empty song ID list to REST when songs have no server IDs',
+      'passes empty file hash list to REST when songs have no server hashes',
       () async {
-        final song = makeSong(id: 1, serverId: -1);
-        song.serverId = -1;
+        final song = makeSong(
+          id: 1,
+          fileHash: '',
+        ); // empty fileHash → filtered out
         when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
           return inv.positionalArguments[0] as Playlist;
         });
@@ -328,7 +332,7 @@ void main() {
             verify(
               mockRestService.createPlaylist(any, captureAny, any),
             ).captured;
-        expect(captured.first as List<int>, isEmpty);
+        expect(captured.first as List<String>, isEmpty);
       },
     );
 
@@ -656,32 +660,35 @@ void main() {
       expect(result, same(serverPlaylist));
     });
 
-    test('serverSongIds resolved: sets songs and songsIds on playlist', () {
-      final song = makeSong(id: 5, serverId: 100);
-      final existing = makePlaylist(id: 1, name: 'Has Songs', serverId: 10);
-      existing.serverId = 10;
+    test(
+      'serverSongFileHashes resolved: sets songs and songsIds on playlist',
+      () {
+        final song = makeSong(id: 5, fileHash: 'hash100');
+        final existing = makePlaylist(id: 1, name: 'Has Songs', serverId: 10);
+        existing.serverId = 10;
 
-      final serverPlaylist = makePlaylist(name: 'Has Songs', serverId: 10);
-      serverPlaylist.serverId = 10;
-      serverPlaylist.serverSongIds = [100];
+        final serverPlaylist = makePlaylist(name: 'Has Songs', serverId: 10);
+        serverPlaylist.serverId = 10;
+        serverPlaylist.serverSongFileHashes = ['hash100'];
 
-      when(mockPlaylistRepo.getPlaylistByServerId(10)).thenReturn(existing);
-      when(mockSongRepo.getSongByServerId(100)).thenReturn(song);
-      when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
-        return inv.positionalArguments[0] as Playlist;
-      });
+        when(mockPlaylistRepo.getPlaylistByServerId(10)).thenReturn(existing);
+        when(mockSongRepo.getSongByFileHash('hash100')).thenReturn(song);
+        when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
+          return inv.positionalArguments[0] as Playlist;
+        });
 
-      service.cacheServerPlaylist(serverPlaylist);
+        service.cacheServerPlaylist(serverPlaylist);
 
-      expect(existing.songsIds, contains(5));
-    });
+        expect(existing.songsIds, contains(5));
+      },
+    );
 
-    test('serverSongIds empty: skips song resolution', () {
+    test('serverSongFileHashes empty: skips song resolution', () {
       final existing = makePlaylist(id: 1, name: 'No Songs', serverId: 10);
       existing.serverId = 10;
       final serverPlaylist = makePlaylist(name: 'No Songs', serverId: 10);
       serverPlaylist.serverId = 10;
-      serverPlaylist.serverSongIds = [];
+      serverPlaylist.serverSongFileHashes = [];
 
       when(mockPlaylistRepo.getPlaylistByServerId(10)).thenReturn(existing);
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
@@ -690,23 +697,23 @@ void main() {
 
       service.cacheServerPlaylist(serverPlaylist);
 
-      verifyNever(mockSongRepo.getSongByServerId(any));
+      verifyNever(mockSongRepo.getSongByFileHash(any));
     });
 
     test(
-      'serverSongIds with unresolved (null from repo): filters them out',
+      'serverSongFileHashes with unresolved (null from repo): filters them out',
       () {
-        final song = makeSong(id: 7, serverId: 200);
+        final song = makeSong(id: 7, fileHash: 'hash200');
         final existing = makePlaylist(id: 1, name: 'Partial', serverId: 10);
         existing.serverId = 10;
 
         final serverPlaylist = makePlaylist(name: 'Partial', serverId: 10);
         serverPlaylist.serverId = 10;
-        serverPlaylist.serverSongIds = [200, 999];
+        serverPlaylist.serverSongFileHashes = ['hash200', 'hash999'];
 
         when(mockPlaylistRepo.getPlaylistByServerId(10)).thenReturn(existing);
-        when(mockSongRepo.getSongByServerId(200)).thenReturn(song);
-        when(mockSongRepo.getSongByServerId(999)).thenReturn(null);
+        when(mockSongRepo.getSongByFileHash('hash200')).thenReturn(song);
+        when(mockSongRepo.getSongByFileHash('hash999')).thenReturn(null);
         when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
           return inv.positionalArguments[0] as Playlist;
         });

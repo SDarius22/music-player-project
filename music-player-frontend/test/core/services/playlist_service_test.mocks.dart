@@ -264,9 +264,9 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
           as _i3.Song);
 
   @override
-  _i3.Song? getSongByServerId(int? serverId) =>
+  _i3.Song? getSongByFileHash(String? fileHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getSongByServerId, [serverId]),
+            Invocation.method(#getSongByFileHash, [fileHash]),
             returnValueForMissingStub: null,
           )
           as _i3.Song?);
@@ -365,12 +365,6 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
             returnValueForMissingStub: <_i3.Song>[],
           )
           as List<_i3.Song>);
-
-  @override
-  void markSongsAsSynced(List<int>? serverIds) => super.noSuchMethod(
-    Invocation.method(#markSongsAsSynced, [serverIds]),
-    returnValueForMissingStub: null,
-  );
 
   @override
   void deleteSong(_i3.Song? song) => super.noSuchMethod(
@@ -472,11 +466,15 @@ class MockPlaylistRestService extends _i1.Mock
   @override
   _i8.Future<Map<String, dynamic>?> createPlaylist(
     String? name,
-    List<int>? songIds,
+    List<String>? songFileHashes,
     String? coverBase64,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#createPlaylist, [name, songIds, coverBase64]),
+            Invocation.method(#createPlaylist, [
+              name,
+              songFileHashes,
+              coverBase64,
+            ]),
             returnValue: _i8.Future<Map<String, dynamic>?>.value(),
             returnValueForMissingStub:
                 _i8.Future<Map<String, dynamic>?>.value(),
@@ -487,14 +485,14 @@ class MockPlaylistRestService extends _i1.Mock
   _i8.Future<bool> updatePlaylist(
     int? playlistId,
     String? name,
-    List<int>? songIds,
+    List<String>? songFileHashes,
     String? coverBase64,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updatePlaylist, [
               playlistId,
               name,
-              songIds,
+              songFileHashes,
               coverBase64,
             ]),
             returnValue: _i8.Future<bool>.value(false),

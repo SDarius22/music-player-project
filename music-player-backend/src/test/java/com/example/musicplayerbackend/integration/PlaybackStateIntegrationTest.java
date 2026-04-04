@@ -105,7 +105,7 @@ class PlaybackStateIntegrationTest {
     @Test
     void shouldPersistAllFieldsInPutThenGetRoundTrip() throws Exception {
         PlaybackStateDto dto = new PlaybackStateDto();
-        dto.setQueueSongIds(List.of(10L, 20L, 30L));
+        dto.setQueueFileHashes(List.of("hash-10", "hash-20", "hash-30"));
         // currentSongId left null to avoid FK constraint against songs table
         dto.setPositionMs(45_000L);
         dto.setShuffle(true);
@@ -125,7 +125,7 @@ class PlaybackStateIntegrationTest {
         // GET — same values come back
         mockMvc.perform(get("/api/v1/playback").with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.queueSongIds", hasSize(3)))
+                .andExpect(jsonPath("$.queueFileHashes", hasSize(3)))
                 .andExpect(jsonPath("$.positionMs").value(45_000))
                 .andExpect(jsonPath("$.shuffle").value(true))
                 .andExpect(jsonPath("$.repeat").value(false));
@@ -134,7 +134,7 @@ class PlaybackStateIntegrationTest {
     @Test
     void shouldOverwritePreviousPlaybackStateOnSecondPut() throws Exception {
         PlaybackStateDto first = new PlaybackStateDto();
-        first.setQueueSongIds(List.of(1L, 2L));
+        first.setQueueFileHashes(List.of("hash-1", "hash-2"));
         first.setShuffle(false);
         first.setRepeat(false);
         first.setPositionMs(1_000L);
@@ -146,7 +146,7 @@ class PlaybackStateIntegrationTest {
                 .andExpect(status().isOk());
 
         PlaybackStateDto second = new PlaybackStateDto();
-        second.setQueueSongIds(List.of(5L));
+        second.setQueueFileHashes(List.of("hash-5"));
         second.setShuffle(true);
         second.setRepeat(true);
         second.setPositionMs(9_999L);
@@ -159,7 +159,7 @@ class PlaybackStateIntegrationTest {
 
         mockMvc.perform(get("/api/v1/playback").with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.queueSongIds", hasSize(1)))
+                .andExpect(jsonPath("$.queueFileHashes", hasSize(1)))
                 .andExpect(jsonPath("$.positionMs").value(9_999))
                 .andExpect(jsonPath("$.shuffle").value(true))
                 .andExpect(jsonPath("$.repeat").value(true));

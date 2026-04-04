@@ -94,8 +94,8 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     return await _songService.getAllSongs();
   }
 
-  Widget getCoverArt(int serverId) {
-    return _songService.getCoverArt(serverId);
+  Widget getCoverArt(String fileHash) {
+    return _songService.getCoverArt(fileHash);
   }
 
   @override

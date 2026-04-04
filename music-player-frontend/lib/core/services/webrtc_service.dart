@@ -10,16 +10,17 @@ class WebRTCService {
   final String myDeviceId;
   final AuthService authService;
   final WebSocketChannel signalingSocket;
-  final Function(int songId, int chunkIndex, Uint8List data) onChunkReceived;
-  final Future<Uint8List?> Function(int songId, int chunkIndex)
+  final Function(String fileHash, int chunkIndex, Uint8List data) onChunkReceived;
+  final Future<Uint8List?> Function(String fileHash, int chunkIndex)
   onChunkRequested;
   final VoidCallback? onSyncTrigger;
 
   final Map<String, RTCPeerConnection> _peerConnections = {};
   final Map<String, RTCDataChannel> _dataChannels = {};
   final Map<String, List<RTCIceCandidate>> _iceQueues = {};
-  final Map<String, Set<int>> _peerLibraries = {};
-  final Map<String, List<({int songId, int chunkIndex})>>
+  final Map<String, Set<String>> _peerLibraries = {};
+  // key: peerId, value: list of pending requests (fileHash + chunkIndex)
+  final Map<String, List<({String fileHash, int chunkIndex})>>
   _pendingChunkRequests = {};
 
   final Map<String, dynamic> _iceServers = {
@@ -42,34 +43,34 @@ class WebRTCService {
 
   bool get isConnected => _dataChannels.isNotEmpty;
 
-  bool hasPeersForSong(int songId) {
+  bool hasPeersForSong(String fileHash) {
     for (final peerSongs in _peerLibraries.values) {
-      if (peerSongs.contains(songId)) {
+      if (peerSongs.contains(fileHash)) {
         return true;
       }
     }
     return false;
   }
 
-  void requestChunk(int songId, int chunkIndex) {
-    final requestMsg = 'REQUEST_CHUNK:$songId:$chunkIndex';
+  void requestChunk(String fileHash, int chunkIndex) {
+    final requestMsg = 'REQUEST_CHUNK:$fileHash:$chunkIndex';
 
     for (final entry in _dataChannels.entries) {
       final peerId = entry.key;
       final channel = entry.value;
 
       if (channel.state == RTCDataChannelState.RTCDataChannelOpen &&
-          _peerLibraries[peerId]?.contains(songId) == true) {
+          _peerLibraries[peerId]?.contains(fileHash) == true) {
         channel.send(RTCDataChannelMessage(requestMsg));
         return;
       }
     }
 
     for (final peerId in _peerLibraries.keys) {
-      if (_peerLibraries[peerId]?.contains(songId) == true) {
+      if (_peerLibraries[peerId]?.contains(fileHash) == true) {
         _pendingChunkRequests.putIfAbsent(peerId, () => []);
         _pendingChunkRequests[peerId]!.add((
-          songId: songId,
+          fileHash: fileHash,
           chunkIndex: chunkIndex,
         ));
         return;
@@ -77,24 +78,24 @@ class WebRTCService {
     }
   }
 
-  void registerCache(int songId, List<int> chunkIndices) {
+  void registerCache(String fileHash, List<int> chunkIndices) {
     if (!authService.isLoggedIn) return;
     debugPrint(
-      '[P2P] Registering cache with server — song=$songId chunks=${chunkIndices.length}',
+      '[P2P] Registering cache with server — song=$fileHash chunks=${chunkIndices.length}',
     );
     signalingSocket.sink.add(
       jsonEncode({
         'type': 'REGISTER_CACHE',
         'senderId': myDeviceId,
         'targetId': 'SERVER',
-        'songId': songId,
+        'songId': fileHash,
         'payload': chunkIndices,
         'userId': authService.userId,
       }),
     );
   }
 
-  void discoverPeers(int songId) {
+  void discoverPeers(String fileHash) {
     if (!authService.isLoggedIn) return;
 
     signalingSocket.sink.add(
@@ -102,7 +103,7 @@ class WebRTCService {
         'type': 'DISCOVER_PEERS',
         'senderId': myDeviceId,
         'targetId': 'SERVER',
-        'songId': songId,
+        'songId': fileHash,
         'payload': {},
         'userId': authService.userId,
       }),
@@ -192,24 +193,28 @@ class WebRTCService {
     );
     for (final req in pending) {
       channel.send(
-        RTCDataChannelMessage('REQUEST_CHUNK:${req.songId}:${req.chunkIndex}'),
+        RTCDataChannelMessage('REQUEST_CHUNK:${req.fileHash}:${req.chunkIndex}'),
       );
     }
   }
 
+  // Binary packet format: [64-byte ASCII fileHash][4-byte uint32 chunkIndex][audio data]
   void _handleBinaryMessage(Uint8List binary) {
     try {
-      final byteData = ByteData.sublistView(binary);
+      if (binary.length < 68) {
+        debugPrint('[P2P] Binary message too short: ${binary.length} bytes');
+        return;
+      }
 
-      final songId = byteData.getUint32(0, Endian.big);
-      final chunkIndex = byteData.getUint32(4, Endian.big);
-
-      final audioData = binary.sublist(8);
+      final fileHash = String.fromCharCodes(binary.sublist(0, 64));
+      final byteData = ByteData.sublistView(binary, 64, 68);
+      final chunkIndex = byteData.getUint32(0, Endian.big);
+      final audioData = binary.sublist(68);
 
       debugPrint(
-        '[P2P] Received chunk from peer — song=$songId chunk=$chunkIndex (${audioData.length} bytes)',
+        '[P2P] Received chunk from peer — song=$fileHash chunk=$chunkIndex (${audioData.length} bytes)',
       );
-      onChunkReceived(songId, chunkIndex, audioData);
+      onChunkReceived(fileHash, chunkIndex, audioData);
     } catch (e) {
       debugPrint("Error parsing binary P2P message: $e");
     }
@@ -217,14 +222,17 @@ class WebRTCService {
 
   Future<void> _handleTextMessage(String remotePeerId, String text) async {
     if (text.startsWith('REQUEST_CHUNK:')) {
-      final parts = text.split(':');
-      if (parts.length == 3) {
-        final songId = int.parse(parts[1]);
-        final chunkIndex = int.parse(parts[2]);
-
-        final data = await onChunkRequested(songId, chunkIndex);
-        if (data != null) {
-          _sendChunkToPeer(remotePeerId, songId, chunkIndex, data);
+      // Format: REQUEST_CHUNK:<fileHash>:<chunkIndex>
+      // fileHash is 64 hex chars; chunkIndex is the last segment
+      final lastColon = text.lastIndexOf(':');
+      if (lastColon > 'REQUEST_CHUNK:'.length) {
+        final fileHash = text.substring('REQUEST_CHUNK:'.length, lastColon);
+        final chunkIndex = int.tryParse(text.substring(lastColon + 1));
+        if (chunkIndex != null) {
+          final data = await onChunkRequested(fileHash, chunkIndex);
+          if (data != null) {
+            _sendChunkToPeer(remotePeerId, fileHash, chunkIndex, data);
+          }
         }
       }
     }
@@ -232,20 +240,22 @@ class WebRTCService {
 
   void _sendChunkToPeer(
     String targetPeerId,
-    int songId,
+    String fileHash,
     int chunkIndex,
     Uint8List data,
   ) {
     final channel = _dataChannels[targetPeerId];
     if (channel != null &&
         channel.state == RTCDataChannelState.RTCDataChannelOpen) {
-      final header = ByteData(8);
-      header.setUint32(0, songId, Endian.big);
-      header.setUint32(4, chunkIndex, Endian.big);
+      // Header: 64-byte ASCII fileHash + 4-byte uint32 chunkIndex
+      final hashBytes = Uint8List.fromList(fileHash.codeUnits);
+      final header = ByteData(4);
+      header.setUint32(0, chunkIndex, Endian.big);
 
-      final packet = Uint8List(8 + data.length);
-      packet.setAll(0, header.buffer.asUint8List());
-      packet.setAll(8, data);
+      final packet = Uint8List(68 + data.length);
+      packet.setAll(0, hashBytes);
+      packet.setAll(64, header.buffer.asUint8List());
+      packet.setAll(68, data);
 
       channel.send(RTCDataChannelMessage.fromBinary(packet));
     }
@@ -284,11 +294,11 @@ class WebRTCService {
           break;
 
         case 'PEER_BUFFER_MAP':
-          final discoveredSongId = (signal['songId'] as num).toInt();
+          final discoveredFileHash = signal['songId'] as String;
           final Map<String, dynamic> map = payload;
           for (final peerId in map.keys) {
             _peerLibraries.putIfAbsent(peerId, () => {});
-            _peerLibraries[peerId]!.add(discoveredSongId);
+            _peerLibraries[peerId]!.add(discoveredFileHash);
 
             if (!_peerConnections.containsKey(peerId)) {
               _createPeerConnection(peerId, true);

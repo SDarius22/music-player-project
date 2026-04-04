@@ -17,7 +17,7 @@ import java.time.ZoneOffset;
 )
 public interface SyncMapper {
 
-    @Mapping(source = "song.id", target = "songId")
+    @Mapping(source = "song.fileHash", target = "fileHash")
     @Mapping(source = "song", target = "songMetadata")
     @Mapping(source = "liked", target = "likedByUser")
     @Mapping(target = "playCountDelta", constant = "0")

@@ -308,7 +308,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(6, 5328859898643810358),
     name: 'Song',
-    lastPropertyId: const obx_int.IdUid(25, 5959721265217084770),
+    lastPropertyId: const obx_int.IdUid(26, 1024957334078684974),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -396,16 +396,17 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(23, 8997306184455754979),
-        name: 'serverId',
-        type: 6,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
         id: const obx_int.IdUid(24, 3835940553080101764),
         name: 'requiresSync',
         type: 1,
         flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(26, 1024957334078684974),
+        name: 'fileHash',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(20, 3494203868611330631),
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -457,7 +458,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
     lastEntityId: const obx_int.IdUid(13, 9001332223065747901),
-    lastIndexId: const obx_int.IdUid(19, 6323886865723491998),
+    lastIndexId: const obx_int.IdUid(20, 3494203868611330631),
     lastRelationId: const obx_int.IdUid(9, 7632131054866366746),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -540,6 +541,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
       7678880629760653732,
       5719158023689531142,
       5959721265217084770,
+      8997306184455754979,
     ],
     retiredRelationUids: const [
       1387782578054686999,
@@ -914,7 +916,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectToFB: (Song object, fb.Builder fbb) {
         final pathOffset = fbb.writeString(object.path);
         final nameOffset = fbb.writeString(object.name);
-        fbb.startTable(26);
+        final fileHashOffset = fbb.writeString(object.fileHash);
+        fbb.startTable(27);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, pathOffset);
         fbb.addInt64(8, object.trackNumber);
@@ -933,8 +936,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
               : object.lastPlayed!.microsecondsSinceEpoch * 1000,
         );
         fbb.addInt64(21, object.playCount);
-        fbb.addInt64(22, object.serverId);
         fbb.addBool(23, object.requiresSync);
+        fbb.addOffset(25, fileHashOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -996,18 +999,15 @@ obx_int.ModelDefinition getObjectBoxModel() {
             46,
             0,
           )
-          ..serverId = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            48,
-            0,
-          )
           ..requiresSync = const fb.BoolReader().vTableGet(
             buffer,
             rootOffset,
             50,
             false,
-          );
+          )
+          ..fileHash = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 54, '');
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1291,13 +1291,13 @@ class Song_ {
     _entities[5].properties[12],
   );
 
-  /// See [Song.serverId].
-  static final serverId = obx.QueryIntegerProperty<Song>(
+  /// See [Song.requiresSync].
+  static final requiresSync = obx.QueryBooleanProperty<Song>(
     _entities[5].properties[13],
   );
 
-  /// See [Song.requiresSync].
-  static final requiresSync = obx.QueryBooleanProperty<Song>(
+  /// See [Song.fileHash].
+  static final fileHash = obx.QueryStringProperty<Song>(
     _entities[5].properties[14],
   );
 }

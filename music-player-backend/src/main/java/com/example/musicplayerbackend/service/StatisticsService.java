@@ -37,7 +37,7 @@ public class StatisticsService {
         ChunkStat stat = ChunkStat.builder()
                 .timestamp(Instant.now())
                 .userId(userId)
-                .songId(dto.getSongId())
+                .songFileHash(dto.getSongFileHash())
                 .songName(dto.getSongName())
                 .localChunks(local)
                 .localCachedChunks(localCached)
@@ -59,7 +59,7 @@ public class StatisticsService {
                 ? stat.getTimestamp().atOffset(java.time.ZoneOffset.UTC)
                 : null);
         dto.setUserId(stat.getUserId());
-        dto.setSongId(stat.getSongId());
+        dto.setSongFileHash(stat.getSongFileHash());
         dto.setSongName(stat.getSongName());
         dto.setLocalChunks(stat.getLocalChunks());
         dto.setLocalCachedChunks(stat.getLocalCachedChunks());

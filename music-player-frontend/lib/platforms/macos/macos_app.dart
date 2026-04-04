@@ -25,7 +25,7 @@ import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/platforms/macos/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/macos/services/macos_file_service.dart';
-import 'package:music_player_frontend/platforms/macos/services/music_scanner_service.dart';
+import 'package:music_player_frontend/platforms/macos/services/macos_music_scanner_service.dart';
 import 'package:provider/provider.dart';
 
 class MacosApplication extends AbstractApp {

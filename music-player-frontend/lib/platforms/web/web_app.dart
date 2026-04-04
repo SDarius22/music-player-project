@@ -74,9 +74,9 @@ class WebApp extends AbstractApp {
     return [
       Provider<WebP2PBridge>(
         create: (context) {
-          final bridge = WebP2PBridge((int songId) {
+          final bridge = WebP2PBridge((String fileHash) {
             final manager = ChunkService(
-              songId: songId,
+              fileHash: fileHash,
               cacheRepo: context.read<ChunkCacheRepository>(),
               streamingClient: context.read<StreamingRestService>(),
               webrtcManager: context.read<WebRTCService>(),

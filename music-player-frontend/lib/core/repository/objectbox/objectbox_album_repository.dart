@@ -1,4 +1,4 @@
-import 'package:music_player_frontend/core/database/objectBox.dart';
+import 'package:music_player_frontend/core/database/object_box_store.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
@@ -26,6 +26,15 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
   @override
   Album? getAlbumByName(String albumName) {
     return _albumBox.query(Album_.name.equals(albumName)).build().findFirst();
+  }
+
+  @override
+  Album? getAlbumByNameAndArtistName(String albumName, String artistName) {
+    final candidates = _albumBox.query(Album_.name.equals(albumName)).build().find();
+    for (final album in candidates) {
+      if (album.artist.target?.name == artistName) return album;
+    }
+    return null;
   }
 
   @override

@@ -36,13 +36,13 @@ class PlaylistRestService extends AbstractRestService {
 
   Future<Map<String, dynamic>?> createPlaylist(
     String name,
-    List<int> songIds,
+    List<String> songFileHashes,
     String? coverBase64,
   ) async {
     try {
       final body = <String, dynamic>{
         'name': name,
-        'songIds': songIds,
+        'songFileHashes': songFileHashes,
         if (coverBase64 != null) 'coverImage': coverBase64,
       };
       final response = await post('/playlists', body);
@@ -59,13 +59,13 @@ class PlaylistRestService extends AbstractRestService {
   Future<bool> updatePlaylist(
     int playlistId,
     String name,
-    List<int> songIds,
+    List<String> songFileHashes,
     String? coverBase64,
   ) async {
     try {
       final body = <String, dynamic>{
         'name': name,
-        'songIds': songIds,
+        'songFileHashes': songFileHashes,
         if (coverBase64 != null) 'coverImage': coverBase64,
       };
       final response = await put('/playlists/$playlistId', body);

@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
 abstract class ChunkCacheRepository {
-  Future<Uint8List?> readChunk(int songId, int chunkIndex);
+  Future<Uint8List?> readChunk(String fileHash, int chunkIndex);
 
-  Future<void> saveChunk(int songId, int chunkIndex, Uint8List data);
+  Future<void> saveChunk(String fileHash, int chunkIndex, Uint8List data);
 
-  Future<List<int>> getAvailableChunkIndices(int songId);
+  Future<List<int>> getAvailableChunkIndices(String fileHash);
 }

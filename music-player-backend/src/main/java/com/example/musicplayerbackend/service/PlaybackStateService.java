@@ -34,13 +34,13 @@ public class PlaybackStateService {
 
     @Transactional
     public PlaybackStateDto saveState(Long userId, PlaybackStateDto req) {
-        List<Long> queueIds = req.getQueueSongIds() == null ? List.of() : req.getQueueSongIds();
+        List<String> queueHashes = req.getQueueFileHashes() == null ? List.of() : req.getQueueFileHashes();
 
         UserPlaybackState state = stateRepository.findById(userId)
                 .orElseGet(() -> UserPlaybackState.builder().userId(userId).build());
 
-        state.setQueueSongIds(toJson(queueIds));
-        state.setCurrentSongId(req.getCurrentSongId());
+        state.setQueueSongIds(toJson(queueHashes));
+        state.setCurrentFileHash(req.getCurrentFileHash());
         state.setPositionMs(req.getPositionMs() == null ? 0L : req.getPositionMs());
         state.setShuffle(req.getShuffle() != null ? req.getShuffle() : false);
         state.setRepeat(req.getRepeat() != null ? req.getRepeat() : false);
@@ -59,8 +59,8 @@ public class PlaybackStateService {
 
     private PlaybackStateDto toDto(UserPlaybackState s) {
         PlaybackStateDto dto = new PlaybackStateDto();
-        dto.setQueueSongIds(fromJson(s.getQueueSongIds()));
-        dto.setCurrentSongId(s.getCurrentSongId());
+        dto.setQueueFileHashes(fromJson(s.getQueueSongIds()));
+        dto.setCurrentFileHash(s.getCurrentFileHash());
         dto.setPositionMs(s.getPositionMs());
         dto.setShuffle(s.getShuffle());
         dto.setRepeat(s.getRepeat());
@@ -68,15 +68,15 @@ public class PlaybackStateService {
         return dto;
     }
 
-    private String toJson(List<Long> ids) {
+    private String toJson(List<String> hashes) {
         try {
-            return objectMapper.writeValueAsString(ids == null ? new ArrayList<>() : ids);
+            return objectMapper.writeValueAsString(hashes == null ? new ArrayList<>() : hashes);
         } catch (JsonProcessingException e) {
             return "[]";
         }
     }
 
-    private List<Long> fromJson(String json) {
+    private List<String> fromJson(String json) {
         if (json == null || json.isBlank()) return List.of();
         try {
             return objectMapper.readValue(json, new TypeReference<>() {});

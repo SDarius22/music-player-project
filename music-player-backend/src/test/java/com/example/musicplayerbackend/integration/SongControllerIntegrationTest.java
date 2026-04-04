@@ -105,7 +105,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
     void shouldFilterSongsByNameQuery() throws Exception {
         mockMvc.perform(get("/api/v1/songs").param("q", "Public").with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[?(@.id == " + publicSong.getId() + ")].name",
+                .andExpect(jsonPath("$.content[?(@.fileHash == '" + publicSong.getFileHash() + "')].name",
                         contains("Public Song")));
     }
 
@@ -186,9 +186,9 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn200ForSongById() throws Exception {
-        mockMvc.perform(get("/api/v1/songs/{id}", publicSong.getId()).with(user(testUser)))
+        mockMvc.perform(get("/api/v1/songs/{fileHash}", publicSong.getFileHash()).with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(publicSong.getId()))
+                .andExpect(jsonPath("$.fileHash").value(publicSong.getFileHash()))
                 .andExpect(jsonPath("$.name").value("Public Song"));
     }
 
@@ -203,13 +203,13 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn404WhenSongCoverHasNoAlbum() throws Exception {
-        mockMvc.perform(get("/api/v1/songs/{id}/cover", songWithNoAlbum.getId()).with(user(testUser)))
+        mockMvc.perform(get("/api/v1/songs/{fileHash}/cover", songWithNoAlbum.getFileHash()).with(user(testUser)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldReturn200WhenSongCoverAlbumHasCover() throws Exception {
-        mockMvc.perform(get("/api/v1/songs/{id}/cover", songWithCover.getId()).with(user(testUser)))
+        mockMvc.perform(get("/api/v1/songs/{fileHash}/cover", songWithCover.getFileHash()).with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.IMAGE_JPEG));
     }
@@ -269,7 +269,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 "chunkData", "chunk.bin", MediaType.APPLICATION_OCTET_STREAM_VALUE,
                 "fake-chunk-content".getBytes());
 
-        mockMvc.perform(multipart("/api/v1/songs/{id}/chunks/{index}", publicSong.getId(), 0)
+        mockMvc.perform(multipart("/api/v1/songs/{fileHash}/chunks/{index}", publicSong.getFileHash(), 0)
                         .file(chunkFile)
                         .param("contentHash", "wronghash")
                         .with(user(testUser)))
@@ -284,7 +284,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
         MockMultipartFile chunkFile = new MockMultipartFile(
                 "chunkData", "chunk.bin", MediaType.APPLICATION_OCTET_STREAM_VALUE, data);
 
-        mockMvc.perform(multipart("/api/v1/songs/{id}/chunks/{index}", privateSong.getId(), 0)
+        mockMvc.perform(multipart("/api/v1/songs/{fileHash}/chunks/{index}", privateSong.getFileHash(), 0)
                         .file(chunkFile)
                         .param("contentHash", hash)
                         .with(user(testUser)))

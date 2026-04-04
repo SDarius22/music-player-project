@@ -16,13 +16,10 @@ class Playlist with AbstractCollection implements BaseEntity {
 
   @Index()
   @Unique()
-  int _serverId = -1;
+  int serverId = -1;
 
   @override
-  int get serverId => _serverId;
-
-  @override
-  set serverId(int value) => _serverId = value;
+  String get cloudId => serverId > 0 ? serverId.toString() : '';
 
   @override
   bool get isLocal {
@@ -61,7 +58,7 @@ class Playlist with AbstractCollection implements BaseEntity {
   List<int> songsIds = [];
 
   @Transient()
-  List<int> serverSongIds = [];
+  List<String> serverSongFileHashes = [];
 
   List<Song> get songsList {
     try {
@@ -81,9 +78,9 @@ class Playlist with AbstractCollection implements BaseEntity {
     final playlist = Playlist();
     playlist.serverId = (json['id'] as num? ?? -1).toInt();
     playlist.name = json['name'] as String? ?? 'Unknown Playlist';
-    playlist.serverSongIds =
-        (json['songIds'] as List<dynamic>? ?? [])
-            .map((e) => (e as num).toInt())
+    playlist.serverSongFileHashes =
+        (json['songFileHashes'] as List<dynamic>? ?? [])
+            .map((e) => e.toString())
             .toList();
     return playlist;
   }

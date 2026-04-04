@@ -12,5 +12,5 @@ import java.util.List;
         unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface NegotiationMapper {
-    NegotiationResponseDto toNegotiationResponseDto(Long songId, List<Integer> missingIndices);
+    NegotiationResponseDto toNegotiationResponseDto(String fileHash, List<Integer> missingIndices);
 }

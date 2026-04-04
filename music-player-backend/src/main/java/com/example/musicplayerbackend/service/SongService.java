@@ -45,10 +45,10 @@ public class SongService {
     }
 
     @Transactional(readOnly = true)
-    public SongDto getSongById(Long songId) {
-        return songRepository.findById(songId)
+    public SongDto getSongByFileHash(String fileHash) {
+        return songRepository.findByFileHash(fileHash)
                 .map(songMapper::toDto)
-                .orElseThrow(() -> new RuntimeException("Song not found with id: " + songId));
+                .orElseThrow(() -> new RuntimeException("Song not found with fileHash: " + fileHash));
     }
 
 
@@ -70,11 +70,12 @@ public class SongService {
         Artist artist = artistRepository.findByName(artistName)
                 .orElseGet(() -> artistRepository.save(Artist.builder().name(artistName).artistType(ContentType.STREAMABLE).build()));
 
-        Album album = albumRepository.findByName(albumName)
+        Album album = albumRepository.findByNameAndArtistId(albumName, artist.getId())
                 .orElseGet(() -> albumRepository.save(
                         Album.builder()
                                 .name(albumName)
                                 .coverImage(photo)
+                                .artist(artist)
                                 .albumType(ContentType.STREAMABLE)
                                 .build()));
 
@@ -109,8 +110,8 @@ public class SongService {
             Artist artist = artistRepository.findByName(request.getArtistName())
                     .orElseGet(() -> artistRepository.save(Artist.builder().name(request.getArtistName()).artistType(ContentType.USER_UPLOAD).ownerId(userId).build()));
 
-            Album album = albumRepository.findByName(request.getAlbumName())
-                    .orElseGet(() -> albumRepository.save(Album.builder().name(request.getAlbumName()).albumType(ContentType.USER_UPLOAD).ownerId(userId).build()));
+            Album album = albumRepository.findByNameAndArtistId(request.getAlbumName(), artist.getId())
+                    .orElseGet(() -> albumRepository.save(Album.builder().name(request.getAlbumName()).artist(artist).albumType(ContentType.USER_UPLOAD).ownerId(userId).build()));
 
             song = songRepository.save(Song.builder()
                     .name(request.getName())
@@ -154,14 +155,14 @@ public class SongService {
             songChunkRepository.saveAll(newLinks);
         }
 
-        log.info("[SONG] Negotiation complete: songId={}, missingChunks={}, deduplicatedChunks={}", song.getId(), missingIndices.size(), newLinks.size());
-        return negotiationMapper.toNegotiationResponseDto(song.getId(), missingIndices);
+        log.info("[SONG] Negotiation complete: fileHash={}, missingChunks={}, deduplicatedChunks={}", song.getFileHash(), missingIndices.size(), newLinks.size());
+        return negotiationMapper.toNegotiationResponseDto(song.getFileHash(), missingIndices);
     }
 
 
     @Transactional
-    public void saveMissingChunk(User user, Long songId, Integer chunkIndex, String contentHash, MultipartFile chunkFile) throws Exception {
-        Song song = songRepository.findById(songId)
+    public void saveMissingChunk(User user, String fileHash, Integer chunkIndex, String contentHash, MultipartFile chunkFile) throws Exception {
+        Song song = songRepository.findByFileHash(fileHash)
                 .orElseThrow(() -> new RuntimeException("Song not found"));
 
         if (!song.getOwnerId().equals(user.getId())) {
@@ -199,7 +200,7 @@ public class SongService {
             }
         }
 
-        log.info("[SONG] Chunk received and verified: songId={}, chunkIndex={}, size={} bytes", songId, chunkIndex, bytes.length);
+        log.info("[SONG] Chunk received and verified: fileHash={}, chunkIndex={}, size={} bytes", fileHash, chunkIndex, bytes.length);
 
         boolean linkExists = songChunkRepository.existsBySongAndOrderIndex(song, chunkIndex);
 

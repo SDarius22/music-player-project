@@ -44,13 +44,13 @@ class PlaylistService {
     _playlistRepository.savePlaylist(newPlaylist);
 
     try {
-      final serverSongIds = songs
-          .map((s) => s.serverId)
-          .where((id) => id > 0)
+      final songFileHashes = songs
+          .map((s) => s.fileHash)
+          .where((h) => h.isNotEmpty)
           .toList();
       final coverBase64 = coverArt != null ? base64Encode(coverArt) : null;
       final result = await _playlistRestService.createPlaylist(
-        name, serverSongIds, coverBase64,
+        name, songFileHashes, coverBase64,
       );
       if (result != null) {
         newPlaylist.serverId = (result['id'] as num).toInt();
@@ -74,15 +74,15 @@ class PlaylistService {
 
     if (playlist.serverId > 0) {
       try {
-        final serverSongIds = playlist.songs
-            .map((s) => s.serverId)
-            .where((id) => id > 0)
+        final songFileHashes = playlist.songs
+            .map((s) => s.fileHash)
+            .where((h) => h.isNotEmpty)
             .toList();
         final coverBase64 = playlist.imageBytes != null
             ? base64Encode(playlist.imageBytes!)
             : null;
         await _playlistRestService.updatePlaylist(
-          playlist.serverId, playlist.name, serverSongIds, coverBase64,
+          playlist.serverId, playlist.name, songFileHashes, coverBase64,
         );
       } catch (e) {
         debugPrint('PlaylistService: failed to update playlist on server: $e');
@@ -274,7 +274,7 @@ class PlaylistService {
       );
       if (byServerId != null) {
         byServerId.name = serverPlaylist.name;
-        _resolveAndSetSongs(byServerId, serverPlaylist.serverSongIds);
+        _resolveAndSetSongs(byServerId, serverPlaylist.serverSongFileHashes);
         _playlistRepository.savePlaylist(byServerId);
         return byServerId;
       }
@@ -285,19 +285,19 @@ class PlaylistService {
       if (byName.serverId <= 0 && serverPlaylist.serverId > 0) {
         byName.serverId = serverPlaylist.serverId;
       }
-      _resolveAndSetSongs(byName, serverPlaylist.serverSongIds);
+      _resolveAndSetSongs(byName, serverPlaylist.serverSongFileHashes);
       _playlistRepository.savePlaylist(byName);
       return byName;
     }
 
-    _resolveAndSetSongs(serverPlaylist, serverPlaylist.serverSongIds);
+    _resolveAndSetSongs(serverPlaylist, serverPlaylist.serverSongFileHashes);
     return _playlistRepository.savePlaylist(serverPlaylist);
   }
 
-  void _resolveAndSetSongs(Playlist playlist, List<int> serverSongIds) {
-    if (serverSongIds.isEmpty) return;
-    final resolved = serverSongIds
-        .map((sid) => _songRepository.getSongByServerId(sid))
+  void _resolveAndSetSongs(Playlist playlist, List<String> songFileHashes) {
+    if (songFileHashes.isEmpty) return;
+    final resolved = songFileHashes
+        .map((hash) => _songRepository.getSongByFileHash(hash))
         .whereType<Song>()
         .toList();
     if (resolved.isNotEmpty) {

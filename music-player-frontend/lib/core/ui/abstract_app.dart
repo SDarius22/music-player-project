@@ -215,18 +215,18 @@ abstract class AbstractApp extends StatelessWidget {
 
       Provider<AppAudioService>(
         create: (context) {
-          final chunkServiceCache = <int, ChunkService>{};
+          final chunkServiceCache = <String, ChunkService>{};
           return AppAudioService(
             context.read<SongService>(),
             context.read<SettingsService>(),
             context.read<PlaylistService>(),
             context.read<AuthService>(),
-            (int songId) {
-              final cached = chunkServiceCache[songId];
+            (String fileHash) {
+              final cached = chunkServiceCache[fileHash];
               if (cached != null) return cached;
 
               final manager = ChunkService(
-                songId: songId,
+                fileHash: fileHash,
                 cacheRepo: context.read<ChunkCacheRepository>(),
                 streamingClient: context.read<StreamingRestService>(),
                 webrtcManager: context.read<WebRTCService>(),
@@ -235,7 +235,7 @@ abstract class AbstractApp extends StatelessWidget {
               if (chunkServiceCache.length >= 5) {
                 chunkServiceCache.remove(chunkServiceCache.keys.first);
               }
-              chunkServiceCache[songId] = manager;
+              chunkServiceCache[fileHash] = manager;
               context.read<ActiveChunkRouter>().registerManager(manager);
 
               return manager;

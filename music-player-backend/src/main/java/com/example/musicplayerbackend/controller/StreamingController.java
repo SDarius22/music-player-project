@@ -24,42 +24,42 @@ public class StreamingController implements StreamApi {
     private final StreamingService streamingService;
 
     @Override
-    public ResponseEntity<Resource> getSongPrefix(Long songId, Integer prefixBytes) {
+    public ResponseEntity<Resource> getSongPrefix(String fileHash, Integer prefixBytes) {
         long userId = currentUserId();
-        log.info("[STREAM] Prefix request: songId={}, prefixBytes={}, userId={}", songId, prefixBytes, userId);
-        Resource resource = streamingService.getSongPrefix(songId, prefixBytes, userId);
+        log.info("[STREAM] Prefix request: fileHash={}, prefixBytes={}, userId={}", fileHash, prefixBytes, userId);
+        Resource resource = streamingService.getSongPrefix(fileHash, prefixBytes, userId);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"song_" + songId + "_prefix\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"song_prefix\"")
                 .body(resource);
     }
 
     @Override
-    public ResponseEntity<Resource> getFullStream(Long songId) {
+    public ResponseEntity<Resource> getFullStream(String fileHash) {
         long userId = currentUserId();
-        log.info("[STREAM] Full stream request (master fallback): songId={}, userId={}", songId, userId);
-        Resource resource = streamingService.getFullStream(songId, userId);
+        log.info("[STREAM] Full stream request (master fallback): fileHash={}, userId={}", fileHash, userId);
+        Resource resource = streamingService.getFullStream(fileHash, userId);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"song_" + songId + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"song\"")
                 .body(resource);
     }
 
     @Override
-    public ResponseEntity<ChunkManifestDto> getSongManifest(Long songId) {
+    public ResponseEntity<ChunkManifestDto> getSongManifest(String fileHash) {
         long userId = currentUserId();
-        log.info("[STREAM] Manifest request: songId={}, userId={}", songId, userId);
-        return ResponseEntity.ok(streamingService.getSongManifest(songId, userId));
+        log.info("[STREAM] Manifest request: fileHash={}, userId={}", fileHash, userId);
+        return ResponseEntity.ok(streamingService.getSongManifest(fileHash, userId));
     }
 
     @Override
-    public ResponseEntity<Resource> getSongChunk(Long songId, Integer chunkIndex) {
+    public ResponseEntity<Resource> getSongChunk(String fileHash, Integer chunkIndex) {
         long userId = currentUserId();
-        log.info("[STREAM] Chunk request (master fallback): songId={}, chunkIndex={}, userId={}", songId, chunkIndex, userId);
-        Resource chunk = streamingService.getSongChunk(songId, chunkIndex, userId);
+        log.info("[STREAM] Chunk request (master fallback): fileHash={}, chunkIndex={}, userId={}", fileHash, chunkIndex, userId);
+        Resource chunk = streamingService.getSongChunk(fileHash, chunkIndex, userId);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"song_" + songId + "_chunk_" + chunkIndex + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"chunk_" + chunkIndex + "\"")
                 .body(chunk);
     }
 

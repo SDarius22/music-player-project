@@ -11,7 +11,7 @@ import 'package:music_player_frontend/core/services/webrtc_service.dart';
 enum _ChunkSource { localCached, p2p, server }
 
 class ChunkService {
-  final int songId;
+  final String fileHash;
   final ChunkCacheRepository cacheRepo;
   final StreamingRestService _streamingClient;
   final WebRTCService _webrtcManager;
@@ -37,7 +37,7 @@ class ChunkService {
   int get totalChunks => manifest?.totalChunks ?? 0;
 
   ChunkService({
-    required this.songId,
+    required this.fileHash,
     required this.cacheRepo,
     required StreamingRestService streamingClient,
     required WebRTCService webrtcManager,
@@ -55,16 +55,16 @@ class ChunkService {
   Future<void> loadManifest() async {
     if (isReady) return;
     try {
-      manifest = await _streamingClient.fetchManifest(songId);
+      manifest = await _streamingClient.fetchManifest(fileHash);
 
-      _webrtcManager.discoverPeers(songId);
+      _webrtcManager.discoverPeers(fileHash);
 
-      var indices = await cacheRepo.getAvailableChunkIndices(songId);
+      var indices = await cacheRepo.getAvailableChunkIndices(fileHash);
       if (indices.isNotEmpty) {
-        _webrtcManager.registerCache(songId, indices);
+        _webrtcManager.registerCache(fileHash, indices);
       }
     } catch (e) {
-      debugPrint("Failed to load manifest for $songId: $e");
+      debugPrint("Failed to load manifest for $fileHash: $e");
       rethrow;
     }
   }
@@ -76,7 +76,7 @@ class ChunkService {
 
     if (_activeRequests.containsKey(index)) return _activeRequests[index]!;
 
-    final cachedData = await cacheRepo.readChunk(songId, index);
+    final cachedData = await cacheRepo.readChunk(fileHash, index);
     if (cachedData != null) {
       _addToHotCache(index, cachedData);
       _recordDelivery(index, _ChunkSource.localCached);
@@ -124,23 +124,23 @@ class ChunkService {
     _ChunkSource source = _ChunkSource.server;
 
     if (index < 8) {
-      data = await _streamingClient.downloadChunkFallback(songId, index);
-    } else if (_webrtcManager.hasPeersForSong(songId)) {
+      data = await _streamingClient.downloadChunkFallback(fileHash, index);
+    } else if (_webrtcManager.hasPeersForSong(fileHash)) {
       try {
         data = await _requestFromPeer(
           index,
         ).timeout(const Duration(seconds: 1));
         source = _ChunkSource.p2p;
-        debugPrint('[P2P] song=$songId chunk=$index — served by peer');
+        debugPrint('[P2P] song=$fileHash chunk=$index — served by peer');
       } catch (_) {
         _p2pCompleters.remove(index);
         debugPrint(
-          '[P2P] song=$songId chunk=$index — peer timeout/fail, falling back to server',
+          '[P2P] song=$fileHash chunk=$index — peer timeout/fail, falling back to server',
         );
-        data = await _streamingClient.downloadChunkFallback(songId, index);
+        data = await _streamingClient.downloadChunkFallback(fileHash, index);
       }
     } else {
-      data = await _streamingClient.downloadChunkFallback(songId, index);
+      data = await _streamingClient.downloadChunkFallback(fileHash, index);
     }
 
     if (_verifyIntegrity(index, data)) {
@@ -150,7 +150,7 @@ class ChunkService {
     } else {
       if (index >= 8) {
         final serverData = await _streamingClient.downloadChunkFallback(
-          songId,
+          fileHash,
           index,
         );
         if (_verifyIntegrity(index, serverData)) {
@@ -177,7 +177,7 @@ class ChunkService {
           _deliveredBy.values.where((v) => v == _ChunkSource.server).length;
       _onFullyReceived!(
         ChunkDeliveryStats(
-          songId: songId,
+          fileHash: fileHash,
           songName: _songName ?? 'Unknown',
           localCachedChunks: localCachedCount,
           p2pChunks: p2pCount,
@@ -190,7 +190,7 @@ class ChunkService {
   Future<Uint8List> _requestFromPeer(int index) {
     final completer = Completer<Uint8List>();
     _p2pCompleters[index] = completer;
-    _webrtcManager.requestChunk(songId, index);
+    _webrtcManager.requestChunk(fileHash, index);
     return completer.future;
   }
 
@@ -214,8 +214,8 @@ class ChunkService {
 
   void _saveToCache(int index, Uint8List data) {
     _addToHotCache(index, data);
-    cacheRepo.saveChunk(songId, index, data).then((_) {
-      _webrtcManager.registerCache(songId, [index]);
+    cacheRepo.saveChunk(fileHash, index, data).then((_) {
+      _webrtcManager.registerCache(fileHash, [index]);
     });
   }
 

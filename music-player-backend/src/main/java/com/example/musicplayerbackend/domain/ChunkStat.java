@@ -22,7 +22,8 @@ public class ChunkStat {
     private Instant timestamp;
 
     private Long userId;
-    private Long songId;
+    @Column(name = "song_file_hash", length = 64)
+    private String songFileHash;
     private String songName;
 
     @Column(nullable = false)

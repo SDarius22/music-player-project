@@ -65,26 +65,26 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn200ForPublicSongManifestWithNoChunks() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/manifest", publicSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/manifest", publicSong.getFileHash())
                         .with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.songId").value(publicSong.getId()))
+                .andExpect(jsonPath("$.fileHash").value(publicSong.getFileHash()))
                 .andExpect(jsonPath("$.totalChunks").value(0));
     }
 
     @Test
     void shouldReturn403WhenManifestPrivateSongOwnedByOther() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/manifest", privateSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/manifest", privateSong.getFileHash())
                         .with(user(otherUser)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void shouldReturn200ForManifestWhenPrivateSongOwnedBySelf() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/manifest", privateSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/manifest", privateSong.getFileHash())
                         .with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.songId").value(privateSong.getId()));
+                .andExpect(jsonPath("$.fileHash").value(privateSong.getFileHash()));
     }
 
     @Test
@@ -108,7 +108,7 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
         songChunkRepository.save(SongChunk.builder()
                 .song(publicSong).chunk(chunk).orderIndex(0).build());
 
-        mockMvc.perform(get("/api/v1/stream/{id}/manifest", publicSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/manifest", publicSong.getFileHash())
                         .with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalChunks").value(1))
@@ -131,28 +131,28 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
         songChunkRepository.save(SongChunk.builder()
                 .song(publicSong).chunk(chunk).orderIndex(0).build());
 
-        mockMvc.perform(get("/api/v1/stream/{id}/chunk/0", publicSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/chunk/0", publicSong.getFileHash())
                         .with(user(testUser)))
                 .andExpect(status().isOk());
     }
 
     @Test
     void shouldReturn403WhenChunkAccessIsForbidden() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/chunk/0", privateSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/chunk/0", privateSong.getFileHash())
                         .with(user(otherUser)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void shouldReturn400WhenChunkIndexIsOutOfBounds() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/chunk/5", publicSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/chunk/5", publicSong.getFileHash())
                         .with(user(testUser)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void shouldReturn400WhenChunkIndexIsNegative() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/chunk/-1", publicSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/chunk/-1", publicSong.getFileHash())
                         .with(user(testUser)))
                 .andExpect(status().isBadRequest());
     }
@@ -161,14 +161,14 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn200ForPrefixOfPublicSongWithNoChunks() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/prefix", publicSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/prefix", publicSong.getFileHash())
                         .with(user(testUser)))
                 .andExpect(status().isOk());
     }
 
     @Test
     void shouldReturn403WhenPrefixAccessIsForbidden() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/prefix", privateSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/prefix", privateSong.getFileHash())
                         .with(user(otherUser)))
                 .andExpect(status().isForbidden());
     }
@@ -177,7 +177,7 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn403WhenFullStreamAccessIsForbidden() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/full", privateSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/full", privateSong.getFileHash())
                         .with(user(otherUser)))
                 .andExpect(status().isForbidden());
     }
@@ -191,7 +191,7 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn200ForFullStreamOfPublicSongWithNoChunks() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{id}/full", publicSong.getId())
+        mockMvc.perform(get("/api/v1/stream/{fileHash}/full", publicSong.getFileHash())
                         .with(user(testUser)))
                 .andExpect(status().isOk());
     }

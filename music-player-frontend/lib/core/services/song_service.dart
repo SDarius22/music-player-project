@@ -104,20 +104,20 @@ class SongService {
   Future<Song?> getSong(
     String songPath, {
     bool preferServer = false,
-    int? serverId,
+    String? fileHash,
   }) async {
     if (preferServer) {
-      if (serverId == null) return null;
+      if (fileHash == null || fileHash.isEmpty) return null;
 
-      final cached = _songRepository.getSongByServerId(serverId);
+      final cached = _songRepository.getSongByFileHash(fileHash);
       if (cached != null) {
         return cached;
       }
 
       try {
-        final serverSong = await _songRestService.getServerSong(serverId);
+        final serverSong = await _songRestService.getServerSong(fileHash);
         _cacheServerSong(serverSong);
-        return _songRepository.getSongByServerId(serverId);
+        return _songRepository.getSongByFileHash(fileHash);
       } catch (_) {
         return null;
       }
@@ -144,19 +144,19 @@ class SongService {
     return await refreshServerSongs();
   }
 
-  Song? getSongByServerId(int serverId) {
-    return _songRepository.getSongByServerId(serverId);
+  Song? getSongByFileHash(String fileHash) {
+    return _songRepository.getSongByFileHash(fileHash);
   }
 
-  Future<Song?> fetchSongByServerId(int serverId) async {
-    final local = _songRepository.getSongByServerId(serverId);
+  Future<Song?> fetchSongByFileHash(String fileHash) async {
+    final local = _songRepository.getSongByFileHash(fileHash);
     if (local != null) return local;
     try {
-      final serverSong = await _songRestService.getServerSong(serverId);
+      final serverSong = await _songRestService.getServerSong(fileHash);
       await _cacheServerSongs([serverSong]);
-      return _songRepository.getSongByServerId(serverId);
+      return _songRepository.getSongByFileHash(fileHash);
     } catch (e) {
-      debugPrint('SongService: failed to fetch song $serverId from server: $e');
+      debugPrint('SongService: failed to fetch song $fileHash from server: $e');
       return null;
     }
   }
@@ -187,12 +187,6 @@ class SongService {
     return songs;
   }
 
-  void linkToServerId(int localId, int serverId) {
-    final song = _songRepository.getSong(localId);
-    song.serverId = serverId;
-    _songRepository.updateSong(song);
-  }
-
   void recordPlay(int songId) {
     final song = _songRepository.getSong(songId);
     song.playCount++;
@@ -202,32 +196,27 @@ class SongService {
   }
 
   Future<void> _cacheServerSongs(List<Song> serverSongs) async {
-    final missingArtistIds =
-        serverSongs
-            .where(
-              (s) =>
-                  s.serverArtistId > 0 &&
-                  _artistService.getArtistByServerId(s.serverArtistId) == null,
-            )
-            .map((s) => s.serverArtistId)
-            .toSet();
-
-    final missingAlbumIds =
-        serverSongs
-            .where(
-              (s) =>
-                  s.serverAlbumId > 0 &&
-                  _albumService.getAlbumByServerId(s.serverAlbumId) == null,
-            )
-            .map((s) => s.serverAlbumId)
-            .toSet();
-
-    await Future.wait([
-      ...missingArtistIds.map(
-        (id) => _artistService.fetchAndCacheArtistById(id),
-      ),
-      ...missingAlbumIds.map((id) => _albumService.fetchAndCacheAlbumById(id)),
-    ]);
+    for (final s in serverSongs) {
+      if (s.artist.target != null && s.artist.target!.serverId > 0) {
+        final existing = _artistService.getArtistByServerId(
+          s.artist.target!.serverId,
+        );
+        if (existing == null) {
+          _artistService.cacheServerArtist(s.artist.target!);
+        }
+      }
+      if (s.album.target != null && s.album.target!.serverId > 0) {
+        if (s.artist.target != null) {
+          s.album.target!.artist.target = s.artist.target;
+        }
+        final existing = _albumService.getAlbumByServerId(
+          s.album.target!.serverId,
+        );
+        if (existing == null) {
+          _albumService.cacheServerAlbum(s.album.target!);
+        }
+      }
+    }
 
     for (final s in serverSongs) {
       _cacheServerSong(s);
@@ -235,23 +224,25 @@ class SongService {
   }
 
   void _cacheServerSong(Song serverSong) {
-    if (serverSong.serverId <= 0) return;
+    if (serverSong.fileHash.isEmpty) return;
 
-    Artist? resolvedArtist;
-    if (serverSong.serverArtistId > 0) {
-      resolvedArtist = _artistService.getArtistByServerId(
-        serverSong.serverArtistId,
-      );
-    }
+    Artist? resolvedArtist =
+        serverSong.artist.target != null
+            ? _artistService.getArtistByServerId(
+                  serverSong.artist.target!.serverId,
+                ) ??
+                serverSong.artist.target
+            : null;
 
-    Album? resolvedAlbum;
-    if (serverSong.serverAlbumId > 0) {
-      resolvedAlbum = _albumService.getAlbumByServerId(
-        serverSong.serverAlbumId,
-      );
-    }
+    Album? resolvedAlbum =
+        serverSong.album.target != null
+            ? _albumService.getAlbumByServerId(
+                  serverSong.album.target!.serverId,
+                ) ??
+                serverSong.album.target
+            : null;
 
-    Song? existing = _songRepository.getSongByServerId(serverSong.serverId);
+    Song? existing = _songRepository.getSongByFileHash(serverSong.fileHash);
 
     if (existing == null) {
       serverSong.requiresSync = false;
@@ -271,9 +262,6 @@ class SongService {
     existing.discNumber = serverSong.discNumber;
     existing.year = serverSong.year;
     existing.requiresSync = false;
-    if (existing.serverId <= 0 && serverSong.serverId > 0) {
-      existing.serverId = serverSong.serverId;
-    }
 
     if (!existing.isLocal) {
       existing.path = '';
@@ -359,7 +347,7 @@ class SongService {
         final response = await _songRestService.negotiateUpload(request);
 
         if (response != null) {
-          song.serverId = response.songId;
+          song.fileHash = response.fileHash;
           song.requiresSync = false;
           _songRepository.updateSong(song);
 
@@ -368,7 +356,7 @@ class SongService {
               await Future.delayed(const Duration(milliseconds: 10));
               if (index < chunks.length) {
                 await _songRestService.uploadChunk(
-                  songId: response.songId,
+                  fileHash: response.fileHash,
                   chunkIndex: index,
                   chunkBytes: chunks[index],
                   hash: hashes[index],
@@ -495,7 +483,7 @@ class SongService {
 
     final refreshed = <Song>[];
     for (final s in serverPage.content) {
-      final cached = _songRepository.getSongByServerId(s.serverId);
+      final cached = _songRepository.getSongByFileHash(s.fileHash);
       if (cached != null) {
         refreshed.add(cached);
       } else {
@@ -516,7 +504,7 @@ class SongService {
     final page = await _songRestService.getRecommendations();
     await _cacheServerSongs(page.content);
     return page.content
-        .map((s) => _songRepository.getSongByServerId(s.serverId) ?? s)
+        .map((s) => _songRepository.getSongByFileHash(s.fileHash) ?? s)
         .toList();
   }
 
@@ -524,7 +512,7 @@ class SongService {
     final page = await _songRestService.getForgottenFavourites();
     await _cacheServerSongs(page.content);
     return page.content
-        .map((s) => _songRepository.getSongByServerId(s.serverId) ?? s)
+        .map((s) => _songRepository.getSongByFileHash(s.fileHash) ?? s)
         .toList();
   }
 
@@ -532,17 +520,17 @@ class SongService {
     final page = await _songRestService.getQuickDial();
     await _cacheServerSongs(page.content);
     return page.content
-        .map((s) => _songRepository.getSongByServerId(s.serverId) ?? s)
+        .map((s) => _songRepository.getSongByFileHash(s.fileHash) ?? s)
         .toList();
   }
 
-  Widget getCoverArt(int serverId) {
-    final song = _songRepository.getSongByServerId(serverId);
+  Widget getCoverArt(String fileHash) {
+    final song = _songRepository.getSongByFileHash(fileHash);
     final album = song?.album.target;
 
     return _songRestService.fetchCoverArt(
       song ?? Song()
-        ..serverId = serverId,
+        ..fileHash = fileHash,
       onBytesLoaded: (bytes) {
         if (album == null) return;
         album.imageBytes = bytes;

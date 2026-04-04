@@ -15,13 +15,10 @@ class Album with AbstractCollection implements BaseEntity {
 
   @Index()
   @Unique()
-  int _serverId = -1;
+  int serverId = -1;
 
   @override
-  int get serverId => _serverId;
-
-  @override
-  set serverId(int value) => _serverId = value;
+  String get cloudId => serverId > 0 ? serverId.toString() : '';
 
   bool requiresSync = false;
 

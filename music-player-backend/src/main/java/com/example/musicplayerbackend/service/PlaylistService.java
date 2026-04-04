@@ -38,7 +38,8 @@ public class PlaylistService {
 
     @Transactional
     public PlaylistDetailDto createPlaylist(User user, CreatePlaylistDto req) {
-        List<Long> songIds = req.getSongIds() == null ? List.of() : req.getSongIds();
+        List<String> fileHashes = req.getSongFileHashes() == null ? List.of() : req.getSongFileHashes();
+        List<Long> songIds = fileHashesToIds(fileHashes);
         Playlist playlist = Playlist.builder()
                 .user(user)
                 .name(req.getName())
@@ -60,8 +61,8 @@ public class PlaylistService {
         if (req.getName() != null) {
             playlist.setName(req.getName());
         }
-        if (req.getSongIds() != null) {
-            playlist.setSongIdsJson(toJson(req.getSongIds()));
+        if (req.getSongFileHashes() != null) {
+            playlist.setSongIdsJson(toJson(fileHashesToIds(req.getSongFileHashes())));
         }
         // coverImage: null = no change; empty string = remove cover; non-empty = set new cover
         if (req.getCoverImage() != null) {
@@ -95,12 +96,13 @@ public class PlaylistService {
 
     private PlaylistDto toDto(Playlist p) {
         List<Long> ids = fromJson(p.getSongIdsJson());
+        List<String> fileHashes = idsToFileHashes(ids);
         PlaylistDto dto = new PlaylistDto();
         dto.setId(p.getId());
         dto.setName(p.getName());
         dto.setType(p.getPlaylistType() != null ? PlaylistDto.TypeEnum.fromValue(p.getPlaylistType().name()) : null);
         dto.setUserId(p.getUser().getId());
-        dto.setSongIds(ids);
+        dto.setSongFileHashes(fileHashes);
         dto.setHasCover(p.getCoverImage() != null && !p.getCoverImage().isBlank());
         return dto;
     }
@@ -118,6 +120,20 @@ public class PlaylistService {
         dto.setSongs(songs);
         dto.setHasCover(p.getCoverImage() != null && !p.getCoverImage().isBlank());
         return dto;
+    }
+
+    private List<Long> fileHashesToIds(List<String> fileHashes) {
+        if (fileHashes == null || fileHashes.isEmpty()) return List.of();
+        return songRepository.findAllByFileHashIn(fileHashes).stream()
+                .map(song -> song.getId())
+                .toList();
+    }
+
+    private List<String> idsToFileHashes(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return songRepository.findAllById(ids).stream()
+                .map(song -> song.getFileHash())
+                .toList();
     }
 
     private String toJson(List<Long> ids) {

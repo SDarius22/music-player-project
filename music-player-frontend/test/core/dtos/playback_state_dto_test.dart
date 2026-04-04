@@ -5,15 +5,15 @@ void main() {
   group('PlaybackStateDto', () {
     test('fromJson parses all fields correctly', () {
       final dto = PlaybackStateDto.fromJson({
-        'queueSongIds': [1, 2, 3],
-        'currentSongId': 2,
+        'queueFileHashes': ['hash1', 'hash2', 'hash3'],
+        'currentFileHash': 'hash2',
         'positionMs': 45000,
         'shuffle': true,
         'repeat': false,
       });
 
-      expect(dto.queueSongIds, equals([1, 2, 3]));
-      expect(dto.currentSongId, equals(2));
+      expect(dto.queueFileHashes, equals(['hash1', 'hash2', 'hash3']));
+      expect(dto.currentFileHash, equals('hash2'));
       expect(dto.positionMs, equals(45000));
       expect(dto.shuffle, isTrue);
       expect(dto.repeat, isFalse);
@@ -22,41 +22,41 @@ void main() {
     test('fromJson uses safe defaults when fields are absent', () {
       final dto = PlaybackStateDto.fromJson({});
 
-      expect(dto.queueSongIds, isEmpty);
-      expect(dto.currentSongId, isNull);
+      expect(dto.queueFileHashes, isEmpty);
+      expect(dto.currentFileHash, isNull);
       expect(dto.positionMs, equals(0));
       expect(dto.shuffle, isFalse);
       expect(dto.repeat, isFalse);
     });
 
-    test('fromJson handles explicit null for currentSongId', () {
+    test('fromJson handles explicit null for currentFileHash', () {
       final dto = PlaybackStateDto.fromJson({
-        'queueSongIds': [1],
-        'currentSongId': null,
+        'queueFileHashes': ['hash1'],
+        'currentFileHash': null,
         'positionMs': 0,
         'shuffle': false,
         'repeat': false,
       });
 
-      expect(dto.currentSongId, isNull);
+      expect(dto.currentFileHash, isNull);
     });
 
-    test('fromJson coerces numeric types from JSON numbers', () {
+    test('fromJson coerces entries to strings', () {
       final dto = PlaybackStateDto.fromJson({
-        'queueSongIds': [1.0, 2.0],
-        'positionMs': 1000.0,
+        'queueFileHashes': ['abc', 'def'],
+        'positionMs': 1000,
         'shuffle': false,
         'repeat': false,
       });
 
-      expect(dto.queueSongIds, equals([1, 2]));
+      expect(dto.queueFileHashes, equals(['abc', 'def']));
       expect(dto.positionMs, equals(1000));
     });
 
     test('toJson serialises all fields', () {
       const dto = PlaybackStateDto(
-        queueSongIds: [10, 20],
-        currentSongId: 10,
+        queueFileHashes: ['hashA', 'hashB'],
+        currentFileHash: 'hashA',
         positionMs: 5000,
         shuffle: true,
         repeat: true,
@@ -64,25 +64,25 @@ void main() {
 
       final json = dto.toJson();
 
-      expect(json['queueSongIds'], equals([10, 20]));
-      expect(json['currentSongId'], equals(10));
+      expect(json['queueFileHashes'], equals(['hashA', 'hashB']));
+      expect(json['currentFileHash'], equals('hashA'));
       expect(json['positionMs'], equals(5000));
       expect(json['shuffle'], isTrue);
       expect(json['repeat'], isTrue);
     });
 
-    test('toJson includes null currentSongId key', () {
-      const dto = PlaybackStateDto(queueSongIds: [], positionMs: 0);
+    test('toJson includes null currentFileHash key', () {
+      const dto = PlaybackStateDto(queueFileHashes: [], positionMs: 0);
       final json = dto.toJson();
 
-      expect(json.containsKey('currentSongId'), isTrue);
-      expect(json['currentSongId'], isNull);
+      expect(json.containsKey('currentFileHash'), isTrue);
+      expect(json['currentFileHash'], isNull);
     });
 
     test('toJson then fromJson is a lossless round-trip', () {
       const original = PlaybackStateDto(
-        queueSongIds: [100, 200, 300],
-        currentSongId: 200,
+        queueFileHashes: ['hash100', 'hash200', 'hash300'],
+        currentFileHash: 'hash200',
         positionMs: 72000,
         shuffle: true,
         repeat: false,
@@ -90,8 +90,8 @@ void main() {
 
       final restored = PlaybackStateDto.fromJson(original.toJson());
 
-      expect(restored.queueSongIds, equals(original.queueSongIds));
-      expect(restored.currentSongId, equals(original.currentSongId));
+      expect(restored.queueFileHashes, equals(original.queueFileHashes));
+      expect(restored.currentFileHash, equals(original.currentFileHash));
       expect(restored.positionMs, equals(original.positionMs));
       expect(restored.shuffle, equals(original.shuffle));
       expect(restored.repeat, equals(original.repeat));

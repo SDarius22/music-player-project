@@ -67,7 +67,7 @@ class ChunkStatRepositoryTest extends BaseRepositoryTest {
         ChunkStat saved = ChunkStat.builder()
                 .timestamp(Instant.now())
                 .userId(user.getId())
-                .songId(100L)
+                .songFileHash("hash-100")
                 .songName("Bohemian Rhapsody")
                 .localChunks(0)
                 .localCachedChunks(0)
@@ -80,7 +80,7 @@ class ChunkStatRepositoryTest extends BaseRepositoryTest {
         ChunkStat result = chunkStatRepository.save(saved);
 
         assertThat(result.getUserId()).isEqualTo(user.getId());
-        assertThat(result.getSongId()).isEqualTo(100L);
+        assertThat(result.getSongFileHash()).isEqualTo("hash-100");
         assertThat(result.getSongName()).isEqualTo("Bohemian Rhapsody");
     }
 

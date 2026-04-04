@@ -51,6 +51,14 @@ class InMemoryAlbumRepository implements AlbumRepository {
   }
 
   @override
+  Album? getAlbumByNameAndArtistName(String albumName, String artistName) {
+    for (final a in _byId.values) {
+      if (a.name == albumName && a.artist.target?.name == artistName) return a;
+    }
+    return null;
+  }
+
+  @override
   Album? getAlbumByServerId(int serverId) {
     for (final a in _byId.values) {
       if (a.serverId == serverId) return a;

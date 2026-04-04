@@ -1,5 +1,5 @@
 class SongSyncDto {
-  final int songId;
+  final String fileHash;
   final int playCountDelta;
   final bool? likedByUser;
   final bool isDeleted;
@@ -7,7 +7,7 @@ class SongSyncDto {
   final DateTime? addedAt;
 
   SongSyncDto({
-    required this.songId,
+    required this.fileHash,
     this.playCountDelta = 0,
     this.likedByUser,
     this.isDeleted = false,
@@ -16,7 +16,7 @@ class SongSyncDto {
   });
 
   Map<String, dynamic> toJson() => {
-    'songId': songId,
+    'fileHash': fileHash,
     'playCountDelta': playCountDelta,
     'likedByUser': likedByUser,
     'isDeleted': isDeleted,
@@ -26,7 +26,7 @@ class SongSyncDto {
 
   factory SongSyncDto.fromJson(Map<String, dynamic> json) {
     return SongSyncDto(
-      songId: json['songId'],
+      fileHash: json['fileHash'] as String,
       playCountDelta: 0,
       likedByUser: json['likedByUser'],
       isDeleted: json['isDeleted'] ?? false,

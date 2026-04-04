@@ -66,14 +66,14 @@ class PlaylistServiceTest {
     void shouldSaveAndReturnPlaylistDetailDto() {
         CreatePlaylistDto req = new CreatePlaylistDto();
         req.setName("New Playlist");
-        req.setSongIds(List.of(10L, 20L));
+        req.setSongFileHashes(List.of("h1", "h2"));
 
         Song song1 = Song.builder().id(10L).name("S1").songType(ContentType.STREAMABLE).fileHash("h1").build();
         Song song2 = Song.builder().id(20L).name("S2").songType(ContentType.STREAMABLE).fileHash("h2").build();
         SongDto dto1 = new SongDto();
-        dto1.setId(10L);
+        dto1.setFileHash("h1");
         SongDto dto2 = new SongDto();
-        dto2.setId(20L);
+        dto2.setFileHash("h2");
 
         when(playlistRepository.save(any())).thenAnswer(inv -> {
             Playlist pl = inv.getArgument(0);
@@ -81,6 +81,7 @@ class PlaylistServiceTest {
                     .songIdsJson(pl.getSongIdsJson()).createdAt(Instant.now()).updatedAt(Instant.now()).build();
             return pl;
         });
+        when(songRepository.findAllByFileHashIn(List.of("h1", "h2"))).thenReturn(List.of(song1, song2));
         when(songRepository.findAllById(List.of(10L, 20L))).thenReturn(List.of(song1, song2));
         when(songMapper.toDto(song1)).thenReturn(dto1);
         when(songMapper.toDto(song2)).thenReturn(dto2);
@@ -96,7 +97,7 @@ class PlaylistServiceTest {
     void shouldHandleNullSongIdsWhenCreatingPlaylist() {
         CreatePlaylistDto req = new CreatePlaylistDto();
         req.setName("Empty Playlist");
-        req.setSongIds(null);
+        req.setSongFileHashes(null);
 
         when(playlistRepository.save(any())).thenAnswer(inv -> {
             Playlist pl = inv.getArgument(0);
@@ -177,7 +178,7 @@ class PlaylistServiceTest {
         when(songRepository.findAllById(any())).thenReturn(List.of());
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
-        req.setSongIds(null);
+        req.setSongFileHashes(null);
 
         service.updatePlaylist(1L, 1L, req);
 
@@ -240,14 +241,15 @@ class PlaylistServiceTest {
                 .songIdsJson("[]").createdAt(Instant.now()).updatedAt(Instant.now()).build();
         Song song = Song.builder().id(5L).name("New Song").songType(ContentType.STREAMABLE).fileHash("h").build();
         SongDto songDto = new SongDto();
-        songDto.setId(5L);
+        songDto.setFileHash("h");
         when(playlistRepository.findById(1L)).thenReturn(Optional.of(p));
         when(playlistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(songRepository.findAllByFileHashIn(List.of("h"))).thenReturn(List.of(song));
         when(songRepository.findAllById(List.of(5L))).thenReturn(List.of(song));
         when(songMapper.toDto(song)).thenReturn(songDto);
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
-        req.setSongIds(List.of(5L));
+        req.setSongFileHashes(List.of("h"));
 
         PlaylistDetailDto result = service.updatePlaylist(1L, 1L, req);
 
@@ -353,7 +355,7 @@ class PlaylistServiceTest {
 
         PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
 
-        assertTrue(result.getContent().getFirst().getSongIds().isEmpty());
+        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
 
     @Test
@@ -364,7 +366,7 @@ class PlaylistServiceTest {
 
         PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
 
-        assertTrue(result.getContent().getFirst().getSongIds().isEmpty());
+        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
 
     @Test
@@ -375,6 +377,6 @@ class PlaylistServiceTest {
 
         PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
 
-        assertTrue(result.getContent().getFirst().getSongIds().isEmpty());
+        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
 }

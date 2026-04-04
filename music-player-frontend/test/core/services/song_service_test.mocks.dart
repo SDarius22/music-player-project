@@ -168,9 +168,9 @@ class MockSongRepository extends _i1.Mock implements _i12.SongRepository {
           as _i2.Song);
 
   @override
-  _i2.Song? getSongByServerId(int? serverId) =>
+  _i2.Song? getSongByFileHash(String? fileHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getSongByServerId, [serverId]),
+            Invocation.method(#getSongByFileHash, [fileHash]),
             returnValueForMissingStub: null,
           )
           as _i2.Song?);
@@ -271,12 +271,6 @@ class MockSongRepository extends _i1.Mock implements _i12.SongRepository {
           as List<_i2.Song>);
 
   @override
-  void markSongsAsSynced(List<int>? serverIds) => super.noSuchMethod(
-    Invocation.method(#markSongsAsSynced, [serverIds]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
   void deleteSong(_i2.Song? song) => super.noSuchMethod(
     Invocation.method(#deleteSong, [song]),
     returnValueForMissingStub: null,
@@ -355,14 +349,14 @@ class MockSongRestService extends _i1.Mock implements _i14.SongRestService {
 
   @override
   _i13.Future<bool> uploadChunk({
-    required int? songId,
+    required String? fileHash,
     required int? chunkIndex,
     required List<int>? chunkBytes,
     required String? hash,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#uploadChunk, [], {
-              #songId: songId,
+              #fileHash: fileHash,
               #chunkIndex: chunkIndex,
               #chunkBytes: chunkBytes,
               #hash: hash,
@@ -443,14 +437,14 @@ class MockSongRestService extends _i1.Mock implements _i14.SongRestService {
           as _i13.Future<bool>);
 
   @override
-  _i13.Future<_i2.Song> getServerSong(int? songId) =>
+  _i13.Future<_i2.Song> getServerSong(String? fileHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getServerSong, [songId]),
+            Invocation.method(#getServerSong, [fileHash]),
             returnValue: _i13.Future<_i2.Song>.value(
-              _FakeSong_0(this, Invocation.method(#getServerSong, [songId])),
+              _FakeSong_0(this, Invocation.method(#getServerSong, [fileHash])),
             ),
             returnValueForMissingStub: _i13.Future<_i2.Song>.value(
-              _FakeSong_0(this, Invocation.method(#getServerSong, [songId])),
+              _FakeSong_0(this, Invocation.method(#getServerSong, [fileHash])),
             ),
           )
           as _i13.Future<_i2.Song>);

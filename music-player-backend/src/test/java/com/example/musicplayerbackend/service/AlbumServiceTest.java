@@ -199,14 +199,14 @@ class AlbumServiceTest {
                 .fileHash("hash").build();
         Album album = Album.builder().id(1L).name("Thriller").songs(List.of(song)).build();
         SongDto songDto = new SongDto();
-        songDto.setId(100L);
+        songDto.setFileHash("hash");
         when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
         when(songMapper.toDto(song)).thenReturn(songDto);
 
         AlbumDetailDto result = service.getAlbumById(1L);
 
         assertEquals(1, result.getSongs().size());
-        assertEquals(100L, result.getSongs().getFirst().getId());
+        assertEquals("hash", result.getSongs().getFirst().getFileHash());
     }
 
     @Test

@@ -18,11 +18,15 @@ public interface SongRepository extends JpaRepository<Song, Long>, JpaSpecificat
     @EntityGraph(attributePaths = {"artist", "album"})
     Optional<Song> findById(Long id);
 
+    @EntityGraph(attributePaths = {"artist", "album"})
     Optional<Song> findByFileHash(String fileHash);
+
+    List<Song> findAllByFileHashIn(List<String> fileHashes);
 
     @Query(value = "SELECT * FROM music_library.songs WHERE song_type = 'STREAMABLE' ORDER BY RANDOM()", nativeQuery = true)
     List<Song> findRandomStreamable(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"artist", "album"})
     @Query("SELECT s FROM Song s WHERE " +
             "(LOWER(s.name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
             "LOWER(s.artist.name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +

@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/database/objectBox.dart';
+import 'package:music_player_frontend/core/database/object_box_store.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';

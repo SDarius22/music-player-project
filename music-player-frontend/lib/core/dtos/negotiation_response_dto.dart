@@ -1,12 +1,12 @@
 class NegotiationResponseDto {
-  final int songId;
+  final String fileHash;
   final List<int> missingIndices;
 
-  NegotiationResponseDto({required this.songId, required this.missingIndices});
+  NegotiationResponseDto({required this.fileHash, required this.missingIndices});
 
   factory NegotiationResponseDto.fromJson(Map<String, dynamic> json) {
     return NegotiationResponseDto(
-      songId: json['songId'],
+      fileHash: json['fileHash'] as String,
       missingIndices: List<int>.from(json['missingIndices']),
     );
   }

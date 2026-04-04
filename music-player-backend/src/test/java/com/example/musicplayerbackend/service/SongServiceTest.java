@@ -85,7 +85,7 @@ class SongServiceTest {
     void shouldReturnPageOfDtosVisibleToUser() {
         Song song = Song.builder().id(1L).name("Test").songType(ContentType.STREAMABLE).fileHash("h").build();
         SongDto dto = new SongDto();
-        dto.setId(1L);
+        dto.setFileHash("h");
         User user = regularUser();
         when(songRepository.findVisibleToUser(eq(""), eq(2L), any()))
                 .thenReturn(new PageImpl<>(List.of(song)));
@@ -111,17 +111,17 @@ class SongServiceTest {
     void shouldReturnSongDto() {
         Song song = Song.builder().id(1L).name("S").songType(ContentType.STREAMABLE).fileHash("h").build();
         SongDto dto = new SongDto();
-        dto.setId(1L);
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        dto.setFileHash("h");
+        when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
         when(songMapper.toDto(song)).thenReturn(dto);
 
-        assertEquals(1L, service.getSongById(1L).getId());
+        assertEquals("h", service.getSongByFileHash("h").getFileHash());
     }
 
     @Test
-    void shouldThrowRuntimeExceptionWhenSongByIdNotFound() {
-        when(songRepository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> service.getSongById(99L));
+    void shouldThrowRuntimeExceptionWhenSongByFileHashNotFound() {
+        when(songRepository.findByFileHash("missing")).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.getSongByFileHash("missing"));
     }
 
     @Test
@@ -157,7 +157,7 @@ class SongServiceTest {
         when(songRepository.findByFileHash(hash)).thenReturn(Optional.empty());
         when(artistRepository.findByName("Artist")).thenReturn(Optional.empty());
         when(artistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(albumRepository.findByName("Album")).thenReturn(Optional.empty());
+        when(albumRepository.findByNameAndArtistId(any(), any())).thenReturn(Optional.empty());
         when(albumRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         Song savedSong = Song.builder().id(10L).name("New Song").songType(ContentType.STREAMABLE)
                 .fileHash(hash).build();
@@ -181,7 +181,7 @@ class SongServiceTest {
         Artist existingArtist = Artist.builder().id(1L).name("Artist").build();
         when(artistRepository.findByName("Artist")).thenReturn(Optional.of(existingArtist));
         Album existingAlbum = Album.builder().id(1L).name("Album").build();
-        when(albumRepository.findByName("Album")).thenReturn(Optional.of(existingAlbum));
+        when(albumRepository.findByNameAndArtistId("Album", 1L)).thenReturn(Optional.of(existingAlbum));
         Song savedSong = Song.builder().id(10L).name("New").songType(ContentType.STREAMABLE).fileHash(hash).build();
         when(songRepository.save(any())).thenReturn(savedSong);
         when(chunkRepository.findByContentHash(any())).thenReturn(Optional.empty());
@@ -203,7 +203,7 @@ class SongServiceTest {
         when(songRepository.findByFileHash(fileHash)).thenReturn(Optional.empty());
         when(artistRepository.findByName(any())).thenReturn(Optional.empty());
         when(artistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(albumRepository.findByName(any())).thenReturn(Optional.empty());
+        when(albumRepository.findByNameAndArtistId(any(), any())).thenReturn(Optional.empty());
         when(albumRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         Song savedSong = Song.builder().id(10L).name("S").songType(ContentType.STREAMABLE).fileHash(fileHash).build();
         when(songRepository.save(any())).thenReturn(savedSong);
@@ -232,19 +232,19 @@ class SongServiceTest {
         when(songRepository.findByFileHash("new-hash")).thenReturn(Optional.empty());
         when(artistRepository.findByName("Artist")).thenReturn(Optional.empty());
         when(artistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(albumRepository.findByName("Album")).thenReturn(Optional.empty());
+        when(albumRepository.findByNameAndArtistId(any(), any())).thenReturn(Optional.empty());
         when(albumRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         Song newSong = Song.builder().id(5L).name("Upload Song").songType(ContentType.USER_UPLOAD)
                 .fileHash("new-hash").build();
         when(songRepository.save(any())).thenReturn(newSong);
         when(songChunkRepository.existsBySongAndOrderIndex(any(), anyInt())).thenReturn(false);
         when(chunkRepository.findByContentHash(any())).thenReturn(Optional.empty());
-        when(negotiationMapper.toNegotiationResponseDto(eq(5L), any())).thenReturn(new NegotiationResponseDto());
+        when(negotiationMapper.toNegotiationResponseDto(eq("new-hash"), any())).thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 
         verify(songRepository).save(any());
-        verify(negotiationMapper).toNegotiationResponseDto(eq(5L), eq(List.of(0, 1)));
+        verify(negotiationMapper).toNegotiationResponseDto(eq("new-hash"), eq(List.of(0, 1)));
     }
 
     @Test
@@ -265,12 +265,12 @@ class SongServiceTest {
                 .size(100).storagePath("/tmp/chunk").build();
         when(chunkRepository.findByContentHash("existing-chunk-hash")).thenReturn(Optional.of(existingChunk));
         when(chunkRepository.findByContentHash("new-chunk-hash")).thenReturn(Optional.empty());
-        when(negotiationMapper.toNegotiationResponseDto(eq(1L), any())).thenReturn(new NegotiationResponseDto());
+        when(negotiationMapper.toNegotiationResponseDto(eq("fh"), any())).thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 
         // only index 1 should be missing (index 0 deduped)
-        verify(negotiationMapper).toNegotiationResponseDto(eq(1L), eq(List.of(1)));
+        verify(negotiationMapper).toNegotiationResponseDto(eq("fh"), eq(List.of(1)));
         verify(songChunkRepository).saveAll(argThat(list ->
                 ((List<?>) list).size() == 1)); // 1 deduped link saved
     }
@@ -288,12 +288,12 @@ class SongServiceTest {
         Artist existingArtist = Artist.builder().id(1L).name("ExistingArtist").build();
         when(artistRepository.findByName("ExistingArtist")).thenReturn(Optional.of(existingArtist));
         Album existingAlbum = Album.builder().id(1L).name("ExistingAlbum").build();
-        when(albumRepository.findByName("ExistingAlbum")).thenReturn(Optional.of(existingAlbum));
+        when(albumRepository.findByNameAndArtistId("ExistingAlbum", 1L)).thenReturn(Optional.of(existingAlbum));
         Song song = Song.builder().id(3L).name("Song").fileHash("fh-reuse").songType(ContentType.USER_UPLOAD).build();
         when(songRepository.save(any())).thenReturn(song);
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(false);
         when(chunkRepository.findByContentHash("chunk-hash")).thenReturn(Optional.empty());
-        when(negotiationMapper.toNegotiationResponseDto(eq(3L), any())).thenReturn(new NegotiationResponseDto());
+        when(negotiationMapper.toNegotiationResponseDto(eq("fh-reuse"), any())).thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 
@@ -312,12 +312,12 @@ class SongServiceTest {
 
         Song song = Song.builder().id(4L).name("Song").fileHash("fh-empty").songType(ContentType.USER_UPLOAD).build();
         when(songRepository.findByFileHash("fh-empty")).thenReturn(Optional.of(song));
-        when(negotiationMapper.toNegotiationResponseDto(eq(4L), eq(List.of()))).thenReturn(new NegotiationResponseDto());
+        when(negotiationMapper.toNegotiationResponseDto(eq("fh-empty"), eq(List.of()))).thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 
         verify(songChunkRepository, never()).saveAll(any());
-        verify(negotiationMapper).toNegotiationResponseDto(eq(4L), eq(List.of()));
+        verify(negotiationMapper).toNegotiationResponseDto(eq("fh-empty"), eq(List.of()));
     }
 
     @Test
@@ -333,7 +333,7 @@ class SongServiceTest {
                 .songType(ContentType.USER_UPLOAD).build();
         when(songRepository.findByFileHash("fh2")).thenReturn(Optional.of(song));
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(true); // already linked
-        when(negotiationMapper.toNegotiationResponseDto(eq(2L), eq(List.of())))
+        when(negotiationMapper.toNegotiationResponseDto(eq("fh2"), eq(List.of())))
                 .thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
@@ -343,19 +343,19 @@ class SongServiceTest {
 
     @Test
     void shouldThrowWhenSaveMissingChunkSongNotFound() {
-        when(songRepository.findById(99L)).thenReturn(Optional.empty());
+        when(songRepository.findByFileHash("hash-99")).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () ->
-                service.saveMissingChunk(regularUser(), 99L, 0, "hash",
+                service.saveMissingChunk(regularUser(), "hash-99", 0, "hash",
                         new MockMultipartFile("f", new byte[]{1})));
     }
 
     @Test
     void shouldThrowWhenSaveMissingChunkCallerIsNotOwner() {
         Song song = Song.builder().id(1L).ownerId(5L).songType(ContentType.USER_UPLOAD).fileHash("h").build();
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
 
         assertThrows(RuntimeException.class, () ->
-                service.saveMissingChunk(regularUser(), 1L, 0, "hash",
+                service.saveMissingChunk(regularUser(), "h", 0, "hash",
                         new MockMultipartFile("f", new byte[]{1})));
     }
 
@@ -364,10 +364,10 @@ class SongServiceTest {
         User owner = User.builder().id(1L).email("o@t.com").role(Role.USER)
                 .provider(AuthProvider.LOCAL).build();
         Song song = Song.builder().id(1L).ownerId(1L).songType(ContentType.USER_UPLOAD).fileHash("h").build();
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
 
         assertThrows(RuntimeException.class, () ->
-                service.saveMissingChunk(owner, 1L, 0, "wrong-hash",
+                service.saveMissingChunk(owner, "h", 0, "wrong-hash",
                         new MockMultipartFile("f", "chunk".getBytes())));
     }
 
@@ -379,12 +379,12 @@ class SongServiceTest {
         byte[] data = "valid chunk data".getBytes();
         String correctHash = sha256Hex(data);
 
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
         when(chunkRepository.findByContentHash(correctHash)).thenReturn(Optional.empty());
         when(chunkRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(false);
 
-        service.saveMissingChunk(owner, 1L, 0, correctHash,
+        service.saveMissingChunk(owner, "h", 0, correctHash,
                 new MockMultipartFile("f", data));
 
         verify(chunkRepository).save(any());
@@ -399,7 +399,7 @@ class SongServiceTest {
         byte[] data = "concurrent chunk data".getBytes();
         String correctHash = sha256Hex(data);
 
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
         when(chunkRepository.findByContentHash(correctHash)).thenReturn(Optional.empty());
         Chunk savedByRace = Chunk.builder().id(99L).contentHash(correctHash).size(data.length).storagePath("/tmp/x").build();
         when(chunkRepository.save(any())).thenThrow(new DataIntegrityViolationException("duplicate"));
@@ -409,7 +409,7 @@ class SongServiceTest {
                 .thenReturn(Optional.of(savedByRace));
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(false);
 
-        service.saveMissingChunk(owner, 1L, 0, correctHash, new MockMultipartFile("f", data));
+        service.saveMissingChunk(owner, "h", 0, correctHash, new MockMultipartFile("f", data));
 
         verify(songChunkRepository).save(any());
     }
@@ -424,11 +424,11 @@ class SongServiceTest {
 
         Chunk existingChunk = Chunk.builder().id(10L).contentHash(correctHash)
                 .size(data.length).storagePath("/tmp/existing").build();
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
         when(chunkRepository.findByContentHash(correctHash)).thenReturn(Optional.of(existingChunk));
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(true); // link already exists
 
-        service.saveMissingChunk(owner, 1L, 0, correctHash, new MockMultipartFile("f", data));
+        service.saveMissingChunk(owner, "h", 0, correctHash, new MockMultipartFile("f", data));
 
         verify(songChunkRepository, never()).save(any());
     }
@@ -443,11 +443,11 @@ class SongServiceTest {
 
         Chunk existingChunk = Chunk.builder().id(10L).contentHash(correctHash)
                 .size(data.length).storagePath("/tmp/existing").build();
-        when(songRepository.findById(1L)).thenReturn(Optional.of(song));
+        when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
         when(chunkRepository.findByContentHash(correctHash)).thenReturn(Optional.of(existingChunk));
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(false);
 
-        service.saveMissingChunk(owner, 1L, 0, correctHash,
+        service.saveMissingChunk(owner, "h", 0, correctHash,
                 new MockMultipartFile("f", data));
 
         verify(chunkRepository, never()).save(any()); // no new chunk created

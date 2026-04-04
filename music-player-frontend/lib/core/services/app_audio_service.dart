@@ -26,14 +26,16 @@ class AppAudioService {
   final PlaylistService playlistService;
   final AuthService authService;
   final PlaybackRestService? playbackRestService;
-  final ChunkService Function(int songId) createChunkManager;
+  final ChunkService Function(String fileHash) createChunkManager;
 
   ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
 
-  void Function(int songId, String songName)? _onWebSongChange;
+  void Function(String fileHash, String songName)? _onWebSongChange;
 
-  void setWebSongChangeCallback(void Function(int songId, String songName) callback) {
+  void setWebSongChangeCallback(
+    void Function(String fileHash, String songName) callback,
+  ) {
     _onWebSongChange = callback;
   }
 
@@ -350,21 +352,21 @@ class AppAudioService {
 
     if (isServerTrack) {
       if (UniversalPlatform.isWeb) {
-        _onWebSongChange?.call(song.serverId, song.name);
+        _onWebSongChange?.call(song.fileHash, song.name);
         return AudioSource.uri(
-          Uri.parse('/music-player/p2p-stream/${song.serverId}'),
+          Uri.parse('/music-player/p2p-stream/${song.fileHash}'),
           tag: Map<String, dynamic>.from({
             "path": song.path,
-            "serverId": song.serverId,
+            "fileHash": song.fileHash,
             "song": song,
           }),
         );
       }
 
       return P2PChunkedAudioSource(
-        songId: song.serverId,
-        chunkManagerFactory: (id) {
-          final manager = createChunkManager(id);
+        fileHash: song.fileHash,
+        chunkManagerFactory: (hash) {
+          final manager = createChunkManager(hash);
           manager.configureSongInfo(
             song.name,
             ChunkStatsService.instance.report,
@@ -373,7 +375,7 @@ class AppAudioService {
         },
         tag: Map<String, dynamic>.from({
           "path": song.path,
-          "serverId": song.serverId,
+          "fileHash": song.fileHash,
           "song": song,
         }),
       );
@@ -382,7 +384,7 @@ class AppAudioService {
         Uri.file(song.path),
         tag: Map<String, dynamic>.from({
           "path": song.path,
-          "serverId": song.serverId,
+          "fileHash": song.fileHash,
           "song": song,
         }),
       );
@@ -391,18 +393,18 @@ class AppAudioService {
 
   void pushStateToServer() {
     if (playbackRestService == null) return;
-    final queueIds =
+    final queueFileHashes =
         _normalQueue
-            .where((s) => !s.isLocal && s.serverId > 0)
-            .map((s) => s.serverId)
+            .where((s) => !s.isLocal && s.fileHash.isNotEmpty)
+            .map((s) => s.fileHash)
             .toList();
-    final currentId =
-        (!currentSong.isLocal && currentSong.serverId > 0)
-            ? currentSong.serverId
+    final currentFileHash =
+        (!currentSong.isLocal && currentSong.fileHash.isNotEmpty)
+            ? currentSong.fileHash
             : null;
     final dto = PlaybackStateDto(
-      queueSongIds: queueIds,
-      currentSongId: currentId,
+      queueFileHashes: queueFileHashes,
+      currentFileHash: currentFileHash,
       positionMs: audioPlayer.position.inMilliseconds,
       shuffle: _currentAudioSettings.shuffle,
       repeat: _currentAudioSettings.repeat,
@@ -411,11 +413,11 @@ class AppAudioService {
   }
 
   Future<void> restoreFromServerState(PlaybackStateDto dto) async {
-    if (dto.queueSongIds.isEmpty) return;
+    if (dto.queueFileHashes.isEmpty) return;
 
     final resolvedQueue =
         (await Future.wait(
-          dto.queueSongIds.map((id) => songService.fetchSongByServerId(id)),
+          dto.queueFileHashes.map((hash) => songService.fetchSongByFileHash(hash)),
         )).whereType<Song>().toList();
 
     if (resolvedQueue.isEmpty) return;
@@ -432,9 +434,9 @@ class AppAudioService {
     playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
 
     Song current = resolvedQueue.first;
-    if (dto.currentSongId != null) {
+    if (dto.currentFileHash != null) {
       final matches = resolvedQueue.where(
-        (s) => s.serverId == dto.currentSongId,
+        (s) => s.fileHash == dto.currentFileHash,
       );
       if (matches.isNotEmpty) current = matches.first;
     }
@@ -457,22 +459,22 @@ class AppAudioService {
     for (int i = 1; i <= prefetchSongs; i++) {
       final songIdx = (_currentIndex + i) % _normalQueue.length;
       final song = _normalQueue[songIdx];
-      if (song.serverId <= 0) continue;
+      if (song.fileHash.isEmpty) continue;
 
       for (int chunkIdx = 0; chunkIdx < prefixChunks; chunkIdx++) {
         try {
-          final manager = createChunkManager(song.serverId);
+          final manager = createChunkManager(song.fileHash);
           final existing = await manager.cacheRepo.readChunk(
-            song.serverId,
+            song.fileHash,
             chunkIdx,
           );
           if (existing == null) {
-            debugPrint("Prefix caching song ${song.serverId} chunk $chunkIdx");
+            debugPrint("Prefix caching song ${song.fileHash} chunk $chunkIdx");
             await manager.getChunk(chunkIdx);
           }
         } catch (e) {
           debugPrint(
-            "Failed to prefix cache song ${song.serverId} chunk $chunkIdx: $e",
+            "Failed to prefix cache song ${song.fileHash} chunk $chunkIdx: $e",
           );
           break;
         }
@@ -499,7 +501,7 @@ class AppAudioService {
     if (song.isLocal) {
       ChunkStatsService.instance.report(
         ChunkDeliveryStats(
-          songId: song.id,
+          fileHash: song.fileHash,
           songName: song.name,
           localChunks: 1,
         ),

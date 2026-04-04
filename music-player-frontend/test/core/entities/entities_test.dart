@@ -15,24 +15,24 @@ void main() {
   group('Song.fromJson', () {
     test('parses all fields from JSON', () {
       final song = Song.fromJson({
-        'id': 42,
+        'fileHash': 'deadbeef01234567',
         'name': 'Test Song',
         'durationInSeconds': 180,
         'trackNumber': 3,
         'discNumber': 1,
         'year': 2020,
-        'artistId': 7,
-        'albumId': 5,
+        'artist': {'id': 7, 'name': 'Some Artist'},
+        'album': {'id': 5, 'name': 'Some Album'},
       });
 
-      expect(song.serverId, 42);
+      expect(song.fileHash, 'deadbeef01234567');
       expect(song.name, 'Test Song');
       expect(song.durationInSeconds, 180);
       expect(song.trackNumber, 3);
       expect(song.discNumber, 1);
       expect(song.year, 2020);
-      expect(song.serverArtistId, 7);
-      expect(song.serverAlbumId, 5);
+      expect(song.artist.target?.serverId, 7);
+      expect(song.album.target?.serverId, 5);
       expect(song.fullyLoaded, isTrue);
       expect(song.id, 0);
       expect(song.path, '');
@@ -41,21 +41,21 @@ void main() {
     test('uses defaults when fields are absent', () {
       final song = Song.fromJson({});
 
-      expect(song.serverId, -1);
+      expect(song.fileHash, '');
       expect(song.name, 'Unknown Song');
       expect(song.durationInSeconds, 0);
       expect(song.trackNumber, 0);
       expect(song.discNumber, 0);
       expect(song.year, 0);
-      expect(song.serverArtistId, 0);
-      expect(song.serverAlbumId, 0);
+      expect(song.artist.target, isNull);
+      expect(song.album.target, isNull);
     });
   });
 
   group('Song.toJson', () {
     test('serializes expected fields', () {
       final song = Song();
-      song.id = 10;
+      song.fileHash = 'deadbeef01234567';
       song.playCount = 5;
       song.likedByUser = true;
       final dt = DateTime(2024, 6, 1);
@@ -63,7 +63,7 @@ void main() {
 
       final json = song.toJson();
 
-      expect(json['songId'], 10);
+      expect(json['fileHash'], 'deadbeef01234567');
       expect(json['playCountDelta'], 5);
       expect(json['likedByUser'], isTrue);
       expect(json['lastPlayed'], dt);
@@ -83,19 +83,15 @@ void main() {
       expect(a, isNot(equals(b)));
     });
 
-    test('server songs equal when same serverId (non -1)', () {
-      final a = Song();
-      a.serverId = 99;
-      final b = Song();
-      b.serverId = 99;
+    test('cloud songs equal when same fileHash (non-empty)', () {
+      final a = Song()..fileHash = 'hash99';
+      final b = Song()..fileHash = 'hash99';
       expect(a, equals(b));
     });
 
-    test('server songs not equal when serverId is -1', () {
+    test('songs not equal when fileHash is empty and no path', () {
       final a = Song();
-      a.serverId = -1;
       final b = Song();
-      b.serverId = -1;
       expect(a, isNot(equals(b)));
     });
 
@@ -111,10 +107,9 @@ void main() {
       expect(song.hashCode, '/music/song.mp3'.hashCode);
     });
 
-    test('uses serverId hash when path is empty', () {
-      final song = Song();
-      song.serverId = 42;
-      expect(song.hashCode, 42.hashCode);
+    test('uses fileHash hash when fileHash is non-empty', () {
+      final song = Song()..fileHash = 'hash42';
+      expect(song.hashCode, 'hash42'.hashCode);
     });
   });
 
@@ -252,16 +247,16 @@ void main() {
   // ─── Playlist ────────────────────────────────────────────────────────────
 
   group('Playlist.fromJson', () {
-    test('parses serverId, name, and songIds', () {
+    test('parses serverId, name, and songFileHashes', () {
       final playlist = Playlist.fromJson({
         'id': 5,
         'name': 'Favorites',
-        'songIds': [10, 20, 30],
+        'songFileHashes': ['hash10', 'hash20', 'hash30'],
       });
 
       expect(playlist.serverId, 5);
       expect(playlist.name, 'Favorites');
-      expect(playlist.serverSongIds, equals([10, 20, 30]));
+      expect(playlist.serverSongFileHashes, equals(['hash10', 'hash20', 'hash30']));
     });
 
     test('uses defaults when fields absent', () {
@@ -269,16 +264,16 @@ void main() {
 
       expect(playlist.serverId, -1);
       expect(playlist.name, 'Unknown Playlist');
-      expect(playlist.serverSongIds, isEmpty);
+      expect(playlist.serverSongFileHashes, isEmpty);
     });
 
-    test('coerces numeric songIds', () {
+    test('coerces non-string entries to strings', () {
       final playlist = Playlist.fromJson({
         'id': 1,
         'name': 'P',
-        'songIds': [1.0, 2.0],
+        'songFileHashes': ['abc', 'def'],
       });
-      expect(playlist.serverSongIds, equals([1, 2]));
+      expect(playlist.serverSongFileHashes, equals(['abc', 'def']));
     });
   });
 

@@ -35,7 +35,7 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
         UserPlaybackState state = UserPlaybackState.builder()
                 .userId(user.getId())
                 .queueSongIds("[1,2,3]")
-                .currentSongId(null)
+                .currentFileHash(null)
                 .positionMs(5000L)
                 .shuffle(true)
                 .repeat(false)

@@ -5,19 +5,19 @@ import 'package:just_audio/just_audio.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 
 class P2PChunkedAudioSource extends StreamAudioSource {
-  final int songId;
-  final ChunkService Function(int) chunkManagerFactory;
+  final String fileHash;
+  final ChunkService Function(String) chunkManagerFactory;
   ChunkService? _chunkManager;
 
   P2PChunkedAudioSource({
-    required this.songId,
+    required this.fileHash,
     required this.chunkManagerFactory,
     super.tag,
   });
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
-    _chunkManager ??= chunkManagerFactory(songId);
+    _chunkManager ??= chunkManagerFactory(fileHash);
     if (!_chunkManager!.isReady) {
       await _chunkManager!.loadManifest();
     }

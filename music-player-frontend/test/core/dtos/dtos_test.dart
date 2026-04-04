@@ -93,13 +93,13 @@ void main() {
   // ─── PlaylistPageDto ──────────────────────────────────────────────────────
 
   group('PlaylistPageDto.fromJson', () {
-    test('parses full response including songIds', () {
+    test('parses full response including songFileHashes', () {
       final dto = PlaylistPageDto.fromJson({
         'content': [
           {
             'id': 5,
             'name': 'Chill',
-            'songIds': [1, 2, 3],
+            'songFileHashes': ['hash1', 'hash2', 'hash3'],
           },
         ],
         'page': 0,
@@ -111,7 +111,10 @@ void main() {
       expect(dto.content.length, 1);
       expect(dto.content.first.name, 'Chill');
       expect(dto.content.first.serverId, 5);
-      expect(dto.content.first.serverSongIds, equals([1, 2, 3]));
+      expect(
+        dto.content.first.serverSongFileHashes,
+        equals(['hash1', 'hash2', 'hash3']),
+      );
       expect(dto.page, 0);
       expect(dto.totalPages, 1);
       expect(dto.totalElements, 1);
@@ -133,14 +136,12 @@ void main() {
       final dto = SongPageDto.fromJson({
         'content': [
           {
-            'id': 99,
+            'fileHash': 'deadbeef01234567',
             'name': 'Comfortably Numb',
             'durationInSeconds': 382,
             'trackNumber': 6,
             'discNumber': 2,
             'year': 1979,
-            'artistId': 1,
-            'albumId': 2,
           },
         ],
         'page': 0,
@@ -150,7 +151,7 @@ void main() {
       });
 
       expect(dto.content.length, 1);
-      expect(dto.content.first.serverId, 99);
+      expect(dto.content.first.fileHash, 'deadbeef01234567');
       expect(dto.content.first.name, 'Comfortably Numb');
       expect(dto.content.first.durationInSeconds, 382);
       expect(dto.page, 0);
@@ -173,14 +174,14 @@ void main() {
   group('ChunkManifestDto.fromJson', () {
     test('parses all fields', () {
       final dto = ChunkManifestDto.fromJson({
-        'songId': 7,
+        'fileHash': 'deadbeef01234567',
         'totalChunks': 10,
         'chunkSize': 65536,
         'totalBytes': 655360,
         'hashes': ['abc', 'def'],
       });
 
-      expect(dto.songId, 7);
+      expect(dto.fileHash, 'deadbeef01234567');
       expect(dto.totalChunks, 10);
       expect(dto.chunkSize, 65536);
       expect(dto.totalBytes, 655360);
@@ -193,14 +194,14 @@ void main() {
   group('SongSyncDto.fromJson', () {
     test('parses all fields including dates', () {
       final dto = SongSyncDto.fromJson({
-        'songId': 12,
+        'fileHash': 'hash12',
         'likedByUser': true,
         'isDeleted': false,
         'lastPlayed': '2024-06-01T12:00:00.000',
         'addedAt': '2024-01-01T00:00:00.000',
       });
 
-      expect(dto.songId, 12);
+      expect(dto.fileHash, 'hash12');
       expect(dto.playCountDelta, 0); // always 0 from fromJson
       expect(dto.likedByUser, isTrue);
       expect(dto.isDeleted, isFalse);
@@ -210,7 +211,7 @@ void main() {
 
     test('null dates stay null', () {
       final dto = SongSyncDto.fromJson({
-        'songId': 1,
+        'fileHash': 'hash1',
         'lastPlayed': null,
         'addedAt': null,
       });
@@ -220,7 +221,7 @@ void main() {
     });
 
     test('isDeleted defaults to false when absent', () {
-      final dto = SongSyncDto.fromJson({'songId': 1});
+      final dto = SongSyncDto.fromJson({'fileHash': 'hash1'});
       expect(dto.isDeleted, isFalse);
     });
   });
@@ -230,7 +231,7 @@ void main() {
       final dt = DateTime(2024, 6, 1, 12);
       final added = DateTime(2024, 1, 1);
       final dto = SongSyncDto(
-        songId: 5,
+        fileHash: 'hash5',
         playCountDelta: 3,
         likedByUser: true,
         isDeleted: false,
@@ -240,7 +241,7 @@ void main() {
 
       final json = dto.toJson();
 
-      expect(json['songId'], 5);
+      expect(json['fileHash'], 'hash5');
       expect(json['playCountDelta'], 3);
       expect(json['likedByUser'], isTrue);
       expect(json['isDeleted'], isFalse);
@@ -249,7 +250,7 @@ void main() {
     });
 
     test('null dates serialize to null', () {
-      final dto = SongSyncDto(songId: 1);
+      final dto = SongSyncDto(fileHash: 'hash1');
       final json = dto.toJson();
       expect(json['lastPlayed'], isNull);
       expect(json['addedAt'], isNull);
@@ -261,7 +262,7 @@ void main() {
   group('SyncRequestDto.toJson', () {
     test('serializes with lastSyncTime and localChanges', () {
       final syncTime = DateTime(2024, 3, 15, 10, 0, 0);
-      final change = SongSyncDto(songId: 7, playCountDelta: 2);
+      final change = SongSyncDto(fileHash: 'hash7', playCountDelta: 2);
       final dto = SyncRequestDto(
         lastSyncTime: syncTime,
         localChanges: [change],
@@ -271,7 +272,7 @@ void main() {
 
       expect(json['lastSyncTime'], syncTime.toIso8601String());
       expect((json['localChanges'] as List).length, 1);
-      expect((json['localChanges'] as List).first['songId'], 7);
+      expect((json['localChanges'] as List).first['fileHash'], 'hash7');
     });
 
     test('null lastSyncTime serializes to null', () {
@@ -289,13 +290,13 @@ void main() {
       final dto = SyncResponseDto.fromJson({
         'newSyncTime': '2024-06-01T00:00:00.000',
         'serverChanges': [
-          {'songId': 3, 'isDeleted': true},
+          {'fileHash': 'hash3', 'isDeleted': true},
         ],
       });
 
       expect(dto.newSyncTime, DateTime.parse('2024-06-01T00:00:00.000'));
       expect(dto.serverChanges.length, 1);
-      expect(dto.serverChanges.first.songId, 3);
+      expect(dto.serverChanges.first.fileHash, 'hash3');
       expect(dto.serverChanges.first.isDeleted, isTrue);
     });
 
@@ -343,19 +344,19 @@ void main() {
   // ─── NegotiationResponseDto ───────────────────────────────────────────────
 
   group('NegotiationResponseDto.fromJson', () {
-    test('parses songId and missingIndices', () {
+    test('parses fileHash and missingIndices', () {
       final dto = NegotiationResponseDto.fromJson({
-        'songId': 42,
+        'fileHash': 'deadbeef42',
         'missingIndices': [0, 3, 7],
       });
 
-      expect(dto.songId, 42);
+      expect(dto.fileHash, 'deadbeef42');
       expect(dto.missingIndices, equals([0, 3, 7]));
     });
 
     test('empty missingIndices', () {
       final dto = NegotiationResponseDto.fromJson({
-        'songId': 1,
+        'fileHash': 'hash1',
         'missingIndices': [],
       });
       expect(dto.missingIndices, isEmpty);

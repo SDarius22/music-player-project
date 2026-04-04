@@ -58,11 +58,14 @@ public class DataSyncService {
         User userReference = userRepository.getReferenceById(userId);
 
         for (SongSyncDto change : changes) {
-            UserLibraryID id = new UserLibraryID(userId, change.getSongId());
+            Song songForId = songRepository.findByFileHash(change.getFileHash()).orElse(null);
+            if (songForId == null) continue;
+
+            UserLibraryID id = new UserLibraryID(userId, songForId.getId());
 
             UserLibrary libEntry = userLibraryRepository.findById(id)
                     .orElseGet(() -> {
-                        Song song = songRepository.findById(change.getSongId()).orElse(null);
+                        Song song = songRepository.findByFileHash(change.getFileHash()).orElse(null);
                         if (song == null) return null;
 
                         return UserLibrary.builder()
@@ -106,7 +109,7 @@ public class DataSyncService {
     private SongSyncDto mapEntityToDto(UserLibrary entity) {
         SongSyncDto dto = new SongSyncDto();
         if (entity.getSong() != null) {
-            dto.setSongId(entity.getSong().getId());
+            dto.setFileHash(entity.getSong().getFileHash());
         }
 
         dto.setLikedByUser(entity.getLiked());

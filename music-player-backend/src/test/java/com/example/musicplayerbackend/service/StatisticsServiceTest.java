@@ -36,7 +36,7 @@ class StatisticsServiceTest {
     @Test
     void shouldReturnAllStatsAsDtos() {
         ChunkStat stat = ChunkStat.builder()
-                .id(1L).userId(10L).songId(20L).songName("Test Song")
+                .id(1L).userId(10L).songFileHash("hash-20").songName("Test Song")
                 .localChunks(0).localCachedChunks(0)
                 .p2pChunks(8).serverChunks(2).totalChunks(10)
                 .p2pPercentage(80.0).timestamp(Instant.now())
@@ -49,7 +49,7 @@ class StatisticsServiceTest {
         ChunkStatDto dto = result.getFirst();
         assertEquals(1L, dto.getId());
         assertEquals(10L, dto.getUserId());
-        assertEquals(20L, dto.getSongId());
+        assertEquals("hash-20", dto.getSongFileHash());
         assertEquals("Test Song", dto.getSongName());
         assertEquals(8, dto.getP2pChunks());
         assertEquals(2, dto.getServerChunks());
@@ -61,7 +61,7 @@ class StatisticsServiceTest {
     @Test
     void shouldMapNullTimestampToNull() {
         ChunkStat stat = ChunkStat.builder()
-                .id(2L).userId(1L).songId(1L).songName("No Time")
+                .id(2L).userId(1L).songFileHash("hash-1").songName("No Time")
                 .localChunks(0).localCachedChunks(0)
                 .p2pChunks(0).serverChunks(0).totalChunks(0)
                 .p2pPercentage(0.0).timestamp(null) // null timestamp
@@ -82,7 +82,7 @@ class StatisticsServiceTest {
     @Test
     void shouldCalculateP2pPercentageCorrectly() {
         ChunkStatDto dto = new ChunkStatDto();
-        dto.setSongId(1L);
+        dto.setSongFileHash("hash-1");
         dto.setSongName("Song A");
         dto.setP2pChunks(7);
         dto.setServerChunks(3);

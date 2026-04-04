@@ -8,18 +8,18 @@ import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:web/web.dart' as web;
 
 class WebP2PBridge {
-  final ChunkService Function(int) chunkManagerFactory;
-  final Map<int, ChunkService> _managers = {};
-  final Map<int, String> _songNames = {};
-  int? _currentSongId;
+  final ChunkService Function(String) chunkManagerFactory;
+  final Map<String, ChunkService> _managers = {};
+  final Map<String, String> _songNames = {};
+  String? _currentFileHash;
 
   WebP2PBridge(this.chunkManagerFactory) {
     _listenToServiceWorker();
   }
 
-  void notifySong(int songId, String songName) {
-    _songNames[songId] = songName;
-    _managers[songId]?.configureSongInfo(songName, ChunkStatsService.instance.report);
+  void notifySong(String fileHash, String songName) {
+    _songNames[fileHash] = songName;
+    _managers[fileHash]?.configureSongInfo(songName, ChunkStatsService.instance.report);
   }
 
   void _listenToServiceWorker() {
@@ -47,24 +47,24 @@ class WebP2PBridge {
     Map<dynamic, dynamic> data,
   ) async {
     final String reqId = data['reqId'] as String;
-    final int songId = int.parse(data['songId'].toString());
+    final String fileHash = data['songId'].toString();
     final String rangeStr = data['range'].toString();
 
-    _currentSongId = songId;
+    _currentFileHash = fileHash;
 
-    if (!_managers.containsKey(songId)) {
-      _managers[songId] = chunkManagerFactory(songId);
-      await _managers[songId]!.loadManifest();
-      if (_songNames.containsKey(songId)) {
-        _managers[songId]!.configureSongInfo(
-          _songNames[songId]!,
+    if (!_managers.containsKey(fileHash)) {
+      _managers[fileHash] = chunkManagerFactory(fileHash);
+      await _managers[fileHash]!.loadManifest();
+      if (_songNames.containsKey(fileHash)) {
+        _managers[fileHash]!.configureSongInfo(
+          _songNames[fileHash]!,
           ChunkStatsService.instance.report,
         );
       }
     }
-    if (_currentSongId != songId) return;
+    if (_currentFileHash != fileHash) return;
 
-    final manager = _managers[songId]!;
+    final manager = _managers[fileHash]!;
 
     int requestedStart = 0;
     int requestedEnd = manager.totalBytes - 1;
@@ -88,7 +88,7 @@ class WebP2PBridge {
       requestedEnd = manager.totalBytes - 1;
     }
 
-    if (_currentSongId != songId) return;
+    if (_currentFileHash != fileHash) return;
 
     try {
       final (responseBytes, isP2P) = await _compileBytesForRange(
@@ -119,14 +119,14 @@ class WebP2PBridge {
   }
 
   void _handleStatsReport(Map<dynamic, dynamic> data) {
-    final int songId = (data['songId'] as num).toInt();
+    final String fileHash = data['songId'].toString();
     final int p2pRanges = (data['p2pRanges'] as num).toInt();
     final int serverRanges = (data['serverRanges'] as num).toInt();
-    final String songName = data['songName'] as String? ?? _songNames[songId] ?? 'Unknown';
+    final String songName = data['songName'] as String? ?? _songNames[fileHash] ?? 'Unknown';
 
     ChunkStatsService.instance.report(
       ChunkDeliveryStats(
-        songId: songId,
+        fileHash: fileHash,
         songName: songName,
         p2pChunks: p2pRanges,
         serverChunks: serverRanges,

@@ -11,7 +11,7 @@ import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
-class WebMusicScannerService implements AbstractMusicScannerService {
+class WindowsMusicScannerService implements AbstractMusicScannerService {
   final SongService _songService;
   final ArtistService _artistService;
   final AlbumService _albumService;
@@ -23,7 +23,7 @@ class WebMusicScannerService implements AbstractMusicScannerService {
 
   bool _isScanning = false;
 
-  WebMusicScannerService(
+  WindowsMusicScannerService(
     this._songService,
     this._artistService,
     this._albumService,

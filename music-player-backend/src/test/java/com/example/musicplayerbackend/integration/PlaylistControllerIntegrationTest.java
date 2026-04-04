@@ -70,7 +70,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturn201WhenCreatingPlaylist() throws Exception {
         CreatePlaylistDto req = new CreatePlaylistDto();
         req.setName("New Playlist");
-        req.setSongIds(List.of());
+        req.setSongFileHashes(List.of());
 
         mockMvc.perform(post("/api/v1/playlists")
                         .with(user(testUser))

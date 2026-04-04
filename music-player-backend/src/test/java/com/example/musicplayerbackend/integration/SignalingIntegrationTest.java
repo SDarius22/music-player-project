@@ -75,7 +75,7 @@ class SignalingIntegrationTest {
                 "REGISTER_CACHE",
                 peer1Id,
                 null,
-                1,
+                "hash-1",
                 Set.of(0, 1, 2, 3)
         );
         peer1Session.sendMessage(new TextMessage(objectMapper.writeValueAsString(registerSignal)));
@@ -113,7 +113,7 @@ class SignalingIntegrationTest {
                     "DISCOVER_PEERS",
                     discovererId,
                     null,
-                    1,
+                    "hash-1",
                     null
             );
             discoverSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(discoverSignal)));

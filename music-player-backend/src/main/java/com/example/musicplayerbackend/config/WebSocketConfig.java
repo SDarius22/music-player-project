@@ -17,6 +17,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(signalingHandler, "/ws/signaling")
-                .setAllowedOrigins("*"); // In production, restrict this to your specific Flutter app domain if applicable
+                .setAllowedOrigins("*");
     }
 }

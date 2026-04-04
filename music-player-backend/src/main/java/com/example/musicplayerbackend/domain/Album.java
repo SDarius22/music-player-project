@@ -6,7 +6,9 @@ import lombok.*;
 import java.util.List;
 
 @Entity
-@Table(name = "albums")
+@Table(name = "albums", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"name", "artist_id"})
+})
 @Getter
 @Setter
 @NoArgsConstructor

@@ -14,7 +14,7 @@ import java.time.ZoneOffset;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@Import({SongMapperImpl.class})
+@Import({SongMapperImpl.class, ArtistMapperImpl.class, AlbumMapperImpl.class})
 class SongMapperTest {
 
     @Autowired SongMapper songMapper;
@@ -26,6 +26,7 @@ class SongMapperTest {
         Song song = Song.builder()
                 .id(10L)
                 .name("Bohemian Rhapsody")
+                .fileHash("bohemian-hash")
                 .artist(artist)
                 .album(album)
                 .durationInSeconds(354)
@@ -35,10 +36,10 @@ class SongMapperTest {
 
         SongDto dto = songMapper.toDto(song);
 
-        assertEquals(10L, dto.getId());
+        assertEquals("bohemian-hash", dto.getFileHash());
         assertEquals("Bohemian Rhapsody", dto.getName());
-        assertEquals(1L, dto.getArtistId());
-        assertEquals(2L, dto.getAlbumId());
+        assertEquals(1L, dto.getArtist().getId());
+        assertEquals(2L, dto.getAlbum().getId());
         assertEquals(354, dto.getDurationInSeconds());
         assertEquals(1, dto.getTrackNumber());
         assertEquals(1, dto.getDiscNumber());
@@ -56,20 +57,20 @@ class SongMapperTest {
 
         SongDto dto = songMapper.toDto(song);
 
-        assertNull(dto.getArtistId());
-        assertNull(dto.getAlbumId());
+        assertNull(dto.getArtist());
+        assertNull(dto.getAlbum());
     }
 
     @Test
     void shouldMapSongIdAndNameToEntity() {
         SongDto dto = new SongDto();
-        dto.setId(7L);
+        dto.setFileHash("stairway-hash");
         dto.setName("Stairway to Heaven");
         dto.setDurationInSeconds(482);
 
         Song entity = songMapper.toEntity(dto);
 
-        assertEquals(7L, entity.getId());
+        assertEquals("stairway-hash", entity.getFileHash());
         assertEquals("Stairway to Heaven", entity.getName());
         assertEquals(482, entity.getDurationInSeconds());
     }

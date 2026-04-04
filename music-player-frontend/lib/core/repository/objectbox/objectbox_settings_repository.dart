@@ -1,4 +1,4 @@
-import 'package:music_player_frontend/core/database/objectBox.dart';
+import 'package:music_player_frontend/core/database/object_box_store.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';

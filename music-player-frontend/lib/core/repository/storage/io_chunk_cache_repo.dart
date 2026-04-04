@@ -25,15 +25,15 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
     return _baseDir!;
   }
 
-  Future<Directory> _getSongDir(int songId) async {
+  Future<Directory> _getSongDir(String fileHash) async {
     final base = await _getBaseDir();
-    final songDir = Directory('${base.path}/$songId');
+    final songDir = Directory('${base.path}/$fileHash');
     return songDir;
   }
 
   @override
-  Future<Uint8List?> readChunk(int songId, int chunkIndex) async {
-    final songDir = await _getSongDir(songId);
+  Future<Uint8List?> readChunk(String fileHash, int chunkIndex) async {
+    final songDir = await _getSongDir(fileHash);
     final file = File('${songDir.path}/$chunkIndex.bin');
 
     if (await file.exists()) {
@@ -43,8 +43,8 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
   }
 
   @override
-  Future<void> saveChunk(int songId, int chunkIndex, Uint8List data) async {
-    final songDir = await _getSongDir(songId);
+  Future<void> saveChunk(String fileHash, int chunkIndex, Uint8List data) async {
+    final songDir = await _getSongDir(fileHash);
 
     if (!await songDir.exists()) {
       await songDir.create(recursive: true);
@@ -55,8 +55,8 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
   }
 
   @override
-  Future<List<int>> getAvailableChunkIndices(int songId) async {
-    final songDir = await _getSongDir(songId);
+  Future<List<int>> getAvailableChunkIndices(String fileHash) async {
+    final songDir = await _getSongDir(fileHash);
 
     if (!await songDir.exists()) return [];
 

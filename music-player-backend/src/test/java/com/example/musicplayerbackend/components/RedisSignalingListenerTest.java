@@ -81,7 +81,7 @@ class RedisSignalingListenerTest {
 
     @Test
     void shouldDelegateToSignalingHandlerWhenWebRTCSignalIsValid() throws Exception {
-        WebRTCMessage signal = new WebRTCMessage("OFFER", "peer-A", "peer-B", 1, "sdp-offer");
+        WebRTCMessage signal = new WebRTCMessage("OFFER", "peer-A", "peer-B", "hash-1", "sdp-offer");
         String message = objectMapper.writeValueAsString(signal);
 
         listener.onWebRTCSignal(message);
@@ -90,13 +90,13 @@ class RedisSignalingListenerTest {
                 "OFFER".equals(s.type()) &&
                 "peer-A".equals(s.senderId()) &&
                 "peer-B".equals(s.targetId()) &&
-                s.songId().equals(1)
+                "hash-1".equals(s.songId())
         ));
     }
 
     @Test
     void shouldDelegateAnswerSignalToSignalingHandler() throws Exception {
-        WebRTCMessage signal = new WebRTCMessage("ANSWER", "peer-B", "peer-A", 2, "sdp-answer");
+        WebRTCMessage signal = new WebRTCMessage("ANSWER", "peer-B", "peer-A", "hash-2", "sdp-answer");
         String message = objectMapper.writeValueAsString(signal);
 
         listener.onWebRTCSignal(message);
@@ -108,7 +108,7 @@ class RedisSignalingListenerTest {
 
     @Test
     void shouldDelegateIceCandidateSignalToSignalingHandler() throws Exception {
-        WebRTCMessage signal = new WebRTCMessage("ICE_CANDIDATE", "peer-A", "peer-B", 3, "candidate-data");
+        WebRTCMessage signal = new WebRTCMessage("ICE_CANDIDATE", "peer-A", "peer-B", "hash-3", "candidate-data");
         String message = objectMapper.writeValueAsString(signal);
 
         listener.onWebRTCSignal(message);

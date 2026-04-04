@@ -48,7 +48,7 @@ class StatisticsControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn201AndPersistStatistic() throws Exception {
         ChunkStatDto dto = new ChunkStatDto();
-        dto.setSongId(1L);
+        dto.setSongFileHash("hash-1");
         dto.setSongName("Test Song");
         dto.setP2pChunks(8);
         dto.setServerChunks(2);
@@ -70,7 +70,7 @@ class StatisticsControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldHandleNullChunksWhenSubmittingStatistic() throws Exception {
         ChunkStatDto dto = new ChunkStatDto();
-        dto.setSongId(1L);
+        dto.setSongFileHash("hash-1");
         dto.setSongName("Null Chunks");
 
         mockMvc.perform(post("/api/v1/statistics")
@@ -85,7 +85,7 @@ class StatisticsControllerIntegrationTest extends BaseIntegrationTest {
         // Submit two stats
         for (int i = 0; i < 2; i++) {
             ChunkStatDto dto = new ChunkStatDto();
-            dto.setSongId((long) i);
+            dto.setSongFileHash("hash-" + i);
             dto.setSongName("Song " + i);
             dto.setP2pChunks(5);
             dto.setServerChunks(5);

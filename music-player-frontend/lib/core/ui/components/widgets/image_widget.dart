@@ -84,7 +84,7 @@ class _ImageWidgetState extends State<ImageWidget> {
 
   Widget _getImageWidget(BuildContext context) {
     var songProvider = context.read<SongProvider>();
-    return songProvider.getCoverArt(widget.entity.serverId);
+    return songProvider.getCoverArt(widget.entity.cloudId);
   }
 
   Widget _buildImageLayer() {

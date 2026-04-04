@@ -67,9 +67,10 @@ class InMemorySongRepository implements SongRepository {
   }
 
   @override
-  Song? getSongByServerId(int serverId) {
+  Song? getSongByFileHash(String fileHash) {
+    if (fileHash.isEmpty) return null;
     for (final s in _byId.values) {
-      if (s.serverId == serverId) return s;
+      if (s.fileHash == fileHash) return s;
     }
     return null;
   }
@@ -166,16 +167,6 @@ class InMemorySongRepository implements SongRepository {
   @override
   List<Song> getUnsyncedSongs() =>
       _byId.values.where((s) => s.requiresSync == true).toList();
-
-  @override
-  void markSongsAsSynced(List<int> serverIds) {
-    for (final s in _byId.values) {
-      if (serverIds.contains(s.serverId)) {
-        s.requiresSync = false;
-      }
-    }
-    _emit();
-  }
 
   @override
   void deleteSong(Song song) {

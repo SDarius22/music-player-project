@@ -1,4 +1,4 @@
-import 'package:music_player_frontend/core/database/objectBox.dart';
+import 'package:music_player_frontend/core/database/object_box_store.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
@@ -49,8 +49,9 @@ class ObjectBoxSongRepository implements SongRepository {
   }
 
   @override
-  Song? getSongByServerId(int serverId) {
-    return _songBox.query(Song_.serverId.equals(serverId)).build().findFirst();
+  Song? getSongByFileHash(String fileHash) {
+    if (fileHash.isEmpty) return null;
+    return _songBox.query(Song_.fileHash.equals(fileHash)).build().findFirst();
   }
 
   @override
@@ -169,18 +170,6 @@ class ObjectBoxSongRepository implements SongRepository {
   @override
   List<Song> getUnsyncedSongs() {
     return _songBox.query(Song_.requiresSync.equals(true)).build().find();
-  }
-
-  @override
-  void markSongsAsSynced(List<int> serverIds) {
-    for (final serverId in serverIds) {
-      final song =
-          _songBox.query(Song_.serverId.equals(serverId)).build().findFirst();
-      if (song != null) {
-        song.requiresSync = false;
-        _songBox.put(song);
-      }
-    }
   }
 
   @override

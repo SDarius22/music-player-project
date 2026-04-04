@@ -32,48 +32,34 @@ public class RecommendationService {
     private final SongRepository songRepository;
     private final SongMapper songMapper;
 
-    /**
-     * Heuristic recommendations: blends liked songs (weighted by play count)
-     * with the user's overall most-played tracks. Songs played in the last
-     * 48 hours are excluded to keep the list fresh.
-     * Always returns LIMIT songs by padding with random catalog tracks.
-     */
     @Transactional(readOnly = true)
     public List<SongDto> getRecommendations(Long userId) {
         List<SongDto> result = new ArrayList<>(LIMIT);
-        Set<Long> seen = new HashSet<>();
+        Set<String> seen = new HashSet<>();
 
         Instant recentCutoff = Instant.now().minus(RECENT_HOURS, ChronoUnit.HOURS);
 
-        // Half from liked songs (ordered by play count so most-loved come first).
         addFromLibrary(result, seen,
                 userLibraryRepository.findLikedByUserId(userId, PageRequest.of(0, LIMIT / 2)));
 
-        // Fill remaining from overall most-played, skipping recently played ones.
         List<UserLibrary> mostPlayed =
                 userLibraryRepository.findMostPlayedByUserId(userId, PageRequest.of(0, LIMIT * 2));
+
         for (UserLibrary ul : mostPlayed) {
             if (result.size() >= LIMIT) break;
             if (ul.getLastPlayed() != null && ul.getLastPlayed().isAfter(recentCutoff)) continue;
             Song song = ul.getSong();
-            if (song != null && seen.add(song.getId())) {
+            if (song != null && song.getFileHash() != null && seen.add(song.getFileHash())) {
                 result.add(songMapper.toDto(song));
             }
         }
 
-        // Pad with random catalog songs so the list is never empty.
         padWithRandom(result, seen);
 
         log.debug("[RECOMMEND] userId={} → {} songs", userId, result.size());
         return result;
     }
 
-    /**
-     * Forgotten favourites: songs the user played at least once but hasn't
-     * touched in the last 30 days, surfaced by play count so their old
-     * favourites appear first.
-     * Always returns songs by padding with random catalog tracks.
-     */
     @Transactional(readOnly = true)
     public List<SongDto> getForgottenFavourites(Long userId) {
         Instant cutoff = Instant.now().minus(FORGOTTEN_DAYS, ChronoUnit.DAYS);
@@ -81,8 +67,8 @@ public class RecommendationService {
                 userLibraryRepository.findForgottenByUserId(userId, cutoff, PageRequest.of(0, LIMIT));
 
         List<SongDto> result = new ArrayList<>(toSongDtos(entries));
-        Set<Long> seen = new HashSet<>();
-        result.forEach(s -> seen.add(s.getId()));
+        Set<String> seen = new HashSet<>();
+        result.forEach(s -> seen.add(s.getFileHash()));
 
         padWithRandom(result, seen);
 
@@ -90,52 +76,43 @@ public class RecommendationService {
         return result;
     }
 
-    /**
-     * Quick dial: the user's most recently played tracks for instant access,
-     * padded with random catalog songs when the played list is short.
-     */
     @Transactional(readOnly = true)
     public List<SongDto> getQuickDial(Long userId) {
         List<SongDto> result = new ArrayList<>(LIMIT);
-        Set<Long> seen = new HashSet<>();
+        Set<String> seen = new HashSet<>();
 
-        // Recently played first.
         addFromLibrary(result, seen,
                 userLibraryRepository.findRecentlyPlayedByUserId(userId, PageRequest.of(0, LIMIT)));
 
-        // Pad with recently added from the user's library if available.
         if (result.size() < LIMIT) {
             addFromLibrary(result, seen,
                     userLibraryRepository.findRecentlyAddedByUserId(
                             userId, PageRequest.of(0, LIMIT - result.size())));
         }
 
-        // Final fallback: random catalog songs.
         padWithRandom(result, seen);
 
         log.debug("[QUICK_DIAL] userId={} → {} songs", userId, result.size());
         return result;
     }
 
-    // ── helpers ────────────────────────────────────────────────────────────────
-
-    private void padWithRandom(List<SongDto> result, Set<Long> seen) {
+    private void padWithRandom(List<SongDto> result, Set<String> seen) {
         if (result.size() >= LIMIT) return;
         List<Song> random = songRepository.findRandomStreamable(
                 PageRequest.of(0, (LIMIT - result.size()) * 3));
         for (Song song : random) {
             if (result.size() >= LIMIT) break;
-            if (seen.add(song.getId())) {
+            if (song.getFileHash() != null && seen.add(song.getFileHash())) {
                 result.add(songMapper.toDto(song));
             }
         }
     }
 
-    private void addFromLibrary(List<SongDto> result, Set<Long> seen, List<UserLibrary> entries) {
+    private void addFromLibrary(List<SongDto> result, Set<String> seen, List<UserLibrary> entries) {
         for (UserLibrary ul : entries) {
             if (result.size() >= LIMIT) break;
             Song song = ul.getSong();
-            if (song != null && seen.add(song.getId())) {
+            if (song != null && song.getFileHash() != null && seen.add(song.getFileHash())) {
                 result.add(songMapper.toDto(song));
             }
         }

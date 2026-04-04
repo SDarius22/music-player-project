@@ -18,18 +18,18 @@ class NegotiationMapperTest {
     @Autowired NegotiationMapper negotiationMapper;
 
     @Test
-    void shouldMapSongIdAndMissingIndicesToNegotiationResponseDto() {
-        NegotiationResponseDto dto = negotiationMapper.toNegotiationResponseDto(42L, List.of(1, 3, 5));
+    void shouldMapFileHashAndMissingIndicesToNegotiationResponseDto() {
+        NegotiationResponseDto dto = negotiationMapper.toNegotiationResponseDto("hash-42", List.of(1, 3, 5));
 
-        assertEquals(42L, dto.getSongId());
+        assertEquals("hash-42", dto.getFileHash());
         assertEquals(List.of(1, 3, 5), dto.getMissingIndices());
     }
 
     @Test
     void shouldMapEmptyMissingIndicesToNegotiationResponseDto() {
-        NegotiationResponseDto dto = negotiationMapper.toNegotiationResponseDto(1L, List.of());
+        NegotiationResponseDto dto = negotiationMapper.toNegotiationResponseDto("hash-1", List.of());
 
-        assertEquals(1L, dto.getSongId());
+        assertEquals("hash-1", dto.getFileHash());
         assertTrue(dto.getMissingIndices().isEmpty());
     }
 
@@ -41,19 +41,19 @@ class NegotiationMapperTest {
     }
 
     @Test
-    void shouldStillCreateNegotiationResponseDtoWhenSongIdIsNull() {
+    void shouldStillCreateNegotiationResponseDtoWhenFileHashIsNull() {
         NegotiationResponseDto dto = negotiationMapper.toNegotiationResponseDto(null, List.of(0));
 
         assertNotNull(dto);
-        assertNull(dto.getSongId());
+        assertNull(dto.getFileHash());
         assertEquals(List.of(0), dto.getMissingIndices());
     }
 
     @Test
     void shouldNotSetMissingIndicesListWhenNullInNegotiationResponseDto() {
-        NegotiationResponseDto dto = negotiationMapper.toNegotiationResponseDto(99L, null);
+        NegotiationResponseDto dto = negotiationMapper.toNegotiationResponseDto("hash-99", null);
 
         assertNotNull(dto);
-        assertEquals(99L, dto.getSongId());
+        assertEquals("hash-99", dto.getFileHash());
     }
 }

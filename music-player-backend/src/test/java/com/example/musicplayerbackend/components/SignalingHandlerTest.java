@@ -51,43 +51,43 @@ class SignalingHandlerTest {
 
     @Test
     void shouldCallRegisterPeerChunksForRegisterCacheMessage() throws Exception {
-        when(peerTrackingService.getPeerBufferMapsForSong(anyInt()))
+        when(peerTrackingService.getPeerBufferMapsForSong(anyString()))
                 .thenReturn(java.util.Collections.emptyMap());
 
         String payload = objectMapper.writeValueAsString(Map.of(
                 "type", "REGISTER_CACHE",
                 "senderId", "peer-A",
                 "userId", 1,
-                "songId", 42,
+                "songId", "hash-42",
                 "payload", Set.of(0, 1, 2)));
 
         handler.handleTextMessage(session, new TextMessage(payload));
 
-        verify(peerTrackingService).registerPeerChunks(eq(42), eq("peer-A"), any());
+        verify(peerTrackingService).registerPeerChunks(eq("hash-42"), eq("peer-A"), any());
     }
 
     @Test
     void shouldSkipRegistrationWhenRegisterCacheSenderIdIsNull() throws Exception {
         String payload = objectMapper.writeValueAsString(Map.of(
                 "type", "REGISTER_CACHE",
-                "songId", 42,
+                "songId", "hash-42",
                 "payload", Set.of(0, 1)));
 
         handler.handleTextMessage(session, new TextMessage(payload));
 
-        verify(peerTrackingService, never()).registerPeerChunks(anyInt(), any(), any());
+        verify(peerTrackingService, never()).registerPeerChunks(anyString(), any(), any());
     }
 
     @Test
     void shouldSendBufferMapForDiscoverPeersMessage() throws Exception {
-        when(peerTrackingService.getPeerBufferMapsForSong(10))
+        when(peerTrackingService.getPeerBufferMapsForSong("hash-10"))
                 .thenReturn(Map.of("peer-X", Set.of(0)));
         when(session.isOpen()).thenReturn(true);
 
         String payload = objectMapper.writeValueAsString(Map.of(
                 "type", "DISCOVER_PEERS",
                 "senderId", "requester",
-                "songId", 10));
+                "songId", "hash-10"));
 
         handler.handleTextMessage(session, new TextMessage(payload));
 
@@ -109,7 +109,7 @@ class SignalingHandlerTest {
                 "type", "OFFER",
                 "senderId", "peer-A",
                 "targetId", "peer-B",
-                "songId", 1,
+                "songId", "hash-1",
                 "payload", "sdp-offer"));
 
         handler.handleTextMessage(session, new TextMessage(offerPayload));
@@ -131,7 +131,7 @@ class SignalingHandlerTest {
                 "type", "ANSWER",
                 "senderId", "peer-A",
                 "targetId", "peer-B",
-                "songId", 1,
+                "songId", "hash-1",
                 "payload", "sdp-answer"));
 
         handler.handleTextMessage(session, new TextMessage(answerPayload));
@@ -152,7 +152,7 @@ class SignalingHandlerTest {
                 "type", "ICE_CANDIDATE",
                 "senderId", "peer-A",
                 "targetId", "peer-B",
-                "songId", 1,
+                "songId", "hash-1",
                 "payload", "candidate-data"));
 
         handler.handleTextMessage(session, new TextMessage(icePayload));
@@ -170,7 +170,7 @@ class SignalingHandlerTest {
         handler.handleTextMessage(session, new TextMessage(payload));
 
         // No interaction with peerTrackingService for sync trigger echoes
-        verify(peerTrackingService, never()).registerPeerChunks(anyInt(), any(), any());
+        verify(peerTrackingService, never()).registerPeerChunks(anyString(), any(), any());
         verify(session, never()).close(any());
     }
 
@@ -348,7 +348,7 @@ class SignalingHandlerTest {
 
         handler.handleTextMessage(session, new TextMessage(payload));
 
-        verify(peerTrackingService, never()).registerPeerChunks(anyInt(), any(), any());
+        verify(peerTrackingService, never()).registerPeerChunks(anyString(), any(), any());
     }
 
     @Test
@@ -358,7 +358,7 @@ class SignalingHandlerTest {
                 "type", "OFFER",
                 "senderId", "peer-A",
                 "targetId", "nonexistent-peer",
-                "songId", 1,
+                "songId", "hash-1",
                 "payload", "sdp"));
 
         assertDoesNotThrow(() -> handler.handleTextMessage(session, new TextMessage(payload)));
@@ -380,7 +380,7 @@ class SignalingHandlerTest {
                 "type", "OFFER",
                 "senderId", "peer-A",
                 "targetId", "peer-C",
-                "songId", 1,
+                "songId", "hash-1",
                 "payload", "sdp-offer"));
 
         handler.handleTextMessage(session, new TextMessage(offerPayload));

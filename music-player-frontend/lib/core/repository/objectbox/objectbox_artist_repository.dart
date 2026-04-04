@@ -1,4 +1,4 @@
-import 'package:music_player_frontend/core/database/objectBox.dart';
+import 'package:music_player_frontend/core/database/object_box_store.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';

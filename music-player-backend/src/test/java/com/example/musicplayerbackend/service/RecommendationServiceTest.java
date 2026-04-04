@@ -47,7 +47,7 @@ class RecommendationServiceTest {
 
     private SongDto songDto(long id) {
         SongDto dto = new SongDto();
-        dto.setId(id);
+        dto.setFileHash("hash-" + id);
         return dto;
     }
 
@@ -101,7 +101,7 @@ class RecommendationServiceTest {
         List<SongDto> result = service.getRecommendations(1L);
 
         assertEquals(LIMIT, result.size());
-        assertTrue(result.stream().noneMatch(s -> s.getId() == 1L));
+        assertTrue(result.stream().noneMatch(s -> "hash-1".equals(s.getFileHash())));
     }
 
     @Test
@@ -121,7 +121,7 @@ class RecommendationServiceTest {
 
         List<SongDto> result = service.getRecommendations(1L);
 
-        assertTrue(result.stream().anyMatch(d -> d.getId() == 1L),
+        assertTrue(result.stream().anyMatch(d -> "hash-1".equals(d.getFileHash())),
                 "Song with null lastPlayed should NOT be excluded");
     }
 
@@ -144,7 +144,7 @@ class RecommendationServiceTest {
 
         List<SongDto> result = service.getRecommendations(1L);
 
-        long count = result.stream().filter(d -> d.getId() == 1L).count();
+        long count = result.stream().filter(d -> "hash-1".equals(d.getFileHash())).count();
         assertEquals(1, count, "Song 1 should appear exactly once");
     }
 
@@ -164,7 +164,7 @@ class RecommendationServiceTest {
         List<SongDto> result = service.getForgottenFavourites(1L);
 
         assertEquals(LIMIT, result.size());
-        assertTrue(result.stream().anyMatch(d -> d.getId() == 1L));
+        assertTrue(result.stream().anyMatch(d -> "hash-1".equals(d.getFileHash())));
     }
 
     @Test
@@ -188,7 +188,7 @@ class RecommendationServiceTest {
         List<SongDto> result = service.getForgottenFavourites(1L);
 
         assertEquals(LIMIT, result.size());
-        assertTrue(result.stream().noneMatch(s -> s.getId() == 999L));
+        assertTrue(result.stream().noneMatch(s -> "hash-999".equals(s.getFileHash())));
     }
 
     @Test
@@ -248,7 +248,7 @@ class RecommendationServiceTest {
         List<SongDto> result = service.getQuickDial(1L);
 
         assertEquals(LIMIT, result.size());
-        assertTrue(result.getFirst().getId() == 1L);
+        assertEquals("hash-1", result.getFirst().getFileHash());
     }
 
     @Test
@@ -312,6 +312,6 @@ class RecommendationServiceTest {
         List<SongDto> result = service.getQuickDial(1L);
 
         assertEquals(LIMIT, result.size());
-        assertTrue(result.stream().noneMatch(s -> s.getId() == 999L));
+        assertTrue(result.stream().noneMatch(s -> "hash-999".equals(s.getFileHash())));
     }
 }

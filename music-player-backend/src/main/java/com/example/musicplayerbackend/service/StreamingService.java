@@ -48,8 +48,8 @@ public class StreamingService {
     }
 
     @Transactional(readOnly = true)
-    public ChunkManifestDto getSongManifest(Long songId, Long userId) {
-        Song song = getSongOrThrow(songId);
+    public ChunkManifestDto getSongManifest(String fileHash, Long userId) {
+        Song song = getSongOrThrow(fileHash);
         if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
         }
@@ -63,7 +63,7 @@ public class StreamingService {
         }
 
         ChunkManifestDto manifest = new ChunkManifestDto();
-        manifest.setSongId(songId);
+        manifest.setFileHash(fileHash);
         manifest.setChunkSize(65536);
         manifest.setTotalChunks(hashes.size());
         manifest.setHashes(hashes);
@@ -73,8 +73,8 @@ public class StreamingService {
     }
 
     @Transactional(readOnly = true)
-    public Resource getSongChunk(Long songId, Integer chunkIndex, Long userId) {
-        Song song = getSongOrThrow(songId);
+    public Resource getSongChunk(String fileHash, Integer chunkIndex, Long userId) {
+        Song song = getSongOrThrow(fileHash);
 
         if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
@@ -91,8 +91,8 @@ public class StreamingService {
     }
 
     @Transactional(readOnly = true)
-    public Resource getSongPrefix(Long songId, Integer prefixBytes, Long userId) {
-        Song song = getSongOrThrow(songId);
+    public Resource getSongPrefix(String fileHash, Integer prefixBytes, Long userId) {
+        Song song = getSongOrThrow(fileHash);
         if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
         }
@@ -113,8 +113,8 @@ public class StreamingService {
     }
 
     @Transactional(readOnly = true)
-    public Resource getFullStream(Long songId, Long userId) {
-        Song song = getSongOrThrow(songId);
+    public Resource getFullStream(String fileHash, Long userId) {
+        Song song = getSongOrThrow(fileHash);
 
         if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
@@ -133,8 +133,8 @@ public class StreamingService {
         return new InputStreamResource(sequenceInputStream);
     }
 
-    private Song getSongOrThrow(Long songId) {
-        return songRepository.findById(songId)
+    private Song getSongOrThrow(String fileHash) {
+        return songRepository.findByFileHash(fileHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
     }
 

@@ -81,17 +81,17 @@ public class SongController implements SongsApi {
     }
 
     @Override
-    public ResponseEntity<SongDto> getSongById(Long songId) {
-        return ResponseEntity.ok(songService.getSongById(songId));
+    public ResponseEntity<SongDto> getSongById(String fileHash) {
+        return ResponseEntity.ok(songService.getSongByFileHash(fileHash));
     }
 
     @Override
-    public ResponseEntity<Resource> getSongCover(Long songId) {
-        SongDto song = songService.getSongById(songId);
-        if (song.getAlbumId() == null) {
+    public ResponseEntity<Resource> getSongCover(String fileHash) {
+        SongDto song = songService.getSongByFileHash(fileHash);
+        if (song.getAlbum() == null || song.getAlbum().getId() == null) {
             return ResponseEntity.notFound().build();
         }
-        byte[] bytes = albumService.getAlbumCover(song.getAlbumId());
+        byte[] bytes = albumService.getAlbumCover(song.getAlbum().getId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
@@ -106,14 +106,14 @@ public class SongController implements SongsApi {
     }
 
     @Override
-    public ResponseEntity<Void> uploadMissingChunk(Long songId, Integer chunkIndex, MultipartFile chunkData, String contentHash) {
+    public ResponseEntity<Void> uploadMissingChunk(String fileHash, Integer chunkIndex, MultipartFile chunkData, String contentHash) {
         User user = getCurrentUser();
-        log.info("[SONG] Upload missing chunk: songId={}, chunkIndex={}, userId={}", songId, chunkIndex, user.getId());
+        log.info("[SONG] Upload missing chunk: fileHash={}, chunkIndex={}, userId={}", fileHash, chunkIndex, user.getId());
         try {
-            songService.saveMissingChunk(user, songId, chunkIndex, contentHash, chunkData);
+            songService.saveMissingChunk(user, fileHash, chunkIndex, contentHash, chunkData);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
-            log.error("[SONG] Failed to save chunk: songId={}, chunkIndex={}, userId={}: {}", songId, chunkIndex, user.getId(), e.getMessage());
+            log.error("[SONG] Failed to save chunk: fileHash={}, chunkIndex={}, userId={}: {}", fileHash, chunkIndex, user.getId(), e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }

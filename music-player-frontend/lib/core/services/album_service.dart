@@ -108,7 +108,12 @@ class AlbumService {
       }
     }
 
-    final byName = _albumRepository.getAlbumByName(serverAlbum.name);
+    final artistName = serverAlbum.artist.target?.name;
+    Album? byName;
+    if (artistName != null && artistName.isNotEmpty) {
+      byName = _albumRepository.getAlbumByNameAndArtistName(serverAlbum.name, artistName);
+    }
+    byName ??= _albumRepository.getAlbumByName(serverAlbum.name);
     if (byName != null) {
       if (byName.serverId <= 0 && serverAlbum.serverId > 0) {
         byName.serverId = serverAlbum.serverId;

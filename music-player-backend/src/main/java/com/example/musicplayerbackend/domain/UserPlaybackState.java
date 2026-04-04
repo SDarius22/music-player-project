@@ -18,13 +18,13 @@ public class UserPlaybackState {
     @Column(name = "user_id")
     private Long userId;
 
-    /** JSON array of song IDs representing the queue, e.g. [1, 5, 12]. */
+    /** JSON array of file hashes representing the queue. */
     @Column(name = "queue_song_ids", columnDefinition = "TEXT", nullable = false)
     @Builder.Default
     private String queueSongIds = "[]";
 
-    @Column(name = "current_song_id")
-    private Long currentSongId;
+    @Column(name = "current_file_hash", length = 64)
+    private String currentFileHash;
 
     @Column(name = "position_ms", nullable = false)
     @Builder.Default

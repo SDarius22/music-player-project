@@ -81,8 +81,8 @@ class StreamingRestService {
     return response;
   }
 
-  Future<ChunkManifestDto> fetchManifest(int songId) async {
-    final response = await _getJson('/stream/$songId/manifest');
+  Future<ChunkManifestDto> fetchManifest(String fileHash) async {
+    final response = await _getJson('/stream/$fileHash/manifest');
 
     if (response.statusCode == 200) {
       return ChunkManifestDto.fromJson(jsonDecode(response.body));
@@ -90,10 +90,10 @@ class StreamingRestService {
     throw Exception("Fetch manifest failed: ${response.statusCode}");
   }
 
-  Future<Uint8List> downloadChunkFallback(int songId, int chunkIndex) async {
+  Future<Uint8List> downloadChunkFallback(String fileHash, int chunkIndex) async {
     await _acquire();
     try {
-      final response = await _getBinary('/stream/$songId/chunk/$chunkIndex');
+      final response = await _getBinary('/stream/$fileHash/chunk/$chunkIndex');
       if (response.statusCode == 200) {
         return response.bodyBytes;
       }
@@ -103,8 +103,8 @@ class StreamingRestService {
     }
   }
 
-  Future<Uint8List> fetchPrefix(int songId) async {
-    final response = await _getBinary('/stream/$songId/prefix');
+  Future<Uint8List> fetchPrefix(String fileHash) async {
+    final response = await _getBinary('/stream/$fileHash/prefix');
 
     if (response.statusCode == 200) {
       return response.bodyBytes;

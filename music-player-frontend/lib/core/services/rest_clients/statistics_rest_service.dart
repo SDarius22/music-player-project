@@ -31,7 +31,7 @@ class StatisticsRestService extends AbstractRestService {
   Future<void> submitStat(ChunkDeliveryStats stats) async {
     try {
       final response = await post('/statistics', {
-        'songId': stats.songId,
+        'songFileHash': stats.fileHash,
         'songName': stats.songName,
         'localChunks': stats.localChunks,
         'localCachedChunks': stats.localCachedChunks,

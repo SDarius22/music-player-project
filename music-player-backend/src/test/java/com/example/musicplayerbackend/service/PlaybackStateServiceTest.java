@@ -48,8 +48,8 @@ class PlaybackStateServiceTest {
         when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         PlaybackStateDto req = new PlaybackStateDto();
-        req.setQueueSongIds(List.of(10L, 20L, 30L));
-        req.setCurrentSongId(20L);
+        req.setQueueFileHashes(List.of("hash10", "hash20", "hash30"));
+        req.setCurrentFileHash("hash20");
         req.setPositionMs(5_000L);
         req.setShuffle(true);
         req.setRepeat(false);
@@ -60,13 +60,13 @@ class PlaybackStateServiceTest {
         UserPlaybackState saved = stateCaptor.getValue();
 
         assertEquals(1L, saved.getUserId());
-        assertEquals(20L, saved.getCurrentSongId());
+        assertEquals("hash20", saved.getCurrentFileHash());
         assertEquals(5_000L, saved.getPositionMs());
         assertTrue(saved.getShuffle());
         assertFalse(saved.getRepeat());
 
-        assertEquals(20L, result.getCurrentSongId());
-        assertEquals(3, result.getQueueSongIds().size());
+        assertEquals("hash20", result.getCurrentFileHash());
+        assertEquals(3, result.getQueueFileHashes().size());
         assertTrue(result.getShuffle());
         assertFalse(result.getRepeat());
         assertNotNull(result.getUpdatedAt());
@@ -76,8 +76,8 @@ class PlaybackStateServiceTest {
     void shouldMutateExistingPlaybackStateRecordRatherThanCreatingNew() {
         UserPlaybackState existing = UserPlaybackState.builder()
                 .userId(1L)
-                .queueSongIds("[1]")
-                .currentSongId(1L)
+                .queueSongIds("[\"hash1\"]")
+                .currentFileHash("hash1")
                 .positionMs(1_000L)
                 .shuffle(false)
                 .repeat(false)
@@ -88,8 +88,8 @@ class PlaybackStateServiceTest {
         when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         PlaybackStateDto req = new PlaybackStateDto();
-        req.setQueueSongIds(List.of(5L, 6L));
-        req.setCurrentSongId(6L);
+        req.setQueueFileHashes(List.of("hash5", "hash6"));
+        req.setCurrentFileHash("hash6");
         req.setPositionMs(9_000L);
         req.setShuffle(true);
         req.setRepeat(true);
@@ -100,7 +100,7 @@ class PlaybackStateServiceTest {
         UserPlaybackState saved = stateCaptor.getValue();
 
         assertSame(existing, saved);
-        assertEquals(6L, saved.getCurrentSongId());
+        assertEquals("hash6", saved.getCurrentFileHash());
         assertEquals(9_000L, saved.getPositionMs());
         assertTrue(saved.getShuffle());
         assertTrue(saved.getRepeat());
@@ -112,7 +112,7 @@ class PlaybackStateServiceTest {
         when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         PlaybackStateDto req = new PlaybackStateDto();
-        req.setQueueSongIds(List.of());
+        req.setQueueFileHashes(List.of());
         req.setShuffle(null);
         req.setRepeat(null);
 
@@ -148,12 +148,12 @@ class PlaybackStateServiceTest {
     }
 
     @Test
-    void shouldSerializeEmptyJsonWhenQueueSongIdsIsNull() {
+    void shouldSerializeEmptyJsonWhenQueueFileHashesIsNull() {
         when(stateRepository.findById(1L)).thenReturn(Optional.empty());
         when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         PlaybackStateDto req = new PlaybackStateDto();
-        req.setQueueSongIds(null); // null → List.of() → "[]"
+        req.setQueueFileHashes(null); // null → List.of() → "[]"
 
         service.saveState(1L, req);
 
@@ -164,37 +164,37 @@ class PlaybackStateServiceTest {
     @Test
     void shouldReturnEmptyQueueWhenQueueSongIdsIsNull() {
         UserPlaybackState entity = UserPlaybackState.builder()
-                .userId(1L).queueSongIds(null).currentSongId(1L)
+                .userId(1L).queueSongIds(null).currentFileHash("hash1")
                 .positionMs(0L).shuffle(false).repeat(false).updatedAt(Instant.now()).build();
         when(stateRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         PlaybackStateDto dto = service.getState(1L).orElseThrow();
 
-        assertTrue(dto.getQueueSongIds().isEmpty());
+        assertTrue(dto.getQueueFileHashes().isEmpty());
     }
 
     @Test
     void shouldReturnEmptyQueueWhenQueueSongIdsIsBlank() {
         UserPlaybackState entity = UserPlaybackState.builder()
-                .userId(1L).queueSongIds("   ").currentSongId(1L)
+                .userId(1L).queueSongIds("   ").currentFileHash("hash1")
                 .positionMs(0L).shuffle(false).repeat(false).updatedAt(Instant.now()).build();
         when(stateRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         PlaybackStateDto dto = service.getState(1L).orElseThrow();
 
-        assertTrue(dto.getQueueSongIds().isEmpty());
+        assertTrue(dto.getQueueFileHashes().isEmpty());
     }
 
     @Test
     void shouldReturnEmptyQueueWhenQueueSongIdsIsInvalidJson() {
         UserPlaybackState entity = UserPlaybackState.builder()
-                .userId(1L).queueSongIds("not-valid-json").currentSongId(1L)
+                .userId(1L).queueSongIds("not-valid-json").currentFileHash("hash1")
                 .positionMs(0L).shuffle(false).repeat(false).updatedAt(Instant.now()).build();
         when(stateRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         PlaybackStateDto dto = service.getState(1L).orElseThrow();
 
-        assertTrue(dto.getQueueSongIds().isEmpty());
+        assertTrue(dto.getQueueFileHashes().isEmpty());
     }
 
     @Test
@@ -207,8 +207,8 @@ class PlaybackStateServiceTest {
     void shouldMapAllFieldsIncludingShuffleAndRepeat() {
         UserPlaybackState entity = UserPlaybackState.builder()
                 .userId(2L)
-                .queueSongIds("[100, 200]")
-                .currentSongId(200L)
+                .queueSongIds("[\"hash100\", \"hash200\"]")
+                .currentFileHash("hash200")
                 .positionMs(12_000L)
                 .shuffle(true)
                 .repeat(true)
@@ -219,8 +219,8 @@ class PlaybackStateServiceTest {
 
         PlaybackStateDto dto = service.getState(2L).orElseThrow();
 
-        assertEquals(List.of(100L, 200L), dto.getQueueSongIds());
-        assertEquals(200L, dto.getCurrentSongId());
+        assertEquals(List.of("hash100", "hash200"), dto.getQueueFileHashes());
+        assertEquals("hash200", dto.getCurrentFileHash());
         assertEquals(12_000L, dto.getPositionMs());
         assertTrue(dto.getShuffle());
         assertTrue(dto.getRepeat());

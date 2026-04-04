@@ -222,13 +222,13 @@ class MockSongService extends _i1.Mock implements _i12.SongService {
   _i13.Future<_i2.Song?> getSong(
     String? songPath, {
     bool? preferServer = false,
-    int? serverId,
+    String? fileHash,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
               #getSong,
               [songPath],
-              {#preferServer: preferServer, #serverId: serverId},
+              {#preferServer: preferServer, #fileHash: fileHash},
             ),
             returnValue: _i13.Future<_i2.Song?>.value(),
             returnValueForMissingStub: _i13.Future<_i2.Song?>.value(),
@@ -258,17 +258,17 @@ class MockSongService extends _i1.Mock implements _i12.SongService {
           as _i13.Future<List<_i2.Song>>);
 
   @override
-  _i2.Song? getSongByServerId(int? serverId) =>
+  _i2.Song? getSongByFileHash(String? fileHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getSongByServerId, [serverId]),
+            Invocation.method(#getSongByFileHash, [fileHash]),
             returnValueForMissingStub: null,
           )
           as _i2.Song?);
 
   @override
-  _i13.Future<_i2.Song?> fetchSongByServerId(int? serverId) =>
+  _i13.Future<_i2.Song?> fetchSongByFileHash(String? fileHash) =>
       (super.noSuchMethod(
-            Invocation.method(#fetchSongByServerId, [serverId]),
+            Invocation.method(#fetchSongByFileHash, [fileHash]),
             returnValue: _i13.Future<_i2.Song?>.value(),
             returnValueForMissingStub: _i13.Future<_i2.Song?>.value(),
           )
@@ -302,12 +302,6 @@ class MockSongService extends _i1.Mock implements _i12.SongService {
             ),
           )
           as _i13.Future<List<_i2.Song>>);
-
-  @override
-  void linkToServerId(int? localId, int? serverId) => super.noSuchMethod(
-    Invocation.method(#linkToServerId, [localId, serverId]),
-    returnValueForMissingStub: null,
-  );
 
   @override
   void recordPlay(int? songId) => super.noSuchMethod(
@@ -475,16 +469,16 @@ class MockSongService extends _i1.Mock implements _i12.SongService {
           as _i13.Future<List<_i2.Song>>);
 
   @override
-  _i4.Widget getCoverArt(int? serverId) =>
+  _i4.Widget getCoverArt(String? fileHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getCoverArt, [serverId]),
+            Invocation.method(#getCoverArt, [fileHash]),
             returnValue: _FakeWidget_2(
               this,
-              Invocation.method(#getCoverArt, [serverId]),
+              Invocation.method(#getCoverArt, [fileHash]),
             ),
             returnValueForMissingStub: _FakeWidget_2(
               this,
-              Invocation.method(#getCoverArt, [serverId]),
+              Invocation.method(#getCoverArt, [fileHash]),
             ),
           )
           as _i4.Widget);

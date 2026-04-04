@@ -6,6 +6,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
+import com.example.musicplayerbackend.mapper.ArtistMapper;
+import com.example.musicplayerbackend.mapper.AlbumMapper;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -13,12 +15,13 @@ import java.time.ZoneOffset;
 
 @Mapper(
         componentModel = MappingConstants.ComponentModel.SPRING,
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {ArtistMapper.class, AlbumMapper.class}
 )
 public interface SongMapper {
 
-    @Mapping(target = "artistId", source = "artist.id")
-    @Mapping(target = "albumId", source = "album.id")
+    @Mapping(target = "artist", source = "artist")
+    @Mapping(target = "album", source = "album")
     @Mapping(target = "year", source = "releaseYear")
     SongDto toDto(Song song);
 

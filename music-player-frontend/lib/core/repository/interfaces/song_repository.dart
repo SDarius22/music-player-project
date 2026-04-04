@@ -13,7 +13,7 @@ abstract class SongRepository {
 
   Song getSongByPath(String path);
 
-  Song? getSongByServerId(int serverId);
+  Song? getSongByFileHash(String fileHash);
 
   Song getSong(int id);
 
@@ -40,8 +40,6 @@ abstract class SongRepository {
   List<Song> getAllSongs();
 
   List<Song> getUnsyncedSongs();
-
-  void markSongsAsSynced(List<int> serverIds);
 
   void deleteSong(Song song);
 

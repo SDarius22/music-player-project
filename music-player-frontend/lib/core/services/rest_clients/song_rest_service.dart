@@ -43,7 +43,7 @@ class SongRestService extends AbstractRestService {
   }
 
   Future<bool> uploadChunk({
-    required int songId,
+    required String fileHash,
     required int chunkIndex,
     required List<int> chunkBytes,
     required String hash,
@@ -51,7 +51,7 @@ class SongRestService extends AbstractRestService {
     try {
       final response = await multipartRequest(
         'POST',
-        '/songs/$songId/chunks/$chunkIndex',
+        '/songs/$fileHash/chunks/$chunkIndex',
         fields: {'contentHash': hash},
         files: [
           http.MultipartFile.fromBytes(
@@ -95,10 +95,9 @@ class SongRestService extends AbstractRestService {
     void Function(Uint8List)? onBytesLoaded,
   }) {
     return CachedNetworkImage(
-      cacheKey:
-          'cover_${song.album.target?.serverId ?? (song.serverAlbumId <= 0 ? song.serverId : song.serverAlbumId)}',
+      cacheKey: 'cover_${song.fileHash}',
       imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
-      imageUrl: '$baseUrl/songs/${song.serverId}/cover',
+      imageUrl: '$baseUrl/songs/${song.fileHash}/cover',
       httpHeaders: {'Authorization': 'Bearer ${authService.accessToken}'},
       fit: BoxFit.cover,
       imageBuilder:
@@ -204,9 +203,9 @@ class SongRestService extends AbstractRestService {
     return false;
   }
 
-  Future<Song> getServerSong(int songId) async {
+  Future<Song> getServerSong(String fileHash) async {
     try {
-      final response = await get('/songs/$songId');
+      final response = await get('/songs/$fileHash');
 
       if (response.statusCode == 200) {
         return Song.fromJson(jsonDecode(response.body));
@@ -218,7 +217,7 @@ class SongRestService extends AbstractRestService {
     } catch (e) {
       debugPrint('Error fetching song: $e');
     }
-    throw Exception('Failed to fetch song with ID $songId');
+    throw Exception('Failed to fetch song with file hash $fileHash');
   }
 
   Future<SongPageDto> getSongsPage({
@@ -289,7 +288,13 @@ class SongRestService extends AbstractRestService {
     } catch (e) {
       debugPrint('Error fetching recommendations: $e');
     }
-    return SongPageDto(content: [], page: 0, size: 0, totalPages: 0, totalElements: 0);
+    return SongPageDto(
+      content: [],
+      page: 0,
+      size: 0,
+      totalPages: 0,
+      totalElements: 0,
+    );
   }
 
   Future<SongPageDto> getForgottenFavourites() async {
@@ -301,7 +306,13 @@ class SongRestService extends AbstractRestService {
     } catch (e) {
       debugPrint('Error fetching forgotten favourites: $e');
     }
-    return SongPageDto(content: [], page: 0, size: 0, totalPages: 0, totalElements: 0);
+    return SongPageDto(
+      content: [],
+      page: 0,
+      size: 0,
+      totalPages: 0,
+      totalElements: 0,
+    );
   }
 
   Future<SongPageDto> getQuickDial() async {
@@ -313,7 +324,13 @@ class SongRestService extends AbstractRestService {
     } catch (e) {
       debugPrint('Error fetching quick dial: $e');
     }
-    return SongPageDto(content: [], page: 0, size: 0, totalPages: 0, totalElements: 0);
+    return SongPageDto(
+      content: [],
+      page: 0,
+      size: 0,
+      totalPages: 0,
+      totalElements: 0,
+    );
   }
 
   Future<List<Song>> getAllSongs() async {
@@ -321,7 +338,7 @@ class SongRestService extends AbstractRestService {
     debugPrint('Fetched ${page.content.length} songs from server.');
     if (page.content.isNotEmpty) {
       final s = page.content.first;
-      debugPrint('First song: ${s.name}, ${s.id}, ${s.serverId}, ${s.path}');
+      debugPrint('First song: ${s.name}, ${s.id}, ${s.fileHash}, ${s.path}');
     }
     return page.content;
   }

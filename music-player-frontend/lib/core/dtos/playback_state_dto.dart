@@ -1,13 +1,13 @@
 class PlaybackStateDto {
-  final List<int> queueSongIds;
-  final int? currentSongId;
+  final List<String> queueFileHashes;
+  final String? currentFileHash;
   final int positionMs;
   final bool shuffle;
   final bool repeat;
 
   const PlaybackStateDto({
-    required this.queueSongIds,
-    this.currentSongId,
+    required this.queueFileHashes,
+    this.currentFileHash,
     this.positionMs = 0,
     this.shuffle = false,
     this.repeat = false,
@@ -15,12 +15,10 @@ class PlaybackStateDto {
 
   factory PlaybackStateDto.fromJson(Map<String, dynamic> json) {
     return PlaybackStateDto(
-      queueSongIds: (json['queueSongIds'] as List<dynamic>? ?? [])
-          .map((e) => (e as num).toInt())
+      queueFileHashes: (json['queueFileHashes'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
           .toList(),
-      currentSongId: json['currentSongId'] != null
-          ? (json['currentSongId'] as num).toInt()
-          : null,
+      currentFileHash: json['currentFileHash'] as String?,
       positionMs: (json['positionMs'] as num? ?? 0).toInt(),
       shuffle: json['shuffle'] as bool? ?? false,
       repeat: json['repeat'] as bool? ?? false,
@@ -28,8 +26,8 @@ class PlaybackStateDto {
   }
 
   Map<String, dynamic> toJson() => {
-    'queueSongIds': queueSongIds,
-    'currentSongId': currentSongId,
+    'queueFileHashes': queueFileHashes,
+    'currentFileHash': currentFileHash,
     'positionMs': positionMs,
     'shuffle': shuffle,
     'repeat': repeat,

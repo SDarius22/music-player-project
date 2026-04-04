@@ -9,7 +9,7 @@ void main() {
     int id = 0,
     String name = 'Test',
     String path = '',
-    int serverId = -1,
+    String fileHash = '',
     int playCount = 0,
     bool liked = false,
   }) {
@@ -17,7 +17,7 @@ void main() {
     s.id = id;
     s.name = name;
     s.path = path;
-    s.serverId = serverId;
+    s.fileHash = fileHash;
     s.playCount = playCount;
     s.likedByUser = liked;
     return s;
@@ -97,17 +97,22 @@ void main() {
     });
   });
 
-  // ─── getSongByServerId ───────────────────────────────────────────────────
+  // ─── getSongByFileHash ───────────────────────────────────────────────────
 
-  group('getSongByServerId', () {
-    test('returns song with matching serverId', () {
-      final s = makeSong(serverId: 42);
+  group('getSongByFileHash', () {
+    test('returns song with matching fileHash', () {
+      final s = makeSong(fileHash: 'hash42');
       repo.saveSong(s);
-      expect(repo.getSongByServerId(42), same(s));
+      expect(repo.getSongByFileHash('hash42'), same(s));
     });
 
     test('returns null when not found', () {
-      expect(repo.getSongByServerId(999), isNull);
+      expect(repo.getSongByFileHash('hash999'), isNull);
+    });
+
+    test('returns null for empty fileHash', () {
+      repo.saveSong(makeSong());
+      expect(repo.getSongByFileHash(''), isNull);
     });
   });
 
@@ -339,26 +344,6 @@ void main() {
       final result = repo.getUnsyncedSongs();
       expect(result.length, 1);
       expect(result.first.name, 'Unsynced');
-    });
-  });
-
-  // ─── markSongsAsSynced ───────────────────────────────────────────────────
-
-  group('markSongsAsSynced', () {
-    test('clears requiresSync for matching serverIds', () {
-      final s = makeSong(serverId: 5);
-      s.requiresSync = true;
-      repo.saveSong(s);
-      repo.markSongsAsSynced([5]);
-      expect(s.requiresSync, isFalse);
-    });
-
-    test('does not affect songs with different serverIds', () {
-      final s = makeSong(serverId: 10);
-      s.requiresSync = true;
-      repo.saveSong(s);
-      repo.markSongsAsSynced([99]);
-      expect(s.requiresSync, isTrue);
     });
   });
 

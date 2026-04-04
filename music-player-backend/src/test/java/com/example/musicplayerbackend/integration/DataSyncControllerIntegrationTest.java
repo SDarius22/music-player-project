@@ -79,7 +79,7 @@ class DataSyncControllerIntegrationTest extends BaseIntegrationTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.serverChanges", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$.serverChanges[0].songId").value(testSong.getId()));
+                .andExpect(jsonPath("$.serverChanges[0].fileHash").value(testSong.getFileHash()));
     }
 
     @Test
@@ -106,7 +106,7 @@ class DataSyncControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldApplyLocalChangesAndPersist() throws Exception {
         SongSyncDto change = new SongSyncDto();
-        change.setSongId(testSong.getId());
+        change.setFileHash(testSong.getFileHash());
         change.setLikedByUser(true);
         change.setIsDeleted(false);
 
@@ -126,7 +126,7 @@ class DataSyncControllerIntegrationTest extends BaseIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(verify)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.serverChanges[?(@.songId == " + testSong.getId() + ")].likedByUser",
+                .andExpect(jsonPath("$.serverChanges[?(@.fileHash == '" + testSong.getFileHash() + "')].likedByUser",
                         contains(true)));
     }
 

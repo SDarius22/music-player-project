@@ -42,7 +42,7 @@ class SyncMapperTest {
 
         SongSyncDto dto = syncMapper.toDto(library);
 
-        assertEquals(10L, dto.getSongId());
+        assertEquals("hash", dto.getFileHash());
         assertEquals(true, dto.getLikedByUser());
         assertEquals(0, dto.getPlayCountDelta()); // constant
         assertFalse(dto.getIsDeleted());
@@ -63,7 +63,7 @@ class SyncMapperTest {
 
         SongSyncDto dto = syncMapper.toDto(library);
 
-        assertNull(dto.getSongId());
+        assertNull(dto.getFileHash());
         assertNull(dto.getSongMetadata());
     }
 

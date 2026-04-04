@@ -1,9 +1,7 @@
 import 'dart:typed_data';
 
 abstract class BaseEntity {
-  int get serverId;
-
-  set serverId(int value);
+  String get cloudId;
 
   String get name;
 

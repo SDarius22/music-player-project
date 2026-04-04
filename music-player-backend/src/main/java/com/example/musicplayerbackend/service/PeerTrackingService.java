@@ -24,9 +24,9 @@ public class PeerTrackingService {
     private static final String CHUNKS_KEY_PREFIX = "peer:chunks:";
     private static final String SONGS_KEY_PREFIX = "peer:songs:";
 
-    public void registerPeerChunks(Integer songId, String peerId, Set<Integer> chunkIndices) {
+    public void registerPeerChunks(String fileHash, String peerId, Set<Integer> chunkIndices) {
         try {
-            String chunksKey = CHUNKS_KEY_PREFIX + songId;
+            String chunksKey = CHUNKS_KEY_PREFIX + fileHash;
             String songsKey = SONGS_KEY_PREFIX + peerId;
 
             String existing = (String) redisTemplate.opsForHash().get(chunksKey, peerId);
@@ -37,10 +37,10 @@ public class PeerTrackingService {
             }
 
             redisTemplate.opsForHash().put(chunksKey, peerId, objectMapper.writeValueAsString(merged));
-            redisTemplate.opsForSet().add(songsKey, String.valueOf(songId));
+            redisTemplate.opsForSet().add(songsKey, fileHash);
 
-            log.info("[PEER_TRACKING] Registered {} chunk(s) for peer={}, songId={} (total cached: {})",
-                    chunkIndices.size(), peerId, songId, merged.size());
+            log.info("[PEER_TRACKING] Registered {} chunk(s) for peer={}, fileHash={} (total cached: {})",
+                    chunkIndices.size(), peerId, fileHash, merged.size());
         } catch (Exception e) {
             log.error("[PEER_TRACKING] Failed to register peer chunks: {}", e.getMessage());
         }
@@ -63,11 +63,11 @@ public class PeerTrackingService {
         }
     }
 
-    public Map<String, Set<Integer>> getPeerBufferMapsForSong(Integer songId) {
+    public Map<String, Set<Integer>> getPeerBufferMapsForSong(String fileHash) {
         try {
-            Map<Object, Object> raw = redisTemplate.opsForHash().entries(CHUNKS_KEY_PREFIX + songId);
+            Map<Object, Object> raw = redisTemplate.opsForHash().entries(CHUNKS_KEY_PREFIX + fileHash);
             if (raw.isEmpty()) {
-                log.info("[PEER_TRACKING] No peers found for songId={}", songId);
+                log.info("[PEER_TRACKING] No peers found for fileHash={}", fileHash);
                 return Collections.emptyMap();
             }
 
@@ -76,7 +76,7 @@ public class PeerTrackingService {
                 Set<Integer> chunks = objectMapper.readValue((String) entry.getValue(), new TypeReference<>() {});
                 result.put((String) entry.getKey(), chunks);
             }
-            log.info("[PEER_TRACKING] Returning buffer map for songId={}: {} peer(s)", songId, result.size());
+            log.info("[PEER_TRACKING] Returning buffer map for fileHash={}: {} peer(s)", fileHash, result.size());
             return Collections.unmodifiableMap(result);
         } catch (Exception e) {
             log.error("[PEER_TRACKING] Failed to get peer buffer maps: {}", e.getMessage());

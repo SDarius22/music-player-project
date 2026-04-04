@@ -2,7 +2,7 @@ class ChunkStatRecord {
   final int id;
   final DateTime timestamp;
   final int? userId;
-  final int? songId;
+  final String? songFileHash;
   final String? songName;
   final int localChunks;
   final int localCachedChunks;
@@ -15,7 +15,7 @@ class ChunkStatRecord {
     required this.id,
     required this.timestamp,
     this.userId,
-    this.songId,
+    this.songFileHash,
     this.songName,
     this.localChunks = 0,
     this.localCachedChunks = 0,
@@ -28,11 +28,12 @@ class ChunkStatRecord {
   factory ChunkStatRecord.fromJson(Map<String, dynamic> json) {
     return ChunkStatRecord(
       id: json['id'] as int? ?? 0,
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'] as String)
-          : DateTime.now(),
+      timestamp:
+          json['timestamp'] != null
+              ? DateTime.parse(json['timestamp'] as String)
+              : DateTime.now(),
       userId: json['userId'] as int?,
-      songId: json['songId'] as int?,
+      songFileHash: json['songFileHash'] as String?,
       songName: json['songName'] as String?,
       localChunks: json['localChunks'] as int? ?? 0,
       localCachedChunks: json['localCachedChunks'] as int? ?? 0,

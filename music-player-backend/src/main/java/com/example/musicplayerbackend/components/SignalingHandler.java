@@ -155,18 +155,18 @@ public class SignalingHandler extends TextWebSocketHandler {
                 Set<Integer> chunkIndices = objectMapper.convertValue(rawPayload, new TypeReference<>() {
                 });
 
-                Integer songId = payloadMap.get("songId") != null ? ((Number) payloadMap.get("songId")).intValue() : null;
+                String fileHash = (String) payloadMap.get("fileHash");
 
-                if (songId != null && senderId != null) {
-                    peerTrackingService.registerPeerChunks(songId, senderId, chunkIndices);
-                    log.info("[SIGNALING] REGISTER_CACHE: peer={}, songId={}, chunks={}", senderId, songId, chunkIndices.size());
+                if (fileHash != null && senderId != null) {
+                    peerTrackingService.registerPeerChunks(fileHash, senderId, chunkIndices);
+                    log.info("[SIGNALING] REGISTER_CACHE: peer={}, fileHash={}, chunks={}", senderId, fileHash, chunkIndices.size());
                 }
             }
 
             case "DISCOVER_PEERS" -> {
-                Integer songId = ((Number) payloadMap.get("songId")).intValue();
-                log.info("[SIGNALING] DISCOVER_PEERS: requester={}, songId={}", senderId, songId);
-                sendBufferMaps(session, songId, senderId);
+                String fileHash = (String) payloadMap.get("fileHash");
+                log.info("[SIGNALING] DISCOVER_PEERS: requester={}, fileHash={}", senderId, fileHash);
+                sendBufferMaps(session, fileHash, senderId);
             }
 
             case "OFFER", "ANSWER", "ICE_CANDIDATE" -> {
@@ -184,9 +184,9 @@ public class SignalingHandler extends TextWebSocketHandler {
         }
     }
 
-    private void sendBufferMaps(WebSocketSession session, Integer songId, String requestingPeerId) throws Exception {
+    private void sendBufferMaps(WebSocketSession session, String fileHash, String requestingPeerId) throws Exception {
         Map<String, Set<Integer>> peerBufferMaps = new ConcurrentHashMap<>(
-                peerTrackingService.getPeerBufferMapsForSong(songId)
+                peerTrackingService.getPeerBufferMapsForSong(fileHash)
         );
 
         peerBufferMaps.remove(requestingPeerId);
@@ -195,7 +195,7 @@ public class SignalingHandler extends TextWebSocketHandler {
                 "PEER_BUFFER_MAP",
                 "SERVER",
                 requestingPeerId,
-                songId,
+                fileHash,
                 peerBufferMaps
         );
 

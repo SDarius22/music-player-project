@@ -11,3 +11,7 @@ databaseChangeLog:
       file: db/changelog/changes/005-artist-album-playlist-type.sql
   - include:
       file: db/changelog/changes/006-chunk-stats-extended.sql
+  - include:
+      file: db/changelog/changes/007-filehash-identifiers.sql
+  - include:
+      file: db/changelog/changes/008-unique-artist-album.sql
