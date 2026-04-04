@@ -219,8 +219,8 @@ class AppAudioService {
   }
 
   Future<void> addToQueue(List<Song> songs) async {
-    final existingIds = _normalQueue.map((s) => s.id).toSet();
-    final toAdd = songs.where((s) => !existingIds.contains(s.id)).toList();
+    final existingHashes = _normalQueue.map((s) => s.fileHash).toSet();
+    final toAdd = songs.where((s) => !existingHashes.contains(s.fileHash)).toList();
     if (toAdd.isEmpty) return;
 
     _normalQueue.addAll(toAdd);
@@ -237,7 +237,7 @@ class AppAudioService {
       if (_normalQueue.any((s) => s == song)) continue;
       _normalQueue.insert(insertAt, song);
       _queuePlaylist.songs.add(song);
-      _queuePlaylist.songsIds.insert(insertAt, song.id);
+      _queuePlaylist.songFileHashes.insert(insertAt, song.fileHash);
     }
 
     playlistService.updatePlaylist(_queuePlaylist);
@@ -268,7 +268,7 @@ class AppAudioService {
       _normalQueue.clear();
       _normalQueue.addAll(songs);
       _queuePlaylist.songs.clear();
-      _queuePlaylist.songsIds.clear();
+      _queuePlaylist.songFileHashes.clear();
       playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
     }
 
@@ -430,7 +430,7 @@ class AppAudioService {
     _normalQueue.clear();
     _normalQueue.addAll(resolvedQueue);
     _queuePlaylist.songs.clear();
-    _queuePlaylist.songsIds.clear();
+    _queuePlaylist.songFileHashes.clear();
     playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
 
     Song current = resolvedQueue.first;

@@ -108,6 +108,20 @@ class MockAlbumRepository extends _i1.Mock implements _i6.AlbumRepository {
           as _i2.Album?);
 
   @override
+  _i2.Album? getAlbumByNameAndArtistName(
+    String? albumName,
+    String? artistName,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAlbumByNameAndArtistName, [
+              albumName,
+              artistName,
+            ]),
+            returnValueForMissingStub: null,
+          )
+          as _i2.Album?);
+
+  @override
   _i2.Album? getAlbumByServerId(int? serverId) =>
       (super.noSuchMethod(
             Invocation.method(#getAlbumByServerId, [serverId]),

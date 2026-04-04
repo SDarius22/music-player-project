@@ -206,8 +206,13 @@ class SongService {
         }
       }
       if (s.album.target != null && s.album.target!.serverId > 0) {
-        if (s.artist.target != null) {
-          s.album.target!.artist.target = s.artist.target;
+        if (s.artist.target != null && s.artist.target!.serverId > 0) {
+          final savedArtist = _artistService.getArtistByServerId(
+            s.artist.target!.serverId,
+          );
+          if (savedArtist != null) {
+            s.album.target!.artist.target = savedArtist;
+          }
         }
         final existing = _albumService.getAlbumByServerId(
           s.album.target!.serverId,
@@ -248,10 +253,6 @@ class SongService {
       serverSong.requiresSync = false;
       serverSong.artist.target = resolvedArtist;
       serverSong.album.target = resolvedAlbum;
-      resolvedArtist?.songs.add(serverSong);
-      resolvedAlbum?.songs.add(serverSong);
-      if (resolvedAlbum != null) _albumService.updateAlbum(resolvedAlbum);
-      if (resolvedArtist != null) _artistService.updateArtist(resolvedArtist);
       _songRepository.saveSong(serverSong);
       return;
     }
@@ -269,17 +270,6 @@ class SongService {
 
     if (resolvedArtist != null) existing.artist.target = resolvedArtist;
     if (resolvedAlbum != null) existing.album.target = resolvedAlbum;
-
-    if (existing.artist.target != null &&
-        !existing.artist.target!.songs.contains(existing)) {
-      existing.artist.target?.songs.add(existing);
-      _artistService.updateArtist(existing.artist.target!);
-    }
-    if (existing.album.target != null &&
-        !existing.album.target!.songs.contains(existing)) {
-      existing.album.target?.songs.add(existing);
-      _albumService.updateAlbum(existing.album.target!);
-    }
 
     _songRepository.updateSong(existing);
   }
@@ -524,18 +514,4 @@ class SongService {
         .toList();
   }
 
-  Widget getCoverArt(String fileHash) {
-    final song = _songRepository.getSongByFileHash(fileHash);
-    final album = song?.album.target;
-
-    return _songRestService.fetchCoverArt(
-      song ?? Song()
-        ..fileHash = fileHash,
-      onBytesLoaded: (bytes) {
-        if (album == null) return;
-        album.imageBytes = bytes;
-        _albumService.updateAlbum(album);
-      },
-    );
-  }
 }

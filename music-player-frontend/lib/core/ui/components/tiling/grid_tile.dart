@@ -42,7 +42,7 @@ class CustomGridTile extends StatelessWidget {
     } else if (entity is Artist) {
       return "${entity.songs.length} Songs";
     } else if (entity is Playlist) {
-      return "${entity.songsIds.length} Songs";
+      return "${entity.songFileHashes.length} Songs";
     }
     return "";
   }

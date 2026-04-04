@@ -297,7 +297,7 @@ class WebRTCService {
           break;
 
         case 'PEER_BUFFER_MAP':
-          final discoveredFileHash = signal['songId'] as String;
+          final discoveredFileHash = signal['fileHash'] as String;
           final Map<String, dynamic> map = payload;
           for (final peerId in map.keys) {
             _peerLibraries.putIfAbsent(peerId, () => {});

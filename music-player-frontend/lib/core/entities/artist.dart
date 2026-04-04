@@ -65,4 +65,8 @@ class Artist with AbstractCollection implements BaseEntity {
 
   @override
   Uint8List? get coverArt => albums.isNotEmpty ? albums.first.coverArt : null;
+
+  /// Server returns the cover of the artist's first album alphabetically.
+  @override
+  String? get imageUrl => serverId > 0 ? '/artists/$serverId/cover' : null;
 }

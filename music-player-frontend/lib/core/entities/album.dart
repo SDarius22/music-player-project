@@ -56,6 +56,9 @@ class Album with AbstractCollection implements BaseEntity {
   @override
   Uint8List? get coverArt => imageBytes;
 
+  @override
+  String? get imageUrl => serverId > 0 ? '/albums/$serverId/cover' : null;
+
   int _duration = -1;
 
   int get durationInSeconds {

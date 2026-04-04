@@ -2,12 +2,8 @@ self.addEventListener('install', (event) => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
 const pendingRequests = new Map();
-// songId -> Set of reqIds currently in flight for that song
 const songPendingReqIds = new Map();
-// reqId -> songId, for cleanup on resolve
 const reqIdToSongId = new Map();
-
-// songId -> { p2pRanges, serverRanges, bytesServed, totalBytes, songName, clientId }
 const songStats = new Map();
 
 self.addEventListener('message', (event) => {
@@ -17,11 +13,11 @@ self.addEventListener('message', (event) => {
         if (req) {
             req.resolve(event.data);
             pendingRequests.delete(reqId);
-            const songId = reqIdToSongId.get(reqId);
+            const fileHash = reqIdToSongId.get(reqId);
             reqIdToSongId.delete(reqId);
-            if (songId !== undefined && songPendingReqIds.has(songId)) {
-                songPendingReqIds.get(songId).delete(reqId);
-                if (songPendingReqIds.get(songId).size === 0) songPendingReqIds.delete(songId);
+            if (fileHash !== undefined && songPendingReqIds.has(fileHash)) {
+                songPendingReqIds.get(fileHash).delete(reqId);
+                if (songPendingReqIds.get(fileHash).size === 0) songPendingReqIds.delete(fileHash);
             }
         }
     }
@@ -31,7 +27,7 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     if (url.pathname.startsWith('/music-player/p2p-stream/')) {
-        const songId = parseInt(url.pathname.split('/').pop(), 10);
+        const fileHash = url.pathname.split('/').pop();
         const rangeHeader = event.request.headers.get('Range') || 'bytes=0-';
         const clientId = event.clientId;
 
@@ -42,9 +38,8 @@ self.addEventListener('fetch', (event) => {
             const reqId = crypto.randomUUID();
             pendingRequests.set(reqId, {resolve});
 
-            // Cancel pending requests for any other song — only one song streams at a time
             for (const [otherSongId, reqIds] of songPendingReqIds.entries()) {
-                if (otherSongId !== songId) {
+                if (otherSongId !== fileHash) {
                     for (const staleReqId of reqIds) {
                         const stale = pendingRequests.get(staleReqId);
                         if (stale) {
@@ -57,21 +52,21 @@ self.addEventListener('fetch', (event) => {
                 }
             }
 
-            if (!songPendingReqIds.has(songId)) songPendingReqIds.set(songId, new Set());
-            songPendingReqIds.get(songId).add(reqId);
-            reqIdToSongId.set(reqId, songId);
+            if (!songPendingReqIds.has(fileHash)) songPendingReqIds.set(fileHash, new Set());
+            songPendingReqIds.get(fileHash).add(reqId);
+            reqIdToSongId.set(reqId, fileHash);
 
             client.postMessage({
                 type: 'P2P_CHUNK_REQUEST',
                 reqId: reqId,
-                songId: songId,
+                fileHash: fileHash,
                 range: rangeHeader
             });
 
         }).then((data) => {
             if (data instanceof Response) return data;
 
-            _recordRangeDelivery(songId, data, clientId);
+            _recordRangeDelivery(fileHash, data, clientId);
 
             return new Response(data.bytes, {
                 status: 206,
@@ -86,9 +81,9 @@ self.addEventListener('fetch', (event) => {
     }
 });
 
-function _recordRangeDelivery(songId, data, clientId) {
-    if (!songStats.has(songId)) {
-        songStats.set(songId, {
+function _recordRangeDelivery(fileHash, data, clientId) {
+    if (!songStats.has(fileHash)) {
+        songStats.set(fileHash, {
             p2pRanges: 0,
             serverRanges: 0,
             bytesServed: new Set(),
@@ -98,7 +93,7 @@ function _recordRangeDelivery(songId, data, clientId) {
         });
     }
 
-    const stats = songStats.get(songId);
+    const stats = songStats.get(fileHash);
     stats.totalBytes = data.total;
     stats.songName = data.songName || stats.songName;
 
@@ -108,25 +103,24 @@ function _recordRangeDelivery(songId, data, clientId) {
         stats.serverRanges++;
     }
 
-    // Track unique bytes served to detect full delivery
     for (let i = data.start; i <= data.end; i++) {
         stats.bytesServed.add(i);
     }
 
     const totalServed = stats.bytesServed.size;
     if (totalServed >= stats.totalBytes && stats.totalBytes > 0) {
-        _reportStats(songId, stats);
-        songStats.delete(songId);
+        _reportStats(fileHash, stats);
+        songStats.delete(fileHash);
     }
 }
 
-async function _reportStats(songId, stats) {
+async function _reportStats(fileHash, stats) {
     const client = await self.clients.get(stats.clientId);
     if (!client) return;
 
     client.postMessage({
         type: 'P2P_STATS_REPORT',
-        songId: songId,
+        fileHash: fileHash,
         songName: stats.songName,
         p2pRanges: stats.p2pRanges,
         serverRanges: stats.serverRanges,

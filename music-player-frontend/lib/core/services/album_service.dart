@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/album_page_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -77,7 +78,11 @@ class AlbumService {
 
       if (serverPage.totalElements > 0) {
         final content = _albumRepository.getAlbumsPaged(
-          query, sortField, ascending, page * size, size,
+          query,
+          sortField,
+          ascending,
+          page * size,
+          size,
         );
         return AlbumPageDto(
           content: content,
@@ -111,7 +116,10 @@ class AlbumService {
     final artistName = serverAlbum.artist.target?.name;
     Album? byName;
     if (artistName != null && artistName.isNotEmpty) {
-      byName = _albumRepository.getAlbumByNameAndArtistName(serverAlbum.name, artistName);
+      byName = _albumRepository.getAlbumByNameAndArtistName(
+        serverAlbum.name,
+        artistName,
+      );
     }
     byName ??= _albumRepository.getAlbumByName(serverAlbum.name);
     if (byName != null) {
@@ -125,6 +133,10 @@ class AlbumService {
       return byName;
     }
 
+    if (serverAlbum.artist.target != null &&
+        serverAlbum.artist.target!.id == 0) {
+      serverAlbum.artist.target = null;
+    }
     return _albumRepository.saveAlbum(serverAlbum);
   }
 

@@ -8,7 +8,10 @@ import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_c
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
 
 class AlbumRestService extends AbstractRestService {
-  AlbumRestService({required String baseUrl, required AuthService authService}) {
+  AlbumRestService({
+    required String baseUrl,
+    required AuthService authService,
+  }) {
     super.baseUrl = baseUrl;
     super.authService = authService;
   }
@@ -56,7 +59,9 @@ class AlbumRestService extends AbstractRestService {
     try {
       final response = await get('/albums/$albumId');
       if (response.statusCode == 200) {
-        return Album.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+        return Album.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,
+        );
       }
     } catch (e) {
       debugPrint('Error fetching album $albumId: $e');

@@ -47,7 +47,7 @@ class WebP2PBridge {
     Map<dynamic, dynamic> data,
   ) async {
     final String reqId = data['reqId'] as String;
-    final String fileHash = data['songId'].toString();
+    final String fileHash = data['fileHash'] as String;
     final String rangeStr = data['range'].toString();
 
     _currentFileHash = fileHash;
@@ -119,7 +119,7 @@ class WebP2PBridge {
   }
 
   void _handleStatsReport(Map<dynamic, dynamic> data) {
-    final String fileHash = data['songId'].toString();
+    final String fileHash = data['fileHash'] as String;
     final int p2pRanges = (data['p2pRanges'] as num).toInt();
     final int serverRanges = (data['serverRanges'] as num).toInt();
     final String songName = data['songName'] as String? ?? _songNames[fileHash] ?? 'Unknown';

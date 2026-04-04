@@ -148,8 +148,6 @@ class AuthService {
         final data = jsonDecode(response.body);
         await saveTokens(data['accessToken'], data['refreshToken'] ?? refresh);
         return data['accessToken'];
-      } else {
-        await logout();
       }
     } catch (e) {
       return null;

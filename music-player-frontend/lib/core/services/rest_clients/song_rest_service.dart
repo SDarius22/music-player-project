@@ -1,10 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -14,8 +11,6 @@ import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:shimmer/shimmer.dart';
 
 class SongRestService extends AbstractRestService {
   SongRestService({required String baseUrl, required AuthService authService}) {
@@ -75,9 +70,9 @@ class SongRestService extends AbstractRestService {
     return false;
   }
 
-  Future<Song?> finalizeSong(int songId) async {
+  Future<Song?> finalizeSong(String fileHash) async {
     try {
-      final response = await post('/songs/$songId/finalize', {});
+      final response = await post('/songs/$fileHash/finalize', {});
 
       if (response.statusCode == 200) {
         return Song.fromJson(jsonDecode(response.body));
@@ -88,67 +83,6 @@ class SongRestService extends AbstractRestService {
       debugPrint('Error finalizing song: $e');
     }
     return null;
-  }
-
-  CachedNetworkImage fetchCoverArt(
-    Song song, {
-    void Function(Uint8List)? onBytesLoaded,
-  }) {
-    return CachedNetworkImage(
-      cacheKey: 'cover_${song.fileHash}',
-      imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
-      imageUrl: '$baseUrl/songs/${song.fileHash}/cover',
-      httpHeaders: {'Authorization': 'Bearer ${authService.accessToken}'},
-      fit: BoxFit.cover,
-      imageBuilder:
-          onBytesLoaded != null
-              ? (context, imageProvider) {
-                imageProvider
-                    .resolve(const ImageConfiguration())
-                    .addListener(
-                      ImageStreamListener(
-                        (info, _) {
-                          info.image
-                              .toByteData(format: ui.ImageByteFormat.png)
-                              .then((data) {
-                                if (data != null) {
-                                  onBytesLoaded(data.buffer.asUint8List());
-                                }
-                              });
-                        },
-                        onError: (e, st) {
-                          debugPrint('Error loading cover art image: $e');
-                        },
-                      ),
-                    );
-                return Image(image: imageProvider, fit: BoxFit.cover);
-              }
-              : null,
-      placeholder:
-          (context, url) => Shimmer.fromColors(
-            baseColor: Colors.grey[800]!,
-            highlightColor: Colors.grey[700]!,
-            child: Container(
-              color: Colors.black,
-              child: Icon(
-                FluentIcons.music,
-                color: Colors.white.withValues(alpha: 0.25),
-                size: 64,
-              ),
-            ),
-          ),
-      errorWidget: (context, url, error) {
-        debugPrint('Error fetching cover art: $error');
-        return Container(
-          color: Colors.black,
-          child: Icon(
-            FluentIcons.music,
-            color: Colors.white.withValues(alpha: 0.25),
-            size: 64,
-          ),
-        );
-      },
-    );
   }
 
   Future<bool> uploadFullSong({

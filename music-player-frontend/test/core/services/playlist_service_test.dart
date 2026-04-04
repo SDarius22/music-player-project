@@ -40,10 +40,10 @@ void main() {
     return p;
   }
 
-  Song makeSong({int id = 1, String fileHash = 'hash1'}) {
+  Song makeSong({int id = 1, String? fileHash}) {
     final s = Song();
     s.id = id;
-    s.fileHash = fileHash;
+    s.fileHash = fileHash ?? 'hash-$id';
     s.name = 'Song $id';
     return s;
   }
@@ -106,23 +106,23 @@ void main() {
 
       service.addToPlaylist(playlist, songs);
 
-      expect(playlist.songsIds, containsAll([1, 2]));
-      expect(playlist.songsIds.first, 1);
-      expect(playlist.songsIds.last, 2);
+      expect(playlist.songFileHashes, containsAll(['hash-1', 'hash-2']));
+      expect(playlist.songFileHashes.first, 'hash-1');
+      expect(playlist.songFileHashes.last, 'hash-2');
     });
 
     test('prepends songs when nextAdded is not last', () {
       final playlist = makePlaylist();
       playlist.nextAdded = 'first';
       final existing = makeSong(id: 10);
-      playlist.songsIds.add(existing.id);
+      playlist.songFileHashes.add(existing.fileHash);
       final newSongs = [makeSong(id: 20)];
       when(mockPlaylistRepo.savePlaylist(any)).thenReturn(playlist);
 
       service.addToPlaylist(playlist, newSongs);
 
-      expect(playlist.songsIds.first, 20);
-      expect(playlist.songsIds[1], 10);
+      expect(playlist.songFileHashes.first, 'hash-20');
+      expect(playlist.songFileHashes[1], 'hash-10');
     });
   });
 
@@ -134,13 +134,13 @@ void main() {
     test('removes song from ids and songs list', () {
       final song = makeSong(id: 5);
       final playlist = makePlaylist();
-      playlist.songsIds.add(song.id);
+      playlist.songFileHashes.add(song.fileHash);
       playlist.songs.add(song);
       when(mockPlaylistRepo.savePlaylist(any)).thenReturn(playlist);
 
       service.deleteFromPlaylist(song, playlist);
 
-      expect(playlist.songsIds, isNot(contains(5)));
+      expect(playlist.songFileHashes, isNot(contains('hash-5')));
       expect(playlist.songs, isNot(contains(song)));
       verify(
         mockPlaylistRepo.savePlaylist(playlist),
@@ -213,7 +213,7 @@ void main() {
   group('deleteAllSongsFromPlaylist', () {
     test('clears all songs and ids', () {
       final playlist = makePlaylist();
-      playlist.songsIds.addAll([1, 2, 3]);
+      playlist.songFileHashes.addAll(['hash-1', 'hash-2', 'hash-3']);
       playlist.songs.addAll([
         makeSong(id: 1),
         makeSong(id: 2),
@@ -223,7 +223,7 @@ void main() {
 
       service.deleteAllSongsFromPlaylist(playlist);
 
-      expect(playlist.songsIds, isEmpty);
+      expect(playlist.songFileHashes, isEmpty);
       expect(playlist.songs, isEmpty);
     });
   });
@@ -262,7 +262,7 @@ void main() {
 
       service.updateMostPlayedPlaylist();
 
-      expect(mostPlayed.songsIds, containsAll([1, 2]));
+      expect(mostPlayed.songFileHashes, containsAll(['hash-1', 'hash-2']));
       verify(mockSongRepo.getMostPlayedSongs(50)).called(1);
     });
 
@@ -370,7 +370,7 @@ void main() {
         // just verify savePlaylist was invoked and the service doesn't throw.
         final playlist = makePlaylist(indestructible: true);
         playlist.songs.add(song);
-        playlist.songsIds.add(song.id);
+        playlist.songFileHashes.add(song.fileHash);
         when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
           return inv.positionalArguments[0] as Playlist;
         });
@@ -661,7 +661,7 @@ void main() {
     });
 
     test(
-      'serverSongFileHashes resolved: sets songs and songsIds on playlist',
+      'serverSongFileHashes resolved: sets songs and songFileHashes on playlist',
       () {
         final song = makeSong(id: 5, fileHash: 'hash100');
         final existing = makePlaylist(id: 1, name: 'Has Songs', serverId: 10);
@@ -679,7 +679,7 @@ void main() {
 
         service.cacheServerPlaylist(serverPlaylist);
 
-        expect(existing.songsIds, contains(5));
+        expect(existing.songFileHashes, contains('hash100'));
       },
     );
 
@@ -720,8 +720,8 @@ void main() {
 
         service.cacheServerPlaylist(serverPlaylist);
 
-        expect(existing.songsIds, contains(7));
-        expect(existing.songsIds.length, 1);
+        expect(existing.songFileHashes, contains('hash200'));
+        expect(existing.songFileHashes.length, 1);
       },
     );
   });
@@ -780,7 +780,7 @@ void main() {
 
       service.updateRecentlyPlayedPlaylist();
 
-      expect(recentlyPlayed.songsIds, containsAll([3, 4]));
+      expect(recentlyPlayed.songFileHashes, containsAll(['hash-3', 'hash-4']));
       verify(mockSongRepo.getRecentlyPlayedSongs(50)).called(1);
     });
 
@@ -808,7 +808,7 @@ void main() {
 
       service.updateFavoritesPlaylist();
 
-      expect(favorites.songsIds, containsAll([5, 6]));
+      expect(favorites.songFileHashes, containsAll(['hash-5', 'hash-6']));
       verify(mockSongRepo.getFavoriteSongs()).called(1);
     });
 

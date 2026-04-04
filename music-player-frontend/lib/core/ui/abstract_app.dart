@@ -27,9 +27,11 @@ import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
+import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/album_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/artist_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/cover_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/playback_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart';
@@ -140,6 +142,13 @@ abstract class AbstractApp extends StatelessWidget {
         create: (context) => createFileService(context),
       ),
 
+      Provider<CoverRestService>(
+        create:
+            (context) => CoverRestService(
+              baseUrl: apiBaseUrl,
+              authService: context.read<AuthService>(),
+            ),
+      ),
       Provider<AlbumRestService>(
         create:
             (context) => AlbumRestService(
@@ -202,6 +211,18 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<SongRestService>(),
               context.read<ArtistService>(),
               context.read<AlbumService>(),
+            ),
+      ),
+
+      Provider<CoverService>(
+        create:
+            (context) => CoverService(
+              albumService: context.read<AlbumService>(),
+              songService: context.read<SongService>(),
+              artistService: context.read<ArtistService>(),
+              playlistService: context.read<PlaylistService>(),
+              coverRestService: context.read<CoverRestService>(),
+              authService: context.read<AuthService>(),
             ),
       ),
 

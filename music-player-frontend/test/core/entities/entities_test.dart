@@ -297,13 +297,13 @@ void main() {
   });
 
   group('Playlist.songsList', () {
-    test('returns empty list when songsIds is empty', () {
+    test('returns empty list when songFileHashes is empty', () {
       expect(Playlist().songsList, isEmpty);
     });
 
-    test('returns empty list when songsIds has no matching songs', () {
+    test('returns empty list when songFileHashes has no matching songs', () {
       final p = Playlist();
-      p.songsIds = [999];
+      p.songFileHashes = ['hash-999'];
       expect(p.songsList, isEmpty);
     });
   });

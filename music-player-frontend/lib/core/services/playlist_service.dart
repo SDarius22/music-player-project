@@ -188,7 +188,7 @@ class PlaylistService {
     List<Song> topSongs = _songRepository.getMostPlayedSongs(50);
     debugPrint("Updating Most Played with ${topSongs.length} songs");
     mostPlayed.songs.clear();
-    mostPlayed.songsIds.clear();
+    mostPlayed.songFileHashes.clear();
     addToPlaylist(mostPlayed, topSongs);
   }
 
@@ -202,7 +202,7 @@ class PlaylistService {
     }
     List<Song> recentSongs = _songRepository.getRecentlyPlayedSongs(50);
     recentlyPlayed.songs.clear();
-    recentlyPlayed.songsIds.clear();
+    recentlyPlayed.songFileHashes.clear();
     addToPlaylist(recentlyPlayed, recentSongs);
   }
 
@@ -216,7 +216,7 @@ class PlaylistService {
     }
     List<Song> favoriteSongs = _songRepository.getFavoriteSongs();
     favorites.songs.clear();
-    favorites.songsIds.clear();
+    favorites.songFileHashes.clear();
     addToPlaylist(favorites, favoriteSongs);
   }
 
@@ -302,10 +302,10 @@ class PlaylistService {
         .toList();
     if (resolved.isNotEmpty) {
       playlist.songs.clear();
-      playlist.songsIds.clear();
+      playlist.songFileHashes.clear();
       for (final song in resolved) {
         playlist.songs.add(song);
-        playlist.songsIds.add(song.id);
+        playlist.songFileHashes.add(song.fileHash);
       }
     }
   }
@@ -350,12 +350,12 @@ class PlaylistService {
   void addToPlaylist(Playlist playlist, List<Song> songs) {
     if (playlist.nextAdded == 'last') {
       for (var song in songs) {
-        playlist.songsIds.add(song.id);
+        playlist.songFileHashes.add(song.fileHash);
         playlist.songs.add(song);
       }
     } else {
       for (var song in songs.reversed) {
-        playlist.songsIds.insert(0, song.id);
+        playlist.songFileHashes.insert(0, song.fileHash);
         playlist.songs.add(song);
       }
     }
@@ -364,7 +364,7 @@ class PlaylistService {
 
   void deleteFromPlaylist(Song song, Playlist playlist) {
     try {
-      playlist.songsIds.remove(song.id);
+      playlist.songFileHashes.remove(song.fileHash);
       playlist.songs.remove(song);
       _playlistRepository.savePlaylist(playlist);
     } catch (e) {
@@ -373,7 +373,7 @@ class PlaylistService {
   }
 
   void deleteAllSongsFromPlaylist(Playlist playlist) {
-    playlist.songsIds.clear();
+    playlist.songFileHashes.clear();
     playlist.songs.clear();
     _playlistRepository.savePlaylist(playlist);
   }

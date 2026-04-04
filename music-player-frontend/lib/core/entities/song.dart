@@ -104,6 +104,11 @@ class Song implements BaseEntity {
   @override
   Uint8List? get coverArt => album.target?.coverArt;
 
+  /// Song cover = its album's cover. Falls back to the album's imageUrl.
+  @override
+  String? get imageUrl =>
+      fileHash.isNotEmpty ? '/songs/$fileHash/cover' : album.target?.imageUrl;
+
   List<Color> get colors {
     if (album.target != null && album.target!.colors.isNotEmpty) {
       return album.target!.colors;

@@ -1,0 +1,25 @@
+import 'dart:typed_data';
+
+import 'package:flutter/cupertino.dart';
+import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
+import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+
+class CoverRestService extends AbstractRestService {
+  CoverRestService({required String baseUrl, required AuthService authService}) {
+    super.baseUrl = baseUrl;
+    super.authService = authService;
+  }
+
+  /// Fetches cover art bytes from [relativeUrl] (e.g. '/albums/3/cover').
+  Future<Uint8List?> fetchCoverBytes(String relativeUrl) async {
+    try {
+      final response = await get(relativeUrl);
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        return response.bodyBytes;
+      }
+    } catch (e) {
+      debugPrint('CoverRestService: failed to fetch $relativeUrl: $e');
+    }
+    return null;
+  }
+}

@@ -2,10 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/core/services/cover_service.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
-enum ImageWidgetType { asset, song, network, bytes }
 
 class ImageWidget extends StatefulWidget {
   final Widget? hoveredChild;
@@ -83,8 +83,22 @@ class _ImageWidgetState extends State<ImageWidget> {
   }
 
   Widget _getImageWidget(BuildContext context) {
-    var songProvider = context.read<SongProvider>();
-    return songProvider.getCoverArt(widget.entity.cloudId);
+    try {
+      return context.read<CoverService>().getWidget(widget.entity);
+    } catch (e) {
+      debugPrint(
+        'ImageWidget: failed to get image for entity ${widget.entity.cloudId}: $e',
+      );
+    }
+
+    return Container(
+      color: Colors.black,
+      child: Icon(
+        FluentIcons.music,
+        color: Colors.white.withValues(alpha: 0.25),
+        size: MediaQuery.of(context).size.width * 0.1,
+      ),
+    );
   }
 
   Widget _buildImageLayer() {

@@ -20,7 +20,9 @@ class StatisticsRestService extends AbstractRestService {
       final response = await get('/statistics');
       if (response.statusCode == 200) {
         final List<dynamic> decoded = jsonDecode(response.body);
-        return decoded.map((e) => ChunkStatRecord.fromJson(e as Map<String, dynamic>)).toList();
+        return decoded
+            .map((e) => ChunkStatRecord.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
     } catch (e) {
       debugPrint('[StatisticsRestService] Error fetching statistics: $e');

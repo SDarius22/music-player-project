@@ -55,15 +55,18 @@ class Playlist with AbstractCollection implements BaseEntity {
   @override
   Uint8List? get coverArt => imageBytes;
 
-  List<int> songsIds = [];
+  @override
+  String? get imageUrl => serverId > 0 ? '/playlists/$serverId/cover' : null;
+
+  List<String> songFileHashes = [];
 
   @Transient()
   List<String> serverSongFileHashes = [];
 
   List<Song> get songsList {
     try {
-      return songsIds
-          .map((id) => songs.firstWhere((song) => song.id == id))
+      return songFileHashes
+          .map((hash) => songs.firstWhere((song) => song.fileHash == hash))
           .toList();
     } catch (e) {
       return [];
