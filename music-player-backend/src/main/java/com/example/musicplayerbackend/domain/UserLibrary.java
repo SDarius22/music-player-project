@@ -18,7 +18,7 @@ public class UserLibrary {
     private UserLibraryID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("fileHash")
+    @MapsId("songId")
     @JoinColumn(name = "song_id")
     private Song song;
 
