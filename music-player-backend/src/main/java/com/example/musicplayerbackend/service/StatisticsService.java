@@ -20,7 +20,8 @@ public class StatisticsService {
 
     @Transactional(readOnly = true)
     public List<ChunkStatDto> getAll() {
-        return chunkStatRepository.findAll().stream()
+        return chunkStatRepository.findAllByOrderByTimestampDesc()
+                .stream()
                 .map(this::toDto)
                 .toList();
     }

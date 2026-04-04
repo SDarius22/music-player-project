@@ -34,28 +34,28 @@ class StatisticsServiceTest {
     }
 
     @Test
-    void shouldReturnAllStatsAsDtos() {
+    void shouldReturnAllStatsAsOrderedDtos() {
         ChunkStat stat = ChunkStat.builder()
                 .id(1L).userId(10L).songFileHash("hash-20").songName("Test Song")
                 .localChunks(0).localCachedChunks(0)
                 .p2pChunks(8).serverChunks(2).totalChunks(10)
                 .p2pPercentage(80.0).timestamp(Instant.now())
                 .build();
-        when(chunkStatRepository.findAll()).thenReturn(List.of(stat));
+
+        ChunkStat olderStat = ChunkStat.builder()
+                .id(2L).userId(20L).songFileHash("hash-10").songName("Older Song")
+                .localChunks(0).localCachedChunks(0)
+                .p2pChunks(5).serverChunks(5).totalChunks(10)
+                .p2pPercentage(50.0).timestamp(Instant.now().minusSeconds(3600))
+                .build();
+
+        when(chunkStatRepository.findAllByOrderByTimestampDesc()).thenReturn(List.of(stat, olderStat));
 
         List<ChunkStatDto> result = service.getAll();
 
-        assertEquals(1, result.size());
-        ChunkStatDto dto = result.getFirst();
-        assertEquals(1L, dto.getId());
-        assertEquals(10L, dto.getUserId());
-        assertEquals("hash-20", dto.getSongFileHash());
-        assertEquals("Test Song", dto.getSongName());
-        assertEquals(8, dto.getP2pChunks());
-        assertEquals(2, dto.getServerChunks());
-        assertEquals(10, dto.getTotalChunks());
-        assertEquals(80.0, dto.getP2pPercentage());
-        assertNotNull(dto.getTimestamp());
+        assertEquals(2, result.size());
+        assertEquals(stat.getId(), result.get(0).getId());
+        assertEquals(olderStat.getId(), result.get(1).getId());
     }
 
     @Test
@@ -66,7 +66,7 @@ class StatisticsServiceTest {
                 .p2pChunks(0).serverChunks(0).totalChunks(0)
                 .p2pPercentage(0.0).timestamp(null) // null timestamp
                 .build();
-        when(chunkStatRepository.findAll()).thenReturn(List.of(stat));
+        when(chunkStatRepository.findAllByOrderByTimestampDesc()).thenReturn(List.of(stat));
 
         List<ChunkStatDto> result = service.getAll();
 
@@ -75,7 +75,7 @@ class StatisticsServiceTest {
 
     @Test
     void shouldReturnEmptyStatsListWhenNoneExist() {
-        when(chunkStatRepository.findAll()).thenReturn(List.of());
+        when(chunkStatRepository.findAllByOrderByTimestampDesc()).thenReturn(List.of());
         assertTrue(service.getAll().isEmpty());
     }
 
