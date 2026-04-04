@@ -252,7 +252,7 @@ public class SongService {
             songChunks.add(link);
         }
         songChunkRepository.saveAll(songChunks);
-        log.info("[SONG] Processed {} chunk(s) for songId={}", orderIndex, song.getId());
+        log.info("[SONG] Processed {} chunk(s) for fileHash={}", orderIndex, song.getId());
     }
 
     private String bytesToHex(byte[] hash) {

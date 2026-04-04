@@ -9,9 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -88,9 +86,9 @@ class RedisSignalingListenerTest {
 
         verify(signalingHandler).routeToTargetLocally(argThat(s ->
                 "OFFER".equals(s.type()) &&
-                "peer-A".equals(s.senderId()) &&
-                "peer-B".equals(s.targetId()) &&
-                "hash-1".equals(s.songId())
+                        "peer-A".equals(s.senderId()) &&
+                        "peer-B".equals(s.targetId()) &&
+                        "hash-1".equals(s.fileHash())
         ));
     }
 
