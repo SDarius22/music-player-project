@@ -58,7 +58,7 @@ class SignalingHandlerTest {
                 "type", "REGISTER_CACHE",
                 "senderId", "peer-A",
                 "userId", 1,
-                "songId", "hash-42",
+                "fileHash", "hash-42",
                 "payload", Set.of(0, 1, 2)));
 
         handler.handleTextMessage(session, new TextMessage(payload));
@@ -70,7 +70,7 @@ class SignalingHandlerTest {
     void shouldSkipRegistrationWhenRegisterCacheSenderIdIsNull() throws Exception {
         String payload = objectMapper.writeValueAsString(Map.of(
                 "type", "REGISTER_CACHE",
-                "songId", "hash-42",
+                "fileHash", "hash-42",
                 "payload", Set.of(0, 1)));
 
         handler.handleTextMessage(session, new TextMessage(payload));
@@ -87,7 +87,7 @@ class SignalingHandlerTest {
         String payload = objectMapper.writeValueAsString(Map.of(
                 "type", "DISCOVER_PEERS",
                 "senderId", "requester",
-                "songId", "hash-10"));
+                "fileHash", "hash-10"));
 
         handler.handleTextMessage(session, new TextMessage(payload));
 
@@ -109,7 +109,7 @@ class SignalingHandlerTest {
                 "type", "OFFER",
                 "senderId", "peer-A",
                 "targetId", "peer-B",
-                "songId", "hash-1",
+                "fileHash", "hash-1",
                 "payload", "sdp-offer"));
 
         handler.handleTextMessage(session, new TextMessage(offerPayload));
@@ -131,7 +131,7 @@ class SignalingHandlerTest {
                 "type", "ANSWER",
                 "senderId", "peer-A",
                 "targetId", "peer-B",
-                "songId", "hash-1",
+                "fileHash", "hash-1",
                 "payload", "sdp-answer"));
 
         handler.handleTextMessage(session, new TextMessage(answerPayload));
@@ -152,7 +152,7 @@ class SignalingHandlerTest {
                 "type", "ICE_CANDIDATE",
                 "senderId", "peer-A",
                 "targetId", "peer-B",
-                "songId", "hash-1",
+                "fileHash", "hash-1",
                 "payload", "candidate-data"));
 
         handler.handleTextMessage(session, new TextMessage(icePayload));
@@ -338,8 +338,8 @@ class SignalingHandlerTest {
     }
 
     @Test
-    void shouldSkipRegisterPeerChunksWhenRegisterCacheSongIdIsNull() throws Exception {
-        // songId absent → condition (songId != null && senderId != null) is false
+    void shouldSkipRegisterPeerChunksWhenRegisterCacheFileHashIsNull() throws Exception {
+        // fileHash absent → condition (fileHash != null && senderId != null) is false
         String payload = objectMapper.writeValueAsString(Map.of(
                 "type", "REGISTER_CACHE",
                 "senderId", "peer-A",
@@ -358,7 +358,7 @@ class SignalingHandlerTest {
                 "type", "OFFER",
                 "senderId", "peer-A",
                 "targetId", "nonexistent-peer",
-                "songId", "hash-1",
+                "fileHash", "hash-1",
                 "payload", "sdp"));
 
         assertDoesNotThrow(() -> handler.handleTextMessage(session, new TextMessage(payload)));
@@ -380,7 +380,7 @@ class SignalingHandlerTest {
                 "type", "OFFER",
                 "senderId", "peer-A",
                 "targetId", "peer-C",
-                "songId", "hash-1",
+                "fileHash", "hash-1",
                 "payload", "sdp-offer"));
 
         handler.handleTextMessage(session, new TextMessage(offerPayload));

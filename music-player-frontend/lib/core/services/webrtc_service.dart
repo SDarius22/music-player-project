@@ -10,7 +10,8 @@ class WebRTCService {
   final String myDeviceId;
   final AuthService authService;
   final WebSocketChannel signalingSocket;
-  final Function(String fileHash, int chunkIndex, Uint8List data) onChunkReceived;
+  final Function(String fileHash, int chunkIndex, Uint8List data)
+  onChunkReceived;
   final Future<Uint8List?> Function(String fileHash, int chunkIndex)
   onChunkRequested;
   final VoidCallback? onSyncTrigger;
@@ -19,6 +20,7 @@ class WebRTCService {
   final Map<String, RTCDataChannel> _dataChannels = {};
   final Map<String, List<RTCIceCandidate>> _iceQueues = {};
   final Map<String, Set<String>> _peerLibraries = {};
+
   // key: peerId, value: list of pending requests (fileHash + chunkIndex)
   final Map<String, List<({String fileHash, int chunkIndex})>>
   _pendingChunkRequests = {};
@@ -88,7 +90,7 @@ class WebRTCService {
         'type': 'REGISTER_CACHE',
         'senderId': myDeviceId,
         'targetId': 'SERVER',
-        'songId': fileHash,
+        'fileHash': fileHash,
         'payload': chunkIndices,
         'userId': authService.userId,
       }),
@@ -103,7 +105,7 @@ class WebRTCService {
         'type': 'DISCOVER_PEERS',
         'senderId': myDeviceId,
         'targetId': 'SERVER',
-        'songId': fileHash,
+        'fileHash': fileHash,
         'payload': {},
         'userId': authService.userId,
       }),
@@ -193,12 +195,13 @@ class WebRTCService {
     );
     for (final req in pending) {
       channel.send(
-        RTCDataChannelMessage('REQUEST_CHUNK:${req.fileHash}:${req.chunkIndex}'),
+        RTCDataChannelMessage(
+          'REQUEST_CHUNK:${req.fileHash}:${req.chunkIndex}',
+        ),
       );
     }
   }
 
-  // Binary packet format: [64-byte ASCII fileHash][4-byte uint32 chunkIndex][audio data]
   void _handleBinaryMessage(Uint8List binary) {
     try {
       if (binary.length < 68) {
