@@ -4,8 +4,8 @@ import com.example.musicplayerbackend.data.ArtistRepository;
 import com.example.musicplayerbackend.data.projection.ArtistListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
-import com.example.musicplayerbackend.mapper.AlbumMapper;
 import com.example.musicplayerbackend.mapper.ArtistMapper;
+import com.example.musicplayerbackend.mapper.SongMapper;
 import com.example.musicplayerbackend.mapper.SortMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,9 +24,9 @@ import java.util.List;
 public class ArtistService {
 
     private final ArtistRepository artistRepository;
-    private final AlbumMapper albumMapper;
     private final ArtistMapper artistMapper;
     private final SortMapper sortMapper;
+    private final SongMapper songMapper;
 
     @Transactional(readOnly = true)
     public ArtistPageDto getArtists(String query, Integer page, Integer size, String sort) {
@@ -37,8 +37,8 @@ public class ArtistService {
 
         Page<ArtistListProjection> result = artistRepository.findAllWithHashes(query, pageable);
 
-        List<ArtistListDto> content = result.getContent().stream().map(proj -> {
-            ArtistListDto dto = artistMapper.toListDto(proj);
+        List<ArtistExpandedDto> content = result.getContent().stream().map(proj -> {
+            ArtistExpandedDto dto = artistMapper.toExpandedDto(proj);
             String csv = proj.getSongFileHashesCsv();
             dto.setSongFileHashes(csv != null && !csv.isBlank()
                     ? Arrays.stream(csv.split(",")).toList() : List.of());
@@ -54,15 +54,13 @@ public class ArtistService {
         Artist artist = artistRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
 
-        List<AlbumDto> albums = artist.getAlbums() == null ? List.of() :
-                artist.getAlbums().stream().map(albumMapper::toDto).toList();
+        List<SongDto> songs = artist.getSongs() == null ? List.of() :
+                artist.getSongs().stream().map(songMapper::toDto).toList();
 
         ArtistDetailDto dto = new ArtistDetailDto();
         dto.setId(artist.getId());
         dto.setName(artist.getName());
-        dto.setType(artist.getArtistType() != null ? ArtistDetailDto.TypeEnum.fromValue(artist.getArtistType().name()) : null);
-        dto.setOwnerId(artist.getOwnerId());
-        dto.setAlbums(albums);
+        dto.setSongs(songs);
         return dto;
     }
 

@@ -30,7 +30,6 @@ class AlbumMapperTest {
 
         assertEquals(1L, dto.getId());
         assertEquals("Abbey Road", dto.getName());
-        assertEquals("base64data", dto.getPhoto());
     }
 
     @Test
@@ -39,12 +38,13 @@ class AlbumMapperTest {
     }
 
     @Test
-    void shouldMapNullCoverImageToNullPhoto() {
+    void shouldMapIdAndNameWhenCoverImageIsNull() {
         Album album = Album.builder().id(2L).name("No Cover").build();
 
         AlbumDto dto = albumMapper.toDto(album);
 
-        assertNull(dto.getPhoto());
+        assertEquals(2L, dto.getId());
+        assertEquals("No Cover", dto.getName());
     }
 
     @Test
@@ -52,13 +52,11 @@ class AlbumMapperTest {
         AlbumDto dto = new AlbumDto();
         dto.setId(5L);
         dto.setName("Help!");
-        dto.setPhoto("img");
 
         Album entity = albumMapper.toEntity(dto);
 
         assertEquals(5L, entity.getId());
         assertEquals("Help!", entity.getName());
-        // photo is not mapped back to coverImage (unmappedTargetPolicy = IGNORE)
     }
 
     @Test

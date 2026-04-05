@@ -2,6 +2,7 @@ package com.example.musicplayerbackend.integration;
 
 import com.example.musicplayerbackend.data.AlbumRepository;
 import com.example.musicplayerbackend.data.ArtistRepository;
+import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.UserRepository;
 import com.example.musicplayerbackend.domain.*;
 import org.junit.jupiter.api.AfterEach;
@@ -20,24 +21,34 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired ArtistRepository artistRepository;
     @Autowired AlbumRepository albumRepository;
+    @Autowired SongRepository songRepository;
     @Autowired UserRepository userRepository;
 
     User testUser;
     Artist artist;
+    Album album;
 
     @BeforeEach
     void setUp() {
         testUser = userRepository.save(buildUser("artist-test@example.com", Role.USER));
         artist = artistRepository.save(Artist.builder().name("Test Artist").build());
-        albumRepository.save(Album.builder()
+        album = albumRepository.save(Album.builder()
                 .name("Test Album")
                 .artist(artist)
                 .coverImage(Base64.getEncoder().encodeToString("img".getBytes()))
+                .build());
+        songRepository.save(Song.builder()
+                .name("Test Song")
+                .artist(artist)
+                .album(album)
+                .songType(ContentType.STREAMABLE)
+                .fileHash("artist-test-hash-001")
                 .build());
     }
 
     @AfterEach
     void tearDown() {
+        songRepository.deleteAll();
         albumRepository.deleteAll();
         artistRepository.deleteAll();
         userRepository.deleteById(testUser.getId());
@@ -94,9 +105,9 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void shouldReturnAlbumsForArtist() throws Exception {
+    void shouldReturnSongsForArtist() throws Exception {
         mockMvc.perform(get("/api/v1/artists/{id}", artist.getId()).with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.albums", not(empty())));
+                .andExpect(jsonPath("$.songs", not(empty())));
     }
 }

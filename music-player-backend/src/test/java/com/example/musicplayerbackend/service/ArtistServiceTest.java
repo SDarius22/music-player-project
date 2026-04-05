@@ -3,8 +3,8 @@ package com.example.musicplayerbackend.service;
 import com.example.musicplayerbackend.data.ArtistRepository;
 import com.example.musicplayerbackend.data.projection.ArtistListProjection;
 import com.example.musicplayerbackend.domain.*;
-import com.example.musicplayerbackend.mapper.AlbumMapper;
 import com.example.musicplayerbackend.mapper.ArtistMapper;
+import com.example.musicplayerbackend.mapper.SongMapper;
 import com.example.musicplayerbackend.mapper.SortMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,15 +28,15 @@ import static org.mockito.Mockito.*;
 class ArtistServiceTest {
 
     @Mock ArtistRepository artistRepository;
-    @Mock AlbumMapper albumMapper;
     @Mock ArtistMapper artistMapper;
     @Mock SortMapper sortMapper;
+    @Mock SongMapper songMapper;
 
     ArtistService service;
 
     @BeforeEach
     void setUp() {
-        service = new ArtistService(artistRepository, albumMapper, artistMapper, sortMapper);
+        service = new ArtistService(artistRepository, artistMapper, sortMapper, songMapper);
         org.mockito.Mockito.lenient().when(sortMapper.toSort(any())).thenReturn(org.springframework.data.domain.Sort.by("name"));
     }
 
@@ -46,11 +46,11 @@ class ArtistServiceTest {
     void shouldReturnPagedArtistResults() {
         ArtistListProjection proj = mock(ArtistListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn(null);
-        ArtistListDto listDto = new ArtistListDto();
+        ArtistExpandedDto listDto = new ArtistExpandedDto();
         listDto.setId(1L);
         listDto.setName("Beatles");
         when(artistRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(artistMapper.toListDto(proj)).thenReturn(listDto);
+        when(artistMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         ArtistPageDto result = service.getArtists(null, 0, 20, null);
 
@@ -105,9 +105,9 @@ class ArtistServiceTest {
     void shouldSplitCsvHashesFromProjection() {
         ArtistListProjection proj = mock(ArtistListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn("h1,h2");
-        ArtistListDto listDto = new ArtistListDto();
+        ArtistExpandedDto listDto = new ArtistExpandedDto();
         when(artistRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(artistMapper.toListDto(proj)).thenReturn(listDto);
+        when(artistMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         ArtistPageDto result = service.getArtists(null, 0, 20, null);
 
@@ -118,9 +118,9 @@ class ArtistServiceTest {
     void shouldReturnEmptyHashesWhenProjectionCsvIsNull() {
         ArtistListProjection proj = mock(ArtistListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn(null);
-        ArtistListDto listDto = new ArtistListDto();
+        ArtistExpandedDto listDto = new ArtistExpandedDto();
         when(artistRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(artistMapper.toListDto(proj)).thenReturn(listDto);
+        when(artistMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         ArtistPageDto result = service.getArtists(null, 0, 20, null);
 
@@ -131,14 +131,14 @@ class ArtistServiceTest {
 
     @Test
     void shouldReturnArtistDetailDto() {
-        Artist artist = Artist.builder().id(1L).name("Beatles").albums(List.of()).build();
+        Artist artist = Artist.builder().id(1L).name("Beatles").songs(List.of()).build();
         when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
 
         ArtistDetailDto result = service.getArtistById(1L);
 
         assertEquals(1L, result.getId());
         assertEquals("Beatles", result.getName());
-        assertTrue(result.getAlbums().isEmpty());
+        assertTrue(result.getSongs().isEmpty());
     }
 
     @Test
@@ -150,28 +150,29 @@ class ArtistServiceTest {
     }
 
     @Test
-    void shouldMapAlbumsWhenGettingArtistById() {
-        Album album = Album.builder().id(10L).name("Abbey Road").build();
-        AlbumDto albumDto = new AlbumDto();
-        albumDto.setId(10L);
-        Artist artist = Artist.builder().id(1L).name("Beatles").albums(List.of(album)).build();
+    void shouldMapSongsWhenGettingArtistById() {
+        Song song = Song.builder().id(10L).name("Come Together").fileHash("hash1")
+                .songType(ContentType.STREAMABLE).build();
+        SongDto songDto = new SongDto();
+        songDto.setFileHash("hash1");
+        Artist artist = Artist.builder().id(1L).name("Beatles").songs(List.of(song)).build();
         when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
-        when(albumMapper.toDto(album)).thenReturn(albumDto);
+        when(songMapper.toDto(song)).thenReturn(songDto);
 
         ArtistDetailDto result = service.getArtistById(1L);
 
-        assertEquals(1, result.getAlbums().size());
-        assertEquals(10L, result.getAlbums().getFirst().getId());
+        assertEquals(1, result.getSongs().size());
+        assertEquals("hash1", result.getSongs().getFirst().getFileHash());
     }
 
     @Test
-    void shouldReturnEmptyAlbumsWhenArtistAlbumsAreNull() {
-        Artist artist = Artist.builder().id(1L).name("Solo").albums(null).build();
+    void shouldReturnEmptySongsWhenArtistSongsAreNull() {
+        Artist artist = Artist.builder().id(1L).name("Solo").songs(null).build();
         when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
 
         ArtistDetailDto result = service.getArtistById(1L);
 
-        assertTrue(result.getAlbums().isEmpty());
+        assertTrue(result.getSongs().isEmpty());
     }
 
     // ── getArtistCover ───────────────────────────────────────────────────────

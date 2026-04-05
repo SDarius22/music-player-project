@@ -112,8 +112,6 @@ public class PlaylistService {
         PlaylistDetailDto dto = new PlaylistDetailDto();
         dto.setId(p.getId());
         dto.setName(p.getName());
-        dto.setType(p.getPlaylistType() != null ? PlaylistDetailDto.TypeEnum.fromValue(p.getPlaylistType().name()) : null);
-        dto.setUserId(p.getUser().getId());
         dto.setSongs(songs);
         dto.setHasCover(p.getCoverImage() != null && !p.getCoverImage().isBlank());
         return dto;

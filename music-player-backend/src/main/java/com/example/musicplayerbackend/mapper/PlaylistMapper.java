@@ -13,7 +13,6 @@ import org.mapstruct.ReportingPolicy;
 )
 public interface PlaylistMapper {
 
-    @Mapping(target = "type", expression = "java(projection.getType() != null ? com.example.musicplayerbackend.domain.PlaylistDto.TypeEnum.fromValue(projection.getType()) : null)")
     @Mapping(target = "songFileHashes", ignore = true)
     PlaylistDto toDto(PlaylistListProjection projection);
 }

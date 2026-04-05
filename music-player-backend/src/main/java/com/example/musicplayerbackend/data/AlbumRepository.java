@@ -21,15 +21,15 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
         value = """
             SELECT a.id,
                    a.name,
-                   a.cover_image     AS photo,
-                   a.album_type      AS type,
-                   a.owner_id        AS ownerid,
+                   ar.id             AS artistid,
+                   ar.name           AS artistname,
                    STRING_AGG(s.file_hash, ',' ORDER BY s.disc_number, s.track_number)
                        FILTER (WHERE s.file_hash IS NOT NULL AND s.file_hash <> '') AS songfilehashescsv
             FROM music_library.albums a
+            LEFT JOIN music_library.artists ar ON ar.id = a.artist_id
             LEFT JOIN music_library.songs s ON s.album_id = a.id
             WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :query, '%'))
-            GROUP BY a.id, a.name, a.cover_image, a.album_type, a.owner_id
+            GROUP BY a.id, a.name, ar.id, ar.name
             """,
         countQuery = """
             SELECT COUNT(DISTINCT a.id)

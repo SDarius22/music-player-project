@@ -88,10 +88,10 @@ class AlbumServiceTest {
     void shouldReturnPagedAlbumResults() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn(null);
-        AlbumListDto listDto = new AlbumListDto();
+        AlbumExpandedDto listDto = new AlbumExpandedDto();
         listDto.setId(1L);
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(albumMapper.toListDto(proj)).thenReturn(listDto);
+        when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -145,9 +145,9 @@ class AlbumServiceTest {
     void shouldSplitCsvHashesFromProjection() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn("hash1,hash2,hash3");
-        AlbumListDto listDto = new AlbumListDto();
+        AlbumExpandedDto listDto = new AlbumExpandedDto();
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(albumMapper.toListDto(proj)).thenReturn(listDto);
+        when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -158,9 +158,9 @@ class AlbumServiceTest {
     void shouldReturnEmptyHashesWhenProjectionCsvIsNull() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn(null);
-        AlbumListDto listDto = new AlbumListDto();
+        AlbumExpandedDto listDto = new AlbumExpandedDto();
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(albumMapper.toListDto(proj)).thenReturn(listDto);
+        when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 

@@ -37,11 +37,17 @@ public class AlbumService {
 
         Page<AlbumListProjection> result = albumRepository.findAllWithHashes(query, pageable);
 
-        List<AlbumListDto> content = result.getContent().stream().map(proj -> {
-            AlbumListDto dto = albumMapper.toListDto(proj);
+        List<AlbumExpandedDto> content = result.getContent().stream().map(proj -> {
+            AlbumExpandedDto dto = albumMapper.toExpandedDto(proj);
             String csv = proj.getSongFileHashesCsv();
             dto.setSongFileHashes(csv != null && !csv.isBlank()
                     ? Arrays.stream(csv.split(",")).toList() : List.of());
+            if (proj.getArtistId() != null) {
+                ArtistDto artistDto = new ArtistDto();
+                artistDto.setId(proj.getArtistId());
+                artistDto.setName(proj.getArtistName());
+                dto.setArtist(artistDto);
+            }
             return dto;
         }).toList();
 
@@ -66,9 +72,6 @@ public class AlbumService {
         AlbumDetailDto dto = new AlbumDetailDto();
         dto.setId(album.getId());
         dto.setName(album.getName());
-        dto.setPhoto(album.getCoverImage());
-        dto.setType(album.getAlbumType() != null ? AlbumDetailDto.TypeEnum.fromValue(album.getAlbumType().name()) : null);
-        dto.setOwnerId(album.getOwnerId());
         dto.setArtist(artistDto);
         dto.setSongs(songs);
         return dto;

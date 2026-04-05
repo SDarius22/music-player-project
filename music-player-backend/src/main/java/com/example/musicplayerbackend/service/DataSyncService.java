@@ -50,6 +50,7 @@ public class DataSyncService {
         SyncResponseDto response = new SyncResponseDto();
         response.setNewSyncTime(OffsetDateTime.ofInstant(now, ZoneOffset.UTC));
         response.setServerChanges(dtos);
+        response.setHasMore(false);
 
         return response;
     }
