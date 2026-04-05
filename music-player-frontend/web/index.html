@@ -48,46 +48,10 @@
                 scope: '/'
             }).then(function (registration) {
                 console.log('P2P ServiceWorker registered');
-
-                // When a new SW version installs, wait until audio is paused
-                // (or idle for 10s) before activating it — avoids mid-song refreshes.
-                registration.addEventListener('updatefound', function () {
-                    const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', function () {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('New SW version waiting — will activate when audio is idle.');
-                            _activateWhenIdle(newWorker);
-                        }
-                    });
-                });
-
-                // Reload only when a *new* SW replaces an existing one (i.e. an update).
-                // If the page loaded without a controller and the SW just claimed it for the
-                // first time, reloading would create an infinite loop.
-                var hadController = !!navigator.serviceWorker.controller;
-                navigator.serviceWorker.addEventListener('controllerchange', function () {
-                    if (!hadController) {
-                        hadController = true;
-                        return;
-                    }
-                    window.location.reload();
-                });
             }).catch(function (err) {
                 console.log('P2P ServiceWorker registration failed: ', err);
             });
         });
-    }
-
-    function _activateWhenIdle(worker) {
-        // Poll: activate as soon as no audio element is playing.
-        const check = setInterval(function () {
-            const audios = Array.from(document.querySelectorAll('audio, video'));
-            const isPlaying = audios.some(function (a) { return !a.paused && !a.ended && a.readyState > 2; });
-            if (!isPlaying) {
-                clearInterval(check);
-                worker.postMessage({ type: 'SKIP_WAITING' });
-            }
-        }, 2000);
     }
 </script>
 </body>
