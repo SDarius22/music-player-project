@@ -30,8 +30,12 @@ public class UserLibrary {
     @Column(nullable = false)
     private Boolean liked = false;
 
+    @Builder.Default
     @Column(nullable = false)
     private Long playCount = 0L;
+    @Builder.Default
+    @Column(nullable = false)
+    private Long totalPlayDurationSeconds = 0L;
     private Instant lastPlayed;
     private Instant addedAt;
     private Boolean isDownloadedLocally = false;

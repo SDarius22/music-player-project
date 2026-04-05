@@ -40,7 +40,7 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
     void setUp() {
         user = userRepository.save(buildUser("library@example.com"));
         Artist artist = artistRepository.save(Artist.builder().name("Artist").build());
-        Album album   = albumRepository.save(Album.builder().name("Album").artist(artist).build());
+        Album album = albumRepository.save(Album.builder().name("Album").artist(artist).build());
 
         song1 = songRepository.save(Song.builder().name("Song 1").artist(artist).album(album)
                 .songType(ContentType.STREAMABLE).fileHash(UUID.randomUUID().toString()).build());
@@ -60,7 +60,7 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
     }
 
     private UserLibrary buildEntry(User u, Song s, boolean liked, long playCount,
-                                    Instant lastPlayed, Instant addedAt, boolean deleted) {
+                                   Instant lastPlayed, Instant addedAt, boolean deleted) {
         UserLibraryID id = new UserLibraryID(u.getId(), s.getId());
         return UserLibrary.builder()
                 .id(id).user(u).song(s)
@@ -69,8 +69,6 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
                 .lastUpdated(Instant.now()).isDeleted(deleted)
                 .build();
     }
-
-    // ── findByIdUserIdAndLastUpdatedAfter ────────────────────────────────────
 
     @Test
     void shouldReturnOnlyRecentEntriesAfterLastUpdated() {
@@ -140,8 +138,8 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void shouldReturnOnlyLikedAndNotDeletedOrderedByPlayCountDesc() {
-        userLibraryRepository.save(buildEntry(user, song1, true,  10, null, Instant.now(), false));
-        userLibraryRepository.save(buildEntry(user, song2, true,  50, null, Instant.now(), false));
+        userLibraryRepository.save(buildEntry(user, song1, true, 10, null, Instant.now(), false));
+        userLibraryRepository.save(buildEntry(user, song2, true, 50, null, Instant.now(), false));
         userLibraryRepository.save(buildEntry(user, song3, false, 99, null, Instant.now(), false));
 
         List<UserLibrary> result = userLibraryRepository.findLikedByUserId(user.getId(), PageRequest.of(0, 10));
@@ -173,9 +171,9 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void shouldReturnMostPlayedOrderedByPlayCountDescExcludingZero() {
-        userLibraryRepository.save(buildEntry(user, song1, false, 5,  null, Instant.now(), false));
+        userLibraryRepository.save(buildEntry(user, song1, false, 5, null, Instant.now(), false));
         userLibraryRepository.save(buildEntry(user, song2, false, 20, null, Instant.now(), false));
-        userLibraryRepository.save(buildEntry(user, song3, false, 0,  null, Instant.now(), false));
+        userLibraryRepository.save(buildEntry(user, song3, false, 0, null, Instant.now(), false));
 
         List<UserLibrary> result = userLibraryRepository.findMostPlayedByUserId(user.getId(), PageRequest.of(0, 10));
 
@@ -290,7 +288,7 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void shouldReturnRecentlyPlayedOrderedByLastPlayedDescExcludingNeverPlayed() {
-        Instant playedLong   = Instant.now().minus(5, ChronoUnit.DAYS);
+        Instant playedLong = Instant.now().minus(5, ChronoUnit.DAYS);
         Instant playedRecent = Instant.now().minus(1, ChronoUnit.HOURS);
 
         userLibraryRepository.save(buildEntry(user, song1, false, 1, playedLong, Instant.now(), false));

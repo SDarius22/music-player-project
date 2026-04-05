@@ -1230,6 +1230,11 @@ components:
           type: boolean
           default: false
 
+        totalPlayDurationSeconds:
+          type: integer
+          format: int64
+          nullable: true
+
         songMetadata:
           $ref: '#/components/schemas/SongDto'
 

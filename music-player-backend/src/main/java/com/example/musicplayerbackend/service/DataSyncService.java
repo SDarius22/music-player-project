@@ -93,6 +93,9 @@ public class DataSyncService {
                 if (change.getPlayCountDelta() != null && change.getPlayCountDelta() > 0) {
                     libEntry.setPlayCount(libEntry.getPlayCount() + change.getPlayCountDelta());
                 }
+                if (change.getTotalPlayDurationSeconds() != null && change.getTotalPlayDurationSeconds() > 0) {
+                    libEntry.setTotalPlayDurationSeconds(libEntry.getTotalPlayDurationSeconds() + change.getTotalPlayDurationSeconds());
+                }
                 if (change.getLastPlayed() != null) {
                     libEntry.setLastPlayed(change.getLastPlayed().toInstant());
                 }
@@ -115,6 +118,7 @@ public class DataSyncService {
         dto.setLikedByUser(entity.getLiked());
         dto.setIsDeleted(entity.getIsDeleted());
         dto.setPlayCountDelta(0);
+        dto.setTotalPlayDurationSeconds(entity.getTotalPlayDurationSeconds());
 
         if (entity.getLastPlayed() != null) {
             dto.setLastPlayed(OffsetDateTime.ofInstant(entity.getLastPlayed(), ZoneOffset.UTC));

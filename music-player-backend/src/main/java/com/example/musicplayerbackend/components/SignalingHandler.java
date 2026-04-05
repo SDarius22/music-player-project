@@ -175,6 +175,8 @@ public class SignalingHandler extends TextWebSocketHandler {
                 routeToTarget(signal);
             }
 
+            case "PING" -> { /* keepalive — silently ignored */ }
+
             case "SYNC_TRIGGER", "PLAYBACK_STATE_CHANGED" -> { /* Server-sent only — ignore if echoed by client */ }
 
             default -> {
