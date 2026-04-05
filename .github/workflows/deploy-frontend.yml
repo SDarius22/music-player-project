@@ -10,7 +10,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      lib-changed: ${{ steps.filter.outputs.lib }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            lib:
+              - 'music-player-frontend/lib/**'
+
   test:
+    needs: check-changes
+    if: needs.check-changes.outputs.lib-changed == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +46,8 @@ jobs:
         run: flutter test
 
   build-and-deploy:
-    needs: test
+    needs: [check-changes, test]
+    if: always() && needs.check-changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: ubuntu-latest
 
     steps:
