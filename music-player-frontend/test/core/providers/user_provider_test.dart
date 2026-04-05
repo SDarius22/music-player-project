@@ -3,7 +3,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/entities/user.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 import 'user_provider_test.mocks.dart';
 

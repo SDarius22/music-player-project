@@ -4,25 +4,27 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:music_player_frontend/core/dtos/playlist_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart';
 
 import 'playlist_service_test.mocks.dart';
 
 @GenerateNiceMocks([
   MockSpec<PlaylistRepository>(),
   MockSpec<SongRepository>(),
-  MockSpec<PlaylistRestService>(),
+  MockSpec<PlaylistRestClient>(),
 ])
 void main() {
   late MockPlaylistRepository mockPlaylistRepo;
   late MockSongRepository mockSongRepo;
-  late MockPlaylistRestService mockRestService;
+  late MockPlaylistRestClient mockRestService;
   late PlaylistService service;
 
   Playlist makePlaylist({
@@ -51,7 +53,7 @@ void main() {
   setUp(() {
     mockPlaylistRepo = MockPlaylistRepository();
     mockSongRepo = MockSongRepository();
-    mockRestService = MockPlaylistRestService();
+    mockRestService = MockPlaylistRestClient();
 
     // Satisfy the constructor check that initializes indestructible playlists.
     when(mockPlaylistRepo.getIndestructiblePlaylists()).thenReturn([
@@ -284,9 +286,14 @@ void main() {
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
         return inv.positionalArguments[0] as Playlist;
       });
-      when(
-        mockRestService.createPlaylist(any, any, any),
-      ).thenAnswer((_) async => {'id': 99});
+      when(mockRestService.createPlaylist(any, any, any)).thenAnswer(
+        (_) async => PlaylistDetailDto(
+          id: 99,
+          name: 'My List',
+          songs: [],
+          hasCover: false,
+        ),
+      );
 
       final result = await service.addPlaylist('My List', [song], 'last', null);
 
@@ -322,9 +329,10 @@ void main() {
         when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
           return inv.positionalArguments[0] as Playlist;
         });
-        when(
-          mockRestService.createPlaylist(any, any, any),
-        ).thenAnswer((_) async => {'id': 5});
+        when(mockRestService.createPlaylist(any, any, any)).thenAnswer(
+          (_) async =>
+              PlaylistDetailDto(id: 5, name: '', songs: [], hasCover: false),
+        );
 
         await service.addPlaylist('No Server Songs', [song], 'last', null);
 
@@ -341,9 +349,10 @@ void main() {
       when(mockPlaylistRepo.savePlaylist(any)).thenAnswer((inv) {
         return inv.positionalArguments[0] as Playlist;
       });
-      when(
-        mockRestService.createPlaylist(any, any, any),
-      ).thenAnswer((_) async => {'id': 1});
+      when(mockRestService.createPlaylist(any, any, any)).thenAnswer(
+        (_) async =>
+            PlaylistDetailDto(id: 1, name: '', songs: [], hasCover: false),
+      );
 
       await service.addPlaylist('With Cover', [], 'last', cover);
 
@@ -447,10 +456,14 @@ void main() {
     test(
       'server success with totalElements > 0: caches and returns local paged content with server totals',
       () async {
-        final serverPlaylist = makePlaylist(serverId: 11, name: 'Server PL');
-        serverPlaylist.serverId = 11;
+        final serverDto = PlaylistDto(
+          id: 11,
+          name: 'Server PL',
+          songFileHashes: [],
+          hasCover: false,
+        );
         final serverPage = PlaylistPageDto(
-          content: [serverPlaylist],
+          content: [serverDto],
           page: 0,
           size: 10,
           totalPages: 1,
@@ -473,6 +486,9 @@ void main() {
         final localContent = [makePlaylist(name: 'Cached PL')];
         when(
           mockPlaylistRepo.getPlaylistsPaged(any, any, any, any, any),
+        ).thenReturn(localContent);
+        when(
+          mockPlaylistRepo.getPlaylists(any, any, any),
         ).thenReturn(localContent);
 
         final result = await service.getPlaylistsPage('', 'name', true, 0, 10);
@@ -503,6 +519,9 @@ void main() {
         final localPlaylists = [makePlaylist(name: 'Local PL')];
         when(
           mockPlaylistRepo.getPlaylists(any, any, any),
+        ).thenReturn(localPlaylists);
+        when(
+          mockPlaylistRepo.getPlaylistsPaged(any, any, any, any, any),
         ).thenReturn(localPlaylists);
 
         final result = await service.getPlaylistsPage('', 'name', true, 0, 10);
@@ -828,7 +847,7 @@ void main() {
     test('saves all 4 indestructible playlists when none exist', () {
       final freshRepo = MockPlaylistRepository();
       final freshSongRepo = MockSongRepository();
-      final freshRest = MockPlaylistRestService();
+      final freshRest = MockPlaylistRestClient();
 
       when(freshRepo.getIndestructiblePlaylists()).thenReturn([]);
       when(freshRepo.getPlaylistByName(any)).thenReturn(null);

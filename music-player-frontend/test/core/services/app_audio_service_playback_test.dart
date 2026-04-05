@@ -8,10 +8,10 @@ import 'package:music_player_frontend/core/dtos/playback_state_dto.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/playback_rest_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
@@ -22,7 +22,7 @@ import 'app_audio_service_playback_test.mocks.dart';
   MockSpec<SettingsService>(),
   MockSpec<PlaylistService>(),
   MockSpec<AuthService>(),
-  MockSpec<PlaybackRestService>(),
+  MockSpec<PlaybackRestClient>(),
   MockSpec<AudioPlayer>(),
 ])
 void main() {
@@ -30,7 +30,7 @@ void main() {
   late MockSettingsService mockSettingsService;
   late MockPlaylistService mockPlaylistService;
   late MockAuthService mockAuthService;
-  late MockPlaybackRestService mockPlaybackRestService;
+  late MockPlaybackRestClient mockPlaybackRestService;
   late MockAudioPlayer mockAudioPlayer;
 
   // Builds a service with all mocks injected.
@@ -52,7 +52,7 @@ void main() {
     mockSettingsService = MockSettingsService();
     mockPlaylistService = MockPlaylistService();
     mockAuthService = MockAuthService();
-    mockPlaybackRestService = MockPlaybackRestService();
+    mockPlaybackRestService = MockPlaybackRestClient();
     mockAudioPlayer = MockAudioPlayer();
 
     when(mockSettingsService.getAudioSettings()).thenReturn(AudioSettings());
@@ -148,7 +148,9 @@ void main() {
         final service = buildService();
         await Future.delayed(Duration.zero);
 
-        when(mockSongService.fetchSongByFileHash(any)).thenAnswer((_) async => null);
+        when(
+          mockSongService.fetchSongByFileHash(any),
+        ).thenAnswer((_) async => null);
 
         const dto = PlaybackStateDto(
           queueFileHashes: ['hash10', 'hash20', 'hash30'],
@@ -173,8 +175,12 @@ void main() {
 
         final songA = Song()..fileHash = 'hash10';
         final songB = Song()..fileHash = 'hash20';
-        when(mockSongService.fetchSongByFileHash('hash10')).thenAnswer((_) async => songA);
-        when(mockSongService.fetchSongByFileHash('hash20')).thenAnswer((_) async => songB);
+        when(
+          mockSongService.fetchSongByFileHash('hash10'),
+        ).thenAnswer((_) async => songA);
+        when(
+          mockSongService.fetchSongByFileHash('hash20'),
+        ).thenAnswer((_) async => songB);
         when(
           mockAudioPlayer.setAudioSource(
             any,
@@ -214,8 +220,12 @@ void main() {
 
         final songA = Song()..fileHash = 'hash10';
         final songB = Song()..fileHash = 'hash20';
-        when(mockSongService.fetchSongByFileHash('hash10')).thenAnswer((_) async => songA);
-        when(mockSongService.fetchSongByFileHash('hash20')).thenAnswer((_) async => songB);
+        when(
+          mockSongService.fetchSongByFileHash('hash10'),
+        ).thenAnswer((_) async => songA);
+        when(
+          mockSongService.fetchSongByFileHash('hash20'),
+        ).thenAnswer((_) async => songB);
         when(
           mockAudioPlayer.setAudioSource(
             any,
@@ -232,7 +242,10 @@ void main() {
 
         await service.restoreFromServerState(dto);
 
-        expect(service.currentSong.fileHash, equals('hash10')); // first in queue
+        expect(
+          service.currentSong.fileHash,
+          equals('hash10'),
+        ); // first in queue
       },
     );
   });

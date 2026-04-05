@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
-import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_service.dart';
+import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
 
 enum _ChunkSource { localCached, p2p, server }
@@ -14,7 +14,7 @@ enum _ChunkSource { localCached, p2p, server }
 class ChunkService {
   final String fileHash;
   final ChunkCacheRepository cacheRepo;
-  final StreamingRestService _streamingClient;
+  final StreamingRestClient _streamingClient;
   final WebRTCService _webrtcManager;
 
   ChunkManifestDto? manifest;
@@ -38,14 +38,12 @@ class ChunkService {
 
   int get totalChunks => manifest?.totalChunks ?? 0;
 
-  // First N chunks always fetched from server for reliable playback start.
-  // Equals 5 % of totalChunks, minimum 1.
   int get _serverPrefixCount => max(1, (totalChunks * 0.05).round());
 
   ChunkService({
     required this.fileHash,
     required this.cacheRepo,
-    required StreamingRestService streamingClient,
+    required StreamingRestClient streamingClient,
     required WebRTCService webrtcManager,
   }) : _streamingClient = streamingClient,
        _webrtcManager = webrtcManager;
@@ -135,9 +133,10 @@ class ChunkService {
       final peers = _webrtcManager.getSortedPeersForSong(fileHash);
       if (peers.isNotEmpty) {
         try {
-          data = await _requestFromPeers(index, peers).timeout(
-            const Duration(seconds: 1),
-          );
+          data = await _requestFromPeers(
+            index,
+            peers,
+          ).timeout(const Duration(seconds: 1));
           source = _ChunkSource.p2p;
           debugPrint('[P2P] song=$fileHash chunk=$index — served by peer');
         } catch (_) {
@@ -192,21 +191,19 @@ class ChunkService {
         fileHash: fileHash,
         songName: _songName ?? 'Unknown',
         localCachedChunks:
-            _deliveredBy.values.where((v) => v == _ChunkSource.localCached).length,
-        p2pChunks: _deliveredBy.values.where((v) => v == _ChunkSource.p2p).length,
+            _deliveredBy.values
+                .where((v) => v == _ChunkSource.localCached)
+                .length,
+        p2pChunks:
+            _deliveredBy.values.where((v) => v == _ChunkSource.p2p).length,
         serverChunks:
             _deliveredBy.values.where((v) => v == _ChunkSource.server).length,
       ),
     );
   }
 
-  /// Emits delivery stats for however many chunks were received so far.
-  /// Call when the song is skipped or stopped before completion.
-  /// Safe to call multiple times — only fires once.
   void flushStats() => _emitStats();
 
-  /// Requests [index] from the peers in [peers] (sorted best-first).
-  /// Cascades to the next peer every 200 ms so the first responder wins.
   Future<Uint8List> _requestFromPeers(int index, List<String> peers) {
     final completer = Completer<Uint8List>();
     _p2pCompleters[index] = completer;
@@ -229,8 +226,6 @@ class ChunkService {
     _p2pCompleters.remove(chunkIndex)?.complete(data);
   }
 
-  /// Background prefetch: tries peers first for ALL indices (no server-prefix
-  /// rule) since we have time to wait. Falls back to server. Silent on error.
   Future<void> prefetchChunk(int index) async {
     if (!isReady || index >= totalChunks) return;
     if (_hotRamCache.containsKey(index)) return;
@@ -245,9 +240,10 @@ class ChunkService {
     final peers = _webrtcManager.getSortedPeersForSong(fileHash);
     if (peers.isNotEmpty) {
       try {
-        data = await _requestFromPeers(index, peers).timeout(
-          const Duration(seconds: 2),
-        );
+        data = await _requestFromPeers(
+          index,
+          peers,
+        ).timeout(const Duration(seconds: 2));
       } catch (_) {
         _p2pCompleters.remove(index);
         try {
@@ -269,8 +265,6 @@ class ChunkService {
     }
   }
 
-  /// Returns true if the chunk was served by a peer, false otherwise,
-  /// or null if the chunk has not been fetched yet.
   bool? wasServedByP2P(int chunkIndex) {
     final source = _deliveredBy[chunkIndex];
     if (source == null) return null;

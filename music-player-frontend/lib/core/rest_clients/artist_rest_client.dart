@@ -2,13 +2,16 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/dtos/artist_page_dto.dart';
-import 'package:music_player_frontend/core/entities/artist.dart';
-import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/dtos/artists/artist_detail_dto.dart';
+import 'package:music_player_frontend/core/dtos/artists/artist_page_dto.dart';
+import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
-class ArtistRestService extends AbstractRestService {
-  ArtistRestService({required String baseUrl, required AuthService authService}) {
+class ArtistRestClient extends AbstractRestClient {
+  ArtistRestClient({
+    required String baseUrl,
+    required AuthService authService,
+  }) {
     super.baseUrl = baseUrl;
     super.authService = authService;
   }
@@ -52,11 +55,13 @@ class ArtistRestService extends AbstractRestService {
     );
   }
 
-  Future<Artist?> getArtistById(int artistId) async {
+  Future<ArtistDetailDto?> getArtistById(int artistId) async {
     try {
       final response = await get('/artists/$artistId');
       if (response.statusCode == 200) {
-        return Artist.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+        return ArtistDetailDto.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,
+        );
       }
     } catch (e) {
       debugPrint('Error fetching artist $artistId: $e');

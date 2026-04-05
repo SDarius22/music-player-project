@@ -1,13 +1,13 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/dtos/playlist_page_dto.dart';
-import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
+import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
-class PlaylistRestService extends AbstractRestService {
-  PlaylistRestService({
+class PlaylistRestClient extends AbstractRestClient {
+  PlaylistRestClient({
     required String baseUrl,
     required AuthService authService,
   }) {
@@ -31,10 +31,16 @@ class PlaylistRestService extends AbstractRestService {
     } catch (e) {
       debugPrint('Error fetching playlists: $e');
     }
-    return PlaylistPageDto(content: const [], page: page, size: size, totalPages: 0, totalElements: 0);
+    return PlaylistPageDto(
+      content: const [],
+      page: page,
+      size: size,
+      totalPages: 0,
+      totalElements: 0,
+    );
   }
 
-  Future<Map<String, dynamic>?> createPlaylist(
+  Future<PlaylistDetailDto?> createPlaylist(
     String name,
     List<String> songFileHashes,
     String? coverBase64,
@@ -46,8 +52,8 @@ class PlaylistRestService extends AbstractRestService {
         if (coverBase64 != null) 'coverImage': coverBase64,
       };
       final response = await post('/playlists', body);
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 201) {
+        return PlaylistDetailDto.fromJson(jsonDecode(response.body));
       }
       debugPrint('Failed to create playlist: ${response.statusCode}');
     } catch (e) {
@@ -84,17 +90,5 @@ class PlaylistRestService extends AbstractRestService {
       debugPrint('Error deleting playlist: $e');
     }
     return false;
-  }
-
-  Future<Uint8List?> getPlaylistCover(int playlistId) async {
-    try {
-      final response = await get('/playlists/$playlistId/cover');
-      if (response.statusCode == 200) {
-        return response.bodyBytes;
-      }
-    } catch (e) {
-      debugPrint('Error fetching playlist cover: $e');
-    }
-    return null;
   }
 }

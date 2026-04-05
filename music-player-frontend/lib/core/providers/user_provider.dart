@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/entities/user.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 enum AuthStatus { unknown, unauthenticated, authenticating, authenticated }
 

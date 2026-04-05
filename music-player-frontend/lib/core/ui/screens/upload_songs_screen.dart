@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
@@ -75,7 +75,7 @@ class _UploadSongsScreenState extends State<UploadSongsScreen> {
 
   AbstractFileService get fileService => context.read<AbstractFileService>();
 
-  SongRestService get songRestService => context.read<SongRestService>();
+  SongRestClient get songRestService => context.read<SongRestClient>();
 
   Future<void> pickSongs() async {
     if (isBusy.value) return;

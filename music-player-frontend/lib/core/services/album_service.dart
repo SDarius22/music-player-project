@@ -1,14 +1,24 @@
 import 'package:flutter/foundation.dart';
-import 'package:music_player_frontend/core/dtos/album_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
+import 'package:music_player_frontend/core/dtos/albums/album_expanded_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
-import 'package:music_player_frontend/core/services/rest_clients/album_rest_service.dart';
+import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/rest_clients/album_rest_client.dart';
 
 class AlbumService {
   final AlbumRepository _albumRepository;
-  final AlbumRestService _albumRestService;
+  final ArtistRepository _artistRepository;
+  final SongRepository _songRepository;
+  final AlbumRestClient _albumRestService;
 
-  AlbumService(this._albumRepository, this._albumRestService);
+  AlbumService(
+    this._albumRepository,
+    this._artistRepository,
+    this._songRepository,
+    this._albumRestService,
+  );
 
   Stream watchAlbums() => _albumRepository.watchAlbums();
 
@@ -24,12 +34,6 @@ class AlbumService {
 
   Album? getAlbumByServerId(int serverId) {
     return _albumRepository.getAlbumByServerId(serverId);
-  }
-
-  Future<Album?> fetchAndCacheAlbumById(int serverId) async {
-    final serverAlbum = await _albumRestService.getAlbumById(serverId);
-    if (serverAlbum == null) return null;
-    return cacheServerAlbum(serverAlbum);
   }
 
   Album getOrCreateAlbum(String albumName, int artistId, {Uint8List? image}) {
@@ -54,13 +58,24 @@ class AlbumService {
     _albumRepository.updateAlbum(album);
   }
 
-  Future<AlbumPageDto> getAlbumsPage(
+  Future<Album> fetchAlbumDetails(int albumId) async {
+    try {
+      final serverAlbum = await _albumRestService.getAlbumById(albumId);
+      return cacheServerAlbumDetail(serverAlbum!);
+    } catch (e) {
+      debugPrint('AlbumService: server fetch failed, using local: $e');
+    }
+    return _albumRepository.getAlbumByServerId(albumId)!;
+  }
+
+  Future<({List<Album> content, int totalPages, int page})> getAlbumsPage(
     String query,
     String sortField,
     bool ascending,
     int page,
     int size,
   ) async {
+    int? serverTotalPages;
     try {
       final sort =
           '${_toServerSortField(sortField)},${ascending ? 'asc' : 'desc'}';
@@ -70,114 +85,101 @@ class AlbumService {
         size: size,
         sort: sort,
       );
-
-      final hashMap = <int, List<String>>{};
+      serverTotalPages = serverPage.totalPages;
       for (final serverAlbum in serverPage.content) {
-        if (serverAlbum.serverId > 0 && serverAlbum.serverSongFileHashes.isNotEmpty) {
-          hashMap[serverAlbum.serverId] = serverAlbum.serverSongFileHashes;
-        }
         cacheServerAlbum(serverAlbum);
-      }
-
-      if (serverPage.totalElements > 0) {
-        final content = _albumRepository.getAlbumsPaged(
-          query,
-          sortField,
-          ascending,
-          page * size,
-          size,
-        );
-        for (final album in content) {
-          final hashes = hashMap[album.serverId];
-          if (hashes != null) album.serverSongFileHashes = hashes;
-        }
-        return AlbumPageDto(
-          content: content,
-          page: page,
-          size: size,
-          totalPages: serverPage.totalPages,
-          totalElements: serverPage.totalElements,
-        );
       }
     } catch (e) {
       debugPrint('AlbumService: server fetch failed, using local: $e');
     }
-    return _localPage(query, sortField, ascending, page, size);
+
+    final localContent = _albumRepository.getAlbumsPaged(
+      query,
+      sortField,
+      ascending,
+      page * size,
+      size,
+    );
+
+    final totalPages =
+        (serverTotalPages != null && serverTotalPages > 0)
+            ? serverTotalPages
+            : ((_albumRepository.getAlbums(query, sortField, ascending).length +
+                        size -
+                        1) ~/
+                    size)
+                .clamp(1, 999999);
+
+    return (content: localContent, totalPages: totalPages, page: page);
   }
 
-  Album cacheServerAlbum(Album serverAlbum) {
-    if (serverAlbum.serverId > 0) {
-      final byServerId = _albumRepository.getAlbumByServerId(
-        serverAlbum.serverId,
-      );
-      if (byServerId != null) {
-        byServerId.name = serverAlbum.name;
-        if (byServerId.imageBytes == null && serverAlbum.imageBytes != null) {
-          byServerId.imageBytes = serverAlbum.imageBytes;
-        }
-        _albumRepository.updateAlbum(byServerId);
-        return byServerId;
-      }
+  Album cacheServerAlbum(AlbumExpandedDto serverAlbum) {
+    if (serverAlbum.id < 0) {
+      throw Exception('Server album must have a valid server ID');
     }
 
-    final artistName = serverAlbum.artist.target?.name;
-    Album? byName;
-    if (artistName != null && artistName.isNotEmpty) {
-      byName = _albumRepository.getAlbumByNameAndArtistName(
-        serverAlbum.name,
-        artistName,
-      );
-    }
-    byName ??= _albumRepository.getAlbumByName(serverAlbum.name);
-    if (byName != null) {
-      if (byName.serverId <= 0 && serverAlbum.serverId > 0) {
-        byName.serverId = serverAlbum.serverId;
-      }
-      if (byName.imageBytes == null && serverAlbum.imageBytes != null) {
-        byName.imageBytes = serverAlbum.imageBytes;
-      }
-      _albumRepository.updateAlbum(byName);
-      return byName;
+    var cachedAlbum = _albumRepository.getOrCreateAlbumByServerId(
+      serverAlbum.id,
+    );
+    cachedAlbum.name = serverAlbum.name;
+
+    var artist = _artistRepository.getOrCreateArtistByServerId(
+      serverAlbum.artist.id,
+    );
+    artist.name = serverAlbum.artist.name;
+    artist.albums.add(cachedAlbum);
+
+    cachedAlbum.artist.targetId = artist.id;
+
+    for (var songHash in serverAlbum.songFileHashes) {
+      var cachedSong = _songRepository.getOrCreateSongByFileHash(songHash);
+      cachedAlbum.songs.add(cachedSong);
+      artist.songs.add(cachedSong);
+
+      cachedSong.album.targetId = cachedAlbum.id;
+      cachedSong.artist.targetId = artist.id;
+      _songRepository.updateSong(cachedSong);
     }
 
-    if (serverAlbum.artist.target != null &&
-        serverAlbum.artist.target!.id == 0) {
-      serverAlbum.artist.target = null;
-    }
-    return _albumRepository.saveAlbum(serverAlbum);
+    _artistRepository.updateArtist(artist);
+
+    return _albumRepository.saveAlbum(cachedAlbum);
   }
 
-  AlbumPageDto _localPage(
-    String query,
-    String sortField,
-    bool ascending,
-    int page,
-    int size,
-  ) {
-    final all = _albumRepository.getAlbums(query, sortField, ascending);
-    final totalElements = all.length;
-    final totalPages = (totalElements / size).ceil();
-    final offset = page * size;
-    if (offset >= totalElements) {
-      return AlbumPageDto(
-        content: const [],
-        page: page,
-        size: size,
-        totalPages: totalPages,
-        totalElements: totalElements,
-      );
+  Album cacheServerAlbumDetail(AlbumDetailDto serverAlbum) {
+    if (serverAlbum.id < 0) {
+      throw Exception('Server album must have a valid server ID');
     }
-    final content = all.sublist(
-      offset,
-      (offset + size).clamp(0, totalElements),
+
+    var cachedAlbum = _albumRepository.getOrCreateAlbumByServerId(
+      serverAlbum.id,
     );
-    return AlbumPageDto(
-      content: content,
-      page: page,
-      size: size,
-      totalPages: totalPages,
-      totalElements: totalElements,
+    cachedAlbum.name = serverAlbum.name;
+
+    var artist = _artistRepository.getOrCreateArtistByServerId(
+      serverAlbum.artist.id,
     );
+    cachedAlbum.artist.targetId = artist.id;
+    artist.albums.add(cachedAlbum);
+
+    for (var song in serverAlbum.songs) {
+      var cachedSong = _songRepository.getOrCreateSongByFileHash(song.fileHash);
+      cachedAlbum.songs.add(cachedSong);
+      artist.songs.add(cachedSong);
+
+      cachedSong.artist.targetId = artist.id;
+      cachedSong.album.targetId = cachedAlbum.id;
+      cachedSong.name = song.name;
+      cachedSong.discNumber = song.discNumber;
+      cachedSong.trackNumber = song.trackNumber;
+      cachedSong.durationInSeconds = song.durationInSeconds;
+      cachedSong.year = song.releaseYear;
+      _songRepository.updateSong(cachedSong);
+    }
+
+    _artistRepository.updateArtist(artist);
+
+    return _albumRepository.saveAlbum(cachedAlbum);
   }
 
   String _toServerSortField(String sortField) {

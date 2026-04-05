@@ -444,7 +444,7 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(26, 1024957334078684974),
         name: 'fileHash',
         type: 9,
-        flags: 2048,
+        flags: 2080,
         indexId: const obx_int.IdUid(20, 3494203868611330631),
       ),
       obx_int.ModelProperty(

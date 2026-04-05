@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -11,64 +10,6 @@ import 'package:music_player_frontend/core/entities/song.dart';
 
 void main() {
   // ─── Song ────────────────────────────────────────────────────────────────
-
-  group('Song.fromJson', () {
-    test('parses all fields from JSON', () {
-      final song = Song.fromJson({
-        'fileHash': 'deadbeef01234567',
-        'name': 'Test Song',
-        'durationInSeconds': 180,
-        'trackNumber': 3,
-        'discNumber': 1,
-        'year': 2020,
-        'artist': {'id': 7, 'name': 'Some Artist'},
-        'album': {'id': 5, 'name': 'Some Album'},
-      });
-
-      expect(song.fileHash, 'deadbeef01234567');
-      expect(song.name, 'Test Song');
-      expect(song.durationInSeconds, 180);
-      expect(song.trackNumber, 3);
-      expect(song.discNumber, 1);
-      expect(song.year, 2020);
-      expect(song.artist.target?.serverId, 7);
-      expect(song.album.target?.serverId, 5);
-      expect(song.fullyLoaded, isTrue);
-      expect(song.id, 0);
-      expect(song.path, '');
-    });
-
-    test('uses defaults when fields are absent', () {
-      final song = Song.fromJson({});
-
-      expect(song.fileHash, '');
-      expect(song.name, 'Unknown Song');
-      expect(song.durationInSeconds, 0);
-      expect(song.trackNumber, 0);
-      expect(song.discNumber, 0);
-      expect(song.year, 0);
-      expect(song.artist.target, isNull);
-      expect(song.album.target, isNull);
-    });
-  });
-
-  group('Song.toJson', () {
-    test('serializes expected fields', () {
-      final song = Song();
-      song.fileHash = 'deadbeef01234567';
-      song.playCount = 5;
-      song.likedByUser = true;
-      final dt = DateTime(2024, 6, 1);
-      song.lastPlayed = dt;
-
-      final json = song.toJson();
-
-      expect(json['fileHash'], 'deadbeef01234567');
-      expect(json['playCountDelta'], 5);
-      expect(json['likedByUser'], isTrue);
-      expect(json['lastPlayed'], dt);
-    });
-  });
 
   group('Song equality', () {
     test('local songs equal when same path', () {
@@ -138,37 +79,6 @@ void main() {
 
   // ─── Album ───────────────────────────────────────────────────────────────
 
-  group('Album.fromJson', () {
-    test('parses name and serverId', () {
-      final album = Album.fromJson({'id': 7, 'name': 'Dark Side'});
-
-      expect(album.serverId, 7);
-      expect(album.name, 'Dark Side');
-      expect(album.imageBytes, isNull);
-      expect(album.id, 0);
-    });
-
-    test('uses defaults when fields absent', () {
-      final album = Album.fromJson({});
-
-      expect(album.serverId, -1);
-      expect(album.name, 'Unknown Album');
-    });
-
-    test('decodes base64 photo into imageBytes', () {
-      final bytes = Uint8List.fromList([1, 2, 3, 4]);
-      final b64 = base64Encode(bytes);
-      final album = Album.fromJson({'id': 1, 'name': 'Art', 'photo': b64});
-
-      expect(album.imageBytes, equals(bytes));
-    });
-
-    test('null photo leaves imageBytes null', () {
-      final album = Album.fromJson({'id': 1, 'name': 'Art', 'photo': null});
-      expect(album.imageBytes, isNull);
-    });
-  });
-
   group('Album.durationInSeconds', () {
     test('returns 0 when no songs', () {
       expect(Album().durationInSeconds, 0);
@@ -207,23 +117,6 @@ void main() {
 
   // ─── Artist ──────────────────────────────────────────────────────────────
 
-  group('Artist.fromJson', () {
-    test('parses name and serverId', () {
-      final artist = Artist.fromJson({'id': 3, 'name': 'Led Zeppelin'});
-
-      expect(artist.serverId, 3);
-      expect(artist.name, 'Led Zeppelin');
-      expect(artist.id, 0);
-    });
-
-    test('uses defaults when fields absent', () {
-      final artist = Artist.fromJson({});
-
-      expect(artist.serverId, -1);
-      expect(artist.name, 'Unknown Artist');
-    });
-  });
-
   group('Artist.coverArt', () {
     test('returns null when no albums', () {
       expect(Artist().coverArt, isNull);
@@ -245,37 +138,6 @@ void main() {
   });
 
   // ─── Playlist ────────────────────────────────────────────────────────────
-
-  group('Playlist.fromJson', () {
-    test('parses serverId, name, and songFileHashes', () {
-      final playlist = Playlist.fromJson({
-        'id': 5,
-        'name': 'Favorites',
-        'songFileHashes': ['hash10', 'hash20', 'hash30'],
-      });
-
-      expect(playlist.serverId, 5);
-      expect(playlist.name, 'Favorites');
-      expect(playlist.serverSongFileHashes, equals(['hash10', 'hash20', 'hash30']));
-    });
-
-    test('uses defaults when fields absent', () {
-      final playlist = Playlist.fromJson({});
-
-      expect(playlist.serverId, -1);
-      expect(playlist.name, 'Unknown Playlist');
-      expect(playlist.serverSongFileHashes, isEmpty);
-    });
-
-    test('coerces non-string entries to strings', () {
-      final playlist = Playlist.fromJson({
-        'id': 1,
-        'name': 'P',
-        'songFileHashes': ['abc', 'def'],
-      });
-      expect(playlist.serverSongFileHashes, equals(['abc', 'def']));
-    });
-  });
 
   group('Playlist.duration', () {
     test('returns 0 when no songs', () {
@@ -356,12 +218,15 @@ void main() {
       expect(settings.songPlaceIncludeSubfolders, isEmpty);
     });
 
-    test('coerces songPlaceIncludeSubfolders to int (handles non-int strings)', () {
-      final settings = AppSettings.fromJson({
-        'songPlaceIncludeSubfolders': ['1', 'x', '0'],
-      });
-      expect(settings.songPlaceIncludeSubfolders, equals([1, 0, 0]));
-    });
+    test(
+      'coerces songPlaceIncludeSubfolders to int (handles non-int strings)',
+      () {
+        final settings = AppSettings.fromJson({
+          'songPlaceIncludeSubfolders': ['1', 'x', '0'],
+        });
+        expect(settings.songPlaceIncludeSubfolders, equals([1, 0, 0]));
+      },
+    );
   });
 
   group('AppSettings.toJson', () {
@@ -384,21 +249,26 @@ void main() {
       expect(restored.drawerOpen, original.drawerOpen);
       expect(restored.mainSongPlace, original.mainSongPlace);
       expect(restored.songPlaces, equals(original.songPlaces));
-      expect(restored.songPlaceIncludeSubfolders,
-          equals(original.songPlaceIncludeSubfolders));
+      expect(
+        restored.songPlaceIncludeSubfolders,
+        equals(original.songPlaceIncludeSubfolders),
+      );
     });
 
     test('toJson contains all expected keys', () {
       final json = AppSettings().toJson();
-      expect(json.keys, containsAll([
-        'firstTime',
-        'systemTray',
-        'fullClose',
-        'drawerOpen',
-        'mainSongPlace',
-        'songPlaces',
-        'songPlaceIncludeSubfolders',
-      ]));
+      expect(
+        json.keys,
+        containsAll([
+          'firstTime',
+          'systemTray',
+          'fullClose',
+          'drawerOpen',
+          'mainSongPlace',
+          'songPlaces',
+          'songPlaceIncludeSubfolders',
+        ]),
+      );
     });
   });
 
@@ -475,14 +345,17 @@ void main() {
 
     test('toJson contains all expected keys', () {
       final json = AudioSettings().toJson();
-      expect(json.keys, containsAll([
-        'repeat',
-        'shuffle',
-        'pitch',
-        'speed',
-        'volume',
-        'sliderInSeconds',
-      ]));
+      expect(
+        json.keys,
+        containsAll([
+          'repeat',
+          'shuffle',
+          'pitch',
+          'speed',
+          'volume',
+          'sliderInSeconds',
+        ]),
+      );
     });
   });
 }

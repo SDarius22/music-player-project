@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/models/chunk_stat_record.dart';
-import 'package:music_player_frontend/core/services/rest_clients/statistics_rest_service.dart';
+import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
@@ -27,12 +27,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   void initState() {
     super.initState();
-    _future = context.read<StatisticsRestService>().getStatistics();
+    _future = context.read<StatisticsRestClient>().getStatistics();
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _future = context.read<StatisticsRestService>().getStatistics();
+      _future = context.read<StatisticsRestClient>().getStatistics();
     });
   }
 
@@ -301,7 +301,8 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLocalFile = record.localChunks > 0 &&
+    final isLocalFile =
+        record.localChunks > 0 &&
         record.p2pChunks == 0 &&
         record.serverChunks == 0 &&
         record.localCachedChunks == 0;
@@ -340,7 +341,10 @@ class _StatRow extends StatelessWidget {
               ),
               if (isLocalFile)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.purple.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(4),
@@ -456,17 +460,16 @@ class _DeliveryBar extends StatelessWidget {
             if (record.serverChunks > 0)
               Flexible(
                 flex: record.serverChunks,
-                child: Container(color: Colors.redAccent.withValues(alpha: 0.7)),
+                child: Container(
+                  color: Colors.redAccent.withValues(alpha: 0.7),
+                ),
               ),
             // Fill remaining with background if needed
             if (record.p2pChunks == 0 &&
                 record.localCachedChunks == 0 &&
                 record.localChunks == 0 &&
                 record.serverChunks == 0)
-              Flexible(
-                flex: 1,
-                child: Container(color: Colors.white12),
-              ),
+              Flexible(flex: 1, child: Container(color: Colors.white12)),
           ],
         ),
       ),

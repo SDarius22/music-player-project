@@ -1,4 +1,4 @@
-import 'package:music_player_frontend/core/dtos/song_sync_dto.dart';
+import 'package:music_player_frontend/core/dtos/sync/song_sync_dto.dart';
 
 class SyncResponseDto {
   final DateTime newSyncTime;

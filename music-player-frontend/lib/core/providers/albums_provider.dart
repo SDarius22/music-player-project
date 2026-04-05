@@ -13,6 +13,10 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
 
   String get defaultSortField => 'Name';
 
+  Future<Album> fetchAlbumDetails(int albumId) async {
+    return await _albumService.fetchAlbumDetails(albumId);
+  }
+
   @override
   Future<PageResult> fetchPage(
     String query,
@@ -21,7 +25,7 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
     int page,
     int size,
   ) async {
-    final dto = await _albumService.getAlbumsPage(
+    final result = await _albumService.getAlbumsPage(
       query,
       sortField,
       ascending,
@@ -29,9 +33,9 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
       size,
     );
     return PageResult(
-      content: dto.content,
-      totalPages: dto.totalPages,
-      page: dto.page,
+      content: result.content,
+      totalPages: result.totalPages,
+      page: result.page,
     );
   }
 

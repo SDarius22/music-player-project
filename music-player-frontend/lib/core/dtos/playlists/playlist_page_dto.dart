@@ -1,13 +1,13 @@
-import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart';
 
-class SongPageDto {
-  final List<Song> content;
+class PlaylistPageDto {
+  final List<PlaylistDto> content;
   final int page;
   final int size;
   final int totalPages;
   final int totalElements;
 
-  SongPageDto({
+  PlaylistPageDto({
     required this.content,
     required this.page,
     required this.size,
@@ -15,11 +15,13 @@ class SongPageDto {
     required this.totalElements,
   });
 
-  factory SongPageDto.fromJson(Map<String, dynamic> json) {
+  factory PlaylistPageDto.fromJson(Map<String, dynamic> json) {
     final List<dynamic> raw = (json['content'] as List<dynamic>? ?? const []);
-    return SongPageDto(
+    return PlaylistPageDto(
       content:
-          raw.map((e) => Song.fromJson(e as Map<String, dynamic>)).toList(),
+          raw
+              .map((e) => PlaylistDto.fromJson(e as Map<String, dynamic>))
+              .toList(),
       page: (json['page'] as num? ?? 0).toInt(),
       size: (json['size'] as num? ?? raw.length).toInt(),
       totalPages: (json['totalPages'] as num? ?? 1).toInt(),

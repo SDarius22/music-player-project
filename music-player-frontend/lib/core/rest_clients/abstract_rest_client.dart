@@ -3,15 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
-abstract class AbstractRestService {
+abstract class AbstractRestClient {
   late final String baseUrl;
   late final AuthService authService;
 
   Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
-    String? token = authService.accessToken;
-
     Future<http.Response> perform(String t) {
       return http.post(
         Uri.parse('$baseUrl$endpoint'),
@@ -23,6 +21,7 @@ abstract class AbstractRestService {
       );
     }
 
+    String? token = authService.accessToken;
     var response = await perform(token ?? "");
 
     if (response.statusCode == 401 || response.statusCode == 403) {
@@ -34,19 +33,16 @@ abstract class AbstractRestService {
     return response;
   }
 
-  Future<http.Response> get(String endpoint) async {
-    String? token = authService.accessToken;
-
+  Future<http.Response> get(
+    String endpoint, {
+    Map<String, String> headers = const {'Content-Type': 'application/json'},
+  }) async {
     Future<http.Response> perform(String t) {
-      return http.get(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $t',
-        },
-      );
+      final fullHeaders = {...headers, 'Authorization': 'Bearer $t'};
+      return http.get(Uri.parse('$baseUrl$endpoint'), headers: fullHeaders);
     }
 
+    String? token = authService.accessToken;
     var response = await perform(token ?? "");
 
     if (response.statusCode == 401 || response.statusCode == 403) {
@@ -59,8 +55,6 @@ abstract class AbstractRestService {
   }
 
   Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
-    String? token = authService.accessToken;
-
     Future<http.Response> perform(String t) {
       return http.put(
         Uri.parse('$baseUrl$endpoint'),
@@ -72,6 +66,7 @@ abstract class AbstractRestService {
       );
     }
 
+    String? token = authService.accessToken;
     var response = await perform(token ?? "");
 
     if (response.statusCode == 401 || response.statusCode == 403) {
@@ -84,8 +79,6 @@ abstract class AbstractRestService {
   }
 
   Future<http.Response> delete(String endpoint) async {
-    String? token = authService.accessToken;
-
     Future<http.Response> perform(String t) {
       return http.delete(
         Uri.parse('$baseUrl$endpoint'),
@@ -96,6 +89,7 @@ abstract class AbstractRestService {
       );
     }
 
+    String? token = authService.accessToken;
     var response = await perform(token ?? "");
 
     if (response.statusCode == 401 || response.statusCode == 403) {
@@ -113,8 +107,6 @@ abstract class AbstractRestService {
     Map<String, String>? fields,
     List<http.MultipartFile>? files,
   }) async {
-    String? token = authService.accessToken;
-
     Future<http.Response> perform(String t) async {
       var request = http.MultipartRequest(
         method,
@@ -126,6 +118,7 @@ abstract class AbstractRestService {
       return http.Response.fromStream(await request.send());
     }
 
+    String? token = authService.accessToken;
     var streamedResponse = await perform(token ?? "");
 
     if (streamedResponse.statusCode == 401 ||
@@ -145,7 +138,6 @@ abstract class AbstractRestService {
     Map<String, String> fields,
     void Function(int sentBytes, int totalBytes) onProgress,
   ) async {
-    String? token = authService.accessToken;
     final totalBytes = await file.length();
 
     Future<http.Response> perform(String t) async {
@@ -183,6 +175,8 @@ abstract class AbstractRestService {
       final response = await http.Response.fromStream(streamed);
       return response;
     }
+
+    String? token = authService.accessToken;
 
     var streamedResponse = await perform(token ?? "");
 

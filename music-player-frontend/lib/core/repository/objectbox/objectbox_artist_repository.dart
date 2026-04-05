@@ -40,6 +40,17 @@ class ObjectBoxArtistRepository implements ArtistRepository {
   }
 
   @override
+  Artist getOrCreateArtistByServerId(int serverId) {
+    Artist? existingArtist = getArtistByServerId(serverId);
+    if (existingArtist != null) {
+      return existingArtist;
+    }
+    Artist newArtist = Artist();
+    newArtist.serverId = serverId;
+    return saveArtist(newArtist);
+  }
+
+  @override
   List<Artist> getArtists(String query, String sortField, bool ascending) {
     Query<Artist> builderQuery;
     if (ascending) {

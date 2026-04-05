@@ -15,6 +15,8 @@ abstract class SongRepository {
 
   Song? getSongByFileHash(String fileHash);
 
+  Song getOrCreateSongByFileHash(String fileHas);
+
   Song getSong(int id);
 
   Song? getSongContaining(String query);

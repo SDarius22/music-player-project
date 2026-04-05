@@ -4,8 +4,8 @@ import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
+import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/playback_rest_service.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/main_scaffold.dart';
@@ -86,7 +86,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     if (!context.mounted) return;
 
     final serverState =
-        await context.read<PlaybackRestService>().getPlaybackState();
+        await context.read<PlaybackRestClient>().getPlaybackState();
     if (serverState != null && context.mounted) {
       await context.read<AppAudioService>().restoreFromServerState(serverState);
     }

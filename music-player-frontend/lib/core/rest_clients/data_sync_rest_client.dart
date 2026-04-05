@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/dtos/song_sync_dto.dart';
-import 'package:music_player_frontend/core/dtos/sync_response_dto.dart';
-import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/dtos/sync/song_sync_dto.dart';
+import 'package:music_player_frontend/core/dtos/sync/sync_response_dto.dart';
+import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
-class DataSyncService extends AbstractRestService {
-  DataSyncService({required String baseUrl, required AuthService authService}) {
+class DataSyncClient extends AbstractRestClient {
+  DataSyncClient({required String baseUrl, required AuthService authService}) {
     super.baseUrl = baseUrl;
     super.authService = authService;
   }

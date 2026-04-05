@@ -21,13 +21,13 @@ import 'abstract/route_builder.dart';
 class CreateOrImportScreen extends StatefulWidget {
   static Route<void> route({
     String playlistName = "",
-    List<String> playlistPaths = const [],
+    List<String> songFileHashes = const [],
     bool import = false,
   }) {
     return buildFadeRoute(
       (context, animation, secondaryAnimation) => CreateOrImportScreen(
         playlistName: playlistName,
-        playlistPaths: playlistPaths,
+        songFileHashes: songFileHashes,
         import: import,
       ),
       settings: RouteSettings(name: import ? "/import" : "/create"),
@@ -35,13 +35,13 @@ class CreateOrImportScreen extends StatefulWidget {
   }
 
   final String playlistName;
-  final List<String> playlistPaths;
+  final List<String> songFileHashes;
   final bool import;
 
   const CreateOrImportScreen({
     super.key,
     this.playlistName = "",
-    this.playlistPaths = const [],
+    this.songFileHashes = const [],
     this.import = false,
   });
 
@@ -58,6 +58,12 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
   late FocusNode searchNode;
   late FocusNode nameNode;
 
+  final List<Song> _songs = [];
+  int _currentPage = 0;
+  bool _isLoading = false;
+  bool _hasMore = true;
+  late ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
@@ -68,9 +74,11 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     coverArt = ValueNotifier<Uint8List?>(null);
     searchNode = FocusNode();
     nameNode = FocusNode();
+    _scrollController = ScrollController()..addListener(_onScroll);
 
     initializeSelectedSongs();
     nameNode.requestFocus();
+    _fetchPage(0, reset: true);
   }
 
   @override
@@ -79,7 +87,36 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     coverArt.dispose();
     searchNode.dispose();
     nameNode.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 300) {
+      if (!_hasMore || _isLoading) return;
+      _fetchPage(_currentPage + 1);
+    }
+  }
+
+  Future<void> _fetchPage(int page, {bool reset = false}) async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final songProvider = Provider.of<SongProvider>(context, listen: false);
+      final result = await songProvider.fetchPage(search, 'Title', true, page, 30);
+      if (!mounted) return;
+      setState(() {
+        if (reset) _songs.clear();
+        _songs.addAll(result.content.whereType<Song>());
+        _currentPage = result.page;
+        _hasMore = result.page < result.totalPages - 1;
+      });
+    } catch (e) {
+      debugPrint('CreateOrImportScreen: fetchPage error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -98,20 +135,20 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
   }
 
   void initializeSelectedSongs() {
-    if (widget.playlistPaths.isEmpty) return;
+    if (widget.songFileHashes.isEmpty) return;
 
     if (widget.import) {
       final songProvider = Provider.of<SongProvider>(context, listen: false);
       selected.value =
-          widget.playlistPaths
-              .map((path) => songProvider.getSongContaining(path))
+          widget.songFileHashes
+              .map((path) => songProvider.fetchSongByFileHash(path))
               .whereType<Song>()
               .toList();
       if (selected.value.isNotEmpty) {
         coverArt.value = selected.value.first.coverArt;
       }
     } else {
-      selected.value = List.from(widget.playlistPaths);
+      selected.value = List.from(widget.songFileHashes);
     }
   }
 
@@ -432,9 +469,8 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                       TextFormField(
                         focusNode: searchNode,
                         onChanged: (value) {
-                          setState(() {
-                            search = value;
-                          });
+                          search = value;
+                          _fetchPage(0, reset: true);
                         },
                         cursorColor: Colors.white,
                         style: Theme.of(
@@ -460,86 +496,55 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                       ),
                       SizedBox(height: height * 0.02),
                       Expanded(
-                        child: Consumer<SongProvider>(
-                          builder: (context, songProvider, child) {
-                            return FutureBuilder(
-                              future: Future(
-                                () =>
-                                    songProvider.getSongs(search, "Name", true),
+                        child: _songs.isEmpty && !_isLoading
+                            ? Center(
+                                child: Text(
+                                  "No songs found",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall!
+                                      .copyWith(color: Colors.white),
+                                ),
+                              )
+                            : CustomScrollView(
+                                controller: _scrollController,
+                                slivers: [
+                                  SliverPadding(
+                                    padding: EdgeInsets.zero,
+                                    sliver: ValueListenableBuilder<List<Song>>(
+                                      valueListenable: selected,
+                                      builder: (context, selectedSongs, child) {
+                                        return ListComponent(
+                                          items: _songs,
+                                          itemExtent: height * 0.125,
+                                          isSelected: (entity) =>
+                                              selectedSongs.contains(entity as Song),
+                                          onTap: (entity) {
+                                            final song = entity as Song;
+                                            if (selected.value.contains(song)) {
+                                              selected.value = List.from(selected.value)
+                                                ..remove(song);
+                                            } else {
+                                              selected.value = List.from(selected.value)
+                                                ..add(song);
+                                            }
+                                          },
+                                          onLongPress: (entity) {},
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  if (_isLoading)
+                                    const SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                                if (snapshot.hasError) {
-                                  debugPrint(snapshot.error.toString());
-                                  return Center(
-                                    child: Text(
-                                      "Error loading songs",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall!
-                                          .copyWith(color: Colors.white),
-                                    ),
-                                  );
-                                }
-                                if ((snapshot.data ?? []).isEmpty) {
-                                  return Center(
-                                    child: Text(
-                                      "No songs found",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall!
-                                          .copyWith(color: Colors.white),
-                                    ),
-                                  );
-                                }
-                                return CustomScrollView(
-                                  slivers: [
-                                    SliverPadding(
-                                      padding: EdgeInsets.zero,
-                                      sliver:
-                                          ValueListenableBuilder<List<Song>>(
-                                            valueListenable: selected,
-                                            builder: (
-                                              context,
-                                              selectedSongs,
-                                              child,
-                                            ) {
-                                              return ListComponent(
-                                                items: snapshot.data ?? [],
-                                                itemExtent: height * 0.125,
-                                                isSelected: (entity) {
-                                                  return selected.value
-                                                      .contains(entity as Song);
-                                                },
-                                                onTap: (entity) {
-                                                  if (selected.value.contains(
-                                                    entity as Song,
-                                                  )) {
-                                                    selected.value = List.from(
-                                                      selected.value,
-                                                    )..remove(entity);
-                                                  } else {
-                                                    selected.value = List.from(
-                                                      selected.value,
-                                                    )..add(entity);
-                                                  }
-                                                },
-                                                onLongPress: (entity) {},
-                                              );
-                                            },
-                                          ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                        ),
                       ),
                     ],
                   ),

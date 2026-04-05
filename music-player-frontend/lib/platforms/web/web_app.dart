@@ -14,12 +14,12 @@ import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_cac
 import 'package:music_player_frontend/core/repository/memory/in_memory_playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_song_repository.dart';
 import 'package:music_player_frontend/core/repository/storage/local_storage_settings_repository.dart';
+import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/active_router_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/web_p2p_bridge.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
@@ -78,13 +78,15 @@ class WebApp extends AbstractApp {
             final manager = ChunkService(
               fileHash: fileHash,
               cacheRepo: context.read<ChunkCacheRepository>(),
-              streamingClient: context.read<StreamingRestService>(),
+              streamingClient: context.read<StreamingRestClient>(),
               webrtcManager: context.read<WebRTCService>(),
             );
             context.read<ActiveChunkRouter>().registerManager(manager);
             return manager;
           });
-          context.read<AppAudioService>().setWebSongChangeCallback(bridge.notifySong);
+          context.read<AppAudioService>().setWebSongChangeCallback(
+            bridge.notifySong,
+          );
           return bridge;
         },
         lazy: false,

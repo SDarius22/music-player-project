@@ -75,19 +75,6 @@ class Playlist with AbstractCollection implements BaseEntity {
 
   int _duration = -1;
 
-  Playlist();
-
-  factory Playlist.fromJson(Map<String, dynamic> json) {
-    final playlist = Playlist();
-    playlist.serverId = (json['id'] as num? ?? -1).toInt();
-    playlist.name = json['name'] as String? ?? 'Unknown Playlist';
-    playlist.serverSongFileHashes =
-        (json['songFileHashes'] as List<dynamic>? ?? [])
-            .map((e) => e.toString())
-            .toList();
-    return playlist;
-  }
-
   int get duration {
     if (_duration != -1) {
       return _duration;

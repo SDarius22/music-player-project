@@ -13,6 +13,8 @@ abstract class PlaylistRepository {
 
   Playlist? getPlaylistByServerId(int serverId);
 
+  Playlist getOrCreatePlaylistByServerId(int serverId);
+
   List<Playlist> getIndestructiblePlaylists();
 
   List<Playlist> getNormalPlaylists();

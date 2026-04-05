@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/playback_state_dto.dart';
-import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
-class PlaybackRestService extends AbstractRestService {
-  PlaybackRestService({
+class PlaybackRestClient extends AbstractRestClient {
+  PlaybackRestClient({
     required String baseUrl,
     required AuthService authService,
   }) {
@@ -22,7 +22,6 @@ class PlaybackRestService extends AbstractRestService {
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       }
-      // 204 = no saved state yet
       return null;
     } catch (e) {
       debugPrint('PlaybackRestService.getPlaybackState error: $e');

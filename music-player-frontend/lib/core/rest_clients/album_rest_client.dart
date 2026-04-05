@@ -2,16 +2,13 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/dtos/album_page_dto.dart';
-import 'package:music_player_frontend/core/entities/album.dart';
-import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
+import 'package:music_player_frontend/core/dtos/albums/album_page_dto.dart';
+import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
-class AlbumRestService extends AbstractRestService {
-  AlbumRestService({
-    required String baseUrl,
-    required AuthService authService,
-  }) {
+class AlbumRestClient extends AbstractRestClient {
+  AlbumRestClient({required String baseUrl, required AuthService authService}) {
     super.baseUrl = baseUrl;
     super.authService = authService;
   }
@@ -55,11 +52,11 @@ class AlbumRestService extends AbstractRestService {
     );
   }
 
-  Future<Album?> getAlbumById(int albumId) async {
+  Future<AlbumDetailDto?> getAlbumById(int albumId) async {
     try {
       final response = await get('/albums/$albumId');
       if (response.statusCode == 200) {
-        return Album.fromJson(
+        return AlbumDetailDto.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       }

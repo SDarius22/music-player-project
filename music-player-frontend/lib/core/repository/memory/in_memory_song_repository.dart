@@ -76,6 +76,16 @@ class InMemorySongRepository implements SongRepository {
   }
 
   @override
+  Song getOrCreateSongByFileHash(String fileHash) {
+    if (fileHash.isEmpty) throw Exception('File hash cannot be empty');
+    final existing = getSongByFileHash(fileHash);
+    if (existing != null) return existing;
+    final newSong = Song();
+    newSong.fileHash = fileHash;
+    return saveSong(newSong);
+  }
+
+  @override
   Song getSong(int id) {
     final s = _byId[id];
     if (s == null) throw Exception('Song with id $id not found');

@@ -13,6 +13,8 @@ abstract class ArtistRepository {
 
   Artist? getArtistByServerId(int serverId);
 
+  Artist getOrCreateArtistByServerId(int serverId);
+
   List<Artist> getArtists(String query, String sortField, bool ascending);
 
   List<Artist> getArtistsPaged(

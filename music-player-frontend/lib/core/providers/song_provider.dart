@@ -17,9 +17,13 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   bool _homeLoaded = false;
 
   List<Song> get recommendations => _recommendations;
+
   List<Song> get forgottenFavourites => _forgottenFavourites;
+
   List<Song> get quickDial => _quickDial;
+
   bool get homeLoading => _homeLoading;
+
   bool get homeLoaded => _homeLoaded;
 
   SongProvider(this._songService, this._scannerService) {
@@ -46,6 +50,10 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     _isInitialized = true;
   }
 
+  Future<Song?> fetchSongByFileHash(String fileHash) async {
+    return await _songService.fetchSongByFileHash(fileHash);
+  }
+
   @override
   Future<PageResult> fetchPage(
     String query,
@@ -54,7 +62,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     int page,
     int size,
   ) async {
-    final dto = await _songService.getSongsPage(
+    final result = await _songService.getSongsPage(
       query,
       sortField,
       ascending,
@@ -62,9 +70,9 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
       size,
     );
     return PageResult(
-      content: dto.content,
-      totalPages: dto.totalPages,
-      page: dto.page,
+      content: result.content,
+      totalPages: result.totalPages,
+      page: result.page,
     );
   }
 
@@ -76,22 +84,6 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   void updateSong(Song song) {
     _songService.updateSong(song);
     notifyListeners();
-  }
-
-  Song? getSongContaining(String query) {
-    return _songService.getSongContaining(query);
-  }
-
-  Future<List<Song>> getSongs(String query, String sortField, bool flag) async {
-    return await _songService.getSongs(query, sortField, flag);
-  }
-
-  Future<List<Song>> getSongsFromPaths(List<String> paths) async {
-    return await _songService.getSongsFromPaths(paths);
-  }
-
-  Future<List<Song>> getAllSongs() async {
-    return await _songService.getAllSongs();
   }
 
   @override

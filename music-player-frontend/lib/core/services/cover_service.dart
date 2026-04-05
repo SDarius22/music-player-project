@@ -5,11 +5,11 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/cover_rest_client.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/cover_rest_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/local_libs/cached_network_image/local_cached_network_image.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -20,7 +20,7 @@ class CoverService {
   final ArtistService artistService;
   final PlaylistService playlistService;
 
-  final CoverRestService _coverRestService;
+  final CoverRestClient _coverRestService;
   final AuthService _authService;
 
   CoverService({
@@ -28,7 +28,7 @@ class CoverService {
     required this.songService,
     required this.artistService,
     required this.playlistService,
-    required CoverRestService coverRestService,
+    required CoverRestClient coverRestService,
     required AuthService authService,
   }) : _coverRestService = coverRestService,
        _authService = authService;

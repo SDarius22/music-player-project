@@ -48,20 +48,6 @@ class Artist with AbstractCollection implements BaseEntity {
   @override
   set name(String value) => _name = value;
 
-  Artist();
-
-  factory Artist.fromJson(Map<String, dynamic> json) {
-    Artist artist = Artist();
-    artist.id = 0;
-    artist.name = json['name'] ?? "Unknown Artist";
-    artist.serverId = json['id'] ?? -1;
-    final hashes = json['songFileHashes'];
-    if (hashes is List) {
-      artist.serverSongFileHashes = hashes.cast<String>();
-    }
-    return artist;
-  }
-
   @override
   ToMany<Song> get songs => _songs;
 
@@ -73,7 +59,6 @@ class Artist with AbstractCollection implements BaseEntity {
   @override
   Uint8List? get coverArt => albums.isNotEmpty ? albums.first.coverArt : null;
 
-  /// Server returns the cover of the artist's first album alphabetically.
   @override
   String? get imageUrl => serverId > 0 ? '/artists/$serverId/cover' : null;
 }

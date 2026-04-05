@@ -1,21 +1,29 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:music_player_frontend/core/dtos/artist_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/artists/artist_expanded_dto.dart';
+import 'package:music_player_frontend/core/dtos/artists/artist_page_dto.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/rest_clients/artist_rest_client.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/artist_rest_service.dart';
 
 import 'artist_service_test.mocks.dart';
 
 @GenerateNiceMocks([
   MockSpec<ArtistRepository>(),
-  MockSpec<ArtistRestService>(),
+  MockSpec<AlbumRepository>(),
+  MockSpec<SongRepository>(),
+  MockSpec<ArtistRestClient>(),
 ])
 void main() {
   late MockArtistRepository mockRepo;
-  late MockArtistRestService mockRestService;
+  late MockAlbumRepository mockAlbumRepo;
+  late MockSongRepository mockSongRepo;
+  late MockArtistRestClient mockRestClient;
   late ArtistService service;
 
   Artist makeArtist({int serverId = 1, String name = 'Artist', int id = 0}) {
@@ -26,8 +34,20 @@ void main() {
     return a;
   }
 
+  ArtistExpandedDto makeExpandedDto({
+    int id = 1,
+    String name = 'Artist',
+    List<String> songFileHashes = const [],
+  }) {
+    return ArtistExpandedDto(
+      id: id,
+      name: name,
+      songFileHashes: songFileHashes,
+    );
+  }
+
   ArtistPageDto makeServerPage({
-    List<Artist>? content,
+    List<ArtistExpandedDto>? content,
     int totalElements = 1,
     int page = 0,
     int size = 20,
@@ -43,8 +63,15 @@ void main() {
 
   setUp(() {
     mockRepo = MockArtistRepository();
-    mockRestService = MockArtistRestService();
-    service = ArtistService(mockRepo, mockRestService);
+    mockAlbumRepo = MockAlbumRepository();
+    mockSongRepo = MockSongRepository();
+    mockRestClient = MockArtistRestClient();
+    service = ArtistService(
+      mockRepo,
+      mockAlbumRepo,
+      mockSongRepo,
+      mockRestClient,
+    );
   });
 
   group('watchArtists', () {
@@ -77,15 +104,16 @@ void main() {
   });
 
   group('getArtistByServerId', () {
-    test('returns artist when found', () {
+    test('falls back to local when server fails', () async {
       final artist = makeArtist(serverId: 42);
+      when(
+        mockRestClient.getArtistById(42),
+      ).thenThrow(Exception('server error'));
       when(mockRepo.getArtistByServerId(42)).thenReturn(artist);
-      expect(service.getArtistByServerId(42), same(artist));
-    });
 
-    test('returns null when not found', () {
-      when(mockRepo.getArtistByServerId(any)).thenReturn(null);
-      expect(service.getArtistByServerId(99), isNull);
+      final result = await service.getArtistByServerId(42);
+
+      expect(result, same(artist));
     });
   });
 
@@ -142,128 +170,124 @@ void main() {
   });
 
   group('cacheServerArtist', () {
-    test('updates name and calls updateArtist when found by serverId', () {
-      final existing = makeArtist(serverId: 10, name: 'Old Name', id: 1);
-      final serverArtist = makeArtist(serverId: 10, name: 'New Name');
-      when(mockRepo.getArtistByServerId(10)).thenReturn(existing);
+    test('creates artist via getOrCreateArtistByServerId and sets name', () {
+      final dto = makeExpandedDto(id: 10, name: 'New Artist');
+      final cached = makeArtist(serverId: 10, id: 1);
+      when(mockRepo.getOrCreateArtistByServerId(10)).thenReturn(cached);
+      when(mockRepo.saveArtist(any)).thenReturn(cached);
 
-      final result = service.cacheServerArtist(serverArtist);
+      final result = service.cacheServerArtist(dto);
 
-      expect(result, same(existing));
-      expect(existing.name, 'New Name');
-      verify(mockRepo.updateArtist(existing)).called(1);
-      verifyNever(mockRepo.saveArtist(any));
+      expect(result, same(cached));
+      expect(cached.name, 'New Artist');
+      verify(mockRepo.saveArtist(cached)).called(1);
     });
 
-    test('links serverId when found by name with no serverId', () {
-      final existing = makeArtist(serverId: -1, name: 'Jazz Band', id: 2);
-      final serverArtist = makeArtist(serverId: 20, name: 'Jazz Band');
-      when(mockRepo.getArtistByServerId(20)).thenReturn(null);
-      when(mockRepo.getArtistByName('Jazz Band')).thenReturn(existing);
+    test('links songs from songFileHashes', () {
+      final dto = makeExpandedDto(id: 10, songFileHashes: ['hash1', 'hash2']);
+      final cached = makeArtist(serverId: 10, id: 1);
+      final song1 = Song()..fileHash = 'hash1';
+      final song2 = Song()..fileHash = 'hash2';
 
-      service.cacheServerArtist(serverArtist);
+      when(mockRepo.getOrCreateArtistByServerId(10)).thenReturn(cached);
+      when(mockSongRepo.getOrCreateSongByFileHash('hash1')).thenReturn(song1);
+      when(mockSongRepo.getOrCreateSongByFileHash('hash2')).thenReturn(song2);
+      when(mockRepo.saveArtist(any)).thenReturn(cached);
 
-      expect(existing.serverId, 20);
-      verify(mockRepo.updateArtist(existing)).called(1);
+      service.cacheServerArtist(dto);
+
+      verify(mockSongRepo.updateSong(song1)).called(1);
+      verify(mockSongRepo.updateSong(song2)).called(1);
+      expect(song1.artist.targetId, 1);
+      expect(song2.artist.targetId, 1);
     });
 
-    test('does not re-link serverId when found-by-name artist already has one', () {
-      final existing = makeArtist(serverId: 5, name: 'Jazz Band', id: 3);
-      final serverArtist = makeArtist(serverId: 20, name: 'Jazz Band');
-      when(mockRepo.getArtistByServerId(20)).thenReturn(null);
-      when(mockRepo.getArtistByName('Jazz Band')).thenReturn(existing);
-
-      service.cacheServerArtist(serverArtist);
-
-      expect(existing.serverId, 5); // unchanged
-      verifyNever(mockRepo.updateArtist(any));
-    });
-
-    test('saves new artist when not found by serverId or name', () {
-      final serverArtist = makeArtist(serverId: 10, name: 'New Artist');
-      when(mockRepo.getArtistByServerId(10)).thenReturn(null);
-      when(mockRepo.getArtistByName('New Artist')).thenReturn(null);
-      when(mockRepo.saveArtist(any)).thenReturn(serverArtist);
-
-      final result = service.cacheServerArtist(serverArtist);
-
-      verify(mockRepo.saveArtist(serverArtist)).called(1);
-      expect(result, same(serverArtist));
-    });
-
-    test('skips serverId lookup when serverId <= 0', () {
-      final serverArtist = makeArtist(serverId: -1, name: 'Unknown');
-      when(mockRepo.getArtistByName('Unknown')).thenReturn(null);
-      when(mockRepo.saveArtist(any)).thenReturn(serverArtist);
-
-      service.cacheServerArtist(serverArtist);
-
-      verifyNever(mockRepo.getArtistByServerId(any));
-      verify(mockRepo.saveArtist(serverArtist)).called(1);
+    test('throws when id <= 0', () {
+      final dto = makeExpandedDto(id: 0);
+      expect(() => service.cacheServerArtist(dto), throwsException);
     });
   });
 
   group('getArtistsPage', () {
-    test('caches artists and returns local paged data when server succeeds', () async {
-      final serverArtist = makeArtist(serverId: 3, name: 'Server Artist');
-      when(mockRestService.getArtistsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => makeServerPage(content: [serverArtist], totalElements: 1));
-      when(mockRepo.getArtistByServerId(any)).thenReturn(null);
-      when(mockRepo.getArtistByName(any)).thenReturn(null);
-      when(mockRepo.saveArtist(any)).thenAnswer((inv) => inv.positionalArguments[0] as Artist);
-      final local = [makeArtist(serverId: 3)];
-      when(mockRepo.getArtistsPaged(any, any, any, any, any)).thenReturn(local);
+    test(
+      'caches artists and returns local paged data when server succeeds',
+      () async {
+        final serverDto = makeExpandedDto(id: 3, name: 'Server Artist');
+        when(
+          mockRestClient.getArtistsPage(
+            query: anyNamed('query'),
+            page: anyNamed('page'),
+            size: anyNamed('size'),
+            sort: anyNamed('sort'),
+          ),
+        ).thenAnswer(
+          (_) async => makeServerPage(content: [serverDto], totalElements: 1),
+        );
+        when(
+          mockRepo.getOrCreateArtistByServerId(any),
+        ).thenReturn(makeArtist());
+        when(
+          mockRepo.saveArtist(any),
+        ).thenAnswer((inv) => inv.positionalArguments[0] as Artist);
+        final local = [makeArtist(serverId: 3)];
+        when(
+          mockRepo.getArtistsPaged(any, any, any, any, any),
+        ).thenReturn(local);
 
-      final result = await service.getArtistsPage('', 'name', true, 0, 20);
+        final result = await service.getArtistsPage('', 'name', true, 0, 20);
 
-      expect(result.content, equals(local));
-      expect(result.totalElements, 1);
-    });
+        expect(result.content, equals(local));
+        expect(result.totalPages, greaterThan(0));
+      },
+    );
 
     test('falls to local when server returns 0 totalElements', () async {
-      when(mockRestService.getArtistsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => makeServerPage(content: [], totalElements: 0));
+      when(
+        mockRestClient.getArtistsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenAnswer((_) async => makeServerPage(content: [], totalElements: 0));
       final local = [makeArtist(), makeArtist()];
       when(mockRepo.getArtists(any, any, any)).thenReturn(local);
       when(mockRepo.getArtistsPaged(any, any, any, any, any)).thenReturn(local);
 
       final result = await service.getArtistsPage('', 'name', true, 0, 20);
 
-      expect(result.totalElements, 2);
+      expect(result.totalPages, 1); // ceil(2/20) = 1
     });
 
     test('falls to local when server throws', () async {
-      when(mockRestService.getArtistsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenThrow(Exception('timeout'));
+      when(
+        mockRestClient.getArtistsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenThrow(Exception('timeout'));
       final local = [makeArtist(), makeArtist()];
       when(mockRepo.getArtists(any, any, any)).thenReturn(local);
       when(mockRepo.getArtistsPaged(any, any, any, any, any)).thenReturn(local);
 
       final result = await service.getArtistsPage('', 'name', true, 0, 20);
 
-      expect(result.totalElements, 2);
+      expect(result.totalPages, 1);
     });
 
     test('returns empty content when local offset exceeds total', () async {
-      when(mockRestService.getArtistsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenThrow(Exception('error'));
+      when(
+        mockRestClient.getArtistsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenThrow(Exception('error'));
       when(mockRepo.getArtists(any, any, any)).thenReturn([makeArtist()]);
+      when(mockRepo.getArtistsPaged(any, any, any, any, any)).thenReturn([]);
 
       final result = await service.getArtistsPage('', 'name', true, 5, 20);
 
@@ -271,60 +295,72 @@ void main() {
     });
 
     test('passes non-empty query string to server', () async {
-      when(mockRestService.getArtistsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => makeServerPage(content: [], totalElements: 0));
+      when(
+        mockRestClient.getArtistsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenAnswer((_) async => makeServerPage(content: [], totalElements: 0));
       when(mockRepo.getArtists(any, any, any)).thenReturn([]);
 
       await service.getArtistsPage('rock', 'name', true, 0, 20);
 
-      verify(mockRestService.getArtistsPage(
-        query: 'rock',
-        page: 0,
-        size: 20,
-        sort: anyNamed('sort'),
-      )).called(1);
+      verify(
+        mockRestClient.getArtistsPage(
+          query: 'rock',
+          page: 0,
+          size: 20,
+          sort: anyNamed('sort'),
+        ),
+      ).called(1);
     });
 
     test('passes null for empty query', () async {
-      when(mockRestService.getArtistsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => makeServerPage(content: [], totalElements: 0));
+      when(
+        mockRestClient.getArtistsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenAnswer((_) async => makeServerPage(content: [], totalElements: 0));
       when(mockRepo.getArtists(any, any, any)).thenReturn([]);
 
       await service.getArtistsPage('', 'name', true, 0, 20);
 
-      verify(mockRestService.getArtistsPage(
-        query: null,
-        page: 0,
-        size: 20,
-        sort: anyNamed('sort'),
-      )).called(1);
+      verify(
+        mockRestClient.getArtistsPage(
+          query: null,
+          page: 0,
+          size: 20,
+          sort: anyNamed('sort'),
+        ),
+      ).called(1);
     });
 
     test('passes desc sort when ascending is false', () async {
-      when(mockRestService.getArtistsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => makeServerPage(content: [], totalElements: 0));
+      when(
+        mockRestClient.getArtistsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenAnswer((_) async => makeServerPage(content: [], totalElements: 0));
       when(mockRepo.getArtists(any, any, any)).thenReturn([]);
 
       await service.getArtistsPage('', 'name', false, 0, 20);
 
-      verify(mockRestService.getArtistsPage(
-        query: null,
-        page: 0,
-        size: 20,
-        sort: 'name,desc',
-      )).called(1);
+      verify(
+        mockRestClient.getArtistsPage(
+          query: null,
+          page: 0,
+          size: 20,
+          sort: 'name,desc',
+        ),
+      ).called(1);
     });
   });
 }

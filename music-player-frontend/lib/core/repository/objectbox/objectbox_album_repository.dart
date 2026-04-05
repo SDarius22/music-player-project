@@ -30,7 +30,8 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
 
   @override
   Album? getAlbumByNameAndArtistName(String albumName, String artistName) {
-    final candidates = _albumBox.query(Album_.name.equals(albumName)).build().find();
+    final candidates =
+        _albumBox.query(Album_.name.equals(albumName)).build().find();
     for (final album in candidates) {
       if (album.artist.target?.name == artistName) return album;
     }
@@ -43,6 +44,17 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
         .query(Album_.serverId.equals(serverId))
         .build()
         .findFirst();
+  }
+
+  @override
+  Album getOrCreateAlbumByServerId(int serverId) {
+    final existingAlbum = getAlbumByServerId(serverId);
+    if (existingAlbum != null) {
+      return existingAlbum;
+    }
+    Album newAlbum = Album();
+    newAlbum.serverId = serverId;
+    return saveAlbum(newAlbum);
   }
 
   @override

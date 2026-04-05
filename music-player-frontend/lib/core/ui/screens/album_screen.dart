@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
@@ -28,9 +28,7 @@ class AlbumScreen extends EntityScreen {
   @override
   Future<void> loadEntityData(BuildContext context) async {
     final album = entity as Album;
-    if (album.serverSongFileHashes.isNotEmpty) {
-      await context.read<SongService>().fetchSongsByHashes(album.serverSongFileHashes);
-    }
+    await context.read<AlbumProvider>().fetchAlbumDetails(album.id);
   }
 
   @override
@@ -131,8 +129,7 @@ class AlbumScreen extends EntityScreen {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
-                            style:
-                                Theme.of(context).textTheme.headlineMedium,
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -179,10 +176,11 @@ class AlbumScreen extends EntityScreen {
                                 itemExtent: height * 0.1,
                                 isSelected: (entity) => false,
                                 onTap: (entity) async {
-                                  var audioProvider = Provider.of<AudioProvider>(
-                                    context,
-                                    listen: false,
-                                  );
+                                  var audioProvider =
+                                      Provider.of<AudioProvider>(
+                                        context,
+                                        listen: false,
+                                      );
                                   await audioProvider.setQueueAndPlay(
                                     album.songs,
                                     entity as Song,

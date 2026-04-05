@@ -8,12 +8,12 @@ import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/p2p_chunked_source.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/playback_rest_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/local_libs/extensions.dart';
@@ -25,7 +25,7 @@ class AppAudioService {
   final SettingsService settingsService;
   final PlaylistService playlistService;
   final AuthService authService;
-  final PlaybackRestService? playbackRestService;
+  final PlaybackRestClient? playbackRestService;
   final ChunkService Function(String fileHash) createChunkManager;
 
   ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
@@ -56,7 +56,6 @@ class AppAudioService {
   List<Song> get _activeQueue =>
       _currentAudioSettings.shuffle ? _shuffledQueue : _normalQueue;
 
-  /// Returns the queue in playback order (shuffled when shuffle is on).
   List<Song> get queue => _activeQueue;
 
   int get currentIndex => _currentIndex;
@@ -272,7 +271,8 @@ class AppAudioService {
       final activeInsert = _activeQueue.isEmpty ? 0 : _currentIndex + 1;
       _activeQueue.insert(activeInsert, song);
 
-      final other = _currentAudioSettings.shuffle ? _normalQueue : _shuffledQueue;
+      final other =
+          _currentAudioSettings.shuffle ? _normalQueue : _shuffledQueue;
       final currentInOther = other.indexWhere((s) => s == currentSong);
       final otherInsert =
           currentInOther < 0 ? other.length : currentInOther + 1;

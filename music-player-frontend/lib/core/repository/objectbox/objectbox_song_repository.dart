@@ -55,6 +55,20 @@ class ObjectBoxSongRepository implements SongRepository {
   }
 
   @override
+  Song getOrCreateSongByFileHash(String fileHash) {
+    if (fileHash.isEmpty) {
+      throw Exception('File hash cannot be empty');
+    }
+    Song? existingSong = getSongByFileHash(fileHash);
+    if (existingSong != null) {
+      return existingSong;
+    }
+    Song newSong = Song();
+    newSong.fileHash = fileHash;
+    return saveSong(newSong);
+  }
+
+  @override
   Song getSong(int id) {
     try {
       return _songBox.get(id)!;

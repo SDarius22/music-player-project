@@ -64,7 +64,7 @@ class WindowsMusicScannerService implements AbstractMusicScannerService {
       await Future.delayed(const Duration(milliseconds: 8));
 
       final file = files[i];
-      final existing = await _songService.getSong(file.path);
+      final existing = _songService.getLocalSong(file.path);
 
       if (existing == null) {
         try {

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
@@ -33,9 +32,6 @@ class Album with AbstractCollection implements BaseEntity {
   @Backlink('album')
   final _songs = ToMany<Song>();
   final artist = ToOne<Artist>();
-
-  @Transient()
-  List<String> serverSongFileHashes = [];
 
   @override
   String get name => _name;
@@ -79,22 +75,5 @@ class Album with AbstractCollection implements BaseEntity {
   @override
   String toString() {
     return name;
-  }
-
-  Album();
-
-  factory Album.fromJson(Map<String, dynamic> json) {
-    Album album = Album();
-    album.id = 0;
-    album.name = json['name'] ?? "Unknown Album";
-    album.serverId = json['id'] ?? -1;
-    if (json['photo'] != null) {
-      album.imageBytes = Uint8List.fromList(base64Decode(json['photo']));
-    }
-    final hashes = json['songFileHashes'];
-    if (hashes is List) {
-      album.serverSongFileHashes = hashes.cast<String>();
-    }
-    return album;
   }
 }

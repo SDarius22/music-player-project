@@ -7,13 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_response_dto.dart';
-import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
-import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/services/rest_clients/abstract_rest_client.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
+import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
+import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
-class SongRestService extends AbstractRestService {
-  SongRestService({required String baseUrl, required AuthService authService}) {
+class SongRestClient extends AbstractRestClient {
+  SongRestClient({required String baseUrl, required AuthService authService}) {
     super.baseUrl = baseUrl;
     super.authService = authService;
   }
@@ -70,21 +70,6 @@ class SongRestService extends AbstractRestService {
     return false;
   }
 
-  Future<Song?> finalizeSong(String fileHash) async {
-    try {
-      final response = await post('/songs/$fileHash/finalize', {});
-
-      if (response.statusCode == 200) {
-        return Song.fromJson(jsonDecode(response.body));
-      } else {
-        debugPrint('Finalize failed: ${response.statusCode} ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('Error finalizing song: $e');
-    }
-    return null;
-  }
-
   Future<bool> uploadFullSong({
     required String audioFilePath,
     required String name,
@@ -123,10 +108,10 @@ class SongRestService extends AbstractRestService {
       );
 
       if (streamedResponse.statusCode == 201) {
-        onProgress(1, 1); // Mark as complete
+        onProgress(1, 1);
         return true;
       } else {
-        onProgress(0, 1); // Reset progress on failure
+        onProgress(0, 1);
         debugPrint(
           'Full song upload failed: ${streamedResponse.statusCode} ${streamedResponse.body}',
         );
@@ -137,12 +122,12 @@ class SongRestService extends AbstractRestService {
     return false;
   }
 
-  Future<Song> getServerSong(String fileHash) async {
+  Future<SongDto> getServerSong(String fileHash) async {
     try {
       final response = await get('/songs/$fileHash');
 
       if (response.statusCode == 200) {
-        return Song.fromJson(jsonDecode(response.body));
+        return SongDto.fromJson(jsonDecode(response.body));
       } else {
         debugPrint(
           'Failed to fetch song: ${response.statusCode} ${response.body}',
@@ -177,24 +162,7 @@ class SongRestService extends AbstractRestService {
       final response = await get(endpoint);
 
       if (response.statusCode == 200) {
-        final dynamic decoded = jsonDecode(response.body);
-
-        if (decoded is Map<String, dynamic>) {
-          return SongPageDto.fromJson(decoded);
-        }
-        if (decoded is List) {
-          final songs =
-              decoded
-                  .map((e) => Song.fromJson(e as Map<String, dynamic>))
-                  .toList();
-          return SongPageDto(
-            content: songs,
-            page: 0,
-            size: songs.length,
-            totalPages: 1,
-            totalElements: songs.length,
-          );
-        }
+        return SongPageDto.fromJson(jsonDecode(response.body));
       } else {
         debugPrint(
           'Failed to fetch songs: ${response.statusCode} ${response.body}',
@@ -265,15 +233,5 @@ class SongRestService extends AbstractRestService {
       totalPages: 0,
       totalElements: 0,
     );
-  }
-
-  Future<List<Song>> getAllSongs() async {
-    final page = await getSongsPage(page: 0, size: 200);
-    debugPrint('Fetched ${page.content.length} songs from server.');
-    if (page.content.isNotEmpty) {
-      final s = page.content.first;
-      debugPrint('First song: ${s.name}, ${s.id}, ${s.fileHash}, ${s.path}');
-    }
-    return page.content;
   }
 }

@@ -72,39 +72,6 @@ class Song implements BaseEntity {
     return id.hashCode;
   }
 
-  Song();
-
-  factory Song.fromJson(Map<String, dynamic> json) {
-    Song song = Song();
-    song.id = 0;
-    song.fileHash = json['fileHash'] ?? '';
-    song.name = json['name'] ?? "Unknown Song";
-    song.path = "";
-    song.durationInSeconds = json['durationInSeconds'] ?? 0;
-    song.trackNumber = json['trackNumber'] ?? 0;
-    song.discNumber = json['discNumber'] ?? 0;
-    song.year = json['year'] ?? 0;
-    song.fullyLoaded = true;
-
-    if (json['artist'] != null) {
-      song.artist.target = Artist.fromJson(
-        json['artist'] as Map<String, dynamic>,
-      );
-    }
-    if (json['album'] != null) {
-      song.album.target = Album.fromJson(json['album'] as Map<String, dynamic>);
-    }
-
-    return song;
-  }
-
-  Map<String, dynamic> toJson() => {
-    'fileHash': fileHash,
-    'playCountDelta': playCount,
-    'likedByUser': likedByUser,
-    'lastPlayed': lastPlayed,
-  };
-
   @override
   Uint8List? get coverArt => album.target?.coverArt;
 
@@ -117,5 +84,33 @@ class Song implements BaseEntity {
       return album.target!.colors;
     }
     return [];
+  }
+
+  Song();
+
+  factory Song.fromJson(Map<String, dynamic> json) {
+    final song = Song();
+    song.fileHash = json['fileHash'] as String? ?? '';
+    song.name = json['name'] as String? ?? 'Unknown Song';
+    song.durationInSeconds = (json['durationInSeconds'] as num? ?? 0).toInt();
+    song.trackNumber = (json['trackNumber'] as num? ?? 0).toInt();
+    song.discNumber = (json['discNumber'] as num? ?? 0).toInt();
+    song.year = (json['year'] as num? ?? 0).toInt();
+    song.fullyLoaded = true;
+    final artistJson = json['artist'] as Map<String, dynamic>?;
+    if (artistJson != null) {
+      final artist = Artist();
+      artist.id = (artistJson['id'] as num? ?? 0).toInt();
+      artist.name = artistJson['name'] as String? ?? '';
+      song.artist.target = artist;
+    }
+    final albumJson = json['album'] as Map<String, dynamic>?;
+    if (albumJson != null) {
+      final album = Album();
+      album.id = (albumJson['id'] as num? ?? 0).toInt();
+      album.name = albumJson['name'] as String? ?? '';
+      song.album.target = album;
+    }
+    return song;
   }
 }

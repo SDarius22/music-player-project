@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:music_player_frontend/core/dtos/album_page_dto.dart';
-import 'package:music_player_frontend/core/dtos/artist_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/albums/album_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/artists/artist_page_dto.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_response_dto.dart';
-import 'package:music_player_frontend/core/dtos/playlist_page_dto.dart';
-import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
-import 'package:music_player_frontend/core/dtos/song_sync_dto.dart';
-import 'package:music_player_frontend/core/dtos/sync_request_dto.dart';
-import 'package:music_player_frontend/core/dtos/sync_response_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/sync/song_sync_dto.dart';
+import 'package:music_player_frontend/core/dtos/sync/sync_request_dto.dart';
+import 'package:music_player_frontend/core/dtos/sync/sync_response_dto.dart';
 
 void main() {
   // ─── AlbumPageDto ─────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ void main() {
 
       expect(dto.content.length, 2);
       expect(dto.content.first.name, 'Album One');
-      expect(dto.content.first.serverId, 1);
+      expect(dto.content.first.id, 1);
       expect(dto.page, 0);
       expect(dto.size, 2);
       expect(dto.totalPages, 5);
@@ -73,7 +73,7 @@ void main() {
 
       expect(dto.content.length, 1);
       expect(dto.content.first.name, 'Led Zeppelin');
-      expect(dto.content.first.serverId, 10);
+      expect(dto.content.first.id, 10);
       expect(dto.page, 1);
       expect(dto.size, 1);
       expect(dto.totalPages, 3);
@@ -110,9 +110,9 @@ void main() {
 
       expect(dto.content.length, 1);
       expect(dto.content.first.name, 'Chill');
-      expect(dto.content.first.serverId, 5);
+      expect(dto.content.first.id, 5);
       expect(
-        dto.content.first.serverSongFileHashes,
+        dto.content.first.songFileHashes,
         equals(['hash1', 'hash2', 'hash3']),
       );
       expect(dto.page, 0);

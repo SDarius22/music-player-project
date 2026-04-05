@@ -18,6 +18,16 @@ import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_rep
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/rest_clients/album_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/artist_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/cover_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/data_sync_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/active_router_service.dart';
@@ -29,16 +39,6 @@ import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/album_rest_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/artist_rest_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/cover_rest_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/playback_rest_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/statistics_rest_service.dart';
-import 'package:music_player_frontend/core/services/rest_clients/streaming_rest_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
@@ -103,33 +103,33 @@ abstract class AbstractApp extends StatelessWidget {
         create: (context) => AuthService(baseUrl: apiBaseUrl),
       ),
 
-      Provider<DataSyncService>(
+      Provider<DataSyncClient>(
         create:
-            (context) => DataSyncService(
+            (context) => DataSyncClient(
               baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
 
-      Provider<SongRestService>(
+      Provider<SongRestClient>(
         create:
-            (context) => SongRestService(
+            (context) => SongRestClient(
               baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
 
-      Provider<StreamingRestService>(
+      Provider<StreamingRestClient>(
         create:
-            (context) => StreamingRestService(
+            (context) => StreamingRestClient(
               baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
 
-      Provider<StatisticsRestService>(
+      Provider<StatisticsRestClient>(
         create: (context) {
-          final service = StatisticsRestService(
+          final service = StatisticsRestClient(
             baseUrl: apiBaseUrl,
             authService: context.read<AuthService>(),
           );
@@ -143,37 +143,37 @@ abstract class AbstractApp extends StatelessWidget {
         create: (context) => createFileService(context),
       ),
 
-      Provider<CoverRestService>(
+      Provider<CoverRestClient>(
         create:
-            (context) => CoverRestService(
+            (context) => CoverRestClient(
               baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
-      Provider<AlbumRestService>(
+      Provider<AlbumRestClient>(
         create:
-            (context) => AlbumRestService(
+            (context) => AlbumRestClient(
               baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
-      Provider<ArtistRestService>(
+      Provider<ArtistRestClient>(
         create:
-            (context) => ArtistRestService(
+            (context) => ArtistRestClient(
               baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
-      Provider<PlaylistRestService>(
+      Provider<PlaylistRestClient>(
         create:
-            (context) => PlaylistRestService(
+            (context) => PlaylistRestClient(
               baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
       ),
-      Provider<PlaybackRestService>(
+      Provider<PlaybackRestClient>(
         create:
-            (context) => PlaybackRestService(
+            (context) => PlaybackRestClient(
               baseUrl: apiBaseUrl,
               authService: context.read<AuthService>(),
             ),
@@ -182,14 +182,18 @@ abstract class AbstractApp extends StatelessWidget {
         create:
             (context) => AlbumService(
               context.read<AlbumRepository>(),
-              context.read<AlbumRestService>(),
+              context.read<ArtistRepository>(),
+              context.read<SongRepository>(),
+              context.read<AlbumRestClient>(),
             ),
       ),
       Provider<ArtistService>(
         create:
             (context) => ArtistService(
               context.read<ArtistRepository>(),
-              context.read<ArtistRestService>(),
+              context.read<AlbumRepository>(),
+              context.read<SongRepository>(),
+              context.read<ArtistRestClient>(),
             ),
       ),
       Provider<LyricsService>(create: (context) => LyricsService()),
@@ -201,22 +205,19 @@ abstract class AbstractApp extends StatelessWidget {
         create:
             (context) => SongService(
               context.read<SongRepository>(),
-              context.read<SongRestService>(),
-              context.read<ArtistService>(),
-              context.read<AlbumService>(),
-              context.read<DataSyncService>(),
+              context.read<ArtistRepository>(),
+              context.read<AlbumRepository>(),
+              context.read<SongRestClient>(),
+              context.read<DataSyncClient>(),
             ),
       ),
       Provider<PlaylistService>(
-        create: (context) {
-          final service = PlaylistService(
-            context.read<PlaylistRepository>(),
-            context.read<SongRepository>(),
-            context.read<PlaylistRestService>(),
-          );
-          service.setSongService(context.read<SongService>());
-          return service;
-        },
+        create:
+            (context) => PlaylistService(
+              context.read<PlaylistRepository>(),
+              context.read<SongRepository>(),
+              context.read<PlaylistRestClient>(),
+            ),
       ),
 
       Provider<CoverService>(
@@ -226,7 +227,7 @@ abstract class AbstractApp extends StatelessWidget {
               songService: context.read<SongService>(),
               artistService: context.read<ArtistService>(),
               playlistService: context.read<PlaylistService>(),
-              coverRestService: context.read<CoverRestService>(),
+              coverRestService: context.read<CoverRestClient>(),
               authService: context.read<AuthService>(),
             ),
       ),
@@ -254,7 +255,7 @@ abstract class AbstractApp extends StatelessWidget {
               final manager = ChunkService(
                 fileHash: fileHash,
                 cacheRepo: context.read<ChunkCacheRepository>(),
-                streamingClient: context.read<StreamingRestService>(),
+                streamingClient: context.read<StreamingRestClient>(),
                 webrtcManager: context.read<WebRTCService>(),
               );
 
@@ -266,7 +267,7 @@ abstract class AbstractApp extends StatelessWidget {
 
               return manager;
             },
-            playbackRestService: context.read<PlaybackRestService>(),
+            playbackRestService: context.read<PlaybackRestClient>(),
           );
         },
       ),

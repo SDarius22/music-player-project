@@ -13,6 +13,10 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
 
   String get defaultSortField => 'Name';
 
+  Future<Artist> fetchArtistDetails(int artistId) async {
+    return await _artistService.getArtistByServerId(artistId);
+  }
+
   @override
   Future<PageResult> fetchPage(
     String query,
@@ -21,7 +25,7 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
     int page,
     int size,
   ) async {
-    final dto = await _artistService.getArtistsPage(
+    final result = await _artistService.getArtistsPage(
       query,
       sortField,
       ascending,
@@ -29,9 +33,9 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
       size,
     );
     return PageResult(
-      content: dto.content,
-      totalPages: dto.totalPages,
-      page: dto.page,
+      content: result.content,
+      totalPages: result.totalPages,
+      page: result.page,
     );
   }
 
@@ -39,8 +43,4 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
   Future<void> refresh() async {
     notifyListeners();
   }
-
-  Artist getArtist(int artistId) => _artistService.getArtist(artistId);
-
-  List<Artist> getAllArtists() => _artistService.getAllArtists();
 }

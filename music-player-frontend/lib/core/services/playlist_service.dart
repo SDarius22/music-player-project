@@ -4,24 +4,17 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/dtos/playlist_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
-import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart';
-import 'package:music_player_frontend/core/services/song_service.dart';
+import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 
 class PlaylistService {
   final PlaylistRepository _playlistRepository;
   final SongRepository _songRepository;
-  final PlaylistRestService _playlistRestService;
-  SongService? _songService;
-
-  /// Injected after construction to avoid circular dependency issues.
-  void setSongService(SongService songService) {
-    _songService = songService;
-  }
+  final PlaylistRestClient _playlistRestService;
 
   PlaylistService(
     this._playlistRepository,
@@ -51,16 +44,16 @@ class PlaylistService {
     _playlistRepository.savePlaylist(newPlaylist);
 
     try {
-      final songFileHashes = songs
-          .map((s) => s.fileHash)
-          .where((h) => h.isNotEmpty)
-          .toList();
+      final songFileHashes =
+          songs.map((s) => s.fileHash).where((h) => h.isNotEmpty).toList();
       final coverBase64 = coverArt != null ? base64Encode(coverArt) : null;
       final result = await _playlistRestService.createPlaylist(
-        name, songFileHashes, coverBase64,
+        name,
+        songFileHashes,
+        coverBase64,
       );
       if (result != null) {
-        newPlaylist.serverId = (result['id'] as num).toInt();
+        newPlaylist.serverId = result.id;
         _playlistRepository.savePlaylist(newPlaylist);
       }
     } catch (e) {
@@ -81,15 +74,20 @@ class PlaylistService {
 
     if (playlist.serverId > 0) {
       try {
-        final songFileHashes = playlist.songs
-            .map((s) => s.fileHash)
-            .where((h) => h.isNotEmpty)
-            .toList();
-        final coverBase64 = playlist.imageBytes != null
-            ? base64Encode(playlist.imageBytes!)
-            : null;
+        final songFileHashes =
+            playlist.songs
+                .map((s) => s.fileHash)
+                .where((h) => h.isNotEmpty)
+                .toList();
+        final coverBase64 =
+            playlist.imageBytes != null
+                ? base64Encode(playlist.imageBytes!)
+                : null;
         await _playlistRestService.updatePlaylist(
-          playlist.serverId, playlist.name, songFileHashes, coverBase64,
+          playlist.serverId,
+          playlist.name,
+          songFileHashes,
+          coverBase64,
         );
       } catch (e) {
         debugPrint('PlaylistService: failed to update playlist on server: $e');
@@ -239,158 +237,103 @@ class PlaylistService {
     return _playlistRepository.getPlaylists(query, sortField, flag);
   }
 
-  Future<PlaylistPageDto> getPlaylistsPage(
+  Future<
+    ({List<Playlist> content, int totalPages, int totalElements, int page})
+  >
+  getPlaylistsPage(
     String query,
     String sortField,
     bool ascending,
     int page,
     int size,
   ) async {
+    int? serverTotalPages;
+    int? serverTotalElements;
     try {
       final serverPage = await _playlistRestService.getPlaylistsPage(
         page: page,
         size: size,
       );
-
-      for (final serverPlaylist in serverPage.content) {
-        cacheServerPlaylist(serverPlaylist);
-      }
-
       if (serverPage.totalElements > 0) {
-        final content = _playlistRepository.getPlaylistsPaged(
-          query, sortField, ascending, page * size, size,
-        );
-        return PlaylistPageDto(
-          content: content,
-          page: page,
-          size: size,
-          totalPages: serverPage.totalPages,
-          totalElements: serverPage.totalElements,
-        );
+        serverTotalPages = serverPage.totalPages;
+        serverTotalElements = serverPage.totalElements;
+        for (final dto in serverPage.content) {
+          cacheServerPlaylist(_playlistDtoToEntity(dto));
+        }
       }
     } catch (e) {
       debugPrint('PlaylistService: server fetch failed, using local: $e');
     }
-    return _localPage(query, sortField, ascending, page, size);
+
+    final allLocal = _playlistRepository.getPlaylists(
+      query,
+      sortField,
+      ascending,
+    );
+    final localTotal = allLocal.length;
+    final effectiveTotalElements = serverTotalElements ?? localTotal;
+    final effectiveTotalPages =
+        serverTotalPages ?? ((localTotal + size - 1) ~/ size).clamp(1, 999999);
+
+    final localContent = _playlistRepository.getPlaylistsPaged(
+      query,
+      sortField,
+      ascending,
+      page * size,
+      size,
+    );
+
+    return (
+      content: localContent,
+      totalPages: effectiveTotalPages,
+      totalElements: effectiveTotalElements,
+      page: page,
+    );
   }
 
   Playlist cacheServerPlaylist(Playlist serverPlaylist) {
-    Playlist playlist;
+    if (serverPlaylist.serverId <= 0) {
+      throw Exception('Server playlist must have a valid ID');
+    }
 
-    if (serverPlaylist.serverId > 0) {
-      final byServerId = _playlistRepository.getPlaylistByServerId(
-        serverPlaylist.serverId,
-      );
-      if (byServerId != null) {
-        byServerId.name = serverPlaylist.name;
-        _resolveAndSetSongs(byServerId, serverPlaylist.serverSongFileHashes);
-        _playlistRepository.savePlaylist(byServerId);
-        playlist = byServerId;
-      } else {
-        final byName = _playlistRepository.getPlaylistByName(serverPlaylist.name);
-        if (byName != null && !byName.indestructible) {
-          if (byName.serverId <= 0 && serverPlaylist.serverId > 0) {
-            byName.serverId = serverPlaylist.serverId;
-          }
-          _resolveAndSetSongs(byName, serverPlaylist.serverSongFileHashes);
-          _playlistRepository.savePlaylist(byName);
-          playlist = byName;
-        } else {
-          _resolveAndSetSongs(serverPlaylist, serverPlaylist.serverSongFileHashes);
-          playlist = _playlistRepository.savePlaylist(serverPlaylist);
-        }
-      }
-    } else {
+    // Look up by serverId first.
+    var cached = _playlistRepository.getPlaylistByServerId(
+      serverPlaylist.serverId,
+    );
+
+    if (cached == null) {
+      // Fall back to name lookup, but never hijack an indestructible playlist.
       final byName = _playlistRepository.getPlaylistByName(serverPlaylist.name);
       if (byName != null && !byName.indestructible) {
-        _resolveAndSetSongs(byName, serverPlaylist.serverSongFileHashes);
-        _playlistRepository.savePlaylist(byName);
-        playlist = byName;
-      } else {
-        _resolveAndSetSongs(serverPlaylist, serverPlaylist.serverSongFileHashes);
-        playlist = _playlistRepository.savePlaylist(serverPlaylist);
-      }
-    }
-
-    // Background-fetch any songs that weren't in the local cache yet.
-    final resolvedHashes = playlist.songs.map((s) => s.fileHash).toSet();
-    final missing = serverPlaylist.serverSongFileHashes
-        .where((h) => h.isNotEmpty && !resolvedHashes.contains(h))
-        .toList();
-    if (missing.isNotEmpty && _songService != null) {
-      unawaited(_fetchAndAppendMissingSongs(playlist, missing));
-    }
-
-    return playlist;
-  }
-
-  Future<void> _fetchAndAppendMissingSongs(
-    Playlist playlist,
-    List<String> missingHashes,
-  ) async {
-    bool changed = false;
-    for (final hash in missingHashes) {
-      final song = await _songService!.fetchSongByFileHash(hash);
-      if (song != null) {
-        if (!playlist.songFileHashes.contains(hash)) {
-          playlist.songs.add(song);
-          playlist.songFileHashes.add(hash);
-          changed = true;
+        cached = byName;
+        if (cached.serverId <= 0) {
+          cached.serverId = serverPlaylist.serverId;
         }
+      } else {
+        // Not found (or found indestructible) — save the entity as-is.
+        return _playlistRepository.savePlaylist(serverPlaylist);
       }
     }
-    if (changed) {
-      _playlistRepository.savePlaylist(playlist);
-    }
-  }
 
-  void _resolveAndSetSongs(Playlist playlist, List<String> songFileHashes) {
-    if (songFileHashes.isEmpty) return;
-    final resolved = songFileHashes
-        .map((hash) => _songRepository.getSongByFileHash(hash))
-        .whereType<Song>()
-        .toList();
-    if (resolved.isNotEmpty) {
-      playlist.songs.clear();
-      playlist.songFileHashes.clear();
-      for (final song in resolved) {
-        playlist.songs.add(song);
-        playlist.songFileHashes.add(song.fileHash);
+    cached.name = serverPlaylist.name;
+
+    for (final hash in serverPlaylist.serverSongFileHashes) {
+      final song = _songRepository.getSongByFileHash(hash);
+      if (song != null && !cached.songFileHashes.contains(hash)) {
+        cached.songs.add(song);
+        cached.songFileHashes.add(hash);
       }
     }
+
+    return _playlistRepository.savePlaylist(cached);
   }
 
-  PlaylistPageDto _localPage(
-    String query,
-    String sortField,
-    bool ascending,
-    int page,
-    int size,
-  ) {
-    final all = _playlistRepository.getPlaylists(query, sortField, ascending);
-    final totalElements = all.length;
-    final totalPages = (totalElements / size).ceil();
-    final offset = page * size;
-    if (offset >= totalElements) {
-      return PlaylistPageDto(
-        content: const [],
-        page: page,
-        size: size,
-        totalPages: totalPages,
-        totalElements: totalElements,
-      );
-    }
-    final content = all.sublist(
-      offset,
-      (offset + size).clamp(0, totalElements),
-    );
-    return PlaylistPageDto(
-      content: content,
-      page: page,
-      size: size,
-      totalPages: totalPages,
-      totalElements: totalElements,
-    );
+  Playlist _playlistDtoToEntity(PlaylistDto dto) {
+    final p = Playlist();
+    p.serverId = dto.id;
+    p.name = dto.name;
+    p.serverSongFileHashes = dto.songFileHashes;
+    return p;
   }
 
   List<Playlist> getAllPlaylists() {

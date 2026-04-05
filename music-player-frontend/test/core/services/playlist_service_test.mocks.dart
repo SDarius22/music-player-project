@@ -5,21 +5,23 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i8;
 import 'dart:io' as _i13;
-import 'dart:typed_data' as _i12;
 
 import 'package:http/http.dart' as _i6;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i11;
-import 'package:music_player_frontend/core/dtos/playlist_page_dto.dart' as _i5;
+import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart'
+    as _i12;
+import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart'
+    as _i5;
 import 'package:music_player_frontend/core/entities/playlist.dart' as _i2;
 import 'package:music_player_frontend/core/entities/song.dart' as _i3;
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart'
     as _i7;
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart'
     as _i9;
-import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart'
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart'
     as _i4;
-import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart'
+import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart'
     as _i10;
 
 // ignore_for_file: type=lint
@@ -124,6 +126,21 @@ class MockPlaylistRepository extends _i1.Mock
             returnValueForMissingStub: null,
           )
           as _i2.Playlist?);
+
+  @override
+  _i2.Playlist getOrCreatePlaylistByServerId(int? serverId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getOrCreatePlaylistByServerId, [serverId]),
+            returnValue: _FakePlaylist_0(
+              this,
+              Invocation.method(#getOrCreatePlaylistByServerId, [serverId]),
+            ),
+            returnValueForMissingStub: _FakePlaylist_0(
+              this,
+              Invocation.method(#getOrCreatePlaylistByServerId, [serverId]),
+            ),
+          )
+          as _i2.Playlist);
 
   @override
   List<_i2.Playlist> getIndestructiblePlaylists() =>
@@ -272,6 +289,21 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
           as _i3.Song?);
 
   @override
+  _i3.Song getOrCreateSongByFileHash(String? fileHas) =>
+      (super.noSuchMethod(
+            Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+            returnValue: _FakeSong_1(
+              this,
+              Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+            ),
+            returnValueForMissingStub: _FakeSong_1(
+              this,
+              Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+            ),
+          )
+          as _i3.Song);
+
+  @override
   _i3.Song getSong(int? id) =>
       (super.noSuchMethod(
             Invocation.method(#getSong, [id]),
@@ -385,11 +417,11 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
   );
 }
 
-/// A class which mocks [PlaylistRestService].
+/// A class which mocks [PlaylistRestClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockPlaylistRestService extends _i1.Mock
-    implements _i10.PlaylistRestService {
+class MockPlaylistRestClient extends _i1.Mock
+    implements _i10.PlaylistRestClient {
   @override
   String get baseUrl =>
       (super.noSuchMethod(
@@ -464,7 +496,7 @@ class MockPlaylistRestService extends _i1.Mock
           as _i8.Future<_i5.PlaylistPageDto>);
 
   @override
-  _i8.Future<Map<String, dynamic>?> createPlaylist(
+  _i8.Future<_i12.PlaylistDetailDto?> createPlaylist(
     String? name,
     List<String>? songFileHashes,
     String? coverBase64,
@@ -475,11 +507,11 @@ class MockPlaylistRestService extends _i1.Mock
               songFileHashes,
               coverBase64,
             ]),
-            returnValue: _i8.Future<Map<String, dynamic>?>.value(),
+            returnValue: _i8.Future<_i12.PlaylistDetailDto?>.value(),
             returnValueForMissingStub:
-                _i8.Future<Map<String, dynamic>?>.value(),
+                _i8.Future<_i12.PlaylistDetailDto?>.value(),
           )
-          as _i8.Future<Map<String, dynamic>?>);
+          as _i8.Future<_i12.PlaylistDetailDto?>);
 
   @override
   _i8.Future<bool> updatePlaylist(
@@ -510,15 +542,6 @@ class MockPlaylistRestService extends _i1.Mock
           as _i8.Future<bool>);
 
   @override
-  _i8.Future<_i12.Uint8List?> getPlaylistCover(int? playlistId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getPlaylistCover, [playlistId]),
-            returnValue: _i8.Future<_i12.Uint8List?>.value(),
-            returnValueForMissingStub: _i8.Future<_i12.Uint8List?>.value(),
-          )
-          as _i8.Future<_i12.Uint8List?>);
-
-  @override
   _i8.Future<_i6.Response> post(String? endpoint, Map<String, dynamic>? body) =>
       (super.noSuchMethod(
             Invocation.method(#post, [endpoint, body]),
@@ -532,14 +555,23 @@ class MockPlaylistRestService extends _i1.Mock
           as _i8.Future<_i6.Response>);
 
   @override
-  _i8.Future<_i6.Response> get(String? endpoint) =>
+  _i8.Future<_i6.Response> get(
+    String? endpoint, {
+    Map<String, String>? headers = const {'Content-Type': 'application/json'},
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#get, [endpoint]),
+            Invocation.method(#get, [endpoint], {#headers: headers}),
             returnValue: _i8.Future<_i6.Response>.value(
-              _FakeResponse_4(this, Invocation.method(#get, [endpoint])),
+              _FakeResponse_4(
+                this,
+                Invocation.method(#get, [endpoint], {#headers: headers}),
+              ),
             ),
             returnValueForMissingStub: _i8.Future<_i6.Response>.value(
-              _FakeResponse_4(this, Invocation.method(#get, [endpoint])),
+              _FakeResponse_4(
+                this,
+                Invocation.method(#get, [endpoint], {#headers: headers}),
+              ),
             ),
           )
           as _i8.Future<_i6.Response>);

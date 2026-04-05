@@ -67,6 +67,17 @@ class InMemoryAlbumRepository implements AlbumRepository {
   }
 
   @override
+  Album getOrCreateAlbumByServerId(int serverId) {
+    Album? existingAlbum = getAlbumByServerId(serverId);
+    if (existingAlbum != null) {
+      return existingAlbum;
+    }
+    Album newAlbum = Album();
+    newAlbum.serverId = serverId;
+    return saveAlbum(newAlbum);
+  }
+
+  @override
   List<Album> getAlbums(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final list =
