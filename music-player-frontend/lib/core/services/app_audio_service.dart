@@ -44,6 +44,7 @@ class AppAudioService {
   int _currentIndex = 0;
   final Completer<void> _initDone = Completer<void>();
   Timer? _positionSaveTimer;
+  DateTime? _playStartTime;
 
   List<Song> _normalQueue = [];
   Playlist _queuePlaylist = Playlist();
@@ -96,6 +97,7 @@ class AppAudioService {
     debugPrint(
       '[AppAudioService] play() called: playing=${audioPlayer.playing}, state=${audioPlayer.processingState}',
     );
+    _playStartTime ??= DateTime.now();
     final future = audioPlayer.play();
     unawaited(_retryIfStuck());
     return future;
@@ -152,7 +154,10 @@ class AppAudioService {
     await _loadAndPlayIndex(_currentIndex);
   }
 
-  Future<void> pause() => audioPlayer.pause();
+  Future<void> pause() {
+    _finalizePlayDuration();
+    return audioPlayer.pause();
+  }
 
   Future<void> skipToNext() async {
     if (_normalQueue.isEmpty) return;
@@ -325,12 +330,14 @@ class AppAudioService {
       _currentIndex = (_currentIndex + 1) % _normalQueue.length;
     }
     await _loadAndPlayIndex(_currentIndex);
+    unawaited(songService.syncLibraryMetadata());
   }
 
   Future<void> _loadAndPlayIndex(int idx) async {
     debugPrint('[AppAudioService] _loadAndPlayIndex($idx) called');
     if (_normalQueue.isEmpty) return;
     await _initDone.future;
+    _finalizePlayDuration();
     _isSwitchingSong = true;
     final song = _normalQueue[idx];
     currentSong = song;
@@ -493,6 +500,9 @@ class AppAudioService {
   void _onSongStarted(Song song) {
     song.lastPlayed = DateTime.now();
     song.playCount += 1;
+    song.pendingPlayCountDelta += 1;
+    song.requiresSync = true;
+    _playStartTime = DateTime.now();
     songService.updateSong(song);
     playlistService.updateMostPlayedPlaylist();
     playlistService.updateRecentlyPlayedPlaylist();
@@ -507,6 +517,19 @@ class AppAudioService {
         ),
       );
     }
+  }
+
+  /// Accumulates elapsed playback time onto the current song and saves it.
+  /// Safe to call multiple times — resets [_playStartTime] each time.
+  void _finalizePlayDuration() {
+    if (_playStartTime == null) return;
+    final elapsed = DateTime.now().difference(_playStartTime!).inSeconds;
+    _playStartTime = null;
+    if (elapsed <= 0) return;
+    final song = currentSong;
+    if (song.fileHash.isEmpty && song.path.isEmpty) return;
+    song.pendingPlayDurationSeconds += elapsed;
+    songService.updateSong(song);
   }
 
   void updateSliderInSeconds(int seconds) {

@@ -8,6 +8,7 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
@@ -18,12 +19,14 @@ import 'song_service_test.mocks.dart';
   MockSpec<SongRestService>(),
   MockSpec<ArtistService>(),
   MockSpec<AlbumService>(),
+  MockSpec<DataSyncService>(),
 ])
 void main() {
   late MockSongRepository mockRepo;
   late MockSongRestService mockRestService;
   late MockArtistService mockArtistService;
   late MockAlbumService mockAlbumService;
+  late MockDataSyncService mockDataSyncService;
   late SongService service;
 
   Song makeSong({String fileHash = '', String name = 'Song', int id = 0}) {
@@ -39,11 +42,13 @@ void main() {
     mockRestService = MockSongRestService();
     mockArtistService = MockArtistService();
     mockAlbumService = MockAlbumService();
+    mockDataSyncService = MockDataSyncService();
     service = SongService(
       mockRepo,
       mockRestService,
       mockArtistService,
       mockAlbumService,
+      mockDataSyncService,
     );
   });
 
@@ -243,8 +248,11 @@ void main() {
       final song = makeSong(fileHash: 'hash5');
       when(mockRepo.getSongByFileHash('hash5')).thenReturn(song);
 
-      final result =
-          await service.getSong('', preferServer: true, fileHash: 'hash5');
+      final result = await service.getSong(
+        '',
+        preferServer: true,
+        fileHash: 'hash5',
+      );
 
       expect(result, same(song));
       verifyNever(mockRestService.getServerSong(any));
@@ -253,8 +261,9 @@ void main() {
     test('fetches from server and returns cached result', () async {
       final serverSong = makeSong(fileHash: 'hash7');
       when(mockRepo.getSongByFileHash('hash7')).thenReturn(null);
-      when(mockRestService.getServerSong('hash7'))
-          .thenAnswer((_) async => serverSong);
+      when(
+        mockRestService.getServerSong('hash7'),
+      ).thenAnswer((_) async => serverSong);
       when(mockRepo.saveSong(any)).thenReturn(serverSong);
 
       // After caching, the second getSongByFileHash call returns the song
@@ -264,19 +273,26 @@ void main() {
         return callCount > 1 ? serverSong : null;
       });
 
-      final result =
-          await service.getSong('', preferServer: true, fileHash: 'hash7');
+      final result = await service.getSong(
+        '',
+        preferServer: true,
+        fileHash: 'hash7',
+      );
 
       expect(result, same(serverSong));
     });
 
     test('returns null when server fetch throws', () async {
       when(mockRepo.getSongByFileHash(any)).thenReturn(null);
-      when(mockRestService.getServerSong(any))
-          .thenThrow(Exception('server down'));
+      when(
+        mockRestService.getServerSong(any),
+      ).thenThrow(Exception('server down'));
 
-      final result =
-          await service.getSong('', preferServer: true, fileHash: 'hash3');
+      final result = await service.getSong(
+        '',
+        preferServer: true,
+        fileHash: 'hash3',
+      );
 
       expect(result, isNull);
     });
@@ -284,8 +300,7 @@ void main() {
 
   group('getSong — local path', () {
     test('throws ArgumentError for empty path', () async {
-      expect(
-          () async => await service.getSong(''), throwsArgumentError);
+      expect(() async => await service.getSong(''), throwsArgumentError);
     });
 
     test('returns song when found by path', () async {
@@ -319,15 +334,18 @@ void main() {
         totalPages: 1,
         totalElements: 1,
       );
-      when(mockRestService.getSongsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => serverPage);
+      when(
+        mockRestService.getSongsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenAnswer((_) async => serverPage);
       when(mockRepo.getSongByFileHash(any)).thenReturn(null);
-      when(mockRepo.saveSong(any))
-          .thenAnswer((inv) => inv.positionalArguments[0] as Song);
+      when(
+        mockRepo.saveSong(any),
+      ).thenAnswer((inv) => inv.positionalArguments[0] as Song);
 
       final local = [makeSong()];
       when(mockRepo.getSongs(any, any, any)).thenReturn(local);
@@ -338,12 +356,14 @@ void main() {
     });
 
     test('returns local songs even when server throws', () async {
-      when(mockRestService.getSongsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenThrow(Exception('timeout'));
+      when(
+        mockRestService.getSongsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenThrow(Exception('timeout'));
       final local = [makeSong()];
       when(mockRepo.getSongs(any, any, any)).thenReturn(local);
 
@@ -360,8 +380,9 @@ void main() {
   group('addSongsBatch', () {
     test('calls saveSong for each song', () {
       final songs = [makeSong(id: 1), makeSong(id: 2)];
-      when(mockRepo.saveSong(any))
-          .thenAnswer((inv) => inv.positionalArguments[0] as Song);
+      when(
+        mockRepo.saveSong(any),
+      ).thenAnswer((inv) => inv.positionalArguments[0] as Song);
 
       service.addSongsBatch(songs);
 
@@ -419,8 +440,7 @@ void main() {
       final local = [makeSong()];
       when(mockRepo.getSongsPaged('', 'title', true, 20, 10)).thenReturn(local);
 
-      final result =
-          service.getSongsPagedLocal('', 'title', true, 2, 10);
+      final result = service.getSongsPagedLocal('', 'title', true, 2, 10);
 
       expect(result, equals(local));
       verify(mockRepo.getSongsPaged('', 'title', true, 20, 10)).called(1);
@@ -432,63 +452,78 @@ void main() {
   // ──────────────────────────────────────────────────────────────────────────
 
   group('searchSongsPageFromServer', () {
-    test('caches songs and returns refreshed list using local cached songs',
-        () async {
-      final serverSong = makeSong(fileHash: 'hash10', name: 'Hit');
-      final serverPage = SongPageDto(
-        content: [serverSong],
-        page: 0,
-        size: 50,
-        totalPages: 1,
-        totalElements: 1,
-      );
-      when(mockRestService.getSongsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => serverPage);
+    test(
+      'caches songs and returns refreshed list using local cached songs',
+      () async {
+        final serverSong = makeSong(fileHash: 'hash10', name: 'Hit');
+        final serverPage = SongPageDto(
+          content: [serverSong],
+          page: 0,
+          size: 50,
+          totalPages: 1,
+          totalElements: 1,
+        );
+        when(
+          mockRestService.getSongsPage(
+            query: anyNamed('query'),
+            page: anyNamed('page'),
+            size: anyNamed('size'),
+            sort: anyNamed('sort'),
+          ),
+        ).thenAnswer((_) async => serverPage);
 
-      final cachedSong = makeSong(fileHash: 'hash10', name: 'Hit Cached', id: 5);
-      when(mockRepo.saveSong(any)).thenReturn(serverSong);
+        final cachedSong = makeSong(
+          fileHash: 'hash10',
+          name: 'Hit Cached',
+          id: 5,
+        );
+        when(mockRepo.saveSong(any)).thenReturn(serverSong);
 
-      // After caching, return the cached song
-      var callCount = 0;
-      when(mockRepo.getSongByFileHash('hash10')).thenAnswer((_) {
-        callCount++;
-        return callCount > 1 ? cachedSong : null;
-      });
+        // After caching, return the cached song
+        var callCount = 0;
+        when(mockRepo.getSongByFileHash('hash10')).thenAnswer((_) {
+          callCount++;
+          return callCount > 1 ? cachedSong : null;
+        });
 
-      final result =
-          await service.searchSongsPageFromServer('hit', page: 0, size: 50);
+        final result = await service.searchSongsPageFromServer(
+          'hit',
+          page: 0,
+          size: 50,
+        );
 
-      expect(result.content.first, same(cachedSong));
-      expect(result.totalElements, 1);
-    });
+        expect(result.content.first, same(cachedSong));
+        expect(result.totalElements, 1);
+      },
+    );
 
-    test('returns server song directly when not in local cache after caching',
-        () async {
-      final serverSong = makeSong(fileHash: 'hash11', name: 'Uncached');
-      final serverPage = SongPageDto(
-        content: [serverSong],
-        page: 0,
-        size: 50,
-        totalPages: 1,
-        totalElements: 1,
-      );
-      when(mockRestService.getSongsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => serverPage);
-      when(mockRepo.getSongByFileHash(any)).thenReturn(null);
-      when(mockRepo.saveSong(any)).thenReturn(serverSong);
+    test(
+      'returns server song directly when not in local cache after caching',
+      () async {
+        final serverSong = makeSong(fileHash: 'hash11', name: 'Uncached');
+        final serverPage = SongPageDto(
+          content: [serverSong],
+          page: 0,
+          size: 50,
+          totalPages: 1,
+          totalElements: 1,
+        );
+        when(
+          mockRestService.getSongsPage(
+            query: anyNamed('query'),
+            page: anyNamed('page'),
+            size: anyNamed('size'),
+            sort: anyNamed('sort'),
+          ),
+        ).thenAnswer((_) async => serverPage);
+        when(mockRepo.getSongByFileHash(any)).thenReturn(null);
+        when(mockRepo.saveSong(any)).thenReturn(serverSong);
 
-      final result = await service.searchSongsPageFromServer('');
+        final result = await service.searchSongsPageFromServer('');
 
-      expect(result.content.first, same(serverSong));
-    });
+        expect(result.content.first, same(serverSong));
+      },
+    );
   });
 
   group('searchSongsFromServer', () {
@@ -501,12 +536,14 @@ void main() {
         totalPages: 1,
         totalElements: 1,
       );
-      when(mockRestService.getSongsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => serverPage);
+      when(
+        mockRestService.getSongsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenAnswer((_) async => serverPage);
       when(mockRepo.getSongByFileHash(any)).thenReturn(null);
       when(mockRepo.saveSong(any)).thenReturn(serverSong);
 
@@ -521,22 +558,25 @@ void main() {
   // ──────────────────────────────────────────────────────────────────────────
 
   group('refreshServerSongs / getServerSongs', () {
-    test('refreshServerSongs fetches, caches, and returns all local songs',
-        () async {
-      final serverSong = makeSong(fileHash: 'hash20');
-      when(mockRestService.getAllSongs())
-          .thenAnswer((_) async => [serverSong]);
-      when(mockRepo.getSongByFileHash(any)).thenReturn(null);
-      when(mockRepo.saveSong(any)).thenReturn(serverSong);
+    test(
+      'refreshServerSongs fetches, caches, and returns all local songs',
+      () async {
+        final serverSong = makeSong(fileHash: 'hash20');
+        when(
+          mockRestService.getAllSongs(),
+        ).thenAnswer((_) async => [serverSong]);
+        when(mockRepo.getSongByFileHash(any)).thenReturn(null);
+        when(mockRepo.saveSong(any)).thenReturn(serverSong);
 
-      final local = [makeSong(fileHash: 'hash20')];
-      when(mockRepo.getAllSongs()).thenReturn(local);
+        final local = [makeSong(fileHash: 'hash20')];
+        when(mockRepo.getAllSongs()).thenReturn(local);
 
-      final result = await service.refreshServerSongs();
+        final result = await service.refreshServerSongs();
 
-      expect(result, equals(local));
-      verify(mockRestService.getAllSongs()).called(1);
-    });
+        expect(result, equals(local));
+        verify(mockRestService.getAllSongs()).called(1);
+      },
+    );
 
     test('getServerSongs delegates to refreshServerSongs', () async {
       when(mockRestService.getAllSongs()).thenAnswer((_) async => []);
@@ -604,14 +644,20 @@ void main() {
         totalPages: 0,
         totalElements: 0,
       );
-      when(mockRestService.getSongsPage(
-        query: anyNamed('query'),
-        page: anyNamed('page'),
-        size: anyNamed('size'),
-        sort: anyNamed('sort'),
-      )).thenAnswer((_) async => serverPage);
-      when(mockRepo.getSongs(any, any, any)).thenReturn([makeSong(), makeSong()]);
-      when(mockRepo.getSongsPaged(any, any, any, any, any)).thenReturn([makeSong()]);
+      when(
+        mockRestService.getSongsPage(
+          query: anyNamed('query'),
+          page: anyNamed('page'),
+          size: anyNamed('size'),
+          sort: anyNamed('sort'),
+        ),
+      ).thenAnswer((_) async => serverPage);
+      when(
+        mockRepo.getSongs(any, any, any),
+      ).thenReturn([makeSong(), makeSong()]);
+      when(
+        mockRepo.getSongsPaged(any, any, any, any, any),
+      ).thenReturn([makeSong()]);
 
       final result = await service.getSongsPage('', 'title', true, 0, 20);
 

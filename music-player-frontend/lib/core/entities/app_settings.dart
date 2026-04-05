@@ -15,6 +15,18 @@ class AppSettings {
   List<String> songPlaces = [];
   List<int> songPlaceIncludeSubfolders = [];
 
+  // 0 = WiFi only, 1 = Cellular only, 2 = WiFi + Cellular (default)
+  int peerNetworkMode = 2;
+  // Data limit in GB; -1 = unlimited (min 1 when set)
+  int peerWifiDataLimitGB = -1;
+  int peerCellularDataLimitGB = -1;
+
+  // Monthly P2P upload tracking (bytes uploaded to peers this month)
+  int peerWifiUploadedBytesThisMonth = 0;
+  int peerCellularUploadedBytesThisMonth = 0;
+  // yyyyMM of the last reset, e.g. 202604
+  int peerUploadResetMonth = 0;
+
   AppSettings();
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -31,6 +43,12 @@ class AppSettings {
             ?.map((e) => int.tryParse(e.toString()) ?? 0)
             .toList() ??
         [];
+    appSettings.peerNetworkMode = (json['peerNetworkMode'] as int?) ?? 2;
+    appSettings.peerWifiDataLimitGB = (json['peerWifiDataLimitGB'] as int?) ?? -1;
+    appSettings.peerCellularDataLimitGB = (json['peerCellularDataLimitGB'] as int?) ?? -1;
+    appSettings.peerWifiUploadedBytesThisMonth = (json['peerWifiUploadedBytesThisMonth'] as int?) ?? 0;
+    appSettings.peerCellularUploadedBytesThisMonth = (json['peerCellularUploadedBytesThisMonth'] as int?) ?? 0;
+    appSettings.peerUploadResetMonth = (json['peerUploadResetMonth'] as int?) ?? 0;
     return appSettings;
   }
 
@@ -42,5 +60,11 @@ class AppSettings {
     'mainSongPlace': mainSongPlace,
     'songPlaces': songPlaces,
     'songPlaceIncludeSubfolders': songPlaceIncludeSubfolders,
+    'peerNetworkMode': peerNetworkMode,
+    'peerWifiDataLimitGB': peerWifiDataLimitGB,
+    'peerCellularDataLimitGB': peerCellularDataLimitGB,
+    'peerWifiUploadedBytesThisMonth': peerWifiUploadedBytesThisMonth,
+    'peerCellularUploadedBytesThisMonth': peerCellularUploadedBytesThisMonth,
+    'peerUploadResetMonth': peerUploadResetMonth,
   };
 }

@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audio_service_win
   bitsdojo_window_windows
+  connectivity_plus
   desktop_drop
   file_saver
   flutter_secure_storage_windows

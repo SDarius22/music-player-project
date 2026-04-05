@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart' as platform_service;
@@ -25,9 +26,9 @@ import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
+import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
-import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/album_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/artist_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
@@ -211,6 +212,7 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<SongRestService>(),
               context.read<ArtistService>(),
               context.read<AlbumService>(),
+              context.read<DataSyncService>(),
             ),
       ),
 
@@ -296,18 +298,21 @@ abstract class AbstractApp extends StatelessWidget {
             context.read<AppAudioService>(),
             context.read<AbstractFileService>(),
           );
-          try {
-            platform_service.AudioService.init(
-              builder: () => audioProvider,
-              config: const platform_service.AudioServiceConfig(
-                androidNotificationChannelId: 'com.example.musicplayer',
-                androidNotificationChannelName: 'Music Player',
-                androidNotificationOngoing: true,
-              ),
-            );
-          } catch (e) {
-            debugPrint('Error initializing AudioProvider: $e');
-          }
+          unawaited(() async {
+            try {
+              await platform_service.AudioService.init(
+                builder: () => audioProvider,
+                config: platform_service.AudioServiceConfig(
+                  androidNotificationChannelId: 'com.example.musicplayer',
+                  androidNotificationChannelName: 'Music Player',
+                  androidNotificationOngoing: true,
+                  androidStopForegroundOnPause: false,
+                ),
+              );
+            } catch (e) {
+              debugPrint('AudioService.init error: $e');
+            }
+          }());
           return audioProvider;
         },
       ),
@@ -351,6 +356,7 @@ abstract class AbstractApp extends StatelessWidget {
       myDeviceId: _deviceId,
       authService: context.read<AuthService>(),
       signalingSocket: socket,
+      settingsService: context.read<SettingsService>(),
       onChunkReceived: router.routeChunk,
       onChunkRequested: router.getLocalChunk,
       onSyncTrigger: context.read<SongService>().runSync,

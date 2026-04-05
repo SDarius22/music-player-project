@@ -17,6 +17,8 @@ import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart'
 import 'package:music_player_frontend/core/dtos/negotiation_response_dto.dart'
     as _i14;
 import 'package:music_player_frontend/core/dtos/song_page_dto.dart' as _i4;
+import 'package:music_player_frontend/core/dtos/song_sync_dto.dart' as _i22;
+import 'package:music_player_frontend/core/dtos/sync_response_dto.dart' as _i21;
 import 'package:music_player_frontend/core/entities/album.dart' as _i8;
 import 'package:music_player_frontend/core/entities/artist.dart' as _i6;
 import 'package:music_player_frontend/core/entities/song.dart' as _i2;
@@ -27,6 +29,8 @@ import 'package:music_player_frontend/core/services/artist_service.dart'
     as _i18;
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart'
     as _i3;
+import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart'
+    as _i20;
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart'
     as _i12;
 
@@ -958,4 +962,201 @@ class MockAlbumService extends _i1.Mock implements _i19.AlbumService {
             ),
           )
           as _i8.Album);
+}
+
+/// A class which mocks [DataSyncService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockDataSyncService extends _i1.Mock implements _i20.DataSyncService {
+  @override
+  String get baseUrl =>
+      (super.noSuchMethod(
+            Invocation.getter(#baseUrl),
+            returnValue: _i13.dummyValue<String>(
+              this,
+              Invocation.getter(#baseUrl),
+            ),
+            returnValueForMissingStub: _i13.dummyValue<String>(
+              this,
+              Invocation.getter(#baseUrl),
+            ),
+          )
+          as String);
+
+  @override
+  _i3.AuthService get authService =>
+      (super.noSuchMethod(
+            Invocation.getter(#authService),
+            returnValue: _FakeAuthService_1(
+              this,
+              Invocation.getter(#authService),
+            ),
+            returnValueForMissingStub: _FakeAuthService_1(
+              this,
+              Invocation.getter(#authService),
+            ),
+          )
+          as _i3.AuthService);
+
+  @override
+  set baseUrl(String? value) => super.noSuchMethod(
+    Invocation.setter(#baseUrl, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  set authService(_i3.AuthService? value) => super.noSuchMethod(
+    Invocation.setter(#authService, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i11.Future<_i21.SyncResponseDto?> syncUserLibrary({
+    required DateTime? lastSyncTime,
+    required List<_i22.SongSyncDto>? localChanges,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#syncUserLibrary, [], {
+              #lastSyncTime: lastSyncTime,
+              #localChanges: localChanges,
+            }),
+            returnValue: _i11.Future<_i21.SyncResponseDto?>.value(),
+            returnValueForMissingStub:
+                _i11.Future<_i21.SyncResponseDto?>.value(),
+          )
+          as _i11.Future<_i21.SyncResponseDto?>);
+
+  @override
+  _i11.Future<_i5.Response> post(
+    String? endpoint,
+    Map<String, dynamic>? body,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#post, [endpoint, body]),
+            returnValue: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(this, Invocation.method(#post, [endpoint, body])),
+            ),
+            returnValueForMissingStub: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(this, Invocation.method(#post, [endpoint, body])),
+            ),
+          )
+          as _i11.Future<_i5.Response>);
+
+  @override
+  _i11.Future<_i5.Response> get(String? endpoint) =>
+      (super.noSuchMethod(
+            Invocation.method(#get, [endpoint]),
+            returnValue: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(this, Invocation.method(#get, [endpoint])),
+            ),
+            returnValueForMissingStub: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(this, Invocation.method(#get, [endpoint])),
+            ),
+          )
+          as _i11.Future<_i5.Response>);
+
+  @override
+  _i11.Future<_i5.Response> put(String? endpoint, Map<String, dynamic>? body) =>
+      (super.noSuchMethod(
+            Invocation.method(#put, [endpoint, body]),
+            returnValue: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(this, Invocation.method(#put, [endpoint, body])),
+            ),
+            returnValueForMissingStub: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(this, Invocation.method(#put, [endpoint, body])),
+            ),
+          )
+          as _i11.Future<_i5.Response>);
+
+  @override
+  _i11.Future<_i5.Response> delete(String? endpoint) =>
+      (super.noSuchMethod(
+            Invocation.method(#delete, [endpoint]),
+            returnValue: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(this, Invocation.method(#delete, [endpoint])),
+            ),
+            returnValueForMissingStub: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(this, Invocation.method(#delete, [endpoint])),
+            ),
+          )
+          as _i11.Future<_i5.Response>);
+
+  @override
+  _i11.Future<_i5.Response> multipartRequest(
+    String? method,
+    String? endpoint, {
+    Map<String, String>? fields,
+    List<_i5.MultipartFile>? files,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #multipartRequest,
+              [method, endpoint],
+              {#fields: fields, #files: files},
+            ),
+            returnValue: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(
+                this,
+                Invocation.method(
+                  #multipartRequest,
+                  [method, endpoint],
+                  {#fields: fields, #files: files},
+                ),
+              ),
+            ),
+            returnValueForMissingStub: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(
+                this,
+                Invocation.method(
+                  #multipartRequest,
+                  [method, endpoint],
+                  {#fields: fields, #files: files},
+                ),
+              ),
+            ),
+          )
+          as _i11.Future<_i5.Response>);
+
+  @override
+  _i11.Future<_i5.Response> multipartRequestWithProgress(
+    String? method,
+    String? endpoint,
+    _i17.File? file,
+    Map<String, String>? fields,
+    void Function(int, int)? onProgress,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#multipartRequestWithProgress, [
+              method,
+              endpoint,
+              file,
+              fields,
+              onProgress,
+            ]),
+            returnValue: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(
+                this,
+                Invocation.method(#multipartRequestWithProgress, [
+                  method,
+                  endpoint,
+                  file,
+                  fields,
+                  onProgress,
+                ]),
+              ),
+            ),
+            returnValueForMissingStub: _i11.Future<_i5.Response>.value(
+              _FakeResponse_3(
+                this,
+                Invocation.method(#multipartRequestWithProgress, [
+                  method,
+                  endpoint,
+                  file,
+                  fields,
+                  onProgress,
+                ]),
+              ),
+            ),
+          )
+          as _i11.Future<_i5.Response>);
 }

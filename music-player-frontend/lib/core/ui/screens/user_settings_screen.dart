@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
@@ -24,7 +25,14 @@ class UserSettingsScreen extends StatefulWidget {
 }
 
 class _UserSettingsScreenState extends State<UserSettingsScreen> {
-  String dropDownValue = "Off";
+  static const _networkModeLabels = ['WiFi only', 'Cellular only', 'WiFi + Cellular'];
+
+  void _saveSettings(BuildContext context) {
+    context.read<AbstractAppStateProvider>().updateAppSettings();
+  }
+
+  AppSettings _settings(BuildContext context) =>
+      context.read<AbstractAppStateProvider>().appSettings;
 
   List<Map<String, Widget>> get settingsMap {
     var height = MediaQuery.of(context).size.height;
@@ -124,6 +132,188 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
           ),
         ),
       },
+
+      // Peer Network Mode
+      {
+        "title": Text(
+          "Peer Network",
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+            fontWeight: FontWeight.normal,
+            color: Colors.white,
+          ),
+        ),
+        "subtitle": Text(
+          "Choose which connection types allow peer-to-peer streaming.",
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall!.copyWith(color: Colors.grey.shade300),
+        ),
+        "trailing": Consumer<AbstractAppStateProvider>(
+          builder: (context, appState, _) {
+            return DropdownButton<int>(
+              value: appState.appSettings.peerNetworkMode,
+              dropdownColor: Colors.black87,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                color: Colors.white,
+              ),
+              underline: const SizedBox.shrink(),
+              items: List.generate(
+                _networkModeLabels.length,
+                (i) => DropdownMenuItem(
+                  value: i,
+                  child: Text(_networkModeLabels[i]),
+                ),
+              ),
+              onChanged: (v) {
+                if (v == null) return;
+                appState.appSettings.peerNetworkMode = v;
+                _saveSettings(context);
+              },
+            );
+          },
+        ),
+      },
+
+      // WiFi data limit (visible when WiFi is included: modes 0 and 2)
+      ...() {
+        final mode = _settings(context).peerNetworkMode;
+        if (mode != 0 && mode != 2) return <Map<String, Widget>>[];
+        return [
+          {
+            "title": Text(
+              "WiFi Data Limit",
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                fontWeight: FontWeight.normal,
+                color: Colors.white,
+              ),
+            ),
+            "subtitle": Consumer<AbstractAppStateProvider>(
+              builder: (context, appState, _) {
+                final limit = appState.appSettings.peerWifiDataLimitGB;
+                return Text(
+                  limit == -1 ? "Unlimited" : "$limit GB",
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall!
+                      .copyWith(color: Colors.grey.shade300),
+                );
+              },
+            ),
+            "trailing": Consumer<AbstractAppStateProvider>(
+              builder: (context, appState, _) {
+                final raw = appState.appSettings.peerWifiDataLimitGB;
+                // Slider value: 0 = unlimited, 1–20 = 1–20 GB
+                final sliderVal = raw == -1 ? 0.0 : raw.clamp(1, 20).toDouble();
+                return SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.15,
+                  child: SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 2,
+                      thumbColor: Colors.white,
+                      thumbShape: RoundSliderThumbShape(
+                        enabledThumbRadius: height * 0.0075,
+                      ),
+                      showValueIndicator: ShowValueIndicator.onDrag,
+                      activeTrackColor: MusicPlayerTheme.gradientViolet,
+                      inactiveTrackColor: Colors.white,
+                      valueIndicatorColor: Colors.white,
+                      valueIndicatorTextStyle: Theme.of(context)
+                          .textTheme
+                          .bodySmall!
+                          .copyWith(color: Colors.black),
+                      valueIndicatorShape:
+                          const PaddleSliderValueIndicatorShape(),
+                    ),
+                    child: Slider(
+                      min: 0,
+                      max: 20,
+                      divisions: 20,
+                      value: sliderVal,
+                      label: sliderVal == 0 ? "Unlimited" : "${sliderVal.toInt()} GB",
+                      onChanged: (v) {
+                        appState.appSettings.peerWifiDataLimitGB =
+                            v == 0 ? -1 : v.toInt();
+                        _saveSettings(context);
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          },
+        ];
+      }(),
+
+      // Cellular data limit (visible when cellular is included: modes 1 and 2)
+      ...() {
+        final mode = _settings(context).peerNetworkMode;
+        if (mode != 1 && mode != 2) return <Map<String, Widget>>[];
+        return [
+          {
+            "title": Text(
+              "Cellular Data Limit",
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                fontWeight: FontWeight.normal,
+                color: Colors.white,
+              ),
+            ),
+            "subtitle": Consumer<AbstractAppStateProvider>(
+              builder: (context, appState, _) {
+                final limit = appState.appSettings.peerCellularDataLimitGB;
+                return Text(
+                  limit == -1 ? "Unlimited" : "$limit GB",
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall!
+                      .copyWith(color: Colors.grey.shade300),
+                );
+              },
+            ),
+            "trailing": Consumer<AbstractAppStateProvider>(
+              builder: (context, appState, _) {
+                // Cellular limit must be at least 1 GB; -1 = unlimited,
+                // represented as slider position 0.
+                final raw = appState.appSettings.peerCellularDataLimitGB;
+                final sliderVal = raw == -1 ? 0.0 : raw.clamp(1, 20).toDouble();
+                return SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.15,
+                  child: SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 2,
+                      thumbColor: Colors.white,
+                      thumbShape: RoundSliderThumbShape(
+                        enabledThumbRadius: height * 0.0075,
+                      ),
+                      showValueIndicator: ShowValueIndicator.onDrag,
+                      activeTrackColor: MusicPlayerTheme.gradientViolet,
+                      inactiveTrackColor: Colors.white,
+                      valueIndicatorColor: Colors.white,
+                      valueIndicatorTextStyle: Theme.of(context)
+                          .textTheme
+                          .bodySmall!
+                          .copyWith(color: Colors.black),
+                      valueIndicatorShape:
+                          const PaddleSliderValueIndicatorShape(),
+                    ),
+                    child: Slider(
+                      min: 0,
+                      max: 20,
+                      divisions: 20,
+                      value: sliderVal,
+                      label: sliderVal == 0 ? "Unlimited" : "${sliderVal.toInt()} GB",
+                      onChanged: (v) {
+                        appState.appSettings.peerCellularDataLimitGB =
+                            v == 0 ? -1 : v.toInt();
+                        _saveSettings(context);
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          },
+        ];
+      }(),
     ];
   }
 

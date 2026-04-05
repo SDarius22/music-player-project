@@ -1,15 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:music_player_frontend/core/services/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/services/settings_service.dart';
+import 'package:universal_platform/universal_platform.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebRTCService {
   final String myDeviceId;
   final AuthService authService;
   final WebSocketChannel signalingSocket;
+  final SettingsService? settingsService;
   final Function(String fileHash, int chunkIndex, Uint8List data)
   onChunkReceived;
   final Future<Uint8List?> Function(String fileHash, int chunkIndex)
@@ -25,6 +29,8 @@ class WebRTCService {
   final Map<String, List<({String fileHash, int chunkIndex})>>
   _pendingChunkRequests = {};
 
+  Timer? _keepaliveTimer;
+
   final Map<String, dynamic> _iceServers = {
     'iceServers': [
       {'urls': 'stun:stun.l.google.com:19302'},
@@ -38,9 +44,45 @@ class WebRTCService {
     required this.signalingSocket,
     required this.onChunkReceived,
     required this.onChunkRequested,
+    this.settingsService,
     this.onSyncTrigger,
   }) {
     _listenToSignaling();
+    _startKeepalive();
+  }
+
+  void _startKeepalive() {
+    _keepaliveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      try {
+        signalingSocket.sink.add(
+          jsonEncode({
+            'type': 'PING',
+            'senderId': myDeviceId,
+            'userId': authService.userId,
+          }),
+        );
+      } catch (_) {
+        // Socket may have closed — ignore until dispose is called.
+      }
+    });
+  }
+
+  Future<bool> _isP2PAllowed() async {
+    if (UniversalPlatform.isDesktop || kIsWeb) return true;
+
+    final settings = settingsService?.getAppSettings();
+    if (settings == null) return true;
+
+    final mode = settings.peerNetworkMode; // 0=WiFi, 1=Cellular, 2=Both
+    if (mode == 2) return true;
+
+    final results = await Connectivity().checkConnectivity();
+    final hasWifi = results.contains(ConnectivityResult.wifi);
+    final hasMobile = results.contains(ConnectivityResult.mobile);
+
+    if (mode == 0) return hasWifi;
+    if (mode == 1) return hasMobile;
+    return true;
   }
 
   bool get isConnected => _dataChannels.isNotEmpty;
@@ -80,8 +122,12 @@ class WebRTCService {
     }
   }
 
-  void registerCache(String fileHash, List<int> chunkIndices) {
+  Future<void> registerCache(String fileHash, List<int> chunkIndices) async {
     if (!authService.isLoggedIn) return;
+    if (!await _isP2PAllowed()) {
+      debugPrint('[P2P] registerCache blocked by network mode preference');
+      return;
+    }
     debugPrint(
       '[P2P] Registering cache with server — song=$fileHash chunks=${chunkIndices.length}',
     );
@@ -97,8 +143,12 @@ class WebRTCService {
     );
   }
 
-  void discoverPeers(String fileHash) {
+  Future<void> discoverPeers(String fileHash) async {
     if (!authService.isLoggedIn) return;
+    if (!await _isP2PAllowed()) {
+      debugPrint('[P2P] discoverPeers blocked by network mode preference');
+      return;
+    }
 
     signalingSocket.sink.add(
       jsonEncode({
@@ -234,34 +284,87 @@ class WebRTCService {
         if (chunkIndex != null) {
           final data = await onChunkRequested(fileHash, chunkIndex);
           if (data != null) {
-            _sendChunkToPeer(remotePeerId, fileHash, chunkIndex, data);
+            await _sendChunkToPeer(remotePeerId, fileHash, chunkIndex, data);
           }
         }
       }
     }
   }
 
-  void _sendChunkToPeer(
+  Future<void> _sendChunkToPeer(
     String targetPeerId,
     String fileHash,
     int chunkIndex,
     Uint8List data,
-  ) {
+  ) async {
     final channel = _dataChannels[targetPeerId];
-    if (channel != null &&
-        channel.state == RTCDataChannelState.RTCDataChannelOpen) {
-      // Header: 64-byte ASCII fileHash + 4-byte uint32 chunkIndex
-      final hashBytes = Uint8List.fromList(fileHash.codeUnits);
-      final header = ByteData(4);
-      header.setUint32(0, chunkIndex, Endian.big);
-
-      final packet = Uint8List(68 + data.length);
-      packet.setAll(0, hashBytes);
-      packet.setAll(64, header.buffer.asUint8List());
-      packet.setAll(68, data);
-
-      channel.send(RTCDataChannelMessage.fromBinary(packet));
+    if (channel == null ||
+        channel.state != RTCDataChannelState.RTCDataChannelOpen) {
+      return;
     }
+
+    if (!await _checkAndRecordUpload(data.length)) {
+      debugPrint(
+        '[P2P] Chunk upload blocked — monthly data limit reached',
+      );
+      return;
+    }
+
+    // Header: 64-byte ASCII fileHash + 4-byte uint32 chunkIndex
+    final hashBytes = Uint8List.fromList(fileHash.codeUnits);
+    final header = ByteData(4);
+    header.setUint32(0, chunkIndex, Endian.big);
+
+    final packet = Uint8List(68 + data.length);
+    packet.setAll(0, hashBytes);
+    packet.setAll(64, header.buffer.asUint8List());
+    packet.setAll(68, data);
+
+    channel.send(RTCDataChannelMessage.fromBinary(packet));
+  }
+
+  /// Returns true if the upload is allowed, and records the bytes used.
+  /// Returns false if the monthly limit has been reached.
+  Future<bool> _checkAndRecordUpload(int bytes) async {
+    if (UniversalPlatform.isDesktop || kIsWeb) return true;
+
+    final service = settingsService;
+    if (service == null) return true;
+
+    final settings = service.getAppSettings();
+
+    // Reset counters if the month has rolled over.
+    final now = DateTime.now();
+    final currentMonth = now.year * 100 + now.month;
+    if (settings.peerUploadResetMonth != currentMonth) {
+      settings.peerWifiUploadedBytesThisMonth = 0;
+      settings.peerCellularUploadedBytesThisMonth = 0;
+      settings.peerUploadResetMonth = currentMonth;
+    }
+
+    final results = await Connectivity().checkConnectivity();
+    final isWifi = results.contains(ConnectivityResult.wifi);
+    final isMobile = results.contains(ConnectivityResult.mobile);
+
+    if (isWifi) {
+      final limitBytes = settings.peerWifiDataLimitGB * 1024 * 1024 * 1024;
+      if (settings.peerWifiDataLimitGB != -1 &&
+          settings.peerWifiUploadedBytesThisMonth + bytes > limitBytes) {
+        return false;
+      }
+      settings.peerWifiUploadedBytesThisMonth += bytes;
+    } else if (isMobile) {
+      final limitBytes =
+          settings.peerCellularDataLimitGB * 1024 * 1024 * 1024;
+      if (settings.peerCellularDataLimitGB != -1 &&
+          settings.peerCellularUploadedBytesThisMonth + bytes > limitBytes) {
+        return false;
+      }
+      settings.peerCellularUploadedBytesThisMonth += bytes;
+    }
+
+    service.updateAppSettings(settings);
+    return true;
   }
 
   void _sendSignal({
@@ -380,6 +483,7 @@ class WebRTCService {
   }
 
   void dispose() {
+    _keepaliveTimer?.cancel();
     for (var element in _dataChannels.values) {
       element.close();
     }

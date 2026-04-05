@@ -55,7 +55,7 @@
     },
     {
       "id": "2:5636332516459031152",
-      "lastPropertyId": "10:5824882614796350963",
+      "lastPropertyId": "16:21833390866547921",
       "name": "AppSettings",
       "properties": [
         {
@@ -98,6 +98,36 @@
           "id": "10:5824882614796350963",
           "name": "drawerOpen",
           "type": 1
+        },
+        {
+          "id": "11:4258273659752079484",
+          "name": "peerNetworkMode",
+          "type": 6
+        },
+        {
+          "id": "12:1151355273231320830",
+          "name": "peerWifiDataLimitGB",
+          "type": 6
+        },
+        {
+          "id": "13:4994523449491059233",
+          "name": "peerCellularDataLimitGB",
+          "type": 6
+        },
+        {
+          "id": "14:1673822122466229522",
+          "name": "peerWifiUploadedBytesThisMonth",
+          "type": 6
+        },
+        {
+          "id": "15:6328768364523248861",
+          "name": "peerCellularUploadedBytesThisMonth",
+          "type": 6
+        },
+        {
+          "id": "16:21833390866547921",
+          "name": "peerUploadResetMonth",
+          "type": 6
         }
       ],
       "relations": []
@@ -247,7 +277,7 @@
     },
     {
       "id": "6:5328859898643810358",
-      "lastPropertyId": "26:1024957334078684974",
+      "lastPropertyId": "28:5586295309400875881",
       "name": "Song",
       "properties": [
         {
@@ -333,6 +363,16 @@
           "indexId": "20:3494203868611330631",
           "type": 9,
           "flags": 2048
+        },
+        {
+          "id": "27:1880970681925066010",
+          "name": "pendingPlayCountDelta",
+          "type": 6
+        },
+        {
+          "id": "28:5586295309400875881",
+          "name": "pendingPlayDurationSeconds",
+          "type": 6
         }
       ],
       "relations": []

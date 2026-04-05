@@ -83,7 +83,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(2, 5636332516459031152),
     name: 'AppSettings',
-    lastPropertyId: const obx_int.IdUid(10, 5824882614796350963),
+    lastPropertyId: const obx_int.IdUid(16, 21833390866547921),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -132,6 +132,42 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(10, 5824882614796350963),
         name: 'drawerOpen',
         type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 4258273659752079484),
+        name: 'peerNetworkMode',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 1151355273231320830),
+        name: 'peerWifiDataLimitGB',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 4994523449491059233),
+        name: 'peerCellularDataLimitGB',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 1673822122466229522),
+        name: 'peerWifiUploadedBytesThisMonth',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 6328768364523248861),
+        name: 'peerCellularUploadedBytesThisMonth',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 21833390866547921),
+        name: 'peerUploadResetMonth',
+        type: 6,
         flags: 0,
       ),
     ],
@@ -311,7 +347,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(6, 5328859898643810358),
     name: 'Song',
-    lastPropertyId: const obx_int.IdUid(26, 1024957334078684974),
+    lastPropertyId: const obx_int.IdUid(28, 5586295309400875881),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -410,6 +446,18 @@ final _entities = <obx_int.ModelEntity>[
         type: 9,
         flags: 2048,
         indexId: const obx_int.IdUid(20, 3494203868611330631),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(27, 1880970681925066010),
+        name: 'pendingPlayCountDelta',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(28, 5586295309400875881),
+        name: 'pendingPlayDurationSeconds',
+        type: 6,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -643,7 +691,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final songPlaceIncludeSubfoldersOffset = fbb.writeListInt64(
           object.songPlaceIncludeSubfolders,
         );
-        fbb.startTable(11);
+        fbb.startTable(17);
         fbb.addInt64(0, object.id);
         fbb.addBool(3, object.firstTime);
         fbb.addBool(4, object.systemTray);
@@ -652,6 +700,12 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(7, songPlacesOffset);
         fbb.addOffset(8, songPlaceIncludeSubfoldersOffset);
         fbb.addBool(9, object.drawerOpen);
+        fbb.addInt64(10, object.peerNetworkMode);
+        fbb.addInt64(11, object.peerWifiDataLimitGB);
+        fbb.addInt64(12, object.peerCellularDataLimitGB);
+        fbb.addInt64(13, object.peerWifiUploadedBytesThisMonth);
+        fbb.addInt64(14, object.peerCellularUploadedBytesThisMonth);
+        fbb.addInt64(15, object.peerUploadResetMonth);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -695,6 +749,38 @@ obx_int.ModelDefinition getObjectBoxModel() {
             rootOffset,
             22,
             false,
+          )
+          ..peerNetworkMode = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            24,
+            0,
+          )
+          ..peerWifiDataLimitGB = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            26,
+            0,
+          )
+          ..peerCellularDataLimitGB = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            28,
+            0,
+          )
+          ..peerWifiUploadedBytesThisMonth = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            30,
+            0,
+          )
+          ..peerCellularUploadedBytesThisMonth = const fb.Int64Reader()
+              .vTableGet(buffer, rootOffset, 32, 0)
+          ..peerUploadResetMonth = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            34,
+            0,
           );
 
         return object;
@@ -923,7 +1009,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final pathOffset = fbb.writeString(object.path);
         final nameOffset = fbb.writeString(object.name);
         final fileHashOffset = fbb.writeString(object.fileHash);
-        fbb.startTable(27);
+        fbb.startTable(29);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, pathOffset);
         fbb.addInt64(8, object.trackNumber);
@@ -944,6 +1030,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(21, object.playCount);
         fbb.addBool(23, object.requiresSync);
         fbb.addOffset(25, fileHashOffset);
+        fbb.addInt64(26, object.pendingPlayCountDelta);
+        fbb.addInt64(27, object.pendingPlayDurationSeconds);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -1013,7 +1101,19 @@ obx_int.ModelDefinition getObjectBoxModel() {
           )
           ..fileHash = const fb.StringReader(
             asciiOptimization: true,
-          ).vTableGet(buffer, rootOffset, 54, '');
+          ).vTableGet(buffer, rootOffset, 54, '')
+          ..pendingPlayCountDelta = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            56,
+            0,
+          )
+          ..pendingPlayDurationSeconds = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            58,
+            0,
+          );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1111,6 +1211,34 @@ class AppSettings_ {
   /// See [AppSettings.drawerOpen].
   static final drawerOpen = obx.QueryBooleanProperty<AppSettings>(
     _entities[1].properties[7],
+  );
+
+  /// See [AppSettings.peerNetworkMode].
+  static final peerNetworkMode = obx.QueryIntegerProperty<AppSettings>(
+    _entities[1].properties[8],
+  );
+
+  /// See [AppSettings.peerWifiDataLimitGB].
+  static final peerWifiDataLimitGB = obx.QueryIntegerProperty<AppSettings>(
+    _entities[1].properties[9],
+  );
+
+  /// See [AppSettings.peerCellularDataLimitGB].
+  static final peerCellularDataLimitGB = obx.QueryIntegerProperty<AppSettings>(
+    _entities[1].properties[10],
+  );
+
+  /// See [AppSettings.peerWifiUploadedBytesThisMonth].
+  static final peerWifiUploadedBytesThisMonth =
+      obx.QueryIntegerProperty<AppSettings>(_entities[1].properties[11]);
+
+  /// See [AppSettings.peerCellularUploadedBytesThisMonth].
+  static final peerCellularUploadedBytesThisMonth =
+      obx.QueryIntegerProperty<AppSettings>(_entities[1].properties[12]);
+
+  /// See [AppSettings.peerUploadResetMonth].
+  static final peerUploadResetMonth = obx.QueryIntegerProperty<AppSettings>(
+    _entities[1].properties[13],
   );
 }
 
@@ -1305,5 +1433,15 @@ class Song_ {
   /// See [Song.fileHash].
   static final fileHash = obx.QueryStringProperty<Song>(
     _entities[5].properties[14],
+  );
+
+  /// See [Song.pendingPlayCountDelta].
+  static final pendingPlayCountDelta = obx.QueryIntegerProperty<Song>(
+    _entities[5].properties[15],
+  );
+
+  /// See [Song.pendingPlayDurationSeconds].
+  static final pendingPlayDurationSeconds = obx.QueryIntegerProperty<Song>(
+    _entities[5].properties[16],
   );
 }

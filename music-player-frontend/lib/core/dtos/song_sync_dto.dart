@@ -5,6 +5,7 @@ class SongSyncDto {
   final bool isDeleted;
   final DateTime? lastPlayed;
   final DateTime? addedAt;
+  final int? totalPlayDurationSeconds;
 
   SongSyncDto({
     required this.fileHash,
@@ -13,6 +14,7 @@ class SongSyncDto {
     this.isDeleted = false,
     this.lastPlayed,
     this.addedAt,
+    this.totalPlayDurationSeconds,
   });
 
   Map<String, dynamic> toJson() => {
@@ -22,6 +24,7 @@ class SongSyncDto {
     'isDeleted': isDeleted,
     'lastPlayed': lastPlayed?.toIso8601String(),
     'addedAt': addedAt?.toIso8601String(),
+    'totalPlayDurationSeconds': totalPlayDurationSeconds,
   };
 
   factory SongSyncDto.fromJson(Map<String, dynamic> json) {
@@ -35,6 +38,7 @@ class SongSyncDto {
               ? DateTime.parse(json['lastPlayed'])
               : null,
       addedAt: json['addedAt'] != null ? DateTime.parse(json['addedAt']) : null,
+      totalPlayDurationSeconds: json['totalPlayDurationSeconds'] as int?,
     );
   }
 }

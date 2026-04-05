@@ -3,16 +3,17 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/song_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/song_sync_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
+import 'package:music_player_frontend/core/services/rest_clients/data_sync_rest_service.dart';
 import 'package:music_player_frontend/core/services/rest_clients/song_rest_service.dart';
 
 class SongService {
@@ -20,8 +21,11 @@ class SongService {
   final SongRestService _songRestService;
   final ArtistService _artistService;
   final AlbumService _albumService;
+  final DataSyncService _dataSyncService;
 
   bool _isSyncing = false;
+  bool _isLibraryMetadataSyncing = false;
+  DateTime? _lastLibrarySyncTime;
   static const int _chunkSize = 64 * 1024;
 
   SongService(
@@ -29,6 +33,7 @@ class SongService {
     this._songRestService,
     this._artistService,
     this._albumService,
+    this._dataSyncService,
   );
 
   Map<String, dynamic> get sortFields => _songRepository.sortFields;
@@ -363,6 +368,57 @@ class SongService {
     }
   }
 
+  Future<void> syncLibraryMetadata() async {
+    if (_isLibraryMetadataSyncing) return;
+    if (!_songRestService.authService.isLoggedIn) return;
+
+    _isLibraryMetadataSyncing = true;
+    try {
+      final pending =
+          _songRepository
+              .getAllSongs()
+              .where((s) => s.requiresSync && s.fileHash.isNotEmpty)
+              .toList();
+
+      if (pending.isEmpty) return;
+
+      final changes =
+          pending
+              .map(
+                (s) => SongSyncDto(
+                  fileHash: s.fileHash,
+                  playCountDelta: s.pendingPlayCountDelta,
+                  likedByUser: s.likedByUser,
+                  lastPlayed: s.lastPlayed,
+                  totalPlayDurationSeconds: s.pendingPlayDurationSeconds,
+                ),
+              )
+              .toList();
+
+      final response = await _dataSyncService.syncUserLibrary(
+        lastSyncTime: _lastLibrarySyncTime,
+        localChanges: changes,
+      );
+
+      if (response != null) {
+        _lastLibrarySyncTime = response.newSyncTime.toLocal();
+        for (final s in pending) {
+          s.requiresSync = false;
+          s.pendingPlayCountDelta = 0;
+          s.pendingPlayDurationSeconds = 0;
+          _songRepository.updateSong(s);
+        }
+        debugPrint(
+          '[SongService] Library metadata sync complete — ${pending.length} song(s) synced',
+        );
+      }
+    } catch (e) {
+      debugPrint('[SongService] Library metadata sync failed: $e');
+    } finally {
+      _isLibraryMetadataSyncing = false;
+    }
+  }
+
   List<List<int>> _splitIntoChunks(List<int> bytes) {
     List<List<int>> chunks = [];
     for (int i = 0; i < bytes.length; i += _chunkSize) {
@@ -513,5 +569,4 @@ class SongService {
         .map((s) => _songRepository.getSongByFileHash(s.fileHash) ?? s)
         .toList();
   }
-
 }

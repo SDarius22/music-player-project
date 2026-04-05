@@ -305,6 +305,15 @@ class MockSongService extends _i1.Mock implements _i11.SongService {
   );
 
   @override
+  _i12.Future<void> syncLibraryMetadata() =>
+      (super.noSuchMethod(
+            Invocation.method(#syncLibraryMetadata, []),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
   _i12.Future<_i3.SongPageDto> getSongsPage(
     String? query,
     String? sortField,

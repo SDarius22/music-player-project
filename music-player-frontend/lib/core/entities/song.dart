@@ -34,6 +34,11 @@ class Song implements BaseEntity {
   DateTime? lastPlayed;
   int playCount = 0;
 
+  /// Accumulated play count delta not yet synced to the server.
+  int pendingPlayCountDelta = 0;
+  /// Accumulated play duration in seconds not yet synced to the server.
+  int pendingPlayDurationSeconds = 0;
+
   @override
   String get name => _name;
 

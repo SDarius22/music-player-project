@@ -57,11 +57,11 @@ class ChunkService {
     try {
       manifest = await _streamingClient.fetchManifest(fileHash);
 
-      _webrtcManager.discoverPeers(fileHash);
+      unawaited(_webrtcManager.discoverPeers(fileHash));
 
       var indices = await cacheRepo.getAvailableChunkIndices(fileHash);
       if (indices.isNotEmpty) {
-        _webrtcManager.registerCache(fileHash, indices);
+        unawaited(_webrtcManager.registerCache(fileHash, indices));
       }
     } catch (e) {
       debugPrint("Failed to load manifest for $fileHash: $e");
@@ -215,7 +215,7 @@ class ChunkService {
   void _saveToCache(int index, Uint8List data) {
     _addToHotCache(index, data);
     cacheRepo.saveChunk(fileHash, index, data).then((_) {
-      _webrtcManager.registerCache(fileHash, [index]);
+      unawaited(_webrtcManager.registerCache(fileHash, [index]));
     });
   }
 
