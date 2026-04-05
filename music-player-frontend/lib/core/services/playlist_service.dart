@@ -10,11 +10,18 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/services/rest_clients/playlist_rest_service.dart';
+import 'package:music_player_frontend/core/services/song_service.dart';
 
 class PlaylistService {
   final PlaylistRepository _playlistRepository;
   final SongRepository _songRepository;
   final PlaylistRestService _playlistRestService;
+  SongService? _songService;
+
+  /// Injected after construction to avoid circular dependency issues.
+  void setSongService(SongService songService) {
+    _songService = songService;
+  }
 
   PlaylistService(
     this._playlistRepository,
@@ -268,6 +275,8 @@ class PlaylistService {
   }
 
   Playlist cacheServerPlaylist(Playlist serverPlaylist) {
+    Playlist playlist;
+
     if (serverPlaylist.serverId > 0) {
       final byServerId = _playlistRepository.getPlaylistByServerId(
         serverPlaylist.serverId,
@@ -276,22 +285,63 @@ class PlaylistService {
         byServerId.name = serverPlaylist.name;
         _resolveAndSetSongs(byServerId, serverPlaylist.serverSongFileHashes);
         _playlistRepository.savePlaylist(byServerId);
-        return byServerId;
+        playlist = byServerId;
+      } else {
+        final byName = _playlistRepository.getPlaylistByName(serverPlaylist.name);
+        if (byName != null && !byName.indestructible) {
+          if (byName.serverId <= 0 && serverPlaylist.serverId > 0) {
+            byName.serverId = serverPlaylist.serverId;
+          }
+          _resolveAndSetSongs(byName, serverPlaylist.serverSongFileHashes);
+          _playlistRepository.savePlaylist(byName);
+          playlist = byName;
+        } else {
+          _resolveAndSetSongs(serverPlaylist, serverPlaylist.serverSongFileHashes);
+          playlist = _playlistRepository.savePlaylist(serverPlaylist);
+        }
+      }
+    } else {
+      final byName = _playlistRepository.getPlaylistByName(serverPlaylist.name);
+      if (byName != null && !byName.indestructible) {
+        _resolveAndSetSongs(byName, serverPlaylist.serverSongFileHashes);
+        _playlistRepository.savePlaylist(byName);
+        playlist = byName;
+      } else {
+        _resolveAndSetSongs(serverPlaylist, serverPlaylist.serverSongFileHashes);
+        playlist = _playlistRepository.savePlaylist(serverPlaylist);
       }
     }
 
-    final byName = _playlistRepository.getPlaylistByName(serverPlaylist.name);
-    if (byName != null && !byName.indestructible) {
-      if (byName.serverId <= 0 && serverPlaylist.serverId > 0) {
-        byName.serverId = serverPlaylist.serverId;
-      }
-      _resolveAndSetSongs(byName, serverPlaylist.serverSongFileHashes);
-      _playlistRepository.savePlaylist(byName);
-      return byName;
+    // Background-fetch any songs that weren't in the local cache yet.
+    final resolvedHashes = playlist.songs.map((s) => s.fileHash).toSet();
+    final missing = serverPlaylist.serverSongFileHashes
+        .where((h) => h.isNotEmpty && !resolvedHashes.contains(h))
+        .toList();
+    if (missing.isNotEmpty && _songService != null) {
+      unawaited(_fetchAndAppendMissingSongs(playlist, missing));
     }
 
-    _resolveAndSetSongs(serverPlaylist, serverPlaylist.serverSongFileHashes);
-    return _playlistRepository.savePlaylist(serverPlaylist);
+    return playlist;
+  }
+
+  Future<void> _fetchAndAppendMissingSongs(
+    Playlist playlist,
+    List<String> missingHashes,
+  ) async {
+    bool changed = false;
+    for (final hash in missingHashes) {
+      final song = await _songService!.fetchSongByFileHash(hash);
+      if (song != null) {
+        if (!playlist.songFileHashes.contains(hash)) {
+          playlist.songs.add(song);
+          playlist.songFileHashes.add(hash);
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      _playlistRepository.savePlaylist(playlist);
+    }
   }
 
   void _resolveAndSetSongs(Playlist playlist, List<String> songFileHashes) {

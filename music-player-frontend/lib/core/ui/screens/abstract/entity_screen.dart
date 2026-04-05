@@ -17,7 +17,7 @@ abstract class EntityScreen extends StatelessWidget {
       body: Padding(
         padding: buildPadding(width, height),
         child: FutureBuilder(
-          future: loadEntityData(),
+          future: loadEntityData(context),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -43,7 +43,7 @@ abstract class EntityScreen extends StatelessWidget {
 
   Widget buildBody(BuildContext context, double width, double height);
 
-  Future<void> loadEntityData() async {
+  Future<void> loadEntityData(BuildContext context) async {
     return;
   }
 }

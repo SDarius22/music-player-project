@@ -9,6 +9,34 @@ import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+class _PeerStats {
+  static const double _alpha = 0.2;
+
+  double rttMs = 500.0;
+  double throughputBytesPerMs = 0.001;
+  int successes = 0;
+  int failures = 0;
+
+  double get successRate {
+    final total = successes + failures;
+    return total == 0 ? 0.5 : successes / total;
+  }
+
+  double get score => successRate * throughputBytesPerMs * 1000 / (rttMs + 1);
+
+  void recordRtt(double ms) {
+    rttMs = _alpha * ms + (1 - _alpha) * rttMs;
+  }
+
+  void recordDelivery(int bytes, double elapsedMs) {
+    successes++;
+    final tput = bytes / elapsedMs.clamp(1, double.infinity);
+    throughputBytesPerMs = _alpha * tput + (1 - _alpha) * throughputBytesPerMs;
+  }
+
+  void recordFailure() => failures++;
+}
+
 class WebRTCService {
   final String myDeviceId;
   final AuthService authService;
@@ -25,9 +53,13 @@ class WebRTCService {
   final Map<String, List<RTCIceCandidate>> _iceQueues = {};
   final Map<String, Set<String>> _peerLibraries = {};
 
-  // key: peerId, value: list of pending requests (fileHash + chunkIndex)
   final Map<String, List<({String fileHash, int chunkIndex})>>
   _pendingChunkRequests = {};
+
+  final Map<String, _PeerStats> _peerStats = {};
+
+  final Map<String, ({String peerId, DateTime sentAt})>
+  _outstandingChunkRequests = {};
 
   Timer? _keepaliveTimer;
 
@@ -62,8 +94,30 @@ class WebRTCService {
           }),
         );
       } catch (_) {
-        // Socket may have closed — ignore until dispose is called.
+        // Socket may have closed
       }
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      for (final entry in _dataChannels.entries) {
+        if (entry.value.state == RTCDataChannelState.RTCDataChannelOpen) {
+          try {
+            entry.value.send(RTCDataChannelMessage('DC_PING:$now'));
+          } catch (_) {}
+        }
+      }
+
+      _cleanupStaleRequests();
+    });
+  }
+
+  void _cleanupStaleRequests() {
+    final cutoff = DateTime.now().subtract(const Duration(seconds: 2));
+    _outstandingChunkRequests.removeWhere((_, value) {
+      if (value.sentAt.isBefore(cutoff)) {
+        _peerStats.putIfAbsent(value.peerId, _PeerStats.new).recordFailure();
+        return true;
+      }
+      return false;
     });
   }
 
@@ -87,38 +141,35 @@ class WebRTCService {
 
   bool get isConnected => _dataChannels.isNotEmpty;
 
-  bool hasPeersForSong(String fileHash) {
-    for (final peerSongs in _peerLibraries.values) {
-      if (peerSongs.contains(fileHash)) {
-        return true;
-      }
-    }
-    return false;
+  List<String> getSortedPeersForSong(String fileHash) {
+    final peers =
+        _peerLibraries.entries
+            .where((e) => e.value.contains(fileHash))
+            .map((e) => e.key)
+            .toList();
+    peers.sort((a, b) {
+      final scoreA = _peerStats[a]?.score ?? 0;
+      final scoreB = _peerStats[b]?.score ?? 0;
+      return scoreB.compareTo(scoreA);
+    });
+    return peers;
   }
 
-  void requestChunk(String fileHash, int chunkIndex) {
-    final requestMsg = 'REQUEST_CHUNK:$fileHash:$chunkIndex';
-
-    for (final entry in _dataChannels.entries) {
-      final peerId = entry.key;
-      final channel = entry.value;
-
-      if (channel.state == RTCDataChannelState.RTCDataChannelOpen &&
-          _peerLibraries[peerId]?.contains(fileHash) == true) {
-        channel.send(RTCDataChannelMessage(requestMsg));
-        return;
-      }
-    }
-
-    for (final peerId in _peerLibraries.keys) {
-      if (_peerLibraries[peerId]?.contains(fileHash) == true) {
-        _pendingChunkRequests.putIfAbsent(peerId, () => []);
-        _pendingChunkRequests[peerId]!.add((
-          fileHash: fileHash,
-          chunkIndex: chunkIndex,
-        ));
-        return;
-      }
+  void requestChunkFromPeer(String peerId, String fileHash, int chunkIndex) {
+    final channel = _dataChannels[peerId];
+    if (channel != null &&
+        channel.state == RTCDataChannelState.RTCDataChannelOpen) {
+      final key = '$peerId:$fileHash:$chunkIndex';
+      _outstandingChunkRequests[key] = (peerId: peerId, sentAt: DateTime.now());
+      channel.send(
+        RTCDataChannelMessage('REQUEST_CHUNK:$fileHash:$chunkIndex'),
+      );
+    } else {
+      _pendingChunkRequests.putIfAbsent(peerId, () => []);
+      _pendingChunkRequests[peerId]!.add((
+        fileHash: fileHash,
+        chunkIndex: chunkIndex,
+      ));
     }
   }
 
@@ -230,7 +281,7 @@ class WebRTCService {
 
     channel.onMessage = (message) async {
       if (message.isBinary) {
-        _handleBinaryMessage(message.binary);
+        _handleBinaryMessage(remotePeerId, message.binary);
       } else {
         await _handleTextMessage(remotePeerId, message.text);
       }
@@ -244,6 +295,8 @@ class WebRTCService {
       '[P2P] DataChannel open with $peerId — draining ${pending.length} queued request(s)',
     );
     for (final req in pending) {
+      final key = '$peerId:${req.fileHash}:${req.chunkIndex}';
+      _outstandingChunkRequests[key] = (peerId: peerId, sentAt: DateTime.now());
       channel.send(
         RTCDataChannelMessage(
           'REQUEST_CHUNK:${req.fileHash}:${req.chunkIndex}',
@@ -252,7 +305,7 @@ class WebRTCService {
     }
   }
 
-  void _handleBinaryMessage(Uint8List binary) {
+  void _handleBinaryMessage(String peerId, Uint8List binary) {
     try {
       if (binary.length < 68) {
         debugPrint('[P2P] Binary message too short: ${binary.length} bytes');
@@ -264,9 +317,21 @@ class WebRTCService {
       final chunkIndex = byteData.getUint32(0, Endian.big);
       final audioData = binary.sublist(68);
 
-      debugPrint(
-        '[P2P] Received chunk from peer — song=$fileHash chunk=$chunkIndex (${audioData.length} bytes)',
-      );
+      final key = '$peerId:$fileHash:$chunkIndex';
+      final outstanding = _outstandingChunkRequests.remove(key);
+      if (outstanding != null) {
+        final elapsedMs =
+            DateTime.now().difference(outstanding.sentAt).inMicroseconds /
+            1000.0;
+        _peerStats
+            .putIfAbsent(peerId, _PeerStats.new)
+            .recordDelivery(audioData.length, elapsedMs);
+        debugPrint(
+          '[P2P] Received chunk from peer=$peerId — song=$fileHash chunk=$chunkIndex '
+          '(${audioData.length} bytes, ${elapsedMs.toStringAsFixed(1)} ms)',
+        );
+      }
+
       onChunkReceived(fileHash, chunkIndex, audioData);
     } catch (e) {
       debugPrint("Error parsing binary P2P message: $e");
@@ -274,9 +339,24 @@ class WebRTCService {
   }
 
   Future<void> _handleTextMessage(String remotePeerId, String text) async {
-    if (text.startsWith('REQUEST_CHUNK:')) {
-      // Format: REQUEST_CHUNK:<fileHash>:<chunkIndex>
-      // fileHash is 64 hex chars; chunkIndex is the last segment
+    if (text.startsWith('DC_PING:')) {
+      final ts = text.substring('DC_PING:'.length);
+      try {
+        _dataChannels[remotePeerId]?.send(RTCDataChannelMessage('DC_PONG:$ts'));
+      } catch (_) {}
+    } else if (text.startsWith('DC_PONG:')) {
+      final sentMs = int.tryParse(text.substring('DC_PONG:'.length));
+      if (sentMs != null) {
+        final rtt = DateTime.now().millisecondsSinceEpoch - sentMs;
+        _peerStats
+            .putIfAbsent(remotePeerId, _PeerStats.new)
+            .recordRtt(rtt.toDouble());
+        debugPrint(
+          '[P2P] RTT to peer=$remotePeerId: ${rtt}ms '
+          '(score=${_peerStats[remotePeerId]!.score.toStringAsFixed(4)})',
+        );
+      }
+    } else if (text.startsWith('REQUEST_CHUNK:')) {
       final lastColon = text.lastIndexOf(':');
       if (lastColon > 'REQUEST_CHUNK:'.length) {
         final fileHash = text.substring('REQUEST_CHUNK:'.length, lastColon);
@@ -304,9 +384,7 @@ class WebRTCService {
     }
 
     if (!await _checkAndRecordUpload(data.length)) {
-      debugPrint(
-        '[P2P] Chunk upload blocked — monthly data limit reached',
-      );
+      debugPrint('[P2P] Chunk upload blocked, monthly data limit reached');
       return;
     }
 
@@ -323,8 +401,6 @@ class WebRTCService {
     channel.send(RTCDataChannelMessage.fromBinary(packet));
   }
 
-  /// Returns true if the upload is allowed, and records the bytes used.
-  /// Returns false if the monthly limit has been reached.
   Future<bool> _checkAndRecordUpload(int bytes) async {
     if (UniversalPlatform.isDesktop || kIsWeb) return true;
 
@@ -333,7 +409,6 @@ class WebRTCService {
 
     final settings = service.getAppSettings();
 
-    // Reset counters if the month has rolled over.
     final now = DateTime.now();
     final currentMonth = now.year * 100 + now.month;
     if (settings.peerUploadResetMonth != currentMonth) {
@@ -354,8 +429,7 @@ class WebRTCService {
       }
       settings.peerWifiUploadedBytesThisMonth += bytes;
     } else if (isMobile) {
-      final limitBytes =
-          settings.peerCellularDataLimitGB * 1024 * 1024 * 1024;
+      final limitBytes = settings.peerCellularDataLimitGB * 1024 * 1024 * 1024;
       if (settings.peerCellularDataLimitGB != -1 &&
           settings.peerCellularUploadedBytesThisMonth + bytes > limitBytes) {
         return false;
@@ -480,6 +554,15 @@ class WebRTCService {
     _iceQueues.remove(peerId);
     _peerLibraries.remove(peerId);
     _pendingChunkRequests.remove(peerId);
+
+    // Mark any in-flight requests to this peer as failures.
+    _outstandingChunkRequests.removeWhere((_, value) {
+      if (value.peerId == peerId) {
+        _peerStats.putIfAbsent(peerId, _PeerStats.new).recordFailure();
+        return true;
+      }
+      return false;
+    });
   }
 
   void dispose() {

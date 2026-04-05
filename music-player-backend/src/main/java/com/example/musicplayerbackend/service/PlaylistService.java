@@ -2,7 +2,10 @@ package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.PlaylistRepository;
 import com.example.musicplayerbackend.data.SongRepository;
+import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.helpers.CoverDecoder;
+import com.example.musicplayerbackend.mapper.PlaylistMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -25,13 +29,21 @@ public class PlaylistService {
 
     private final PlaylistRepository playlistRepository;
     private final SongRepository songRepository;
+    private final PlaylistMapper playlistMapper;
     private final SongMapper songMapper;
     private final ObjectMapper objectMapper;
 
     public PlaylistPageDto getPlaylists(Long userId, int page, int size) {
-        Page<Playlist> result = playlistRepository.findAllByUserId(userId,
-                PageRequest.of(page, size));
-        List<PlaylistDto> content = result.getContent().stream().map(this::toDto).toList();
+        Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(userId, PageRequest.of(page, size));
+
+        List<PlaylistDto> content = result.getContent().stream().map(proj -> {
+            PlaylistDto dto = playlistMapper.toDto(proj);
+            String csv = proj.getSongFileHashesCsv();
+            dto.setSongFileHashes(csv != null && !csv.isBlank()
+                    ? Arrays.stream(csv.split(",")).toList() : List.of());
+            return dto;
+        }).toList();
+
         return new PlaylistPageDto(content, result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalPages());
     }
@@ -80,10 +92,8 @@ public class PlaylistService {
 
     public byte[] getPlaylistCover(Long playlistId, Long userId) {
         Playlist playlist = findAndAuthorize(playlistId, userId);
-        return AlbumService.decodeCoverImage(playlist.getCoverImage());
+        return CoverDecoder.decodeCoverImage(playlist.getCoverImage());
     }
-
-    // ── helpers ──────────────────────────────────────────────────────────────
 
     private Playlist findAndAuthorize(Long playlistId, Long userId) {
         Playlist playlist = playlistRepository.findById(playlistId)
@@ -92,19 +102,6 @@ public class PlaylistService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
         return playlist;
-    }
-
-    private PlaylistDto toDto(Playlist p) {
-        List<Long> ids = fromJson(p.getSongIdsJson());
-        List<String> fileHashes = idsToFileHashes(ids);
-        PlaylistDto dto = new PlaylistDto();
-        dto.setId(p.getId());
-        dto.setName(p.getName());
-        dto.setType(p.getPlaylistType() != null ? PlaylistDto.TypeEnum.fromValue(p.getPlaylistType().name()) : null);
-        dto.setUserId(p.getUser().getId());
-        dto.setSongFileHashes(fileHashes);
-        dto.setHasCover(p.getCoverImage() != null && !p.getCoverImage().isBlank());
-        return dto;
     }
 
     private PlaylistDetailDto toDetailDto(Playlist p) {
@@ -125,14 +122,7 @@ public class PlaylistService {
     private List<Long> fileHashesToIds(List<String> fileHashes) {
         if (fileHashes == null || fileHashes.isEmpty()) return List.of();
         return songRepository.findAllByFileHashIn(fileHashes).stream()
-                .map(song -> song.getId())
-                .toList();
-    }
-
-    private List<String> idsToFileHashes(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) return List.of();
-        return songRepository.findAllById(ids).stream()
-                .map(song -> song.getFileHash())
+                .map(Song::getId)
                 .toList();
     }
 
@@ -147,7 +137,8 @@ public class PlaylistService {
     private List<Long> fromJson(String json) {
         if (json == null || json.isBlank()) return List.of();
         try {
-            return objectMapper.readValue(json, new TypeReference<>() {});
+            return objectMapper.readValue(json, new TypeReference<>() {
+            });
         } catch (JsonProcessingException e) {
             return List.of();
         }

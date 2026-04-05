@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "chunk_stats", schema = "music_library")
+@Table(name = "chunk_stats")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,8 +22,10 @@ public class ChunkStat {
     private Instant timestamp;
 
     private Long userId;
-    @Column(name = "song_file_hash", length = 64)
+
+    @Column(length = 64)
     private String songFileHash;
+
     private String songName;
 
     @Column(nullable = false)

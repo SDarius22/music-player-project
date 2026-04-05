@@ -208,7 +208,6 @@ public class SignalingHandler extends TextWebSocketHandler {
         if (routeToTargetLocally(signal)) {
             return;
         }
-        // Target not on this instance — route via Redis pub/sub
         redisTemplate.convertAndSend("signaling:webrtc", objectMapper.writeValueAsString(signal));
     }
 

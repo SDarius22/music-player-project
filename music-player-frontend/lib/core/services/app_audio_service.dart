@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:math';
+import 'dart:math' show max;
 
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
@@ -47,12 +47,17 @@ class AppAudioService {
   DateTime? _playStartTime;
 
   List<Song> _normalQueue = [];
+  List<Song> _shuffledQueue = [];
   Playlist _queuePlaylist = Playlist();
   AudioSettings _currentAudioSettings = AudioSettings();
 
   AudioSettings get currentAudioSettings => _currentAudioSettings;
 
-  List<Song> get queue => _normalQueue;
+  List<Song> get _activeQueue =>
+      _currentAudioSettings.shuffle ? _shuffledQueue : _normalQueue;
+
+  /// Returns the queue in playback order (shuffled when shuffle is on).
+  List<Song> get queue => _activeQueue;
 
   int get currentIndex => _currentIndex;
 
@@ -85,7 +90,10 @@ class AppAudioService {
     });
 
     _positionSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (this.audioPlayer.playing) pushStateToServer();
+      if (this.audioPlayer.playing) {
+        pushStateToServer();
+        unawaited(_proactivelyCachePrefixes());
+      }
     });
 
     this.audioPlayer.errorStream.listen((error) {
@@ -160,15 +168,15 @@ class AppAudioService {
   }
 
   Future<void> skipToNext() async {
-    if (_normalQueue.isEmpty) return;
-    _currentIndex = (_currentIndex + 1) % _normalQueue.length;
+    if (_activeQueue.isEmpty) return;
+    _currentIndex = (_currentIndex + 1) % _activeQueue.length;
     await _loadAndPlayIndex(_currentIndex);
   }
 
   Future<void> skipToPrevious() async {
-    if (_normalQueue.isEmpty) return;
+    if (_activeQueue.isEmpty) return;
     _currentIndex =
-        _currentIndex > 0 ? _currentIndex - 1 : _normalQueue.length - 1;
+        _currentIndex > 0 ? _currentIndex - 1 : _activeQueue.length - 1;
     await _loadAndPlayIndex(_currentIndex);
   }
 
@@ -208,7 +216,24 @@ class AppAudioService {
     if (shuffle == _currentAudioSettings.shuffle) return;
     _currentAudioSettings.shuffle = shuffle;
     settingsService.updateAudioSettings(_currentAudioSettings);
+    // Find current song in the newly active queue and sync the index.
+    final current = currentSong;
+    final idx = _activeQueue.indexWhere((s) => s == current);
+    _currentIndex = idx < 0 ? 0 : idx;
     pushStateToServer();
+  }
+
+  /// Rebuilds [_shuffledQueue] from [_normalQueue], placing [prioritySong]
+  /// first so it plays immediately when shuffle is enabled.
+  void _rebuildShuffledQueue({Song? prioritySong}) {
+    _shuffledQueue = List.from(_normalQueue)..shuffle();
+    if (prioritySong != null) {
+      final idx = _shuffledQueue.indexWhere((s) => s == prioritySong);
+      if (idx > 0) {
+        _shuffledQueue.removeAt(idx);
+        _shuffledQueue.insert(0, prioritySong);
+      }
+    }
   }
 
   Future<Duration> getDuration() async {
@@ -225,10 +250,13 @@ class AppAudioService {
 
   Future<void> addToQueue(List<Song> songs) async {
     final existingHashes = _normalQueue.map((s) => s.fileHash).toSet();
-    final toAdd = songs.where((s) => !existingHashes.contains(s.fileHash)).toList();
+    final toAdd =
+        songs.where((s) => !existingHashes.contains(s.fileHash)).toList();
     if (toAdd.isEmpty) return;
 
     _normalQueue.addAll(toAdd);
+    // Append to shuffled queue without reshuffling.
+    _shuffledQueue.addAll(toAdd);
     playlistService.addToPlaylist(_queuePlaylist, toAdd);
     pushStateToServer();
   }
@@ -236,13 +264,22 @@ class AppAudioService {
   Future<void> addNextToQueue(List<Song> songs) async {
     if (songs.isEmpty) return;
 
-    final insertAt = _normalQueue.isEmpty ? 0 : _currentIndex + 1;
-
+    // Insert after current position in the active queue, and after the current
+    // song in the other queue (positions differ when shuffled).
     for (final song in songs.reversed) {
       if (_normalQueue.any((s) => s == song)) continue;
-      _normalQueue.insert(insertAt, song);
+
+      final activeInsert = _activeQueue.isEmpty ? 0 : _currentIndex + 1;
+      _activeQueue.insert(activeInsert, song);
+
+      final other = _currentAudioSettings.shuffle ? _normalQueue : _shuffledQueue;
+      final currentInOther = other.indexWhere((s) => s == currentSong);
+      final otherInsert =
+          currentInOther < 0 ? other.length : currentInOther + 1;
+      other.insert(otherInsert, song);
+
       _queuePlaylist.songs.add(song);
-      _queuePlaylist.songFileHashes.insert(insertAt, song.fileHash);
+      _queuePlaylist.songFileHashes.insert(activeInsert, song.fileHash);
     }
 
     playlistService.updatePlaylist(_queuePlaylist);
@@ -250,17 +287,21 @@ class AppAudioService {
   }
 
   Future<void> removeFromQueue(Song song) async {
-    final idx = _normalQueue.indexWhere((s) => s == song);
-    if (idx == -1) return;
+    final activeIdx = _activeQueue.indexWhere((s) => s == song);
+    if (activeIdx == -1) return;
 
-    _normalQueue.removeAt(idx);
+    final wasCurrentSong = song == currentSong;
+    _normalQueue.remove(song);
+    _shuffledQueue.remove(song);
     playlistService.deleteFromPlaylist(song, _queuePlaylist);
 
-    if (idx < _currentIndex) {
+    if (wasCurrentSong) {
+      if (_activeQueue.isNotEmpty) {
+        _currentIndex = _currentIndex.clamp(0, _activeQueue.length - 1);
+        await _loadAndPlayIndex(_currentIndex);
+      }
+    } else if (activeIdx < _currentIndex) {
       _currentIndex--;
-    } else if (idx == _currentIndex && _normalQueue.isNotEmpty) {
-      _currentIndex = _currentIndex % _normalQueue.length;
-      await _loadAndPlayIndex(_currentIndex);
     }
     pushStateToServer();
   }
@@ -275,6 +316,8 @@ class AppAudioService {
       _queuePlaylist.songs.clear();
       _queuePlaylist.songFileHashes.clear();
       playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
+      // Full queue replacement — rebuild shuffled order with selected song first.
+      _rebuildShuffledQueue(prioritySong: song);
     }
 
     await setCurrentSongAndPlay(song);
@@ -283,7 +326,7 @@ class AppAudioService {
   Future<void> setCurrentSongAndPlay(Song song) async {
     currentSong = song;
     try {
-      final idx = _normalQueue.indexWhere((s) => s == song);
+      final idx = _activeQueue.indexWhere((s) => s == song);
       _currentIndex = idx < 0 ? 0 : idx;
       await _loadAndPlayIndex(_currentIndex);
     } catch (e) {
@@ -302,12 +345,13 @@ class AppAudioService {
     );
 
     if (_normalQueue.isNotEmpty) {
-      final idx = _normalQueue.indexWhere((s) => s == currentSong);
+      _rebuildShuffledQueue(prioritySong: currentSong);
+      final idx = _activeQueue.indexWhere((s) => s == currentSong);
       _currentIndex = idx < 0 ? 0 : idx;
       debugPrint(
         '[_initPlayer] sliderInSeconds=${_currentAudioSettings.sliderInSeconds}, durationInSeconds=${currentSong.durationInSeconds}, song="${currentSong.name}"',
       );
-      final source = _buildAudioSource(_normalQueue[_currentIndex]);
+      final source = _buildAudioSource(_activeQueue[_currentIndex]);
       await audioPlayer.setAudioSource(
         source,
         initialPosition: Duration(
@@ -321,25 +365,27 @@ class AppAudioService {
 
   Future<void> _onSongCompleted() async {
     debugPrint(
-      '[_onSongCompleted] called: queue=${_normalQueue.length}, isSwitching=$_isSwitchingSong, index=$_currentIndex',
+      '[_onSongCompleted] called: queue=${_activeQueue.length}, isSwitching=$_isSwitchingSong, index=$_currentIndex',
     );
-    if (_normalQueue.isEmpty || _isSwitchingSong) return;
-    if (_currentAudioSettings.shuffle) {
-      _currentIndex = Random().nextInt(_normalQueue.length);
-    } else {
-      _currentIndex = (_currentIndex + 1) % _normalQueue.length;
-    }
+    if (_activeQueue.isEmpty || _isSwitchingSong) return;
+    _currentIndex = (_currentIndex + 1) % _activeQueue.length;
     await _loadAndPlayIndex(_currentIndex);
     unawaited(songService.syncLibraryMetadata());
   }
 
   Future<void> _loadAndPlayIndex(int idx) async {
     debugPrint('[AppAudioService] _loadAndPlayIndex($idx) called');
-    if (_normalQueue.isEmpty) return;
+    if (_activeQueue.isEmpty) return;
     await _initDone.future;
     _finalizePlayDuration();
     _isSwitchingSong = true;
-    final song = _normalQueue[idx];
+
+    final outgoing = currentSong;
+    if (!outgoing.isLocal && outgoing.fileHash.isNotEmpty) {
+      createChunkManager(outgoing.fileHash).flushStats();
+    }
+
+    final song = _activeQueue[idx];
     currentSong = song;
     if (!UniversalPlatform.isDesktop) {
       await audioPlayer.stop();
@@ -424,7 +470,9 @@ class AppAudioService {
 
     final resolvedQueue =
         (await Future.wait(
-          dto.queueFileHashes.map((hash) => songService.fetchSongByFileHash(hash)),
+          dto.queueFileHashes.map(
+            (hash) => songService.fetchSongByFileHash(hash),
+          ),
         )).whereType<Song>().toList();
 
     if (resolvedQueue.isEmpty) return;
@@ -447,7 +495,8 @@ class AppAudioService {
       );
       if (matches.isNotEmpty) current = matches.first;
     }
-    final idx = resolvedQueue.indexOf(current);
+    _rebuildShuffledQueue(prioritySong: current);
+    final idx = _activeQueue.indexWhere((s) => s == current);
     _currentIndex = idx < 0 ? 0 : idx;
     currentSong = current;
 
@@ -458,34 +507,48 @@ class AppAudioService {
     );
   }
 
+  static const _nextSongTargets = [0.25, 0.20, 0.15, 0.10, 0.05];
+  static const _prevSongTargets = [0.10, 0.05];
+
   Future<void> _proactivelyCachePrefixes() async {
     if (_normalQueue.isEmpty) return;
-    const prefetchSongs = 5;
-    const prefixChunks = 8;
 
-    for (int i = 1; i <= prefetchSongs; i++) {
-      final songIdx = (_currentIndex + i) % _normalQueue.length;
-      final song = _normalQueue[songIdx];
-      if (song.fileHash.isEmpty) continue;
+    final totalSecs =
+        audioPlayer.duration?.inSeconds.toDouble() ??
+        currentSong.durationInSeconds.toDouble();
+    final posSecs = audioPlayer.position.inSeconds.toDouble();
+    final progress =
+        totalSecs > 0 ? (posSecs / totalSecs).clamp(0.0, 1.0) : 0.0;
 
-      for (int chunkIdx = 0; chunkIdx < prefixChunks; chunkIdx++) {
-        try {
-          final manager = createChunkManager(song.fileHash);
-          final existing = await manager.cacheRepo.readChunk(
-            song.fileHash,
-            chunkIdx,
-          );
-          if (existing == null) {
-            debugPrint("Prefix caching song ${song.fileHash} chunk $chunkIdx");
-            await manager.getChunk(chunkIdx);
-          }
-        } catch (e) {
-          debugPrint(
-            "Failed to prefix cache song ${song.fileHash} chunk $chunkIdx: $e",
-          );
-          break;
-        }
+    final q = _activeQueue;
+    for (int i = 0; i < _nextSongTargets.length; i++) {
+      final songIdx = (_currentIndex + i + 1) % q.length;
+      if (songIdx == _currentIndex) continue;
+      final song = q[songIdx];
+      if (song.isLocal || song.fileHash.isEmpty) continue;
+      unawaited(_prefetchSongFraction(song, _nextSongTargets[i] * progress));
+    }
+
+    for (int i = 0; i < _prevSongTargets.length; i++) {
+      final songIdx = (_currentIndex - i - 1 + q.length) % q.length;
+      if (songIdx == _currentIndex) continue;
+      final song = q[songIdx];
+      if (song.isLocal || song.fileHash.isEmpty) continue;
+      unawaited(_prefetchSongFraction(song, _prevSongTargets[i] * progress));
+    }
+  }
+
+  Future<void> _prefetchSongFraction(Song song, double fraction) async {
+    if (fraction <= 0) return;
+    try {
+      final manager = createChunkManager(song.fileHash);
+      if (!manager.isReady) await manager.loadManifest();
+      final targetCount = max(1, (manager.totalChunks * fraction).round());
+      for (int i = 0; i < targetCount; i++) {
+        await manager.prefetchChunk(i);
       }
+    } catch (e) {
+      debugPrint('[prefetch] ${song.name}: $e');
     }
   }
 
@@ -519,8 +582,6 @@ class AppAudioService {
     }
   }
 
-  /// Accumulates elapsed playback time onto the current song and saves it.
-  /// Safe to call multiple times — resets [_playStartTime] each time.
   void _finalizePlayDuration() {
     if (_playStartTime == null) return;
     final elapsed = DateTime.now().difference(_playStartTime!).inSeconds;

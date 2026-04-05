@@ -926,11 +926,33 @@ components:
           type: string
         type:
           type: string
-          enum: [STREAMABLE, USER_UPLOAD]
+          enum: [ STREAMABLE, USER_UPLOAD ]
         ownerId:
           type: integer
           format: int64
           nullable: true
+
+    ArtistListDto:
+      type: object
+      description: Artist summary used in paginated list responses. Includes ordered song file hashes.
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          type: string
+          enum: [ STREAMABLE, USER_UPLOAD ]
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+        songFileHashes:
+          type: array
+          items:
+            type: string
+          description: Ordered file hashes of all songs by this artist (album name → disc → track).
 
     ArtistDetailDto:
       type: object
@@ -942,7 +964,7 @@ components:
           type: string
         type:
           type: string
-          enum: [STREAMABLE, USER_UPLOAD]
+          enum: [ STREAMABLE, USER_UPLOAD ]
         ownerId:
           type: integer
           format: int64
@@ -964,7 +986,7 @@ components:
         content:
           type: array
           items:
-            $ref: '#/components/schemas/ArtistDto'
+            $ref: '#/components/schemas/ArtistListDto'
         page:
           type: integer
           minimum: 0
@@ -991,11 +1013,35 @@ components:
           type: string
         type:
           type: string
-          enum: [STREAMABLE, USER_UPLOAD]
+          enum: [ STREAMABLE, USER_UPLOAD ]
         ownerId:
           type: integer
           format: int64
           nullable: true
+
+    AlbumListDto:
+      type: object
+      description: Album summary used in paginated list responses. Includes ordered song file hashes.
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        photo:
+          type: string
+        type:
+          type: string
+          enum: [ STREAMABLE, USER_UPLOAD ]
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+        songFileHashes:
+          type: array
+          items:
+            type: string
+          description: Ordered file hashes of the album's songs (disc → track).
 
     AlbumDetailDto:
       type: object
@@ -1009,7 +1055,7 @@ components:
           type: string
         type:
           type: string
-          enum: [STREAMABLE, USER_UPLOAD]
+          enum: [ STREAMABLE, USER_UPLOAD ]
         ownerId:
           type: integer
           format: int64
@@ -1033,7 +1079,7 @@ components:
         content:
           type: array
           items:
-            $ref: '#/components/schemas/AlbumDto'
+            $ref: '#/components/schemas/AlbumListDto'
         page:
           type: integer
           minimum: 0
@@ -1058,7 +1104,7 @@ components:
           type: string
         type:
           type: string
-          enum: [STREAMABLE, USER_UPLOAD]
+          enum: [ STREAMABLE, USER_UPLOAD ]
         userId:
           type: integer
           format: int64
@@ -1079,7 +1125,7 @@ components:
           type: string
         type:
           type: string
-          enum: [STREAMABLE, USER_UPLOAD]
+          enum: [ STREAMABLE, USER_UPLOAD ]
         userId:
           type: integer
           format: int64
@@ -1128,7 +1174,7 @@ components:
           type: array
           items:
             type: string
-          default: []
+          default: [ ]
         coverImage:
           type: string
           description: Base64-encoded cover image (optional)

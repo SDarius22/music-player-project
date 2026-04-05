@@ -21,9 +21,7 @@ public class ArtistController implements ArtistsApi {
 
     @Override
     public ResponseEntity<ArtistPageDto> getArtists(String q, Integer page, Integer size, String sort) {
-        int safePage = page == null ? 0 : Math.max(page, 0);
-        int safeSize = size == null ? 50 : Math.min(Math.max(size, 1), 200);
-        return ResponseEntity.ok(artistService.getArtists(q, safePage, safeSize, sort));
+        return ResponseEntity.ok(artistService.getArtists(q, page, size, sort));
     }
 
     @Override

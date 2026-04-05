@@ -34,6 +34,9 @@ class Album with AbstractCollection implements BaseEntity {
   final _songs = ToMany<Song>();
   final artist = ToOne<Artist>();
 
+  @Transient()
+  List<String> serverSongFileHashes = [];
+
   @override
   String get name => _name;
 
@@ -87,6 +90,10 @@ class Album with AbstractCollection implements BaseEntity {
     album.serverId = json['id'] ?? -1;
     if (json['photo'] != null) {
       album.imageBytes = Uint8List.fromList(base64Decode(json['photo']));
+    }
+    final hashes = json['songFileHashes'];
+    if (hashes is List) {
+      album.serverSongFileHashes = hashes.cast<String>();
     }
     return album;
   }

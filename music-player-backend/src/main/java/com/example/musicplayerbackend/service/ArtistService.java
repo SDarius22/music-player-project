@@ -1,17 +1,22 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.ArtistRepository;
+import com.example.musicplayerbackend.data.projection.ArtistListProjection;
 import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
+import com.example.musicplayerbackend.mapper.ArtistMapper;
+import com.example.musicplayerbackend.mapper.SortMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -20,18 +25,23 @@ public class ArtistService {
 
     private final ArtistRepository artistRepository;
     private final AlbumMapper albumMapper;
+    private final ArtistMapper artistMapper;
+    private final SortMapper sortMapper;
 
-    public ArtistPageDto getArtists(String q, int page, int size, String sort) {
-        String query = (q == null || q.isBlank()) ? "" : q;
-        Pageable pageable = PageRequest.of(page, size, parseSort(sort));
-        Page<Artist> result = artistRepository.findAllByNameContainingIgnoreCase(query, pageable);
+    @Transactional(readOnly = true)
+    public ArtistPageDto getArtists(String query, Integer page, Integer size, String sort) {
+        int safePage = page == null ? 0 : Math.max(page, 0);
+        int safeSize = size == null ? 50 : Math.min(Math.max(size, 1), 200);
+        query = (query == null || query.isBlank()) ? "" : query;
+        Pageable pageable = PageRequest.of(safePage, safeSize, sortMapper.toSort(sort));
 
-        List<ArtistDto> content = result.getContent().stream().map(a -> {
-            ArtistDto dto = new ArtistDto();
-            dto.setId(a.getId());
-            dto.setName(a.getName());
-            dto.setType(a.getArtistType() != null ? ArtistDto.TypeEnum.fromValue(a.getArtistType().name()) : null);
-            dto.setOwnerId(a.getOwnerId());
+        Page<ArtistListProjection> result = artistRepository.findAllWithHashes(query, pageable);
+
+        List<ArtistListDto> content = result.getContent().stream().map(proj -> {
+            ArtistListDto dto = artistMapper.toListDto(proj);
+            String csv = proj.getSongFileHashesCsv();
+            dto.setSongFileHashes(csv != null && !csv.isBlank()
+                    ? Arrays.stream(csv.split(",")).toList() : List.of());
             return dto;
         }).toList();
 
@@ -39,6 +49,7 @@ public class ArtistService {
                 result.getTotalElements(), result.getTotalPages());
     }
 
+    @Transactional(readOnly = true)
     public ArtistDetailDto getArtistById(Long id) {
         Artist artist = artistRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
@@ -64,18 +75,11 @@ public class ArtistService {
         }
 
         String coverImage = artist.getAlbums().stream()
-                .map(a -> a.getCoverImage())
+                .map(Album::getCoverImage)
                 .filter(c -> c != null && !c.isBlank())
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cover not found"));
 
-        return AlbumService.decodeCoverImage(coverImage);
-    }
-
-    private Sort parseSort(String sort) {
-        if (sort == null || sort.isBlank()) return Sort.by(Sort.Order.asc("name"));
-        String[] parts = sort.split(",", 2);
-        String dir = parts.length > 1 ? parts[1].trim() : "asc";
-        return "desc".equals(dir) ? Sort.by(Sort.Order.desc("name")) : Sort.by(Sort.Order.asc("name"));
+        return CoverDecoder.decodeCoverImage(coverImage);
     }
 }

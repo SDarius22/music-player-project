@@ -2,7 +2,9 @@ package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.PlaylistRepository;
 import com.example.musicplayerbackend.data.SongRepository;
+import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.mapper.PlaylistMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,43 +26,98 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PlaylistServiceTest {
 
-    @Mock
-    PlaylistRepository playlistRepository;
-    @Mock
-    SongRepository songRepository;
-    @Mock
-    SongMapper songMapper;
+    @Mock PlaylistRepository playlistRepository;
+    @Mock SongRepository songRepository;
+    @Mock PlaylistMapper playlistMapper;
+    @Mock SongMapper songMapper;
 
-    @Captor
-    ArgumentCaptor<Playlist> playlistCaptor;
+    @Captor ArgumentCaptor<Playlist> playlistCaptor;
 
     PlaylistService service;
     User owner;
 
     @BeforeEach
     void setUp() {
-        service = new PlaylistService(playlistRepository, songRepository, songMapper, new ObjectMapper());
+        service = new PlaylistService(playlistRepository, songRepository, playlistMapper, songMapper, new ObjectMapper());
         owner = User.builder().id(1L).email("u@test.com").role(Role.USER)
                 .provider(AuthProvider.LOCAL).build();
     }
 
+    // ── getPlaylists ─────────────────────────────────────────────────────────
+
     @Test
     void shouldReturnPagedPlaylistDtos() {
-        Playlist p = Playlist.builder().id(1L).user(owner).name("My Mix")
-                .songIdsJson("[]").createdAt(Instant.now()).updatedAt(Instant.now()).build();
-        when(playlistRepository.findAllByUserId(eq(1L), any())).thenReturn(new PageImpl<>(List.of(p)));
+        PlaylistListProjection proj = mock(PlaylistListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn(null);
+        PlaylistDto dto = new PlaylistDto();
+        dto.setName("My Mix");
+        when(playlistRepository.findAllWithHashes(eq(1L), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(playlistMapper.toDto(proj)).thenReturn(dto);
 
         PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
 
         assertEquals(1, result.getContent().size());
         assertEquals("My Mix", result.getContent().getFirst().getName());
     }
+
+    @Test
+    void shouldReturnEmptyHashesWhenProjectionCsvIsNull() {
+        PlaylistListProjection proj = mock(PlaylistListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn(null);
+        when(playlistRepository.findAllWithHashes(eq(1L), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(playlistMapper.toDto(proj)).thenReturn(new PlaylistDto());
+
+        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
+
+        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
+    }
+
+    @Test
+    void shouldSplitCsvHashesFromPlaylistProjection() {
+        PlaylistListProjection proj = mock(PlaylistListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn("h1,h2,h3");
+        when(playlistRepository.findAllWithHashes(eq(1L), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(playlistMapper.toDto(proj)).thenReturn(new PlaylistDto());
+
+        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
+
+        assertEquals(List.of("h1", "h2", "h3"), result.getContent().getFirst().getSongFileHashes());
+    }
+
+    @Test
+    void shouldSetHasCoverTrueWhenProjectionReturnsTrue() {
+        PlaylistListProjection proj = mock(PlaylistListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn(null);
+        PlaylistDto dto = new PlaylistDto();
+        dto.setHasCover(true);
+        when(playlistRepository.findAllWithHashes(eq(1L), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(playlistMapper.toDto(proj)).thenReturn(dto);
+
+        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
+
+        assertEquals(Boolean.TRUE, result.getContent().getFirst().getHasCover());
+    }
+
+    @Test
+    void shouldSetHasCoverFalseWhenProjectionReturnsFalse() {
+        PlaylistListProjection proj = mock(PlaylistListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn(null);
+        PlaylistDto dto = new PlaylistDto();
+        dto.setHasCover(false);
+        when(playlistRepository.findAllWithHashes(eq(1L), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(playlistMapper.toDto(proj)).thenReturn(dto);
+
+        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
+
+        assertNotEquals(Boolean.TRUE, result.getContent().getFirst().getHasCover());
+    }
+
+    // ── createPlaylist ───────────────────────────────────────────────────────
 
     @Test
     void shouldSaveAndReturnPlaylistDetailDto() {
@@ -110,6 +167,8 @@ class PlaylistServiceTest {
         assertTrue(result.getSongs().isEmpty());
     }
 
+    // ── getPlaylistById ──────────────────────────────────────────────────────
+
     @Test
     void shouldReturnPlaylistDetailDto() {
         Playlist p = Playlist.builder().id(1L).user(owner).name("Chill")
@@ -139,6 +198,8 @@ class PlaylistServiceTest {
                 () -> service.getPlaylistById(1L, 999L));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
+
+    // ── updatePlaylist ───────────────────────────────────────────────────────
 
     @Test
     void shouldThrow403WhenUpdatingPlaylistOwnedByDifferentUser() {
@@ -195,7 +256,7 @@ class PlaylistServiceTest {
         when(playlistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
-        req.setCoverImage(null); // null = no change
+        req.setCoverImage(null);
 
         service.updatePlaylist(1L, 1L, req);
 
@@ -273,6 +334,8 @@ class PlaylistServiceTest {
         assertNull(playlistCaptor.getValue().getCoverImage());
     }
 
+    // ── deletePlaylist ───────────────────────────────────────────────────────
+
     @Test
     void shouldDeletePlaylist() {
         Playlist p = Playlist.builder().id(1L).user(owner).name("To Delete")
@@ -291,6 +354,8 @@ class PlaylistServiceTest {
         when(playlistRepository.findById(1L)).thenReturn(Optional.of(p));
         assertThrows(ResponseStatusException.class, () -> service.deletePlaylist(1L, 999L));
     }
+
+    // ── getPlaylistCover ─────────────────────────────────────────────────────
 
     @Test
     void shouldReturnPlaylistCoverBytes() {
@@ -321,62 +386,5 @@ class PlaylistServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> service.getPlaylistCover(1L, 999L));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-    }
-
-    @Test
-    void shouldSetHasCoverTrueWhenCoverImageIsPresent() {
-        Playlist p = Playlist.builder().id(1L).user(owner).name("My Mix")
-                .coverImage("some-data").songIdsJson("[]")
-                .createdAt(Instant.now()).updatedAt(Instant.now()).build();
-        when(playlistRepository.findAllByUserId(eq(1L), any())).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(p)));
-
-        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
-
-        assertEquals(Boolean.TRUE, result.getContent().getFirst().getHasCover());
-    }
-
-    @Test
-    void shouldSetHasCoverFalseWhenCoverImageIsBlank() {
-        Playlist p = Playlist.builder().id(1L).user(owner).name("My Mix")
-                .coverImage("   ").songIdsJson("[]")
-                .createdAt(Instant.now()).updatedAt(Instant.now()).build();
-        when(playlistRepository.findAllByUserId(eq(1L), any())).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(p)));
-
-        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
-
-        assertNotEquals(Boolean.TRUE, result.getContent().getFirst().getHasCover());
-    }
-
-    @Test
-    void shouldHandleNullSongIdsJsonWhenGettingPlaylists() {
-        Playlist p = Playlist.builder().id(1L).user(owner).name("P")
-                .songIdsJson(null).createdAt(Instant.now()).updatedAt(Instant.now()).build();
-        when(playlistRepository.findAllByUserId(eq(1L), any())).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(p)));
-
-        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
-
-        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
-    }
-
-    @Test
-    void shouldHandleBlankSongIdsJsonWhenGettingPlaylists() {
-        Playlist p = Playlist.builder().id(1L).user(owner).name("P")
-                .songIdsJson("   ").createdAt(Instant.now()).updatedAt(Instant.now()).build();
-        when(playlistRepository.findAllByUserId(eq(1L), any())).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(p)));
-
-        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
-
-        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
-    }
-
-    @Test
-    void shouldHandleInvalidSongIdsJsonWhenGettingPlaylists() {
-        Playlist p = Playlist.builder().id(1L).user(owner).name("P")
-                .songIdsJson("not-valid-json").createdAt(Instant.now()).updatedAt(Instant.now()).build();
-        when(playlistRepository.findAllByUserId(eq(1L), any())).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(p)));
-
-        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
-
-        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
 }

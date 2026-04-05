@@ -39,6 +39,9 @@ class Artist with AbstractCollection implements BaseEntity {
   @Backlink('artist')
   final albums = ToMany<Album>();
 
+  @Transient()
+  List<String> serverSongFileHashes = [];
+
   @override
   String get name => _name;
 
@@ -52,6 +55,10 @@ class Artist with AbstractCollection implements BaseEntity {
     artist.id = 0;
     artist.name = json['name'] ?? "Unknown Artist";
     artist.serverId = json['id'] ?? -1;
+    final hashes = json['songFileHashes'];
+    if (hashes is List) {
+      artist.serverSongFileHashes = hashes.cast<String>();
+    }
     return artist;
   }
 

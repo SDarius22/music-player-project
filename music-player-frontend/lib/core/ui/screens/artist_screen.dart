@@ -3,6 +3,7 @@ import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
@@ -22,6 +23,14 @@ class ArtistScreen extends EntityScreen {
   }
 
   const ArtistScreen({super.key, required super.entity});
+
+  @override
+  Future<void> loadEntityData(BuildContext context) async {
+    final artist = entity as Artist;
+    if (artist.serverSongFileHashes.isNotEmpty) {
+      await context.read<SongService>().fetchSongsByHashes(artist.serverSongFileHashes);
+    }
+  }
 
   @override
   Widget buildBody(BuildContext context, double width, double height) {

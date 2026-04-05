@@ -30,18 +30,18 @@ public class Playlist {
     @Builder.Default
     private ContentType playlistType = ContentType.USER_UPLOAD;
 
-    @Column(name = "cover_image", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String coverImage;
 
     @Column(name = "song_ids", columnDefinition = "TEXT", nullable = false)
     @Builder.Default
     private String songIdsJson = "[]";
 
-    @Column(name = "created_at", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();
 }

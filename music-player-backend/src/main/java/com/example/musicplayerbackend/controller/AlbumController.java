@@ -20,10 +20,8 @@ public class AlbumController implements AlbumsApi {
     private final AlbumService albumService;
 
     @Override
-    public ResponseEntity<AlbumPageDto> getAlbums(String q, Integer page, Integer size, String sort) {
-        int safePage = page == null ? 0 : Math.max(page, 0);
-        int safeSize = size == null ? 50 : Math.min(Math.max(size, 1), 200);
-        return ResponseEntity.ok(albumService.getAlbums(q, safePage, safeSize, sort));
+    public ResponseEntity<AlbumPageDto> getAlbums(String query, Integer page, Integer size, String sort) {
+        return ResponseEntity.ok(albumService.getAlbums(query, page, size, sort));
     }
 
     @Override

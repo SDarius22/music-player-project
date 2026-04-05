@@ -192,7 +192,10 @@ void main() {
 
         await service.restoreFromServerState(dto);
 
-        expect(service.queue, equals([songA, songB]));
+        // With shuffle on, the queue is the shuffled queue, which puts the
+        // current song (songB) first. Both songs must be present.
+        expect(service.queue, containsAll([songA, songB]));
+        expect(service.queue.first.fileHash, equals('hash20'));
         expect(service.currentSong.fileHash, equals('hash20'));
         expect(service.currentAudioSettings.shuffle, isTrue);
         expect(service.currentAudioSettings.repeat, isTrue);

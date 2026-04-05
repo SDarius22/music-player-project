@@ -27,22 +27,29 @@ public class UserLibrary {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean liked = false;
 
     @Builder.Default
     @Column(nullable = false)
     private Long playCount = 0L;
+
     @Builder.Default
     @Column(nullable = false)
     private Long totalPlayDurationSeconds = 0L;
+
     private Instant lastPlayed;
+
     private Instant addedAt;
+
+    @Builder.Default
     private Boolean isDownloadedLocally = false;
 
     @Column(nullable = false)
     private Instant lastUpdated;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isDeleted = false;
 }

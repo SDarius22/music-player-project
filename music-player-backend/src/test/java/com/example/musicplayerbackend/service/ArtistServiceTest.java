@@ -1,8 +1,11 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.ArtistRepository;
+import com.example.musicplayerbackend.data.projection.ArtistListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
+import com.example.musicplayerbackend.mapper.ArtistMapper;
+import com.example.musicplayerbackend.mapper.SortMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,29 +22,35 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ArtistServiceTest {
 
-    @Mock
-    ArtistRepository artistRepository;
-    @Mock
-    AlbumMapper albumMapper;
+    @Mock ArtistRepository artistRepository;
+    @Mock AlbumMapper albumMapper;
+    @Mock ArtistMapper artistMapper;
+    @Mock SortMapper sortMapper;
 
     ArtistService service;
 
     @BeforeEach
     void setUp() {
-        service = new ArtistService(artistRepository, albumMapper);
+        service = new ArtistService(artistRepository, albumMapper, artistMapper, sortMapper);
+        org.mockito.Mockito.lenient().when(sortMapper.toSort(any())).thenReturn(org.springframework.data.domain.Sort.by("name"));
     }
+
+    // ── getArtists ───────────────────────────────────────────────────────────
 
     @Test
     void shouldReturnPagedArtistResults() {
-        Artist artist = Artist.builder().id(1L).name("Beatles").build();
-        Page<Artist> page = new PageImpl<>(List.of(artist));
-        when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(page);
+        ArtistListProjection proj = mock(ArtistListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn(null);
+        ArtistListDto listDto = new ArtistListDto();
+        listDto.setId(1L);
+        listDto.setName("Beatles");
+        when(artistRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(artistMapper.toListDto(proj)).thenReturn(listDto);
 
         ArtistPageDto result = service.getArtists(null, 0, 20, null);
 
@@ -52,56 +61,73 @@ class ArtistServiceTest {
 
     @Test
     void shouldPassBlankArtistQueryAsEmpty() {
-        when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any()))
-                .thenReturn(Page.empty());
+        when(artistRepository.findAllWithHashes(eq(""), any())).thenReturn(Page.empty());
         service.getArtists("  ", 0, 20, null);
-        verify(artistRepository).findAllByNameContainingIgnoreCase(eq(""), any());
+        verify(artistRepository).findAllWithHashes(eq(""), any());
     }
 
     @Test
     void shouldPassNonBlankArtistQueryThrough() {
-        when(artistRepository.findAllByNameContainingIgnoreCase(eq("rock"), any()))
-                .thenReturn(Page.empty());
+        when(artistRepository.findAllWithHashes(eq("rock"), any())).thenReturn(Page.empty());
         service.getArtists("rock", 0, 20, null);
-        verify(artistRepository).findAllByNameContainingIgnoreCase(eq("rock"), any());
+        verify(artistRepository).findAllWithHashes(eq("rock"), any());
     }
 
     @Test
     void shouldSortArtistsAscendingWhenExplicitAscProvided() {
-        when(artistRepository.findAllByNameContainingIgnoreCase(any(),
+        when(sortMapper.toSort("name,asc")).thenReturn(
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name")));
+        when(artistRepository.findAllWithHashes(any(),
                 argThat(p -> p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isAscending())))
                 .thenReturn(Page.empty());
         service.getArtists(null, 0, 20, "name,asc");
-        verify(artistRepository).findAllByNameContainingIgnoreCase(any(),
-                argThat(p -> p.getSort().getOrderFor("name") != null
-                        && p.getSort().getOrderFor("name").isAscending()));
-    }
-
-    @Test
-    void shouldSortArtistsAscendingWhenSortHasNoComma() {
-        // parts.length == 1 → dir = "asc"
-        when(artistRepository.findAllByNameContainingIgnoreCase(any(),
-                argThat(p -> p.getSort().getOrderFor("name") != null
-                        && p.getSort().getOrderFor("name").isAscending())))
-                .thenReturn(Page.empty());
-        service.getArtists(null, 0, 20, "name");
-        verify(artistRepository).findAllByNameContainingIgnoreCase(any(),
+        verify(artistRepository).findAllWithHashes(any(),
                 argThat(p -> p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isAscending()));
     }
 
     @Test
     void shouldSortArtistsDescending() {
-        when(artistRepository.findAllByNameContainingIgnoreCase(any(),
+        when(sortMapper.toSort("name,desc")).thenReturn(
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.desc("name")));
+        when(artistRepository.findAllWithHashes(any(),
                 argThat(p -> p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isDescending())))
                 .thenReturn(Page.empty());
         service.getArtists(null, 0, 20, "name,desc");
-        verify(artistRepository).findAllByNameContainingIgnoreCase(any(),
+        verify(artistRepository).findAllWithHashes(any(),
                 argThat(p -> p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isDescending()));
     }
+
+    @Test
+    void shouldSplitCsvHashesFromProjection() {
+        ArtistListProjection proj = mock(ArtistListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn("h1,h2");
+        ArtistListDto listDto = new ArtistListDto();
+        when(artistRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(artistMapper.toListDto(proj)).thenReturn(listDto);
+
+        ArtistPageDto result = service.getArtists(null, 0, 20, null);
+
+        assertEquals(List.of("h1", "h2"), result.getContent().getFirst().getSongFileHashes());
+    }
+
+    @Test
+    void shouldReturnEmptyHashesWhenProjectionCsvIsNull() {
+        ArtistListProjection proj = mock(ArtistListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn(null);
+        ArtistListDto listDto = new ArtistListDto();
+        when(artistRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(artistMapper.toListDto(proj)).thenReturn(listDto);
+
+        ArtistPageDto result = service.getArtists(null, 0, 20, null);
+
+        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
+    }
+
+    // ── getArtistById ────────────────────────────────────────────────────────
 
     @Test
     void shouldReturnArtistDetailDto() {
@@ -186,7 +212,6 @@ class ArtistServiceTest {
 
     @Test
     void shouldThrow404WhenAllArtistAlbumsHaveBlankImage() {
-        // blank (non-null) coverImage → filtered out → orElseThrow
         Album album = Album.builder().id(1L).name("Album").coverImage("   ").build();
         Artist artist = Artist.builder().id(1L).name("Artist").albums(List.of(album)).build();
         when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));

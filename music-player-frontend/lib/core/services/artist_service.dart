@@ -75,7 +75,11 @@ class ArtistService {
         sort: sort,
       );
 
+      final hashMap = <int, List<String>>{};
       for (final serverArtist in serverPage.content) {
+        if (serverArtist.serverId > 0 && serverArtist.serverSongFileHashes.isNotEmpty) {
+          hashMap[serverArtist.serverId] = serverArtist.serverSongFileHashes;
+        }
         cacheServerArtist(serverArtist);
       }
 
@@ -83,6 +87,10 @@ class ArtistService {
         final content = _artistRepository.getArtistsPaged(
           query, sortField, ascending, page * size, size,
         );
+        for (final artist in content) {
+          final hashes = hashMap[artist.serverId];
+          if (hashes != null) artist.serverSongFileHashes = hashes;
+        }
         return ArtistPageDto(
           content: content,
           page: page,

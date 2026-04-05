@@ -44,6 +44,7 @@ public class Song {
     @Column(nullable = false, unique = true, length = 64)
     private String fileHash;
 
+    @Builder.Default
     @OneToMany(mappedBy = "song", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     private List<SongChunk> chunks = new ArrayList<>();

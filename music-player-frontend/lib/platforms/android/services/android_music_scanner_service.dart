@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
@@ -41,6 +43,12 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
   }
 
   Future<void> _addSong(SongModel songModel) async {
+    String fileHash = '';
+    try {
+      final bytes = await File(songModel.data).readAsBytes();
+      fileHash = sha256.convert(bytes).toString();
+    } catch (_) {}
+
     var artist = _artistService.getOrCreateArtist(
       songModel.artist ?? 'Unknown Artist',
     );
@@ -58,6 +66,7 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
           ..trackNumber = songModel.track ?? 0
           ..discNumber = -1
           ..year = -1
+          ..fileHash = fileHash
           ..artist.target = artist
           ..album.target = album
           ..fullyLoaded = false;

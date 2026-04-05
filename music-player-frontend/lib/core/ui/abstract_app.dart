@@ -193,14 +193,6 @@ abstract class AbstractApp extends StatelessWidget {
             ),
       ),
       Provider<LyricsService>(create: (context) => LyricsService()),
-      Provider<PlaylistService>(
-        create:
-            (context) => PlaylistService(
-              context.read<PlaylistRepository>(),
-              context.read<SongRepository>(),
-              context.read<PlaylistRestService>(),
-            ),
-      ),
       Provider<SettingsService>(
         create:
             (context) => SettingsService(context.read<SettingsRepository>()),
@@ -214,6 +206,17 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<AlbumService>(),
               context.read<DataSyncService>(),
             ),
+      ),
+      Provider<PlaylistService>(
+        create: (context) {
+          final service = PlaylistService(
+            context.read<PlaylistRepository>(),
+            context.read<SongRepository>(),
+            context.read<PlaylistRestService>(),
+          );
+          service.setSongService(context.read<SongService>());
+          return service;
+        },
       ),
 
       Provider<CoverService>(
@@ -302,10 +305,9 @@ abstract class AbstractApp extends StatelessWidget {
             try {
               await platform_service.AudioService.init(
                 builder: () => audioProvider,
-                config: platform_service.AudioServiceConfig(
+                config: const platform_service.AudioServiceConfig(
                   androidNotificationChannelId: 'com.example.musicplayer',
                   androidNotificationChannelName: 'Music Player',
-                  androidNotificationOngoing: true,
                   androidStopForegroundOnPause: false,
                 ),
               );

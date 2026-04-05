@@ -1,19 +1,22 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.AlbumRepository;
+import com.example.musicplayerbackend.data.projection.AlbumListProjection;
 import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
+import com.example.musicplayerbackend.mapper.SortMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Base64;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -23,30 +26,25 @@ public class AlbumService {
     private final AlbumRepository albumRepository;
     private final AlbumMapper albumMapper;
     private final SongMapper songMapper;
+    private final SortMapper sortMapper;
 
-    public static byte[] decodeCoverImage(String coverImage) {
-        if (coverImage == null || coverImage.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cover not found");
-        }
-        String base64 = coverImage;
-        if (coverImage.startsWith("data:")) {
-            int commaIdx = coverImage.indexOf(',');
-            if (commaIdx >= 0) {
-                base64 = coverImage.substring(commaIdx + 1);
-            }
-        }
-        try {
-            return Base64.getDecoder().decode(base64.trim());
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cover not found");
-        }
-    }
+    @Transactional(readOnly = true)
+    public AlbumPageDto getAlbums(String query, Integer page, Integer size, String sort) {
+        int safePage = page == null ? 0 : Math.max(page, 0);
+        int safeSize = size == null ? 50 : Math.min(Math.max(size, 1), 200);
+        query = (query == null || query.isBlank()) ? "" : query;
+        Pageable pageable = PageRequest.of(safePage, safeSize, sortMapper.toSort(sort));
 
-    public AlbumPageDto getAlbums(String q, int page, int size, String sort) {
-        String query = (q == null || q.isBlank()) ? "" : q;
-        Pageable pageable = PageRequest.of(page, size, parseSort(sort));
-        Page<Album> result = albumRepository.findAllByNameContainingIgnoreCase(query, pageable);
-        List<AlbumDto> content = result.getContent().stream().map(albumMapper::toDto).toList();
+        Page<AlbumListProjection> result = albumRepository.findAllWithHashes(query, pageable);
+
+        List<AlbumListDto> content = result.getContent().stream().map(proj -> {
+            AlbumListDto dto = albumMapper.toListDto(proj);
+            String csv = proj.getSongFileHashesCsv();
+            dto.setSongFileHashes(csv != null && !csv.isBlank()
+                    ? Arrays.stream(csv.split(",")).toList() : List.of());
+            return dto;
+        }).toList();
+
         return new AlbumPageDto(content, result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalPages());
     }
@@ -79,13 +77,6 @@ public class AlbumService {
     public byte[] getAlbumCover(Long id) {
         Album album = albumRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
-        return decodeCoverImage(album.getCoverImage());
-    }
-
-    private Sort parseSort(String sort) {
-        if (sort == null || sort.isBlank()) return Sort.by(Sort.Order.asc("name"));
-        String[] parts = sort.split(",", 2);
-        String dir = parts.length > 1 ? parts[1].trim() : "asc";
-        return "desc".equals(dir) ? Sort.by(Sort.Order.desc("name")) : Sort.by(Sort.Order.asc("name"));
+        return CoverDecoder.decodeCoverImage(album.getCoverImage());
     }
 }

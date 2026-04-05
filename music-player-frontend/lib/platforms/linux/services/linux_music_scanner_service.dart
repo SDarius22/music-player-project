@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/entities/app_settings.dart';
@@ -71,6 +73,12 @@ class LinuxMusicScannerService implements AbstractMusicScannerService {
             withImage: true,
           );
 
+          String fileHash = '';
+          try {
+            final bytes = await File(file.path).readAsBytes();
+            fileHash = sha256.convert(bytes).toString();
+          } catch (_) {}
+
           var artist = _artistService.getOrCreateArtist(
             metadata['artist'] ?? 'Unknown Artist',
           );
@@ -90,6 +98,7 @@ class LinuxMusicScannerService implements AbstractMusicScannerService {
                 ..discNumber = metadata['discNumber'] ?? 0
                 ..year = metadata['year'] ?? 0
                 ..fullyLoaded = true
+                ..fileHash = fileHash
                 ..artist.target = artist
                 ..album.target = album;
 

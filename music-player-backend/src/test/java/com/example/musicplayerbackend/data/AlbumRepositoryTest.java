@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.data;
 
+import com.example.musicplayerbackend.data.projection.AlbumListProjection;
 import com.example.musicplayerbackend.domain.Album;
 import com.example.musicplayerbackend.domain.Artist;
 import org.junit.jupiter.api.AfterEach;
@@ -67,10 +68,10 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
         albumRepository.save(buildAlbum("Abbey One"));
         albumRepository.save(buildAlbum("Unrelated"));
 
-        Page<Album> result = albumRepository.findAllByNameContainingIgnoreCase("abbey", PageRequest.of(0, 10));
+        Page<AlbumListProjection> result = albumRepository.findAllWithHashes("abbey", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).hasSize(2)
-                .extracting(Album::getName)
+                .extracting(AlbumListProjection::getName)
                 .containsExactlyInAnyOrder("Abbey Road", "Abbey One");
     }
 
@@ -78,9 +79,9 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
     void shouldBeCaseInsensitiveWhenSearchingByName() {
         albumRepository.save(buildAlbum("Thriller"));
 
-        Page<Album> lower = albumRepository.findAllByNameContainingIgnoreCase("thriller", PageRequest.of(0, 10));
-        Page<Album> upper = albumRepository.findAllByNameContainingIgnoreCase("THRILLER", PageRequest.of(0, 10));
-        Page<Album> mixed = albumRepository.findAllByNameContainingIgnoreCase("ThRiLlEr", PageRequest.of(0, 10));
+        Page<AlbumListProjection> lower = albumRepository.findAllWithHashes("thriller", PageRequest.of(0, 10));
+        Page<AlbumListProjection> upper = albumRepository.findAllWithHashes("THRILLER", PageRequest.of(0, 10));
+        Page<AlbumListProjection> mixed = albumRepository.findAllWithHashes("ThRiLlEr", PageRequest.of(0, 10));
 
         assertThat(lower.getTotalElements()).isEqualTo(1);
         assertThat(upper.getTotalElements()).isEqualTo(1);
@@ -91,7 +92,7 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
     void shouldReturnEmptyWhenNoAlbumNameMatches() {
         albumRepository.save(buildAlbum("Something Blue"));
 
-        Page<Album> result = albumRepository.findAllByNameContainingIgnoreCase("zzznomatch", PageRequest.of(0, 10));
+        Page<AlbumListProjection> result = albumRepository.findAllWithHashes("zzznomatch", PageRequest.of(0, 10));
 
         assertThat(result).isEmpty();
     }
@@ -102,8 +103,8 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
             albumRepository.save(buildAlbum("Page Album " + i));
         }
 
-        Page<Album> page0 = albumRepository.findAllByNameContainingIgnoreCase("Page Album", PageRequest.of(0, 2));
-        Page<Album> page1 = albumRepository.findAllByNameContainingIgnoreCase("Page Album", PageRequest.of(1, 2));
+        Page<AlbumListProjection> page0 = albumRepository.findAllWithHashes("Page Album", PageRequest.of(0, 2));
+        Page<AlbumListProjection> page1 = albumRepository.findAllWithHashes("Page Album", PageRequest.of(1, 2));
 
         assertThat(page0.getContent()).hasSize(2);
         assertThat(page0.getTotalElements()).isEqualTo(5);

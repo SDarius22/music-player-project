@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -27,6 +28,7 @@ class ChunkService {
   final Map<int, _ChunkSource> _deliveredBy = {};
   String? _songName;
   void Function(ChunkDeliveryStats)? _onFullyReceived;
+  bool _statsFlushed = false;
 
   bool get isReady => manifest != null;
 
@@ -35,6 +37,10 @@ class ChunkService {
   int get totalBytes => manifest?.totalBytes ?? 0;
 
   int get totalChunks => manifest?.totalChunks ?? 0;
+
+  // First N chunks always fetched from server for reliable playback start.
+  // Equals 5 % of totalChunks, minimum 1.
+  int get _serverPrefixCount => max(1, (totalChunks * 0.05).round());
 
   ChunkService({
     required this.fileHash,
@@ -123,24 +129,27 @@ class ChunkService {
     Uint8List data;
     _ChunkSource source = _ChunkSource.server;
 
-    if (index < 8) {
+    if (index < _serverPrefixCount) {
       data = await _streamingClient.downloadChunkFallback(fileHash, index);
-    } else if (_webrtcManager.hasPeersForSong(fileHash)) {
-      try {
-        data = await _requestFromPeer(
-          index,
-        ).timeout(const Duration(seconds: 1));
-        source = _ChunkSource.p2p;
-        debugPrint('[P2P] song=$fileHash chunk=$index — served by peer');
-      } catch (_) {
-        _p2pCompleters.remove(index);
-        debugPrint(
-          '[P2P] song=$fileHash chunk=$index — peer timeout/fail, falling back to server',
-        );
+    } else {
+      final peers = _webrtcManager.getSortedPeersForSong(fileHash);
+      if (peers.isNotEmpty) {
+        try {
+          data = await _requestFromPeers(index, peers).timeout(
+            const Duration(seconds: 1),
+          );
+          source = _ChunkSource.p2p;
+          debugPrint('[P2P] song=$fileHash chunk=$index — served by peer');
+        } catch (_) {
+          _p2pCompleters.remove(index);
+          debugPrint(
+            '[P2P] song=$fileHash chunk=$index — peer timeout/fail, falling back to server',
+          );
+          data = await _streamingClient.downloadChunkFallback(fileHash, index);
+        }
+      } else {
         data = await _streamingClient.downloadChunkFallback(fileHash, index);
       }
-    } else {
-      data = await _streamingClient.downloadChunkFallback(fileHash, index);
     }
 
     if (_verifyIntegrity(index, data)) {
@@ -168,34 +177,96 @@ class ChunkService {
     _deliveredBy[index] = source;
 
     final total = manifest?.totalChunks ?? 0;
-    if (total > 0 && _deliveredBy.length == total && _onFullyReceived != null) {
-      final localCachedCount =
-          _deliveredBy.values.where((v) => v == _ChunkSource.localCached).length;
-      final p2pCount =
-          _deliveredBy.values.where((v) => v == _ChunkSource.p2p).length;
-      final serverCount =
-          _deliveredBy.values.where((v) => v == _ChunkSource.server).length;
-      _onFullyReceived!(
-        ChunkDeliveryStats(
-          fileHash: fileHash,
-          songName: _songName ?? 'Unknown',
-          localCachedChunks: localCachedCount,
-          p2pChunks: p2pCount,
-          serverChunks: serverCount,
-        ),
-      );
+    if (total > 0 && _deliveredBy.length == total) {
+      _emitStats();
     }
   }
 
-  Future<Uint8List> _requestFromPeer(int index) {
+  void _emitStats() {
+    if (_statsFlushed || _onFullyReceived == null || _deliveredBy.isEmpty) {
+      return;
+    }
+    _statsFlushed = true;
+    _onFullyReceived!(
+      ChunkDeliveryStats(
+        fileHash: fileHash,
+        songName: _songName ?? 'Unknown',
+        localCachedChunks:
+            _deliveredBy.values.where((v) => v == _ChunkSource.localCached).length,
+        p2pChunks: _deliveredBy.values.where((v) => v == _ChunkSource.p2p).length,
+        serverChunks:
+            _deliveredBy.values.where((v) => v == _ChunkSource.server).length,
+      ),
+    );
+  }
+
+  /// Emits delivery stats for however many chunks were received so far.
+  /// Call when the song is skipped or stopped before completion.
+  /// Safe to call multiple times — only fires once.
+  void flushStats() => _emitStats();
+
+  /// Requests [index] from the peers in [peers] (sorted best-first).
+  /// Cascades to the next peer every 200 ms so the first responder wins.
+  Future<Uint8List> _requestFromPeers(int index, List<String> peers) {
     final completer = Completer<Uint8List>();
     _p2pCompleters[index] = completer;
-    _webrtcManager.requestChunk(fileHash, index);
+
+    _webrtcManager.requestChunkFromPeer(peers[0], fileHash, index);
+
+    for (var i = 1; i < peers.length && i <= 2; i++) {
+      final peerId = peers[i];
+      Future.delayed(Duration(milliseconds: 200 * i), () {
+        if (!completer.isCompleted) {
+          _webrtcManager.requestChunkFromPeer(peerId, fileHash, index);
+        }
+      });
+    }
+
     return completer.future;
   }
 
   void resolvePeerRequest(int chunkIndex, Uint8List data) {
     _p2pCompleters.remove(chunkIndex)?.complete(data);
+  }
+
+  /// Background prefetch: tries peers first for ALL indices (no server-prefix
+  /// rule) since we have time to wait. Falls back to server. Silent on error.
+  Future<void> prefetchChunk(int index) async {
+    if (!isReady || index >= totalChunks) return;
+    if (_hotRamCache.containsKey(index)) return;
+    final cached = await cacheRepo.readChunk(fileHash, index);
+    if (cached != null) return;
+    if (_activeRequests.containsKey(index)) {
+      await _activeRequests[index];
+      return;
+    }
+
+    Uint8List data;
+    final peers = _webrtcManager.getSortedPeersForSong(fileHash);
+    if (peers.isNotEmpty) {
+      try {
+        data = await _requestFromPeers(index, peers).timeout(
+          const Duration(seconds: 2),
+        );
+      } catch (_) {
+        _p2pCompleters.remove(index);
+        try {
+          data = await _streamingClient.downloadChunkFallback(fileHash, index);
+        } catch (_) {
+          return;
+        }
+      }
+    } else {
+      try {
+        data = await _streamingClient.downloadChunkFallback(fileHash, index);
+      } catch (_) {
+        return;
+      }
+    }
+
+    if (_verifyIntegrity(index, data)) {
+      _saveToCache(index, data);
+    }
   }
 
   /// Returns true if the chunk was served by a peer, false otherwise,

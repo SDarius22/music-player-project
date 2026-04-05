@@ -1,6 +1,9 @@
 package com.example.musicplayerbackend.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.*;
 
 import java.time.Instant;
@@ -15,30 +18,28 @@ import java.time.Instant;
 public class UserPlaybackState {
 
     @Id
-    @Column(name = "user_id")
     private Long userId;
 
-    /** JSON array of file hashes representing the queue. */
-    @Column(name = "queue_song_ids", columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     @Builder.Default
     private String queueSongIds = "[]";
 
-    @Column(name = "current_file_hash", length = 64)
+    @Column(length = 64)
     private String currentFileHash;
 
-    @Column(name = "position_ms", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private Long positionMs = 0L;
 
-    @Column(name = "shuffle", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private Boolean shuffle = false;
 
-    @Column(name = "repeat", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private Boolean repeat = false;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();
 }

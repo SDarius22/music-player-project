@@ -11,6 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Chunk {
+    public static final int MAX_SIZE = 64 * 1024; // 64KB
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

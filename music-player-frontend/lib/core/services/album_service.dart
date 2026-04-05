@@ -71,7 +71,11 @@ class AlbumService {
         sort: sort,
       );
 
+      final hashMap = <int, List<String>>{};
       for (final serverAlbum in serverPage.content) {
+        if (serverAlbum.serverId > 0 && serverAlbum.serverSongFileHashes.isNotEmpty) {
+          hashMap[serverAlbum.serverId] = serverAlbum.serverSongFileHashes;
+        }
         cacheServerAlbum(serverAlbum);
       }
 
@@ -83,6 +87,10 @@ class AlbumService {
           page * size,
           size,
         );
+        for (final album in content) {
+          final hashes = hashMap[album.serverId];
+          if (hashes != null) album.serverSongFileHashes = hashes;
+        }
         return AlbumPageDto(
           content: content,
           page: page,

@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.data;
 
+import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.Playlist;
 import com.example.musicplayerbackend.domain.User;
 import org.junit.jupiter.api.AfterEach;
@@ -56,10 +57,10 @@ class PlaylistRepositoryTest extends BaseRepositoryTest {
         playlistRepository.save(buildPlaylist(userA, "Playlist A2"));
         playlistRepository.save(buildPlaylist(userB, "Playlist B1"));
 
-        Page<Playlist> result = playlistRepository.findAllByUserId(userA.getId(), PageRequest.of(0, 10));
+        Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(userA.getId(), PageRequest.of(0, 10));
 
         assertThat(result.getContent()).hasSize(2)
-                .extracting(Playlist::getName)
+                .extracting(PlaylistListProjection::getName)
                 .containsExactlyInAnyOrder("Playlist A1", "Playlist A2");
     }
 
@@ -68,16 +69,16 @@ class PlaylistRepositoryTest extends BaseRepositoryTest {
         playlistRepository.save(buildPlaylist(userA, "Only A's"));
         playlistRepository.save(buildPlaylist(userB, "Only B's"));
 
-        Page<Playlist> result = playlistRepository.findAllByUserId(userA.getId(), PageRequest.of(0, 10));
+        Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(userA.getId(), PageRequest.of(0, 10));
 
         assertThat(result.getContent())
-                .extracting(Playlist::getName)
+                .extracting(PlaylistListProjection::getName)
                 .doesNotContain("Only B's");
     }
 
     @Test
     void shouldReturnEmptyPageWhenUserHasNoPlaylists() {
-        Page<Playlist> result = playlistRepository.findAllByUserId(userA.getId(), PageRequest.of(0, 10));
+        Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(userA.getId(), PageRequest.of(0, 10));
 
         assertThat(result).isEmpty();
     }
@@ -88,8 +89,8 @@ class PlaylistRepositoryTest extends BaseRepositoryTest {
             playlistRepository.save(buildPlaylist(userA, "Playlist " + i));
         }
 
-        Page<Playlist> page0 = playlistRepository.findAllByUserId(userA.getId(), PageRequest.of(0, 2));
-        Page<Playlist> page1 = playlistRepository.findAllByUserId(userA.getId(), PageRequest.of(1, 2));
+        Page<PlaylistListProjection> page0 = playlistRepository.findAllWithHashes(userA.getId(), PageRequest.of(0, 2));
+        Page<PlaylistListProjection> page1 = playlistRepository.findAllWithHashes(userA.getId(), PageRequest.of(1, 2));
 
         assertThat(page0.getContent()).hasSize(2);
         assertThat(page0.getTotalElements()).isEqualTo(5);
@@ -101,7 +102,7 @@ class PlaylistRepositoryTest extends BaseRepositoryTest {
         Playlist saved = playlistRepository.save(buildPlaylist(userA, "ToDelete"));
         playlistRepository.delete(saved);
 
-        Page<Playlist> result = playlistRepository.findAllByUserId(userA.getId(), PageRequest.of(0, 10));
+        Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(userA.getId(), PageRequest.of(0, 10));
         assertThat(result).isEmpty();
     }
 }

@@ -434,6 +434,15 @@ class MockSongService extends _i1.Mock implements _i11.SongService {
           as _i12.Future<_i3.SongPageDto>);
 
   @override
+  _i12.Future<void> fetchSongsByHashes(List<String>? hashes) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchSongsByHashes, [hashes]),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
   _i12.Future<List<_i2.Song>> getRecommendations() =>
       (super.noSuchMethod(
             Invocation.method(#getRecommendations, []),
@@ -527,6 +536,12 @@ class MockPlaylistService extends _i1.Mock implements _i14.PlaylistService {
             returnValueForMissingStub: <String, dynamic>{},
           )
           as Map<String, dynamic>);
+
+  @override
+  void setSongService(_i11.SongService? songService) => super.noSuchMethod(
+    Invocation.method(#setSongService, [songService]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i12.Stream<dynamic> watchPlaylists() =>

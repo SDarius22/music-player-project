@@ -546,6 +546,12 @@ class SongService {
     );
   }
 
+  Future<void> fetchSongsByHashes(List<String> hashes) async {
+    for (final hash in hashes) {
+      await fetchSongByFileHash(hash);
+    }
+  }
+
   Future<List<Song>> getRecommendations() async {
     final page = await _songRestService.getRecommendations();
     await _cacheServerSongs(page.content);

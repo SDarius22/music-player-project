@@ -12,6 +12,7 @@ class Song implements BaseEntity {
   int id = 0;
 
   @Index()
+  @Unique()
   String fileHash = '';
 
   bool requiresSync = true;
@@ -34,9 +35,7 @@ class Song implements BaseEntity {
   DateTime? lastPlayed;
   int playCount = 0;
 
-  /// Accumulated play count delta not yet synced to the server.
   int pendingPlayCountDelta = 0;
-  /// Accumulated play duration in seconds not yet synced to the server.
   int pendingPlayDurationSeconds = 0;
 
   @override
@@ -109,7 +108,6 @@ class Song implements BaseEntity {
   @override
   Uint8List? get coverArt => album.target?.coverArt;
 
-  /// Song cover = its album's cover. Falls back to the album's imageUrl.
   @override
   String? get imageUrl =>
       fileHash.isNotEmpty ? '/songs/$fileHash/cover' : album.target?.imageUrl;
