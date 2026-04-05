@@ -61,8 +61,15 @@
                     });
                 });
 
-                // Reload the page when a new SW takes control (state is fresh — no audio was playing).
+                // Reload only when a *new* SW replaces an existing one (i.e. an update).
+                // If the page loaded without a controller and the SW just claimed it for the
+                // first time, reloading would create an infinite loop.
+                var hadController = !!navigator.serviceWorker.controller;
                 navigator.serviceWorker.addEventListener('controllerchange', function () {
+                    if (!hadController) {
+                        hadController = true;
+                        return;
+                    }
                     window.location.reload();
                 });
             }).catch(function (err) {
