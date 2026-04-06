@@ -13,8 +13,8 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
 
   String get defaultSortField => 'Name';
 
-  Future<Artist> fetchArtistDetails(int artistId) async {
-    return await _artistService.getArtistByServerId(artistId);
+  Future<Artist?> fetchArtistDetails(String artistHash) async {
+    return await _artistService.fetchArtistDetails(artistHash);
   }
 
   @override

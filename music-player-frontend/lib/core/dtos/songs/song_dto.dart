@@ -24,14 +24,14 @@ class SongDto {
 
   factory SongDto.fromJson(Map<String, dynamic> json) {
     return SongDto(
-      fileHash: json['fileHash'] as String? ?? '',
-      name: json['name'] as String? ?? 'Unknown song',
-      durationInSeconds: (json['durationInSeconds'] as num? ?? 0).toInt(),
-      trackNumber: (json['trackNumber'] as num? ?? 0).toInt(),
-      discNumber: (json['discNumber'] as num? ?? 0).toInt(),
-      releaseYear: (json['releaseYear'] as num? ?? 0).toInt(),
-      artist: ArtistDto.fromJson(json['artist'] as Map<String, dynamic>? ?? {}),
-      album: AlbumDto.fromJson(json['album'] as Map<String, dynamic>? ?? {}),
+      fileHash: json['fileHash'] as String,
+      name: json['name'] as String,
+      durationInSeconds: (json['durationInSeconds'] as num).toInt(),
+      trackNumber: (json['trackNumber'] as num).toInt(),
+      discNumber: (json['discNumber'] as num).toInt(),
+      releaseYear: (json['releaseYear'] as num).toInt(),
+      artist: ArtistDto.fromJson(json['artist'] as Map<String, dynamic>),
+      album: AlbumDto.fromJson(json['album'] as Map<String, dynamic>),
     );
   }
 }

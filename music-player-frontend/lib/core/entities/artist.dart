@@ -13,10 +13,10 @@ class Artist implements BaseEntity {
 
   @Index()
   @Unique()
-  final String _hash;
+  final String hash;
 
   @Unique()
-  final String _name;
+  final String name;
 
   @Property(type: PropertyType.byteVector)
   Uint8List? imageBytes;
@@ -24,9 +24,9 @@ class Artist implements BaseEntity {
   @Backlink('artist')
   final _songs = ToMany<Song>();
 
-  Artist(this._hash, this._name, {List<Song> songs = const []}) {
-    assert(_hash.isNotEmpty, 'Artist hash cannot be empty');
-    assert(_name.isNotEmpty, 'Artist name cannot be empty');
+  Artist(this.hash, this.name, {List<Song> songs = const []}) {
+    assert(hash.isNotEmpty, 'Artist hash cannot be empty');
+    assert(name.isNotEmpty, 'Artist name cannot be empty');
     for (var song in songs) {
       addSong(song);
     }
@@ -42,12 +42,12 @@ class Artist implements BaseEntity {
 
   @override
   String getName() {
-    return _name;
+    return name;
   }
 
   @override
   String getHash() {
-    return _hash;
+    return hash;
   }
 
   @override
@@ -78,11 +78,11 @@ class Artist implements BaseEntity {
 
   @override
   String getImageUrl() {
-    return '/artists/$_hash/image';
+    return '/artists/$hash/image';
   }
 
   @override
   String toString() {
-    return "Artist{name: $_name, hash: $_hash, songs: ${_songs.length}}";
+    return "Artist{name: $name, hash: $hash, songs: ${_songs.length}}";
   }
 }

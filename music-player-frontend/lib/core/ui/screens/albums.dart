@@ -33,9 +33,11 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
       onPressed: () async {
         if (entity is! Album) return;
         Album album = entity;
-        album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
         var audioProvider = Provider.of<AudioProvider>(context, listen: false);
-        await audioProvider.setQueueAndPlay(album.songs, album.songs.first);
+        await audioProvider.setQueueAndPlay(
+          album.getSongs(),
+          album.getSongs().first,
+        );
       },
     );
   }
@@ -53,21 +55,19 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
         switch (value) {
           case 'add':
             Album album = entity as Album;
-            album.songs.sort((a, b) => a.trackNumber.compareTo(b.trackNumber));
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
             abstractAppStateProvider.innerNavigatorKey.currentState!.push(
-              AddOrExportScreen.route(songs: album.songs),
+              AddOrExportScreen.route(songs: album.getSongs()),
             );
             break;
           case 'playNext':
             Album album = entity as Album;
-            album.songs.sort((a, b) => b.trackNumber.compareTo(a.trackNumber));
             var audioProvider = Provider.of<AudioProvider>(
               context,
               listen: false,
             );
-            audioProvider.addNextToQueue(album.songs);
+            audioProvider.addNextToQueue(album.getSongs());
             break;
           case 'select':
             var selectionProvider = Provider.of<SelectionProvider>(

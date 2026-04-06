@@ -188,9 +188,7 @@ class TrackScreen extends EntityScreen {
                             ),
                           ),
                           Text(
-                            Duration(
-                              seconds: song.durationInSeconds,
-                            ).pretty(),
+                            Duration(seconds: song.durationInSeconds).pretty(),
                             style: Theme.of(context).textTheme.bodyMedium!
                                 .copyWith(color: Colors.white),
                           ),
@@ -260,7 +258,7 @@ class TrackScreen extends EntityScreen {
                       child: Column(
                         children: [
                           Hero(
-                            tag: song.path,
+                            tag: song.getHash(),
                             child: Container(
                               height: imageSize,
                               width: imageSize,
@@ -312,7 +310,7 @@ class TrackScreen extends EntityScreen {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Hero(
-                            tag: song.path,
+                            tag: song.getHash(),
                             child: Container(
                               height: height * 0.5,
                               width: height * 0.5,

@@ -33,19 +33,15 @@ class PlaylistService {
   Future<Playlist> addPlaylist(
     String name,
     List<Song> songs,
-    String whereToAdd,
     Uint8List? coverArt,
   ) async {
-    Playlist newPlaylist = Playlist();
-    newPlaylist.name = name;
-    newPlaylist.nextAdded = whereToAdd;
+    Playlist newPlaylist = Playlist(name, songs: songs);
     newPlaylist.imageBytes = coverArt;
-    addToPlaylist(newPlaylist, songs);
     _playlistRepository.savePlaylist(newPlaylist);
 
     try {
       final songFileHashes =
-          songs.map((s) => s.fileHash).where((h) => h.isNotEmpty).toList();
+          songs.map((s) => s.getHash()).where((h) => h.isNotEmpty).toList();
       final coverBase64 = coverArt != null ? base64Encode(coverArt) : null;
       final result = await _playlistRestService.createPlaylist(
         name,
@@ -65,9 +61,9 @@ class PlaylistService {
 
   Future<Playlist> updatePlaylist(Playlist playlist) async {
     if (playlist.indestructible) {
-      final list = playlist.songsList;
+      final list = playlist.getSongs();
       if (list.isNotEmpty) {
-        playlist.imageBytes = list.first.coverArt;
+        playlist.imageBytes = list.first.getCoverArt();
       }
     }
     _playlistRepository.savePlaylist(playlist);
@@ -75,8 +71,9 @@ class PlaylistService {
     if (playlist.serverId > 0) {
       try {
         final songFileHashes =
-            playlist.songs
-                .map((s) => s.fileHash)
+            playlist
+                .getSongs()
+                .map((s) => s.getHash())
                 .where((h) => h.isNotEmpty)
                 .toList();
         final coverBase64 =
@@ -85,7 +82,7 @@ class PlaylistService {
                 : null;
         await _playlistRestService.updatePlaylist(
           playlist.serverId,
-          playlist.name,
+          playlist.getName(),
           songFileHashes,
           coverBase64,
         );
@@ -95,10 +92,6 @@ class PlaylistService {
     }
 
     return playlist;
-  }
-
-  Playlist? getPlaylist(int playlistId) {
-    return _playlistRepository.getPlaylist(playlistId);
   }
 
   Song? getMostRecentPlayedSong() {
@@ -113,115 +106,109 @@ class PlaylistService {
   }
 
   void initializeQueue() {
-    if (_playlistRepository.getPlaylistByName("Queue") != null) {
+    if (_playlistRepository.getPlaylistByServerIdAndName(-1, "Queue") != null) {
       return;
     }
-    Playlist queue = Playlist();
-    queue.id = 1;
-    queue.name = "Queue";
+    Playlist queue = Playlist("Queue");
     queue.indestructible = true;
-    queue.nextAdded = "last";
     _playlistRepository.savePlaylist(queue);
   }
 
   Playlist getQueuePlaylist() {
-    var queue = _playlistRepository.getPlaylistByName("Queue");
+    var queue = _playlistRepository.getPlaylistByServerIdAndName(-1, "Queue");
     if (queue == null) {
       debugPrint("Queue playlist not found, initializing...");
       initializeQueue();
-      return _playlistRepository.getPlaylistByName("Queue")!;
+      return _playlistRepository.getPlaylistByServerIdAndName(-1, "Queue")!;
     } else {
       return queue;
     }
   }
 
   void initializeFavorites() {
-    if (_playlistRepository.getPlaylistByName("Favorites") != null) {
+    if (_playlistRepository.getPlaylistByServerIdAndName(-1, "Favorites") !=
+        null) {
       return;
     }
-    Playlist favorites = Playlist();
-    favorites.id = 2;
-    favorites.name = "Favorites";
+    Playlist favorites = Playlist("Favorites");
     favorites.indestructible = true;
-    favorites.nextAdded = "last";
     _playlistRepository.savePlaylist(favorites);
   }
 
   Playlist getFavoritesPlaylist() {
-    var favorites = _playlistRepository.getPlaylistByName("Favorites");
+    var favorites = _playlistRepository.getPlaylistByServerIdAndName(
+      -1,
+      "Favorites",
+    );
     if (favorites == null) {
       debugPrint("Favorites playlist not found, initializing...");
       initializeFavorites();
-      return _playlistRepository.getPlaylistByName("Favorites")!;
+      return _playlistRepository.getPlaylistByServerIdAndName(-1, "Favorites")!;
     } else {
       return favorites;
     }
   }
 
   void initializeMostPlayed() {
-    if (_playlistRepository.getPlaylistByName("Most Played") != null) {
+    if (_playlistRepository.getPlaylistByServerIdAndName(-1, "Most Played") !=
+        null) {
       return;
     }
-    Playlist mostPlayed = Playlist();
-    mostPlayed.id = 3;
-    mostPlayed.name = "Most Played";
+    Playlist mostPlayed = Playlist("Most Played");
     mostPlayed.indestructible = true;
-    mostPlayed.nextAdded = "last";
     _playlistRepository.savePlaylist(mostPlayed);
   }
 
   void initializeRecentlyPlayed() {
-    if (_playlistRepository.getPlaylistByName("Recently Played") != null) {
+    if (_playlistRepository.getPlaylistByServerIdAndName(
+          -1,
+          "Recently Played",
+        ) !=
+        null) {
       return;
     }
-    Playlist recentlyPlayed = Playlist();
-    recentlyPlayed.id = 4;
-    recentlyPlayed.name = "Recently Played";
+    Playlist recentlyPlayed = Playlist("Recently Played");
     recentlyPlayed.indestructible = true;
-    recentlyPlayed.nextAdded = "last";
     _playlistRepository.savePlaylist(recentlyPlayed);
   }
 
   void updateMostPlayedPlaylist() {
     Playlist? mostPlayed = _playlistRepository
         .getIndestructiblePlaylists()
-        .firstWhereOrNull((pl) => pl.name == "Most Played");
+        .firstWhereOrNull((pl) => pl.getName() == "Most Played");
     if (mostPlayed == null) {
       debugPrint("Most Played playlist not found");
       return;
     }
     List<Song> topSongs = _songRepository.getMostPlayedSongs(50);
     debugPrint("Updating Most Played with ${topSongs.length} songs");
-    mostPlayed.songs.clear();
-    mostPlayed.songFileHashes.clear();
+    mostPlayed.clearSongs();
     addToPlaylist(mostPlayed, topSongs);
   }
 
   void updateRecentlyPlayedPlaylist() {
     Playlist? recentlyPlayed = _playlistRepository
         .getIndestructiblePlaylists()
-        .firstWhereOrNull((pl) => pl.name == "Recently Played");
+        .firstWhereOrNull((pl) => pl.getName() == "Recently Played");
     if (recentlyPlayed == null) {
       debugPrint("Recently Played playlist not found");
       return;
     }
     List<Song> recentSongs = _songRepository.getRecentlyPlayedSongs(50);
-    recentlyPlayed.songs.clear();
-    recentlyPlayed.songFileHashes.clear();
+    recentlyPlayed.clearSongs();
     addToPlaylist(recentlyPlayed, recentSongs);
   }
 
   void updateFavoritesPlaylist() {
     Playlist? favorites = _playlistRepository
         .getIndestructiblePlaylists()
-        .firstWhereOrNull((pl) => pl.name == "Favorites");
+        .firstWhereOrNull((pl) => pl.getName() == "Favorites");
     if (favorites == null) {
       debugPrint("Favorites playlist not found");
       return;
     }
     List<Song> favoriteSongs = _songRepository.getFavoriteSongs();
-    favorites.songs.clear();
-    favorites.songFileHashes.clear();
+    favorites.clearSongs();
     addToPlaylist(favorites, favoriteSongs);
   }
 
@@ -237,10 +224,7 @@ class PlaylistService {
     return _playlistRepository.getPlaylists(query, sortField, flag);
   }
 
-  Future<
-    ({List<Playlist> content, int totalPages, int totalElements, int page})
-  >
-  getPlaylistsPage(
+  Future<({List<Playlist> content, int totalPages, int page})> getPlaylistsPage(
     String query,
     String sortField,
     bool ascending,
@@ -248,32 +232,19 @@ class PlaylistService {
     int size,
   ) async {
     int? serverTotalPages;
-    int? serverTotalElements;
     try {
       final serverPage = await _playlistRestService.getPlaylistsPage(
         page: page,
         size: size,
       );
-      if (serverPage.totalElements > 0) {
-        serverTotalPages = serverPage.totalPages;
-        serverTotalElements = serverPage.totalElements;
-        for (final dto in serverPage.content) {
-          cacheServerPlaylist(_playlistDtoToEntity(dto));
-        }
+      serverTotalPages = serverPage.totalPages;
+
+      for (final serverPlaylist in serverPage.content) {
+        cacheServerPlaylist(serverPlaylist);
       }
     } catch (e) {
       debugPrint('PlaylistService: server fetch failed, using local: $e');
     }
-
-    final allLocal = _playlistRepository.getPlaylists(
-      query,
-      sortField,
-      ascending,
-    );
-    final localTotal = allLocal.length;
-    final effectiveTotalElements = serverTotalElements ?? localTotal;
-    final effectiveTotalPages =
-        serverTotalPages ?? ((localTotal + size - 1) ~/ size).clamp(1, 999999);
 
     final localContent = _playlistRepository.getPlaylistsPaged(
       query,
@@ -283,57 +254,38 @@ class PlaylistService {
       size,
     );
 
-    return (
-      content: localContent,
-      totalPages: effectiveTotalPages,
-      totalElements: effectiveTotalElements,
-      page: page,
-    );
+    final totalPages =
+        (serverTotalPages != null && serverTotalPages > 0)
+            ? serverTotalPages
+            : ((_playlistRepository
+                            .getPlaylists(query, sortField, ascending)
+                            .length +
+                        size -
+                        1) ~/
+                    size)
+                .clamp(1, double.maxFinite.toInt());
+
+    return (content: localContent, totalPages: totalPages, page: page);
   }
 
-  Playlist cacheServerPlaylist(Playlist serverPlaylist) {
-    if (serverPlaylist.serverId <= 0) {
+  Playlist cacheServerPlaylist(PlaylistDto serverPlaylist) {
+    if (serverPlaylist.id <= 0) {
       throw Exception('Server playlist must have a valid ID');
     }
 
-    // Look up by serverId first.
-    var cached = _playlistRepository.getPlaylistByServerId(
-      serverPlaylist.serverId,
+    var cachedPlaylist = _playlistRepository.getOrCreatePlaylist(
+      serverPlaylist.id,
+      serverPlaylist.name,
     );
 
-    if (cached == null) {
-      // Fall back to name lookup, but never hijack an indestructible playlist.
-      final byName = _playlistRepository.getPlaylistByName(serverPlaylist.name);
-      if (byName != null && !byName.indestructible) {
-        cached = byName;
-        if (cached.serverId <= 0) {
-          cached.serverId = serverPlaylist.serverId;
-        }
-      } else {
-        // Not found (or found indestructible) — save the entity as-is.
-        return _playlistRepository.savePlaylist(serverPlaylist);
+    for (final hash in serverPlaylist.songFileHashes) {
+      final song = _songRepository.getOrCreateSong(hash);
+      if (!cachedPlaylist.getSongs().contains(song)) {
+        cachedPlaylist.addSong(song);
       }
     }
 
-    cached.name = serverPlaylist.name;
-
-    for (final hash in serverPlaylist.serverSongFileHashes) {
-      final song = _songRepository.getSongByFileHash(hash);
-      if (song != null && !cached.songFileHashes.contains(hash)) {
-        cached.songs.add(song);
-        cached.songFileHashes.add(hash);
-      }
-    }
-
-    return _playlistRepository.savePlaylist(cached);
-  }
-
-  Playlist _playlistDtoToEntity(PlaylistDto dto) {
-    final p = Playlist();
-    p.serverId = dto.id;
-    p.name = dto.name;
-    p.serverSongFileHashes = dto.songFileHashes;
-    return p;
+    return _playlistRepository.savePlaylist(cachedPlaylist);
   }
 
   List<Playlist> getAllPlaylists() {
@@ -341,15 +293,9 @@ class PlaylistService {
   }
 
   void addToPlaylist(Playlist playlist, List<Song> songs) {
-    if (playlist.nextAdded == 'last') {
-      for (var song in songs) {
-        playlist.songFileHashes.add(song.fileHash);
-        playlist.songs.add(song);
-      }
-    } else {
-      for (var song in songs.reversed) {
-        playlist.songFileHashes.insert(0, song.fileHash);
-        playlist.songs.add(song);
+    for (var song in songs) {
+      if (!playlist.getSongs().contains(song)) {
+        playlist.addSong(song);
       }
     }
     updatePlaylist(playlist);
@@ -357,8 +303,7 @@ class PlaylistService {
 
   void deleteFromPlaylist(Song song, Playlist playlist) {
     try {
-      playlist.songFileHashes.remove(song.fileHash);
-      playlist.songs.remove(song);
+      playlist.removeSong(song);
       _playlistRepository.savePlaylist(playlist);
     } catch (e) {
       debugPrint("Error removing song from playlist: $e");
@@ -366,14 +311,15 @@ class PlaylistService {
   }
 
   void deleteAllSongsFromPlaylist(Playlist playlist) {
-    playlist.songFileHashes.clear();
-    playlist.songs.clear();
+    playlist.clearSongs();
     _playlistRepository.savePlaylist(playlist);
   }
 
   Future<void> deletePlaylist(Playlist playlist) async {
     if (playlist.indestructible) {
-      debugPrint("Cannot delete indestructible playlist: ${playlist.name}");
+      debugPrint(
+        "Cannot delete indestructible playlist: ${playlist.getName()}",
+      );
       return;
     }
     if (playlist.serverId > 0) {

@@ -300,7 +300,7 @@ class _MobileQuickDialCard extends StatelessWidget {
           AspectRatio(
             aspectRatio: 1,
             child: Image(
-              image: MemoryImage(song.coverArt ?? Uint8List(0)),
+              image: MemoryImage(song.getCoverArt() ?? Uint8List(0)),
               fit: BoxFit.cover,
               errorBuilder:
                   (_, _, _) => Container(
@@ -362,7 +362,7 @@ class _MobileSquareGridCard extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Image(
-              image: MemoryImage(song.coverArt ?? Uint8List(0)),
+              image: MemoryImage(song.getCoverArt() ?? Uint8List(0)),
               fit: BoxFit.cover,
               width: double.infinity,
               errorBuilder:

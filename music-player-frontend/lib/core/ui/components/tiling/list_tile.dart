@@ -101,7 +101,7 @@ class CustomListTile extends StatelessWidget {
                         ? Consumer<AudioProvider>(
                           builder: (_, audioProvider, _) {
                             return CustomTextScroll(
-                              text: entity.name,
+                              text: entity.getName(),
                               style: Theme.of(
                                 context,
                               ).textTheme.bodyMedium!.copyWith(
@@ -123,7 +123,7 @@ class CustomListTile extends StatelessWidget {
                           },
                         )
                         : CustomTextScroll(
-                          text: entity.name,
+                          text: entity.getName(),
                           style: Theme.of(
                             context,
                           ).textTheme.bodyMedium!.copyWith(

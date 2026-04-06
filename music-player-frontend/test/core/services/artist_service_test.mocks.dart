@@ -328,21 +328,6 @@ class MockSongRepository extends _i1.Mock implements _i10.SongRepository {
           as int);
 
   @override
-  _i4.Song getSongByPath(String? path) =>
-      (super.noSuchMethod(
-            Invocation.method(#getSongByPath, [path]),
-            returnValue: _FakeSong_2(
-              this,
-              Invocation.method(#getSongByPath, [path]),
-            ),
-            returnValueForMissingStub: _FakeSong_2(
-              this,
-              Invocation.method(#getSongByPath, [path]),
-            ),
-          )
-          as _i4.Song);
-
-  @override
   _i4.Song? getSongByFileHash(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#getSongByFileHash, [fileHash]),
@@ -351,39 +336,19 @@ class MockSongRepository extends _i1.Mock implements _i10.SongRepository {
           as _i4.Song?);
 
   @override
-  _i4.Song getOrCreateSongByFileHash(String? fileHas) =>
+  _i4.Song getOrCreateSong(String? fileHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+            Invocation.method(#getOrCreateSong, [fileHash]),
             returnValue: _FakeSong_2(
               this,
-              Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+              Invocation.method(#getOrCreateSong, [fileHash]),
             ),
             returnValueForMissingStub: _FakeSong_2(
               this,
-              Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+              Invocation.method(#getOrCreateSong, [fileHash]),
             ),
           )
           as _i4.Song);
-
-  @override
-  _i4.Song getSong(int? id) =>
-      (super.noSuchMethod(
-            Invocation.method(#getSong, [id]),
-            returnValue: _FakeSong_2(this, Invocation.method(#getSong, [id])),
-            returnValueForMissingStub: _FakeSong_2(
-              this,
-              Invocation.method(#getSong, [id]),
-            ),
-          )
-          as _i4.Song);
-
-  @override
-  _i4.Song? getSongContaining(String? query) =>
-      (super.noSuchMethod(
-            Invocation.method(#getSongContaining, [query]),
-            returnValueForMissingStub: null,
-          )
-          as _i4.Song?);
 
   @override
   List<_i4.Song> getRecentlyPlayedSongs(int? limit) =>

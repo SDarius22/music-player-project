@@ -38,11 +38,11 @@ class CustomGridTile extends StatelessWidget {
     if (entity is Song) {
       return (entity).artist.target?.name ?? 'Unknown Artist';
     } else if (entity is Album) {
-      return (entity).artist.target?.name ?? 'Unknown Artist';
+      return (entity).getArtistName();
     } else if (entity is Artist) {
-      return "${entity.songs.length} Songs";
+      return "${entity.getSongs().length} Songs";
     } else if (entity is Playlist) {
-      return "${entity.songFileHashes.length} Songs";
+      return "${entity.getSongs().length} Songs";
     }
     return "";
   }
@@ -58,7 +58,7 @@ class CustomGridTile extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         child: Hero(
-          tag: entity is Song ? (entity as Song).path : entity.name,
+          tag: entity.getHash(),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(height * 0.015),
             child: ImageWidget(
@@ -105,13 +105,13 @@ class CustomGridTile extends StatelessWidget {
                     ),
                     child:
                         entity is Song
-                            ? Selector<AudioProvider, Song>(
+                            ? Selector<AudioProvider, Song?>(
                               selector:
                                   (_, audioProvider) =>
                                       audioProvider.currentSong,
                               builder: (_, song, _) {
                                 return CustomTextScroll(
-                                  text: entity.name,
+                                  text: entity.getName(),
                                   style: Theme.of(
                                     context,
                                   ).textTheme.titleSmall!.copyWith(
@@ -124,7 +124,7 @@ class CustomGridTile extends StatelessWidget {
                               },
                             )
                             : CustomTextScroll(
-                              text: entity.name,
+                              text: entity.getName(),
                               style: Theme.of(context).textTheme.titleSmall!
                                   .copyWith(color: Colors.white),
                             ),
@@ -132,7 +132,7 @@ class CustomGridTile extends StatelessWidget {
                 ],
               ),
               otherStackChildren: [
-                if (!kIsWeb && entity.isLocal)
+                if (!kIsWeb && entity.isLocal())
                   Align(
                     alignment: Alignment.topRight,
                     child: ClipPath(
@@ -199,13 +199,13 @@ class CustomGridTile extends StatelessWidget {
                         ),
                         child:
                             entity is Song
-                                ? Selector<AudioProvider, Song>(
+                                ? Selector<AudioProvider, Song?>(
                                   selector:
                                       (_, audioProvider) =>
                                           audioProvider.currentSong,
                                   builder: (_, song, _) {
                                     return Text(
-                                      entity.name,
+                                      entity.getName(),
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
                                       style: Theme.of(
@@ -220,7 +220,7 @@ class CustomGridTile extends StatelessWidget {
                                   },
                                 )
                                 : Text(
-                                  entity.name,
+                                  entity.getName(),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                   style: Theme.of(context).textTheme.titleSmall!

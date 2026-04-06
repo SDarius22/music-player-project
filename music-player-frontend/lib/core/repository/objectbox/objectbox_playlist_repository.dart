@@ -42,7 +42,8 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   Playlist getOrCreatePlaylist(int serverId, String name) {
     final existing = getPlaylistByServerIdAndName(serverId, name);
     if (existing != null) return existing;
-    Playlist playlist = Playlist(serverId, name);
+    Playlist playlist = Playlist(name);
+    playlist.serverId = serverId;
     return savePlaylist(playlist);
   }
 

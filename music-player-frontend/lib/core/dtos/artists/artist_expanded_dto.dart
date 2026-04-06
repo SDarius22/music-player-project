@@ -1,21 +1,20 @@
 class ArtistExpandedDto {
-  final int id;
+  final String hash;
   final String name;
   final List<String> songFileHashes;
 
   ArtistExpandedDto({
-    required this.id,
+    required this.hash,
     required this.name,
     required this.songFileHashes,
   });
 
   factory ArtistExpandedDto.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw =
-        (json['songFileHashes'] as List<dynamic>? ?? const []);
+    final List<String> raw = (json['songFileHashes'] as List<String>);
     return ArtistExpandedDto(
-      id: (json['id'] as num? ?? 0).toInt(),
-      name: json['name'] as String? ?? 'Unknown artist',
-      songFileHashes: raw.map((e) => e as String).toList(),
+      hash: json['hash'] as String,
+      name: json['name'] as String,
+      songFileHashes: raw,
     );
   }
 }

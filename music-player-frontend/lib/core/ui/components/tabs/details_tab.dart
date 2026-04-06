@@ -106,7 +106,7 @@ class DetailsTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     CustomTextScroll(
-                      text: audioProvider.currentSong.name,
+                      text: currentSong.name,
                       style:
                           MusicPlayerTheme.getTheme().textTheme.headlineMedium!,
                     ),
@@ -121,8 +121,7 @@ class DetailsTab extends StatelessWidget {
                                 state: PanelState.min,
                               );
 
-                              var artist =
-                                  audioProvider.currentSong.artist.target;
+                              var artist = currentSong.artist.target;
                               if (artist != null) {
                                 Navigator.push(
                                   context,
@@ -138,11 +137,7 @@ class DetailsTab extends StatelessWidget {
                             iconAlignment: IconAlignment.end,
                             label: CustomTextScroll(
                               text:
-                                  audioProvider
-                                      .currentSong
-                                      .artist
-                                      .target
-                                      ?.name ??
+                                  currentSong.artist.target?.name ??
                                   'Unknown Artist',
                               style:
                                   MusicPlayerTheme.getTheme()
@@ -162,8 +157,7 @@ class DetailsTab extends StatelessWidget {
                               miniPlayerController.animateToHeight(
                                 state: PanelState.min,
                               );
-                              var album =
-                                  audioProvider.currentSong.album.target;
+                              var album = currentSong.album.target;
                               if (album != null) {
                                 Navigator.push(
                                   context,
@@ -178,11 +172,7 @@ class DetailsTab extends StatelessWidget {
                             ),
                             label: CustomTextScroll(
                               text:
-                                  audioProvider
-                                      .currentSong
-                                      .album
-                                      .target
-                                      ?.name ??
+                                  currentSong.album.target?.name ??
                                   'Unknown Album',
                               style:
                                   MusicPlayerTheme.getTheme()

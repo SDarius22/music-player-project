@@ -74,7 +74,7 @@ abstract class AbstractFileService {
       throw Exception("Song is null");
     }
 
-    if (song.coverArt == null) {
+    if (song.getCoverArt() == null) {
       return File(''); // Return an empty file if no cover art is available
     }
 
@@ -84,7 +84,7 @@ abstract class AbstractFileService {
     if (file.existsSync()) {
       return file;
     }
-    final ByteData data = ByteData.view(song.coverArt!.buffer);
+    final ByteData data = ByteData.view(song.getCoverArt()!.buffer);
     await file.writeAsBytes(data.buffer.asUint8List());
     return file;
   }

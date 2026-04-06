@@ -56,7 +56,8 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
     if (existingPlaylist != null) {
       return existingPlaylist;
     }
-    Playlist newPlaylist = Playlist(serverId, name);
+    Playlist newPlaylist = Playlist(name);
+    newPlaylist.serverId = serverId;
     return savePlaylist(newPlaylist);
   }
 

@@ -25,26 +25,23 @@ class ArtistService {
 
   Map<String, dynamic> get sortFields => _artistRepository.sortFields;
 
-  Future<Artist?> fetchArtistDetails(String name) async {
-    if (name.isEmpty || name.trim().isEmpty) {
-      throw Exception("Artist name cannot be empty.");
-    }
-    try {
-      String artistHash = sha256.convert(utf8.encode(name)).toString();
-      final result = await _artistRestService.getArtistByHash(artistHash);
-      return cacheServerArtistDetail(result!);
-    } catch (e) {
-      debugPrint('Failed to fetch artist by server ID $name: $e');
-    }
-    return _artistRepository.getArtistByName(name);
-  }
-
   Artist getOrCreateArtist(String artistName) {
-    return _artistRepository.getOrCreateArtistByName(artistName);
+    var artistHash = sha256.convert(utf8.encode(artistName)).toString();
+    return _artistRepository.getOrCreateArtist(artistHash, artistName);
   }
 
   void updateArtist(Artist artist) {
     _artistRepository.updateArtist(artist);
+  }
+
+  Future<Artist?> fetchArtistDetails(String artistHash) async {
+    try {
+      final result = await _artistRestService.getArtistByHash(artistHash);
+      return cacheServerArtistDetail(result!);
+    } catch (e) {
+      debugPrint('Failed to fetch artist: $e');
+    }
+    return _artistRepository.getArtistByHash(artistHash);
   }
 
   Future<({List<Artist> content, int totalPages, int page})> getArtistsPage(
@@ -64,6 +61,7 @@ class ArtistService {
         size: size,
         sort: sort,
       );
+      serverTotalPages = serverPage.totalPages;
 
       for (final serverArtist in serverPage.content) {
         cacheServerArtist(serverArtist);
@@ -92,46 +90,49 @@ class ArtistService {
   }
 
   Artist cacheServerArtist(ArtistExpandedDto serverArtist) {
-    var cachedArtist = _artistRepository.getOrCreateArtistByName(
+    var cachedArtist = _artistRepository.getOrCreateArtist(
+      serverArtist.hash,
       serverArtist.name,
     );
 
     for (var songHash in serverArtist.songFileHashes) {
-      var cachedSong = _songRepository.getOrCreateSongByFileHash(songHash);
-      cachedArtist.songs.add(cachedSong);
+      var cachedSong = _songRepository.getOrCreateSong(songHash);
       cachedSong.artist.targetId = cachedArtist.id;
       _songRepository.updateSong(cachedSong);
+
+      cachedArtist.addSong(cachedSong);
     }
 
     return _artistRepository.saveArtist(cachedArtist);
   }
 
   Artist cacheServerArtistDetail(ArtistDetailDto serverArtist) {
-    var cachedArtist = _artistRepository.getOrCreateArtistByName(
+    var cachedArtist = _artistRepository.getOrCreateArtist(
+      serverArtist.hash,
       serverArtist.name,
     );
 
     for (var song in serverArtist.songs) {
-      var cachedSong = _songRepository.getOrCreateSongByFileHash(song.fileHash);
+      var cachedSong = _songRepository.getOrCreateSong(song.fileHash);
 
-      var cachedAlbum = _albumRepository.getOrCreateAlbumByNameAndArtist(
+      var cachedAlbum = _albumRepository.getOrCreateAlbum(
+        song.album.hash,
         song.album.name,
         cachedArtist,
       );
-      cachedAlbum.artist.targetId = cachedArtist.id;
-      cachedAlbum.songs.add(cachedSong);
-      _albumRepository.updateAlbum(cachedAlbum);
 
+      cachedSong.setName(song.name);
       cachedSong.artist.targetId = cachedArtist.id;
       cachedSong.album.targetId = cachedAlbum.id;
-      cachedSong.name = song.name;
       cachedSong.discNumber = song.discNumber;
       cachedSong.trackNumber = song.trackNumber;
       cachedSong.durationInSeconds = song.durationInSeconds;
       cachedSong.year = song.releaseYear;
       _songRepository.updateSong(cachedSong);
 
-      cachedArtist.songs.add(cachedSong);
+      cachedArtist.addSong(cachedSong);
+      cachedAlbum.addSong(cachedSong);
+      _albumRepository.updateAlbum(cachedAlbum);
     }
 
     return _artistRepository.saveArtist(cachedArtist);

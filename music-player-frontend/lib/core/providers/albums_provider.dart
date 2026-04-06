@@ -13,8 +13,8 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
 
   String get defaultSortField => 'Name';
 
-  Future<Album> fetchAlbumDetails(int albumId) async {
-    return await _albumService.fetchAlbumDetails(albumId);
+  Future<Album?> fetchAlbumDetails(String albumHash) async {
+    return await _albumService.fetchAlbumDetails(albumHash);
   }
 
   @override
@@ -43,8 +43,4 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
   Future<void> refresh() async {
     notifyListeners();
   }
-
-  Album getAlbum(int albumId) => _albumService.getAlbum(albumId);
-
-  List<Album> getAllAlbums() => _albumService.getAllAlbums();
 }

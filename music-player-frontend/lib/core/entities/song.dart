@@ -18,10 +18,10 @@ class Song implements BaseEntity {
 
   @Index()
   @Unique()
-  final String _fileHash;
+  final String fileHash;
 
   String? path;
-  String _name = 'Unknown Song';
+  String name = 'Unknown Song';
   int durationInSeconds = 0;
   int trackNumber = 0;
   int discNumber = 0;
@@ -35,22 +35,22 @@ class Song implements BaseEntity {
   int playCount = 0;
   bool likedByUser = false;
 
-  Song(this._fileHash) {
-    assert(_fileHash.isNotEmpty, 'File hash cannot be empty');
+  Song(this.fileHash) {
+    assert(fileHash.isNotEmpty, 'File hash cannot be empty');
   }
 
   @override
   String getName() {
-    return _name;
+    return name;
   }
 
   void setName(String value) {
-    _name = value;
+    name = value;
   }
 
   @override
   String getHash() {
-    return _fileHash;
+    return fileHash;
   }
 
   @override
@@ -60,7 +60,7 @@ class Song implements BaseEntity {
 
   @override
   String getImageUrl() {
-    return '/songs/$_fileHash/cover';
+    return '/songs/$fileHash/cover';
   }
 
   @override
@@ -78,12 +78,12 @@ class Song implements BaseEntity {
   bool operator ==(Object other) {
     if (other is! Song) return false;
 
-    return _fileHash == other._fileHash;
+    return fileHash == other.fileHash;
   }
 
   @override
   int get hashCode {
-    return _fileHash.hashCode;
+    return fileHash.hashCode;
   }
 
   List<Color> getColors() {

@@ -86,7 +86,7 @@ class _ImageWidgetState extends State<ImageWidget> {
       return context.read<CoverService>().getWidget(widget.entity);
     } catch (e) {
       debugPrint(
-        'ImageWidget: failed to get image for entity ${widget.entity.name}: $e',
+        'ImageWidget: failed to get image for entity ${widget.entity.getName()}: $e',
       );
     }
 

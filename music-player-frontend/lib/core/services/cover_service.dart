@@ -35,13 +35,13 @@ class CoverService {
        _authService = authService;
 
   Widget getWidget(BaseEntity entity) {
-    final localBytes = entity.coverArt;
+    final localBytes = entity.getCoverArt();
     if (localBytes != null && localBytes.isNotEmpty) {
       return Image.memory(localBytes, fit: BoxFit.cover);
     }
 
-    final relativeUrl = entity.imageUrl;
-    if (relativeUrl == null || relativeUrl.isEmpty) {
+    final relativeUrl = entity.getImageUrl();
+    if (relativeUrl.isEmpty) {
       return _placeholder();
     }
 

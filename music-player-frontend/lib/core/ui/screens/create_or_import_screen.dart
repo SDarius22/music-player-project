@@ -52,7 +52,6 @@ class CreateOrImportScreen extends StatefulWidget {
 class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
   late ValueNotifier<List<Song>> selected;
   late String playlistName;
-  late String playlistAdd;
   late String search;
   late ValueNotifier<Uint8List?> coverArt;
   late FocusNode searchNode;
@@ -69,7 +68,6 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     super.initState();
     selected = ValueNotifier<List<Song>>([]);
     playlistName = widget.playlistName;
-    playlistAdd = "last";
     search = "";
     coverArt = ValueNotifier<Uint8List?>(null);
     searchNode = FocusNode();
@@ -104,7 +102,13 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     setState(() => _isLoading = true);
     try {
       final songProvider = Provider.of<SongProvider>(context, listen: false);
-      final result = await songProvider.fetchPage(search, 'Title', true, page, 30);
+      final result = await songProvider.fetchPage(
+        search,
+        'Title',
+        true,
+        page,
+        30,
+      );
       if (!mounted) return;
       setState(() {
         if (reset) _songs.clear();
@@ -145,7 +149,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
               .whereType<Song>()
               .toList();
       if (selected.value.isNotEmpty) {
-        coverArt.value = selected.value.first.coverArt;
+        coverArt.value = selected.value.first.getCoverArt();
       }
     } else {
       selected.value = List.from(widget.songFileHashes);
@@ -166,12 +170,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
       context,
       listen: false,
     );
-    playlistProvider.addPlaylist(
-      playlistName,
-      selected.value,
-      playlistAdd,
-      coverArt.value,
-    );
+    playlistProvider.addPlaylist(playlistName, selected.value, coverArt.value);
 
     showToast(
       widget.import
@@ -274,7 +273,6 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                   playlistProvider.addPlaylist(
                     playlistName,
                     selected.value,
-                    playlistAdd,
                     coverArt.value,
                   );
                   BotToast.showText(
@@ -325,7 +323,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                             builder: (context, values, child) {
                               var cover = values[0] as Uint8List?;
                               if (cover != null) {
-                                var playlist = Playlist();
+                                var playlist = Playlist('');
                                 playlist.imageBytes = cover;
 
                                 return ImageWidget(
@@ -403,51 +401,6 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                           playlistName = value;
                         },
                       ),
-                      Row(
-                        children: [
-                          Text(
-                            "Where to add new songs in the future?",
-                            style: Theme.of(context).textTheme.bodyMedium!
-                                .copyWith(color: Colors.white),
-                          ),
-                          const Spacer(),
-                          DropdownButton<String>(
-                            value: playlistAdd,
-                            icon: Icon(
-                              FluentIcons.down,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium!.copyWith(
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white,
-                            ),
-                            underline: Container(height: 0),
-                            borderRadius: BorderRadius.circular(
-                              MediaQuery.of(context).size.height * 0.015,
-                            ),
-                            padding: EdgeInsets.zero,
-                            alignment: Alignment.center,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'first',
-                                child: Text("At the beginning"),
-                              ),
-                              DropdownMenuItem(
-                                value: 'last',
-                                child: Text("At the end"),
-                              ),
-                            ],
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                playlistAdd = newValue ?? 'last';
-                              });
-                            },
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -496,55 +449,68 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                       ),
                       SizedBox(height: height * 0.02),
                       Expanded(
-                        child: _songs.isEmpty && !_isLoading
-                            ? Center(
-                                child: Text(
-                                  "No songs found",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall!
-                                      .copyWith(color: Colors.white),
-                                ),
-                              )
-                            : CustomScrollView(
-                                controller: _scrollController,
-                                slivers: [
-                                  SliverPadding(
-                                    padding: EdgeInsets.zero,
-                                    sliver: ValueListenableBuilder<List<Song>>(
-                                      valueListenable: selected,
-                                      builder: (context, selectedSongs, child) {
-                                        return ListComponent(
-                                          items: _songs,
-                                          itemExtent: height * 0.125,
-                                          isSelected: (entity) =>
-                                              selectedSongs.contains(entity as Song),
-                                          onTap: (entity) {
-                                            final song = entity as Song;
-                                            if (selected.value.contains(song)) {
-                                              selected.value = List.from(selected.value)
-                                                ..remove(song);
-                                            } else {
-                                              selected.value = List.from(selected.value)
-                                                ..add(song);
-                                            }
-                                          },
-                                          onLongPress: (entity) {},
-                                        );
-                                      },
-                                    ),
+                        child:
+                            _songs.isEmpty && !_isLoading
+                                ? Center(
+                                  child: Text(
+                                    "No songs found",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall!
+                                        .copyWith(color: Colors.white),
                                   ),
-                                  if (_isLoading)
-                                    const SliverToBoxAdapter(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(16),
-                                        child: Center(
-                                          child: CircularProgressIndicator(),
+                                )
+                                : CustomScrollView(
+                                  controller: _scrollController,
+                                  slivers: [
+                                    SliverPadding(
+                                      padding: EdgeInsets.zero,
+                                      sliver:
+                                          ValueListenableBuilder<List<Song>>(
+                                            valueListenable: selected,
+                                            builder: (
+                                              context,
+                                              selectedSongs,
+                                              child,
+                                            ) {
+                                              return ListComponent(
+                                                items: _songs,
+                                                itemExtent: height * 0.125,
+                                                isSelected:
+                                                    (entity) =>
+                                                        selectedSongs.contains(
+                                                          entity as Song,
+                                                        ),
+                                                onTap: (entity) {
+                                                  final song = entity as Song;
+                                                  if (selected.value.contains(
+                                                    song,
+                                                  )) {
+                                                    selected.value = List.from(
+                                                      selected.value,
+                                                    )..remove(song);
+                                                  } else {
+                                                    selected.value = List.from(
+                                                      selected.value,
+                                                    )..add(song);
+                                                  }
+                                                },
+                                                onLongPress: (entity) {},
+                                              );
+                                            },
+                                          ),
+                                    ),
+                                    if (_isLoading)
+                                      const SliverToBoxAdapter(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(16),
+                                          child: Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                ],
-                              ),
+                                  ],
+                                ),
                       ),
                     ],
                   ),

@@ -18,7 +18,7 @@ class ObjectBoxArtistRepository implements ArtistRepository {
   @override
   Artist? getArtistByHash(String artistHash) {
     return _artistBox
-        .query(Artist_.getHash().equals(artistHash))
+        .query(Artist_.hash.equals(artistHash))
         .build()
         .findFirst();
   }

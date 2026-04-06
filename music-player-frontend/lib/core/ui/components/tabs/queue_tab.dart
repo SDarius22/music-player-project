@@ -33,7 +33,7 @@ class QueueTab extends StatelessWidget {
                 return false;
               },
               onTap: (entity) async {
-                debugPrint("Tapped on: ${entity.name}");
+                debugPrint("Tapped on: ${entity.getName()}");
                 var audioProvider = Provider.of<AudioProvider>(
                   context,
                   listen: false,
@@ -41,7 +41,7 @@ class QueueTab extends StatelessWidget {
                 await audioProvider.setCurrentSongAndPlay(entity as Song);
               },
               onLongPress: (entity) {
-                debugPrint("Long pressed on: ${entity.name}");
+                debugPrint("Long pressed on: ${entity.getName()}");
               },
             ),
           ),

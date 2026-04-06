@@ -34,6 +34,6 @@ class LyricsProvider with ChangeNotifier {
   }
 
   String? _getLyricsForCurrentSong() {
-    return _fileService.getLyrics(_audioProvider.currentSong.path);
+    return _fileService.getLyrics(_audioProvider.currentSong?.path);
   }
 }

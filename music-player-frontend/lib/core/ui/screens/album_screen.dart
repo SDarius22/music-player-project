@@ -19,7 +19,7 @@ class AlbumScreen extends EntityScreen {
   static Route<void> route({required Album album}) {
     return buildFadeRoute(
       (context, animation, secondaryAnimation) => AlbumScreen(entity: album),
-      settings: RouteSettings(name: "/album/${album.id}"),
+      settings: RouteSettings(name: "/album/${album.getHash()}"),
     );
   }
 
@@ -28,7 +28,7 @@ class AlbumScreen extends EntityScreen {
   @override
   Future<void> loadEntityData(BuildContext context) async {
     final album = entity as Album;
-    await context.read<AlbumProvider>().fetchAlbumDetails(album.id);
+    await context.read<AlbumProvider>().fetchAlbumDetails(album.getHash());
   }
 
   @override
@@ -63,7 +63,7 @@ class AlbumScreen extends EntityScreen {
                         listen: false,
                       );
                   abstractAppStateProvider.innerNavigatorKey.currentState?.push(
-                    AddOrExportScreen.route(songs: album.songs),
+                    AddOrExportScreen.route(songs: album.getSongs()),
                   );
                 },
                 icon: Icon(FluentIcons.add, color: Colors.white, size: 24),
@@ -78,8 +78,8 @@ class AlbumScreen extends EntityScreen {
                     listen: false,
                   );
                   await audioProvider.setQueueAndPlay(
-                    album.songs,
-                    album.songs.first,
+                    album.getSongs(),
+                    album.getSongs().first,
                   );
                 },
                 icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
@@ -133,7 +133,7 @@ class AlbumScreen extends EntityScreen {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            album.artist.target?.name ?? "Unknown Artist",
+                            album.getArtistName(),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -141,7 +141,7 @@ class AlbumScreen extends EntityScreen {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "${album.songs.length} Songs | ${Duration(seconds: album.durationInSeconds).pretty()}",
+                            "${album.getSongs().length} Songs | ${Duration(seconds: album.getDurationInSeconds()).pretty()}",
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -172,7 +172,7 @@ class AlbumScreen extends EntityScreen {
                                 horizontal: width * 0.01,
                               ),
                               sliver: ListComponent(
-                                items: album.songs,
+                                items: album.getSongs(),
                                 itemExtent: height * 0.1,
                                 isSelected: (entity) => false,
                                 onTap: (entity) async {
@@ -182,7 +182,7 @@ class AlbumScreen extends EntityScreen {
                                         listen: false,
                                       );
                                   await audioProvider.setQueueAndPlay(
-                                    album.songs,
+                                    album.getSongs(),
                                     entity as Song,
                                   );
                                 },
@@ -230,7 +230,7 @@ class AlbumScreen extends EntityScreen {
                           ),
                           SizedBox(height: height * 0.005),
                           Text(
-                            album.artist.target?.name ?? "Unknown Artist",
+                            album.getArtistName(),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -238,7 +238,7 @@ class AlbumScreen extends EntityScreen {
                           ),
                           SizedBox(height: height * 0.005),
                           Text(
-                            "${album.songs.length} Songs | ${Duration(seconds: album.durationInSeconds).pretty()}",
+                            "${album.getSongs().length} Songs | ${Duration(seconds: album.getDurationInSeconds()).pretty()}",
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -272,24 +272,26 @@ class AlbumScreen extends EntityScreen {
                               horizontal: width * 0.01,
                             ),
                             sliver: ListComponent(
-                              items: album.songs,
+                              items: album.getSongs(),
                               itemExtent: height * 0.1,
                               isSelected: (entity) {
                                 return false;
                               },
                               onTap: (entity) async {
-                                debugPrint("Tapped on ${entity.name}");
+                                debugPrint("Tapped on ${entity.getName()}");
                                 var audioProvider = Provider.of<AudioProvider>(
                                   context,
                                   listen: false,
                                 );
                                 await audioProvider.setQueueAndPlay(
-                                  album.songs,
+                                  album.getSongs(),
                                   entity as Song,
                                 );
                               },
                               onLongPress: (entity) {
-                                debugPrint("Long pressed on ${entity.name}");
+                                debugPrint(
+                                  "Long pressed on ${entity.getName()}",
+                                );
                               },
                             ),
                           ),

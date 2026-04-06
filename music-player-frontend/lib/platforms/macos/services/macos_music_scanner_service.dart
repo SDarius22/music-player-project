@@ -63,71 +63,76 @@ class MacosMusicScannerService implements AbstractMusicScannerService {
       await Future.delayed(const Duration(milliseconds: 8));
 
       final file = files[i];
-      final existing = _songService.getLocalSong(file.path);
+
+      String fileHash = '';
+      try {
+        final bytes = await File(file.path).readAsBytes();
+        fileHash = sha256.convert(bytes).toString();
+      } catch (_) {
+        debugPrint("Failed to read file for hashing: ${file.path}");
+        continue;
+      }
+
+      var existing = _songService.getLocalSong(fileHash);
 
       if (existing == null) {
+        existing = Song(fileHash)..path = file.path;
         try {
-          final metadata = await _fileService.retrieveSong(
-            file.path,
-            withImage: true,
+          final metadata = await _fileService.retrieveSong(file.path);
+
+          var artistName =
+              metadata['artist']?.trim().isEmpty == true
+                  ? 'Unknown Artist'
+                  : metadata['artist']?.trim() ?? 'Unknown Artist';
+          var albumName =
+              metadata['album']?.trim().isEmpty == true
+                  ? 'Unknown Album'
+                  : metadata['album']?.trim() ?? 'Unknown Album';
+
+          var artist = _artistService.getOrCreateArtist(artistName);
+
+          var album = _albumService.getOrCreateAlbum(albumName, artist);
+
+          existing.setName(
+            metadata['title'] ?? _getFileNameWithoutExtension(file.path),
           );
 
-          String fileHash = '';
-          try {
-            final bytes = await File(file.path).readAsBytes();
-            fileHash = sha256.convert(bytes).toString();
-          } catch (_) {}
+          existing
+            ..durationInSeconds = metadata['duration'] ?? 0
+            ..trackNumber = metadata['trackNumber'] ?? 0
+            ..discNumber = metadata['discNumber'] ?? 0
+            ..year = metadata['year'] ?? 0
+            ..artist.target = artist
+            ..album.target = album
+            ..fullyLoaded = true;
 
-          var artist = _artistService.getOrCreateArtist(
-            metadata['artist'] ?? 'Unknown Artist',
-          );
-          var album = _albumService.getOrCreateAlbum(
-            metadata['album'] ?? 'Unknown Album',
-            artist.id,
-            image: metadata['image'],
-          );
+          songsToUpdate.add(existing);
 
-          final song =
-              Song()
-                ..path = file.path
-                ..name =
-                    metadata['title'] ?? _getFileNameWithoutExtension(file.path)
-                ..durationInSeconds = metadata['duration'] ?? 0
-                ..trackNumber = metadata['trackNumber'] ?? 0
-                ..discNumber = metadata['discNumber'] ?? 0
-                ..year = metadata['year'] ?? 0
-                ..fullyLoaded = true
-                ..fileHash = fileHash
-                ..artist.target = artist
-                ..album.target = album;
-
-          songsToUpdate.add(song);
-
-          album.songs.add(song);
+          album.addSong(existing);
           _albumService.updateAlbum(album);
 
-          artist.songs.add(song);
-          artist.albums.add(album);
+          artist.addSong(existing);
           _artistService.updateArtist(artist);
         } catch (e) {
           debugPrint(e.toString());
 
           var artist = _artistService.getOrCreateArtist('Unknown Artist');
-          var album = _albumService.getOrCreateAlbum(
-            'Unknown Album',
-            artist.id,
-          );
+          var album = _albumService.getOrCreateAlbum('Unknown Album', artist);
 
-          final song =
-              Song()
-                ..path = file.path
-                ..name = _getFileNameWithoutExtension(file.path)
-                ..fullyLoaded = true
-                ..requiresSync = true
-                ..artist.target = artist
-                ..album.target = album;
+          existing.setName(_getFileNameWithoutExtension(file.path));
+          existing
+            ..fullyLoaded = true
+            ..requiresSync = true
+            ..artist.target = artist
+            ..album.target = album;
 
-          songsToUpdate.add(song);
+          songsToUpdate.add(existing);
+
+          album.addSong(existing);
+          _albumService.updateAlbum(album);
+
+          artist.addSong(existing);
+          _artistService.updateArtist(artist);
         }
       }
 

@@ -104,40 +104,24 @@ class MockPlaylistRepository extends _i1.Mock
           as _i2.Playlist);
 
   @override
-  _i2.Playlist? getPlaylistByName(String? name) =>
+  _i2.Playlist? getPlaylistByServerIdAndName(int? serverId, String? name) =>
       (super.noSuchMethod(
-            Invocation.method(#getPlaylistByName, [name]),
+            Invocation.method(#getPlaylistByServerIdAndName, [serverId, name]),
             returnValueForMissingStub: null,
           )
           as _i2.Playlist?);
 
   @override
-  _i2.Playlist? getPlaylist(int? id) =>
+  _i2.Playlist getOrCreatePlaylist(int? serverId, String? name) =>
       (super.noSuchMethod(
-            Invocation.method(#getPlaylist, [id]),
-            returnValueForMissingStub: null,
-          )
-          as _i2.Playlist?);
-
-  @override
-  _i2.Playlist? getPlaylistByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getPlaylistByServerId, [serverId]),
-            returnValueForMissingStub: null,
-          )
-          as _i2.Playlist?);
-
-  @override
-  _i2.Playlist getOrCreatePlaylistByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getOrCreatePlaylistByServerId, [serverId]),
+            Invocation.method(#getOrCreatePlaylist, [serverId, name]),
             returnValue: _FakePlaylist_0(
               this,
-              Invocation.method(#getOrCreatePlaylistByServerId, [serverId]),
+              Invocation.method(#getOrCreatePlaylist, [serverId, name]),
             ),
             returnValueForMissingStub: _FakePlaylist_0(
               this,
-              Invocation.method(#getOrCreatePlaylistByServerId, [serverId]),
+              Invocation.method(#getOrCreatePlaylist, [serverId, name]),
             ),
           )
           as _i2.Playlist);
@@ -266,21 +250,6 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
           as int);
 
   @override
-  _i3.Song getSongByPath(String? path) =>
-      (super.noSuchMethod(
-            Invocation.method(#getSongByPath, [path]),
-            returnValue: _FakeSong_1(
-              this,
-              Invocation.method(#getSongByPath, [path]),
-            ),
-            returnValueForMissingStub: _FakeSong_1(
-              this,
-              Invocation.method(#getSongByPath, [path]),
-            ),
-          )
-          as _i3.Song);
-
-  @override
   _i3.Song? getSongByFileHash(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#getSongByFileHash, [fileHash]),
@@ -289,39 +258,19 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
           as _i3.Song?);
 
   @override
-  _i3.Song getOrCreateSongByFileHash(String? fileHas) =>
+  _i3.Song getOrCreateSong(String? fileHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+            Invocation.method(#getOrCreateSong, [fileHash]),
             returnValue: _FakeSong_1(
               this,
-              Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+              Invocation.method(#getOrCreateSong, [fileHash]),
             ),
             returnValueForMissingStub: _FakeSong_1(
               this,
-              Invocation.method(#getOrCreateSongByFileHash, [fileHas]),
+              Invocation.method(#getOrCreateSong, [fileHash]),
             ),
           )
           as _i3.Song);
-
-  @override
-  _i3.Song getSong(int? id) =>
-      (super.noSuchMethod(
-            Invocation.method(#getSong, [id]),
-            returnValue: _FakeSong_1(this, Invocation.method(#getSong, [id])),
-            returnValueForMissingStub: _FakeSong_1(
-              this,
-              Invocation.method(#getSong, [id]),
-            ),
-          )
-          as _i3.Song);
-
-  @override
-  _i3.Song? getSongContaining(String? query) =>
-      (super.noSuchMethod(
-            Invocation.method(#getSongContaining, [query]),
-            returnValueForMissingStub: null,
-          )
-          as _i3.Song?);
 
   @override
   List<_i3.Song> getRecentlyPlayedSongs(int? limit) =>

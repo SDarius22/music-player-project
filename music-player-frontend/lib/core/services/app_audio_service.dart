@@ -28,7 +28,7 @@ class AppAudioService {
   final PlaybackRestClient? playbackRestService;
   final ChunkService Function(String fileHash) createChunkManager;
 
-  ValueNotifier<Song> currentSongNotifier = ValueNotifier<Song>(Song());
+  ValueNotifier<Song?> currentSongNotifier = ValueNotifier<Song?>(null);
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
 
   void Function(String fileHash, String songName)? _onWebSongChange;
@@ -48,7 +48,8 @@ class AppAudioService {
 
   List<Song> _normalQueue = [];
   List<Song> _shuffledQueue = [];
-  Playlist _queuePlaylist = Playlist();
+  late Playlist _queuePlaylist;
+
   AudioSettings _currentAudioSettings = AudioSettings();
 
   AudioSettings get currentAudioSettings => _currentAudioSettings;
@@ -60,11 +61,11 @@ class AppAudioService {
 
   int get currentIndex => _currentIndex;
 
-  Song get currentSong => currentSongNotifier.value;
+  Song? get currentSong => currentSongNotifier.value;
 
-  set currentSong(Song song) {
+  set currentSong(Song? song) {
     currentSongNotifier.value = song;
-    likedNotifier.value = song.likedByUser;
+    likedNotifier.value = song?.likedByUser ?? false;
   }
 
   AppAudioService(
@@ -77,9 +78,9 @@ class AppAudioService {
     AudioPlayer? audioPlayer,
   }) : audioPlayer = audioPlayer ?? AudioPlayer() {
     _currentAudioSettings = settingsService.getAudioSettings();
-    currentSong = playlistService.getMostRecentPlayedSong() ?? Song();
+    currentSong = playlistService.getMostRecentPlayedSong();
     _queuePlaylist = playlistService.getQueuePlaylist();
-    _normalQueue = _queuePlaylist.songsList;
+    _normalQueue = _queuePlaylist.getSongs();
     _initPlayer();
 
     this.audioPlayer.processingStateStream.listen((state) {
@@ -222,8 +223,6 @@ class AppAudioService {
     pushStateToServer();
   }
 
-  /// Rebuilds [_shuffledQueue] from [_normalQueue], placing [prioritySong]
-  /// first so it plays immediately when shuffle is enabled.
   void _rebuildShuffledQueue({Song? prioritySong}) {
     _shuffledQueue = List.from(_normalQueue)..shuffle();
     if (prioritySong != null) {
@@ -237,24 +236,24 @@ class AppAudioService {
 
   Future<Duration> getDuration() async {
     final duration = audioPlayer.duration;
+    final currentSongDuration = currentSong?.durationInSeconds ?? 0;
     if (duration == null || duration.inSeconds <= 0) {
-      return Duration(seconds: currentSong.durationInSeconds);
+      return Duration(seconds: currentSongDuration);
     }
-    if (currentSong.durationInSeconds <= 0) {
-      currentSong.durationInSeconds = duration.inSeconds;
-      songService.updateSong(currentSong);
+    if (currentSongDuration <= 0 && currentSong != null) {
+      currentSong!.durationInSeconds = duration.inSeconds;
+      songService.updateSong(currentSong!);
     }
     return duration;
   }
 
   Future<void> addToQueue(List<Song> songs) async {
-    final existingHashes = _normalQueue.map((s) => s.fileHash).toSet();
+    final existingHashes = _normalQueue.map((s) => s.getHash()).toSet();
     final toAdd =
-        songs.where((s) => !existingHashes.contains(s.fileHash)).toList();
+        songs.where((s) => !existingHashes.contains(s.getHash())).toList();
     if (toAdd.isEmpty) return;
 
     _normalQueue.addAll(toAdd);
-    // Append to shuffled queue without reshuffling.
     _shuffledQueue.addAll(toAdd);
     playlistService.addToPlaylist(_queuePlaylist, toAdd);
     pushStateToServer();
@@ -263,8 +262,6 @@ class AppAudioService {
   Future<void> addNextToQueue(List<Song> songs) async {
     if (songs.isEmpty) return;
 
-    // Insert after current position in the active queue, and after the current
-    // song in the other queue (positions differ when shuffled).
     for (final song in songs.reversed) {
       if (_normalQueue.any((s) => s == song)) continue;
 
@@ -278,8 +275,7 @@ class AppAudioService {
           currentInOther < 0 ? other.length : currentInOther + 1;
       other.insert(otherInsert, song);
 
-      _queuePlaylist.songs.add(song);
-      _queuePlaylist.songFileHashes.insert(activeInsert, song.fileHash);
+      _queuePlaylist.addSong(song);
     }
 
     playlistService.updatePlaylist(_queuePlaylist);
@@ -313,10 +309,8 @@ class AppAudioService {
       debugPrint("updating queue with new songs");
       _normalQueue.clear();
       _normalQueue.addAll(songs);
-      _queuePlaylist.songs.clear();
-      _queuePlaylist.songFileHashes.clear();
+      _queuePlaylist.clearSongs();
       playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
-      // Full queue replacement — rebuild shuffled order with selected song first.
       _rebuildShuffledQueue(prioritySong: song);
     }
 
@@ -348,9 +342,6 @@ class AppAudioService {
       _rebuildShuffledQueue(prioritySong: currentSong);
       final idx = _activeQueue.indexWhere((s) => s == currentSong);
       _currentIndex = idx < 0 ? 0 : idx;
-      debugPrint(
-        '[_initPlayer] sliderInSeconds=${_currentAudioSettings.sliderInSeconds}, durationInSeconds=${currentSong.durationInSeconds}, song="${currentSong.name}"',
-      );
       final source = _buildAudioSource(_activeQueue[_currentIndex]);
       await audioPlayer.setAudioSource(
         source,
@@ -381,8 +372,16 @@ class AppAudioService {
     _isSwitchingSong = true;
 
     final outgoing = currentSong;
-    if (!outgoing.isLocal && outgoing.fileHash.isNotEmpty) {
-      createChunkManager(outgoing.fileHash).flushStats();
+    if (outgoing == null) {
+      debugPrint(
+        '[AppAudioService] No outgoing song to finalize before switching',
+      );
+      _isSwitchingSong = false;
+      return;
+    }
+
+    if (!outgoing.isLocal() && outgoing.getHash().isNotEmpty) {
+      createChunkManager(outgoing.getHash()).flushStats();
     }
 
     final song = _activeQueue[idx];
@@ -398,46 +397,51 @@ class AppAudioService {
   }
 
   AudioSource _buildAudioSource(Song song) {
-    final bool isServerTrack = !song.isLocal;
+    final bool isServerTrack = !song.isLocal();
     debugPrint(
-      "Building audio source for song ${song.name} (isLocal: ${song.isLocal})",
+      "Building audio source for song ${song.getName()} (isLocal: ${song.isLocal})",
     );
 
     if (isServerTrack) {
       if (UniversalPlatform.isWeb) {
-        _onWebSongChange?.call(song.fileHash, song.name);
+        _onWebSongChange?.call(song.getHash(), song.getName());
         return AudioSource.uri(
-          Uri.parse('/music-player/p2p-stream/${song.fileHash}'),
+          Uri.parse('/music-player/p2p-stream/${song.getHash()}'),
           tag: Map<String, dynamic>.from({
             "path": song.path,
-            "fileHash": song.fileHash,
+            "fileHash": song.getHash(),
             "song": song,
           }),
         );
       }
 
       return P2PChunkedAudioSource(
-        fileHash: song.fileHash,
+        fileHash: song.getHash(),
         chunkManagerFactory: (hash) {
           final manager = createChunkManager(hash);
           manager.configureSongInfo(
-            song.name,
+            song.getName(),
             ChunkStatsService.instance.report,
           );
           return manager;
         },
         tag: Map<String, dynamic>.from({
           "path": song.path,
-          "fileHash": song.fileHash,
+          "fileHash": song.getHash(),
           "song": song,
         }),
       );
     } else {
+      if (song.path == null || song.path!.isEmpty) {
+        debugPrint(
+          "Warning: Song ${song.getName()} is marked as local but has no path",
+        );
+      }
       return AudioSource.uri(
-        Uri.file(song.path),
+        Uri.file(song.path!),
         tag: Map<String, dynamic>.from({
           "path": song.path,
-          "fileHash": song.fileHash,
+          "fileHash": song.getHash(),
           "song": song,
         }),
       );
@@ -448,12 +452,14 @@ class AppAudioService {
     if (playbackRestService == null) return;
     final queueFileHashes =
         _normalQueue
-            .where((s) => !s.isLocal && s.fileHash.isNotEmpty)
-            .map((s) => s.fileHash)
+            .where((s) => !s.isLocal() && s.getHash().isNotEmpty)
+            .map((s) => s.getHash())
             .toList();
     final currentFileHash =
-        (!currentSong.isLocal && currentSong.fileHash.isNotEmpty)
-            ? currentSong.fileHash
+        currentSong != null &&
+                !currentSong!.isLocal() &&
+                currentSong!.getHash().isNotEmpty
+            ? currentSong!.getHash()
             : null;
     final dto = PlaybackStateDto(
       queueFileHashes: queueFileHashes,
@@ -484,14 +490,13 @@ class AppAudioService {
 
     _normalQueue.clear();
     _normalQueue.addAll(resolvedQueue);
-    _queuePlaylist.songs.clear();
-    _queuePlaylist.songFileHashes.clear();
+    _queuePlaylist.clearSongs();
     playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
 
     Song current = resolvedQueue.first;
     if (dto.currentFileHash != null) {
       final matches = resolvedQueue.where(
-        (s) => s.fileHash == dto.currentFileHash,
+        (s) => s.getHash() == dto.currentFileHash,
       );
       if (matches.isNotEmpty) current = matches.first;
     }
@@ -515,7 +520,8 @@ class AppAudioService {
 
     final totalSecs =
         audioPlayer.duration?.inSeconds.toDouble() ??
-        currentSong.durationInSeconds.toDouble();
+        currentSong?.durationInSeconds.toDouble() ??
+        0.0;
     final posSecs = audioPlayer.position.inSeconds.toDouble();
     final progress =
         totalSecs > 0 ? (posSecs / totalSecs).clamp(0.0, 1.0) : 0.0;
@@ -525,7 +531,7 @@ class AppAudioService {
       final songIdx = (_currentIndex + i + 1) % q.length;
       if (songIdx == _currentIndex) continue;
       final song = q[songIdx];
-      if (song.isLocal || song.fileHash.isEmpty) continue;
+      if (song.isLocal() || song.getHash().isEmpty) continue;
       unawaited(_prefetchSongFraction(song, _nextSongTargets[i] * progress));
     }
 
@@ -533,7 +539,7 @@ class AppAudioService {
       final songIdx = (_currentIndex - i - 1 + q.length) % q.length;
       if (songIdx == _currentIndex) continue;
       final song = q[songIdx];
-      if (song.isLocal || song.fileHash.isEmpty) continue;
+      if (song.isLocal() || song.getHash().isEmpty) continue;
       unawaited(_prefetchSongFraction(song, _prevSongTargets[i] * progress));
     }
   }
@@ -541,22 +547,22 @@ class AppAudioService {
   Future<void> _prefetchSongFraction(Song song, double fraction) async {
     if (fraction <= 0) return;
     try {
-      final manager = createChunkManager(song.fileHash);
+      final manager = createChunkManager(song.getHash());
       if (!manager.isReady) await manager.loadManifest();
       final targetCount = max(1, (manager.totalChunks * fraction).round());
       for (int i = 0; i < targetCount; i++) {
         await manager.prefetchChunk(i);
       }
     } catch (e) {
-      debugPrint('[prefetch] ${song.name}: $e');
+      debugPrint('[prefetch] ${song.getName()}: $e');
     }
   }
 
   void likeCurrentSong() {
-    currentSongNotifier.value.likedByUser =
-        !currentSongNotifier.value.likedByUser;
-    likedNotifier.value = currentSongNotifier.value.likedByUser;
-    songService.updateSong(currentSongNotifier.value);
+    currentSongNotifier.value?.likedByUser =
+        !currentSongNotifier.value!.likedByUser;
+    likedNotifier.value = currentSongNotifier.value!.likedByUser;
+    songService.updateSong(currentSongNotifier.value!);
     playlistService.updateFavoritesPlaylist();
   }
 
@@ -571,11 +577,11 @@ class AppAudioService {
     playlistService.updateRecentlyPlayedPlaylist();
     _proactivelyCachePrefixes();
 
-    if (song.isLocal) {
+    if (song.isLocal()) {
       ChunkStatsService.instance.report(
         ChunkDeliveryStats(
-          fileHash: song.fileHash,
-          songName: song.name,
+          fileHash: song.getHash(),
+          songName: song.getName(),
           localChunks: 1,
         ),
       );
@@ -588,7 +594,7 @@ class AppAudioService {
     _playStartTime = null;
     if (elapsed <= 0) return;
     final song = currentSong;
-    if (song.fileHash.isEmpty && song.path.isEmpty) return;
+    if (song!.getHash().isEmpty && song.path!.isEmpty) return;
     song.pendingPlayDurationSeconds += elapsed;
     songService.updateSong(song);
   }

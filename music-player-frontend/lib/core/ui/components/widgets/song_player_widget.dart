@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
@@ -54,13 +53,14 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
   Widget build(BuildContext context) {
     return Consumer<AudioProvider>(
       builder: (_, audioProvider, _) {
-        debugPrint(
-          "Building SongPlayerWidget, current song: ${audioProvider.currentSong.name}",
-        );
-        if (audioProvider.currentSong == Song()) {
+        if (audioProvider.currentSong == null) {
           debugPrint("Not showing player");
           return const SizedBox.shrink();
         }
+
+        debugPrint(
+          "Building SongPlayerWidget, current song: ${audioProvider.currentSong!.name}",
+        );
         final ValueNotifier<double> playerExpandProgress =
             ValueNotifier<double>(getMinHeight(context));
 
@@ -216,7 +216,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
               borderRadius: getBorderRadius(context),
             ),
             child: DetailsTab(
-              currentSong: audioProvider.currentSong,
+              currentSong: audioProvider.currentSong!,
               miniPlayerController: appStateProvider.miniPlayerController,
               opacity: detailsOpacity,
             ),
@@ -233,7 +233,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    audioProvider.currentSong.name,
+                    audioProvider.currentSong!.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -247,7 +247,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     ),
                   ),
                   Text(
-                    audioProvider.currentSong.artist.target?.name ??
+                    audioProvider.currentSong!.artist.target?.name ??
                         'Unknown Artist',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -352,7 +352,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
               borderRadius: BorderRadius.circular(borderRadius),
             ),
             child: DetailsTab(
-              currentSong: audioProvider.currentSong,
+              currentSong: audioProvider.currentSong!,
               miniPlayerController: appStateProvider.miniPlayerController,
               opacity: detailsOpacity,
             ),
@@ -368,7 +368,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    audioProvider.currentSong.name,
+                    audioProvider.currentSong!.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -382,7 +382,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     ),
                   ),
                   Text(
-                    audioProvider.currentSong.artist.target?.name ??
+                    audioProvider.currentSong!.artist.target?.name ??
                         'Unknown Artist',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -502,7 +502,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                   constraints: BoxConstraints(maxWidth: width * 0.325),
                   margin: EdgeInsets.only(right: imageRightMargin),
                   child: DetailsTab(
-                    currentSong: audioProvider.currentSong,
+                    currentSong: audioProvider.currentSong!,
                     miniPlayerController: appStateProvider.miniPlayerController,
                     opacity: detailsOpacity,
                   ),
@@ -749,7 +749,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                                 )
                                 : DetailsTab(
                                   key: const ValueKey<int>(2),
-                                  currentSong: audioProvider.currentSong,
+                                  currentSong: audioProvider.currentSong!,
                                   miniPlayerController:
                                       appStateProvider.miniPlayerController,
                                   opacity: detailsOpacity,

@@ -45,7 +45,7 @@ class AlbumService {
     } catch (e) {
       debugPrint('AlbumService: server fetch failed, using local: $e');
     }
-    return _albumRepository.getAlbumByNameAndArtist(albumName, artist);
+    return _albumRepository.getAlbumByHash(albumHash);
   }
 
   Future<({List<Album> content, int totalPages, int page})> getAlbumsPage(
@@ -94,70 +94,62 @@ class AlbumService {
   }
 
   Album cacheServerAlbum(AlbumExpandedDto serverAlbum) {
-    if (serverAlbum.id < 0) {
-      throw Exception('Server album must have a valid server ID');
-    }
-
-    var cachedAlbum = _albumRepository.getOrCreateAlbumByServerId(
-      serverAlbum.id,
+    var cachedArtist = _artistRepository.getOrCreateArtist(
+      serverAlbum.artist.hash,
+      serverAlbum.artist.name,
     );
-    cachedAlbum.name = serverAlbum.name;
 
-    var artist = _artistRepository.getOrCreateArtistByServerId(
-      serverAlbum.artist.id,
+    var cachedAlbum = _albumRepository.getOrCreateAlbum(
+      serverAlbum.hash,
+      serverAlbum.name,
+      cachedArtist,
     );
-    artist.name = serverAlbum.artist.name;
-    artist.albums.add(cachedAlbum);
-
-    cachedAlbum.artist.targetId = artist.id;
 
     for (var songHash in serverAlbum.songFileHashes) {
-      var cachedSong = _songRepository.getOrCreateSongByFileHash(songHash);
-      cachedAlbum.songs.add(cachedSong);
-      artist.songs.add(cachedSong);
+      var cachedSong = _songRepository.getOrCreateSong(songHash);
 
       cachedSong.album.targetId = cachedAlbum.id;
-      cachedSong.artist.targetId = artist.id;
+      cachedSong.artist.targetId = cachedArtist.id;
       _songRepository.updateSong(cachedSong);
+
+      cachedAlbum.addSong(cachedSong);
+      cachedArtist.addSong(cachedSong);
     }
 
-    _artistRepository.updateArtist(artist);
+    _artistRepository.updateArtist(cachedArtist);
 
     return _albumRepository.saveAlbum(cachedAlbum);
   }
 
   Album cacheServerAlbumDetail(AlbumDetailDto serverAlbum) {
-    if (serverAlbum.id < 0) {
-      throw Exception('Server album must have a valid server ID');
-    }
-
-    var cachedAlbum = _albumRepository.getOrCreateAlbumByServerId(
-      serverAlbum.id,
+    var cachedArtist = _artistRepository.getOrCreateArtist(
+      serverAlbum.artist.hash,
+      serverAlbum.artist.name,
     );
-    cachedAlbum.name = serverAlbum.name;
 
-    var artist = _artistRepository.getOrCreateArtistByServerId(
-      serverAlbum.artist.id,
+    var cachedAlbum = _albumRepository.getOrCreateAlbum(
+      serverAlbum.hash,
+      serverAlbum.name,
+      cachedArtist,
     );
-    cachedAlbum.artist.targetId = artist.id;
-    artist.albums.add(cachedAlbum);
 
     for (var song in serverAlbum.songs) {
-      var cachedSong = _songRepository.getOrCreateSongByFileHash(song.fileHash);
-      cachedAlbum.songs.add(cachedSong);
-      artist.songs.add(cachedSong);
+      var cachedSong = _songRepository.getOrCreateSong(song.fileHash);
 
-      cachedSong.artist.targetId = artist.id;
+      cachedSong.artist.targetId = cachedArtist.id;
       cachedSong.album.targetId = cachedAlbum.id;
-      cachedSong.name = song.name;
+      cachedSong.setName(song.name);
       cachedSong.discNumber = song.discNumber;
       cachedSong.trackNumber = song.trackNumber;
       cachedSong.durationInSeconds = song.durationInSeconds;
       cachedSong.year = song.releaseYear;
       _songRepository.updateSong(cachedSong);
+
+      cachedArtist.addSong(cachedSong);
+      cachedAlbum.addSong(cachedSong);
     }
 
-    _artistRepository.updateArtist(artist);
+    _artistRepository.updateArtist(cachedArtist);
 
     return _albumRepository.saveAlbum(cachedAlbum);
   }

@@ -35,7 +35,10 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
         if (entity is! Artist) return;
         Artist artist = entity;
         var audioProvider = Provider.of<AudioProvider>(context, listen: false);
-        await audioProvider.setQueueAndPlay(artist.songs, artist.songs.first);
+        await audioProvider.setQueueAndPlay(
+          artist.getSongs(),
+          artist.getSongs().first,
+        );
       },
     );
   }
@@ -56,7 +59,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             var abstractAppStateProvider =
                 Provider.of<AbstractAppStateProvider>(context, listen: false);
             abstractAppStateProvider.innerNavigatorKey.currentState!.push(
-              AddOrExportScreen.route(songs: artist.songs),
+              AddOrExportScreen.route(songs: artist.getSongs()),
             );
             break;
           case 'playNext':
@@ -65,7 +68,7 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
               context,
               listen: false,
             );
-            audioProvider.addNextToQueue(artist.songs);
+            audioProvider.addNextToQueue(artist.getSongs());
             break;
           case 'select':
             var selectionProvider = Provider.of<SelectionProvider>(

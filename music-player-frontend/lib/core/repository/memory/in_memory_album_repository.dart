@@ -30,7 +30,8 @@ class InMemoryAlbumRepository implements AlbumRepository {
   Album getOrCreateAlbum(String albumHash, String albumName, Artist artist) {
     final existing = getAlbumByHash(albumHash);
     if (existing != null) return existing;
-    var album = Album(albumHash, albumName, artist);
+    var album = Album(albumHash, albumName);
+    album.setArtist(artist);
     return saveAlbum(album);
   }
 

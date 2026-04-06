@@ -32,8 +32,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
 
   @override
   Widget Function(BuildContext context)? get buildExtraTile => (context) {
-    Playlist emptyPlaylist = Playlist();
-    emptyPlaylist.name = "Create New Playlist";
+    Playlist emptyPlaylist = Playlist('Create New Playlist');
     emptyPlaylist.indestructible = true;
     emptyPlaylist.imageBytes = _createPlaylistImageBytes;
     return CustomGridTile(
@@ -60,7 +59,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
       onPressed: () async {
         if (entity is! Playlist) return;
         Playlist playlist = entity;
-        final songs = playlist.songsList;
+        final songs = playlist.getSongs();
         var audioProvider = Provider.of<AudioProvider>(context, listen: false);
         await audioProvider.setQueueAndPlay(songs, songs.first);
       },

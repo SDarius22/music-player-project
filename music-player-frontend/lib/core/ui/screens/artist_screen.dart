@@ -27,7 +27,7 @@ class ArtistScreen extends EntityScreen {
   @override
   Future<void> loadEntityData(BuildContext context) async {
     final artist = entity as Artist;
-    await context.read<ArtistProvider>().fetchArtistDetails(artist.id);
+    await context.read<ArtistProvider>().fetchArtistDetails(artist.hash);
   }
 
   @override
@@ -62,7 +62,7 @@ class ArtistScreen extends EntityScreen {
                         listen: false,
                       );
                   abstractAppStateProvider.innerNavigatorKey.currentState?.push(
-                    AddOrExportScreen.route(songs: artist.songs),
+                    AddOrExportScreen.route(songs: artist.getSongs()),
                   );
                 },
                 icon: Icon(FluentIcons.add, color: Colors.white, size: 24),
@@ -77,8 +77,8 @@ class ArtistScreen extends EntityScreen {
                     listen: false,
                   );
                   await audioProvider.setQueueAndPlay(
-                    artist.songs,
-                    artist.songs.first,
+                    artist.getSongs(),
+                    artist.getSongs().first,
                   );
                 },
                 icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
@@ -155,7 +155,7 @@ class ArtistScreen extends EntityScreen {
                                 horizontal: width * 0.01,
                               ),
                               sliver: ListComponent(
-                                items: artist.songs,
+                                items: artist.getSongs(),
                                 itemExtent: height * 0.1,
                                 isSelected: (entity) => false,
                                 onTap: (entity) async {
@@ -165,7 +165,7 @@ class ArtistScreen extends EntityScreen {
                                         listen: false,
                                       );
                                   await audioProvider.setQueueAndPlay(
-                                    artist.songs,
+                                    artist.getSongs(),
                                     entity as Song,
                                   );
                                 },
@@ -239,24 +239,26 @@ class ArtistScreen extends EntityScreen {
                               horizontal: width * 0.01,
                             ),
                             sliver: ListComponent(
-                              items: artist.songs,
+                              items: artist.getSongs(),
                               itemExtent: height * 0.1,
                               isSelected: (entity) {
                                 return false;
                               },
                               onTap: (entity) async {
-                                debugPrint("Tapped on ${entity.name}");
+                                debugPrint("Tapped on ${entity.getName()}");
                                 var audioProvider = Provider.of<AudioProvider>(
                                   context,
                                   listen: false,
                                 );
                                 await audioProvider.setQueueAndPlay(
-                                  artist.songs,
+                                  artist.getSongs(),
                                   entity as Song,
                                 );
                               },
                               onLongPress: (entity) {
-                                debugPrint("Long pressed on ${entity.name}");
+                                debugPrint(
+                                  "Long pressed on ${entity.getName()}",
+                                );
                               },
                             ),
                           ),

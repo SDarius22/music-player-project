@@ -17,7 +17,7 @@ class Playlist implements BaseEntity {
   int serverId = -1;
 
   @Unique()
-  String _name;
+  String name;
   int _duration = -1;
 
   @Property(type: PropertyType.byteVector)
@@ -29,8 +29,8 @@ class Playlist implements BaseEntity {
   final _songs = ToMany<Song>();
   final List<String> _songFileHashes = [];
 
-  Playlist(this.serverId, this._name, {List<Song> songs = const []}) {
-    assert(_name.isNotEmpty, 'Playlist name cannot be empty');
+  Playlist(this.name, {List<Song> songs = const []}) {
+    assert(name.isNotEmpty, 'Playlist name cannot be empty');
     for (var song in songs) {
       addSong(song);
     }
@@ -40,6 +40,18 @@ class Playlist implements BaseEntity {
     _songs.add(song);
     _songFileHashes.add(song.getHash());
     _duration += song.durationInSeconds;
+  }
+
+  void removeSong(Song song) {
+    _songs.remove(song);
+    _songFileHashes.remove(song.getHash());
+    _duration -= song.durationInSeconds;
+  }
+
+  void clearSongs() {
+    _songs.clear();
+    _songFileHashes.clear();
+    _duration = 0;
   }
 
   List<Song> getSongs() {
@@ -52,11 +64,11 @@ class Playlist implements BaseEntity {
 
   @override
   String getName() {
-    return _name;
+    return name;
   }
 
   void setName(String value) {
-    _name = value;
+    name = value;
   }
 
   @override
@@ -93,6 +105,6 @@ class Playlist implements BaseEntity {
 
   @override
   String toString() {
-    return 'Playlist{id: $id, serverId: $serverId, name: $_name, duration: $_duration seconds, songs: ${_songs.length}}';
+    return 'Playlist{id: $id, serverId: $serverId, name: $name, duration: $_duration seconds, songs: ${_songs.length}}';
   }
 }

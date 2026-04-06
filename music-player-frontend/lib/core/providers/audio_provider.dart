@@ -22,17 +22,18 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   ValueNotifier<int> bufferedPositionNotifier = ValueNotifier<int>(0);
   ValueNotifier<double> volumeNotifier = ValueNotifier<double>(0.5);
   ValueNotifier<double> playbackSpeedNotifier = ValueNotifier<double>(1.0);
-  ValueNotifier<Duration> totalDurationNotifier =
-      ValueNotifier<Duration>(Duration.zero);
+  ValueNotifier<Duration> totalDurationNotifier = ValueNotifier<Duration>(
+    Duration.zero,
+  );
 
-  ValueNotifier<Song> get currentSongNotifier =>
+  ValueNotifier<Song?> get currentSongNotifier =>
       _audioService.currentSongNotifier;
 
   ValueNotifier<bool> get likedNotifier => _audioService.likedNotifier;
 
-  Song get currentSong => currentSongNotifier.value;
+  Song? get currentSong => currentSongNotifier.value;
 
-  int get currentIndexInNonShuffled => normalQueue.indexOf(currentSong);
+  int get currentIndexInNonShuffled => normalQueue.indexOf(currentSong!);
 
   List<Song> get normalQueue => _audioService.queue;
 
@@ -43,9 +44,9 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     shuffleNotifier.value = _currentAudioSettings.shuffle;
     volumeNotifier.value = _currentAudioSettings.volume;
 
-    sliderNotifier.value = currentSong.durationInSeconds;
+    sliderNotifier.value = currentSong?.durationInSeconds ?? 0;
     totalDurationNotifier.value = Duration(
-      seconds: currentSong.durationInSeconds,
+      seconds: currentSong?.durationInSeconds ?? 0,
     );
 
     _startListeners();
@@ -145,8 +146,9 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<Duration> getDuration() async {
-    if (currentSong.durationInSeconds > 0) {
-      return Duration(seconds: currentSong.durationInSeconds);
+    var currentSongDuration = currentSong?.durationInSeconds ?? 0;
+    if (currentSongDuration > 0) {
+      return Duration(seconds: currentSongDuration);
     }
     return await _audioService.getDuration();
   }
@@ -175,14 +177,15 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<void> _changeMediaItem() async {
+    if (currentSong == null) return;
     try {
       File tempFile = await _fileService.createWorkaroundFile(currentSong);
       MediaItem item = MediaItem(
-        id: currentSong.id.toString(),
-        album: currentSong.album.target?.name ?? 'Unknown Album',
-        title: currentSong.name,
-        artist: currentSong.artist.target?.name ?? 'Unknown Artist',
-        duration: Duration(seconds: currentSong.durationInSeconds),
+        id: currentSong!.id.toString(),
+        album: currentSong!.album.target?.getName() ?? 'Unknown Album',
+        title: currentSong!.getName(),
+        artist: currentSong!.artist.target?.getName() ?? 'Unknown Artist',
+        duration: Duration(seconds: currentSong!.durationInSeconds),
         artUri: tempFile.uri,
       );
       mediaItem.add(item);
@@ -192,23 +195,25 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<void> _setColors() async {
-    if (currentSong.coverArt == null || currentSong.colors.isNotEmpty) {
-      debugPrint("Skipping color extraction for ${currentSong.name}");
+    if (currentSong == null ||
+        currentSong?.getCoverArt() == null ||
+        currentSong!.getColors().isNotEmpty) {
+      debugPrint("Skipping color extraction");
       return;
     }
 
-    currentSong.album.target!.colors = await WorkerService.extractColors(
-      currentSong.album.target!.coverArt,
+    currentSong!.album.target!.colors = await WorkerService.extractColors(
+      currentSong!.album.target!.getCoverArt(),
     );
   }
 
   void _startListeners() {
     _audioService.currentSongNotifier.addListener(() {
+      if (currentSong == null) return;
+      var currentSongDuration = currentSong?.durationInSeconds ?? 0;
       shuffleNotifier.value = _audioService.currentAudioSettings.shuffle;
       repeatNotifier.value = _audioService.currentAudioSettings.repeat;
-      totalDurationNotifier.value = Duration(
-        seconds: currentSong.durationInSeconds,
-      );
+      totalDurationNotifier.value = Duration(seconds: currentSongDuration);
       _setColors();
       _changeMediaItem();
       notifyListeners();
@@ -216,9 +221,12 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
     _audioService.audioPlayer.durationStream.listen((duration) {
       if (duration == null || duration.inSeconds <= 0) return;
-      if (currentSong.durationInSeconds <= 0) {
-        currentSong.durationInSeconds = duration.inSeconds;
-        _audioService.songService.updateSong(currentSong);
+      if (currentSong == null) return;
+      var currentSongDuration = currentSong?.durationInSeconds ?? 0;
+
+      if (currentSongDuration <= 0) {
+        currentSong!.durationInSeconds = duration.inSeconds;
+        _audioService.songService.updateSong(currentSong!);
       }
       totalDurationNotifier.value = duration;
     });

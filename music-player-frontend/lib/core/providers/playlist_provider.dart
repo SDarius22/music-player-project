@@ -47,23 +47,14 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     notifyListeners();
   }
 
-  void addPlaylist(
-    String name,
-    List<Song> songs,
-    String whereToAdd,
-    Uint8List? coverArt,
-  ) {
-    _playlistService.addPlaylist(name, songs, whereToAdd, coverArt);
+  void addPlaylist(String name, List<Song> songs, Uint8List? coverArt) {
+    _playlistService.addPlaylist(name, songs, coverArt);
     notifyListeners();
   }
 
   void deletePlaylist(Playlist playlist) {
     _playlistService.deletePlaylist(playlist);
     notifyListeners();
-  }
-
-  Playlist? getPlaylist(int playlistId) {
-    return _playlistService.getPlaylist(playlistId);
   }
 
   List<Playlist> getIndestructiblePlaylists() {

@@ -25,11 +25,15 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
 
   int currentDrawerIndex = 0;
 
-  List<Color> get colors =>
-      audioProvider.currentSong.colors.isNotEmpty &&
-              audioProvider.currentSong.colors.length == 4
-          ? audioProvider.currentSong.colors
-          : MusicPlayerTheme.primaryGradient.colors;
+  List<Color> get colors {
+    if (audioProvider.currentSong == null ||
+        audioProvider.currentSong!.getColors().isEmpty ||
+        audioProvider.currentSong!.getColors().length != 4) {
+      return MusicPlayerTheme.primaryGradient.colors;
+    }
+
+    return audioProvider.currentSong!.getColors();
+  }
 
   ValueNotifier<bool> isPanelOpen = ValueNotifier(false);
   ValueNotifier<double> opacityNotifier = ValueNotifier(1.0);

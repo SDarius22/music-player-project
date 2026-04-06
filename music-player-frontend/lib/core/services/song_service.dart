@@ -46,13 +46,13 @@ class SongService {
     return _songRepository.getSongCount();
   }
 
-  Song? getLocalSong(String songPath) {
-    if (songPath.isEmpty) {
-      throw ArgumentError('Song path cannot be empty');
+  Song? getLocalSong(String songHash) {
+    if (songHash.isEmpty) {
+      throw ArgumentError('Song hash cannot be empty');
     }
 
     try {
-      return _songRepository.getSongByPath(songPath);
+      return _songRepository.getSongByFileHash(songHash);
     } catch (_) {
       return null;
     }
@@ -62,7 +62,7 @@ class SongService {
     if (fileHash.isEmpty) {
       throw ArgumentError('File hash cannot be empty');
     }
-    return _songRepository.getOrCreateSongByFileHash(fileHash);
+    return _songRepository.getOrCreateSong(fileHash);
   }
 
   Future<Song?> fetchSongByFileHash(String fileHash) async {
@@ -176,7 +176,12 @@ class SongService {
         await Future.delayed(const Duration(milliseconds: 50));
 
         final song = unsyncedSongs[i];
-        final file = File(song.path);
+        if (song.path == null) {
+          debugPrint('Song ${song.getName()} has no file path, skipping');
+          continue;
+        }
+
+        final file = File(song.path!);
 
         if (!await file.exists()) continue;
 
@@ -192,9 +197,9 @@ class SongService {
         }
 
         final request = NegotiationRequestDto(
-          name: song.name,
-          artistName: song.artist.target?.name ?? 'Unknown Artist',
-          albumName: song.album.target?.name ?? 'Unknown Album',
+          name: song.getName(),
+          artistName: song.artist.target?.getName() ?? 'Unknown Artist',
+          albumName: song.album.target?.getName() ?? 'Unknown Album',
           photoBase64: photoBase64,
           durationInSeconds: song.durationInSeconds,
           trackNumber: song.trackNumber,
@@ -207,7 +212,6 @@ class SongService {
         final response = await _songRestService.negotiateUpload(request);
 
         if (response != null) {
-          song.fileHash = response.fileHash;
           song.requiresSync = false;
           _songRepository.updateSong(song);
 
@@ -242,7 +246,7 @@ class SongService {
       final pending =
           _songRepository
               .getAllSongs()
-              .where((s) => s.requiresSync && s.fileHash.isNotEmpty)
+              .where((s) => s.requiresSync && s.getHash().isNotEmpty)
               .toList();
 
       if (pending.isEmpty) return;
@@ -251,7 +255,7 @@ class SongService {
           pending
               .map(
                 (s) => SongSyncDto(
-                  fileHash: s.fileHash,
+                  fileHash: s.getHash(),
                   playCountDelta: s.pendingPlayCountDelta,
                   likedByUser: s.likedByUser,
                   lastPlayed: s.lastPlayed,
@@ -297,32 +301,35 @@ class SongService {
       throw Exception('Server song must have a file hash');
     }
 
-    var cachedSong = _songRepository.getOrCreateSongByFileHash(
-      serverSong.fileHash,
-    );
-    cachedSong.name = serverSong.name;
+    var cachedSong = _songRepository.getOrCreateSong(serverSong.fileHash);
+    cachedSong.setName(serverSong.name);
     cachedSong.durationInSeconds = serverSong.durationInSeconds;
     cachedSong.trackNumber = serverSong.trackNumber;
     cachedSong.discNumber = serverSong.discNumber;
     cachedSong.year = serverSong.releaseYear;
 
-    var artist = _artistRepository.getOrCreateArtistByServerId(
-      serverSong.artist.id,
+    var artist = _artistRepository.getOrCreateArtist(
+      serverSong.artist.hash,
+      serverSong.artist.name,
     );
-    artist.name = serverSong.artist.name;
     cachedSong.artist.targetId = artist.id;
-    artist.songs.add(cachedSong);
+
+    var album = _albumRepository.getOrCreateAlbum(
+      serverSong.album.hash,
+      serverSong.album.name,
+      artist,
+    );
+    cachedSong.album.targetId = album.id;
+
+    var finalSong = _songRepository.saveSong(cachedSong);
+
+    artist.addSong(finalSong);
     _artistRepository.updateArtist(artist);
 
-    var album = _albumRepository.getOrCreateAlbumByServerId(
-      serverSong.album.id,
-    );
-    album.name = serverSong.album.name;
-    cachedSong.album.targetId = album.id;
-    album.songs.add(cachedSong);
+    album.addSong(finalSong);
     _albumRepository.updateAlbum(album);
 
-    return _songRepository.saveSong(cachedSong);
+    return finalSong;
   }
 
   List<List<int>> _splitIntoChunks(List<int> bytes) {
