@@ -295,19 +295,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/AlbumPageDto'
 
-  /albums/{albumId}:
+  /albums/{albumHash}:
     get:
-      summary: Get album by ID
-      operationId: getAlbumById
+      summary: Get album by hash (base64-encoded album name + artist name)
+      operationId: getAlbumByHash
       tags:
         - Albums
       parameters:
-        - name: albumId
+        - name: albumHash
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+
       responses:
         '200':
           description: Album with tracks
@@ -919,9 +919,6 @@ components:
     ArtistDto:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
         name:
           type: string
 
@@ -929,23 +926,17 @@ components:
       type: object
       description: Artist summary used in paginated list responses. Includes ordered song file hashes.
       properties:
-        id:
-          type: integer
-          format: int64
         name:
           type: string
         songFileHashes:
           type: array
           items:
             type: string
-          description: Ordered file hashes of all songs by this artist (album name → disc → track).
+          description: Ordered file hashes of all songs by this artist (ordered by song name).
 
     ArtistDetailDto:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
         name:
           type: string
         songs:
@@ -983,18 +974,14 @@ components:
     AlbumDto:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
         name:
           type: string
+        artist:
+          $ref: '#/components/schemas/ArtistDto'
 
     AlbumDetailDto:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
         name:
           type: string
         songs:
@@ -1008,16 +995,13 @@ components:
       type: object
       description: Album summary used in paginated list responses. Includes ordered song file hashes.
       properties:
-        id:
-          type: integer
-          format: int64
         name:
           type: string
         songFileHashes:
           type: array
           items:
             type: string
-          description: Ordered file hashes of the album's songs (disc → track).
+          description: Ordered file hashes of the album's songs (disc, track).
         artist:
           $ref: '#/components/schemas/ArtistDto'
 

@@ -153,6 +153,21 @@ class MockSongService extends _i1.Mock implements _i9.SongService {
           as _i2.Song?);
 
   @override
+  _i2.Song getOrCreateSongByFileHash(String? fileHash) =>
+      (super.noSuchMethod(
+            Invocation.method(#getOrCreateSongByFileHash, [fileHash]),
+            returnValue: _FakeSong_0(
+              this,
+              Invocation.method(#getOrCreateSongByFileHash, [fileHash]),
+            ),
+            returnValueForMissingStub: _FakeSong_0(
+              this,
+              Invocation.method(#getOrCreateSongByFileHash, [fileHash]),
+            ),
+          )
+          as _i2.Song);
+
+  @override
   _i10.Future<_i2.Song?> fetchSongByFileHash(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#fetchSongByFileHash, [fileHash]),

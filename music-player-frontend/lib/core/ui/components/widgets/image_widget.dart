@@ -6,7 +6,6 @@ import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
-
 class ImageWidget extends StatefulWidget {
   final Widget? hoveredChild;
   final Widget? child;
@@ -87,7 +86,7 @@ class _ImageWidgetState extends State<ImageWidget> {
       return context.read<CoverService>().getWidget(widget.entity);
     } catch (e) {
       debugPrint(
-        'ImageWidget: failed to get image for entity ${widget.entity.cloudId}: $e',
+        'ImageWidget: failed to get image for entity ${widget.entity.name}: $e',
       );
     }
 

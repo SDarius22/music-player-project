@@ -308,15 +308,6 @@ class MockArtistRepository extends _i1.Mock implements _i11.ArtistRepository {
           as Map<String, dynamic>);
 
   @override
-  _i10.Stream<dynamic> watchArtists() =>
-      (super.noSuchMethod(
-            Invocation.method(#watchArtists, []),
-            returnValue: _i10.Stream<dynamic>.empty(),
-            returnValueForMissingStub: _i10.Stream<dynamic>.empty(),
-          )
-          as _i10.Stream<dynamic>);
-
-  @override
   _i3.Artist saveArtist(_i3.Artist? artist) =>
       (super.noSuchMethod(
             Invocation.method(#saveArtist, [artist]),
@@ -332,40 +323,24 @@ class MockArtistRepository extends _i1.Mock implements _i11.ArtistRepository {
           as _i3.Artist);
 
   @override
-  _i3.Artist? getArtist(int? artistId) =>
+  _i3.Artist? getArtistByHash(String? artistName) =>
       (super.noSuchMethod(
-            Invocation.method(#getArtist, [artistId]),
+            Invocation.method(#getArtistByHash, [artistName]),
             returnValueForMissingStub: null,
           )
           as _i3.Artist?);
 
   @override
-  _i3.Artist? getArtistByName(String? artistName) =>
+  _i3.Artist getOrCreateArtist(String? artistHash, String? artistName) =>
       (super.noSuchMethod(
-            Invocation.method(#getArtistByName, [artistName]),
-            returnValueForMissingStub: null,
-          )
-          as _i3.Artist?);
-
-  @override
-  _i3.Artist? getArtistByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getArtistByServerId, [serverId]),
-            returnValueForMissingStub: null,
-          )
-          as _i3.Artist?);
-
-  @override
-  _i3.Artist getOrCreateArtistByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getOrCreateArtistByServerId, [serverId]),
+            Invocation.method(#getOrCreateArtist, [artistHash, artistName]),
             returnValue: _FakeArtist_1(
               this,
-              Invocation.method(#getOrCreateArtistByServerId, [serverId]),
+              Invocation.method(#getOrCreateArtist, [artistHash, artistName]),
             ),
             returnValueForMissingStub: _FakeArtist_1(
               this,
-              Invocation.method(#getOrCreateArtistByServerId, [serverId]),
+              Invocation.method(#getOrCreateArtist, [artistHash, artistName]),
             ),
           )
           as _i3.Artist);
@@ -405,15 +380,6 @@ class MockArtistRepository extends _i1.Mock implements _i11.ArtistRepository {
           as List<_i3.Artist>);
 
   @override
-  List<_i3.Artist> getAllArtists() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllArtists, []),
-            returnValue: <_i3.Artist>[],
-            returnValueForMissingStub: <_i3.Artist>[],
-          )
-          as List<_i3.Artist>);
-
-  @override
   void updateArtist(_i3.Artist? artist) => super.noSuchMethod(
     Invocation.method(#updateArtist, [artist]),
     returnValueForMissingStub: null,
@@ -434,15 +400,6 @@ class MockAlbumRepository extends _i1.Mock implements _i12.AlbumRepository {
           as Map<String, dynamic>);
 
   @override
-  _i10.Stream<dynamic> watchAlbums() =>
-      (super.noSuchMethod(
-            Invocation.method(#watchAlbums, []),
-            returnValue: _i10.Stream<dynamic>.empty(),
-            returnValueForMissingStub: _i10.Stream<dynamic>.empty(),
-          )
-          as _i10.Stream<dynamic>);
-
-  @override
   _i4.Album saveAlbum(_i4.Album? album) =>
       (super.noSuchMethod(
             Invocation.method(#saveAlbum, [album]),
@@ -458,54 +415,40 @@ class MockAlbumRepository extends _i1.Mock implements _i12.AlbumRepository {
           as _i4.Album);
 
   @override
-  _i4.Album? getAlbum(int? albumId) =>
+  _i4.Album? getAlbumByHash(String? albumHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getAlbum, [albumId]),
+            Invocation.method(#getAlbumByHash, [albumHash]),
             returnValueForMissingStub: null,
           )
           as _i4.Album?);
 
   @override
-  _i4.Album? getAlbumByName(String? albumName) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAlbumByName, [albumName]),
-            returnValueForMissingStub: null,
-          )
-          as _i4.Album?);
-
-  @override
-  _i4.Album? getAlbumByNameAndArtistName(
+  _i4.Album getOrCreateAlbum(
+    String? albumHash,
     String? albumName,
-    String? artistName,
+    _i3.Artist? artist,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#getAlbumByNameAndArtistName, [
+            Invocation.method(#getOrCreateAlbum, [
+              albumHash,
               albumName,
-              artistName,
+              artist,
             ]),
-            returnValueForMissingStub: null,
-          )
-          as _i4.Album?);
-
-  @override
-  _i4.Album? getAlbumByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAlbumByServerId, [serverId]),
-            returnValueForMissingStub: null,
-          )
-          as _i4.Album?);
-
-  @override
-  _i4.Album getOrCreateAlbumByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getOrCreateAlbumByServerId, [serverId]),
             returnValue: _FakeAlbum_2(
               this,
-              Invocation.method(#getOrCreateAlbumByServerId, [serverId]),
+              Invocation.method(#getOrCreateAlbum, [
+                albumHash,
+                albumName,
+                artist,
+              ]),
             ),
             returnValueForMissingStub: _FakeAlbum_2(
               this,
-              Invocation.method(#getOrCreateAlbumByServerId, [serverId]),
+              Invocation.method(#getOrCreateAlbum, [
+                albumHash,
+                albumName,
+                artist,
+              ]),
             ),
           )
           as _i4.Album);
@@ -539,15 +482,6 @@ class MockAlbumRepository extends _i1.Mock implements _i12.AlbumRepository {
               offset,
               limit,
             ]),
-            returnValue: <_i4.Album>[],
-            returnValueForMissingStub: <_i4.Album>[],
-          )
-          as List<_i4.Album>);
-
-  @override
-  List<_i4.Album> getAllAlbums() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllAlbums, []),
             returnValue: <_i4.Album>[],
             returnValueForMissingStub: <_i4.Album>[],
           )

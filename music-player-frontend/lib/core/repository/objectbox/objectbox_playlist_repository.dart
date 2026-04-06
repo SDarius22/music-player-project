@@ -29,32 +29,21 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   }
 
   @override
-  Playlist? getPlaylistByName(String name) {
-    return _playlistBox.query(Playlist_.name.equals(name)).build().findFirst();
-  }
-
-  @override
-  Playlist? getPlaylist(int id) {
-    return _playlistBox.get(id);
-  }
-
-  @override
-  Playlist? getPlaylistByServerId(int serverId) {
+  Playlist? getPlaylistByServerIdAndName(int serverId, String name) {
     return _playlistBox
-        .query(Playlist_.serverId.equals(serverId))
+        .query(
+          Playlist_.serverId.equals(serverId) & Playlist_.name.equals(name),
+        )
         .build()
         .findFirst();
   }
 
   @override
-  Playlist getOrCreatePlaylistByServerId(int serverId) {
-    Playlist? existingPlaylist = getPlaylistByServerId(serverId);
-    if (existingPlaylist != null) {
-      return existingPlaylist;
-    }
-    Playlist newPlaylist = Playlist();
-    newPlaylist.serverId = serverId;
-    return savePlaylist(newPlaylist);
+  Playlist getOrCreatePlaylist(int serverId, String name) {
+    final existing = getPlaylistByServerIdAndName(serverId, name);
+    if (existing != null) return existing;
+    Playlist playlist = Playlist(serverId, name);
+    return savePlaylist(playlist);
   }
 
   @override

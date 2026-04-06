@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_detail_dto.dart';
@@ -55,28 +54,16 @@ class ArtistRestClient extends AbstractRestClient {
     );
   }
 
-  Future<ArtistDetailDto?> getArtistById(int artistId) async {
+  Future<ArtistDetailDto?> getArtistByHash(String artistHash) async {
     try {
-      final response = await get('/artists/$artistId');
+      final response = await get('/artists/$artistHash');
       if (response.statusCode == 200) {
         return ArtistDetailDto.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       }
     } catch (e) {
-      debugPrint('Error fetching artist $artistId: $e');
-    }
-    return null;
-  }
-
-  Future<Uint8List?> getArtistCover(int artistId) async {
-    try {
-      final response = await get('/artists/$artistId/cover');
-      if (response.statusCode == 200) {
-        return response.bodyBytes;
-      }
-    } catch (e) {
-      debugPrint('Error fetching artist cover: $e');
+      debugPrint('Error fetching artist with hash: $artistHash: $e');
     }
     return null;
   }

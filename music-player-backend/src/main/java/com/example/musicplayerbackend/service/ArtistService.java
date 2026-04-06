@@ -1,14 +1,12 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.ArtistRepository;
-import com.example.musicplayerbackend.data.projection.ArtistListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.ArtistMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
 import com.example.musicplayerbackend.mapper.SortMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -35,15 +33,16 @@ public class ArtistService {
         query = (query == null || query.isBlank()) ? "" : query;
         Pageable pageable = PageRequest.of(safePage, safeSize, sortMapper.toSort(sort));
 
-        Page<ArtistListProjection> result = artistRepository.findAllWithHashes(query, pageable);
+        var result = artistRepository.findAllWithHashes(query, pageable);
 
-        List<ArtistExpandedDto> content = result.getContent().stream().map(proj -> {
-            ArtistExpandedDto dto = artistMapper.toExpandedDto(proj);
-            String csv = proj.getSongFileHashesCsv();
-            dto.setSongFileHashes(csv != null && !csv.isBlank()
-                    ? Arrays.stream(csv.split(",")).toList() : List.of());
-            return dto;
-        }).toList();
+        var content = result.getContent()
+                .stream().map(proj -> {
+                    ArtistExpandedDto dto = artistMapper.toExpandedDto(proj);
+                    String csv = proj.getSongFileHashesCsv();
+                    dto.setSongFileHashes(csv != null && !csv.isBlank()
+                            ? Arrays.stream(csv.split(",")).toList() : List.of());
+                    return dto;
+                }).toList();
 
         return new ArtistPageDto(content, result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalPages());

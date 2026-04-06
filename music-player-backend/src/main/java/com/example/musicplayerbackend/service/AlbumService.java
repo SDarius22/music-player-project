@@ -1,16 +1,13 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.AlbumRepository;
-import com.example.musicplayerbackend.data.projection.AlbumListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
 import com.example.musicplayerbackend.mapper.SortMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,21 +30,15 @@ public class AlbumService {
         int safePage = page == null ? 0 : Math.max(page, 0);
         int safeSize = size == null ? 50 : Math.min(Math.max(size, 1), 200);
         query = (query == null || query.isBlank()) ? "" : query;
-        Pageable pageable = PageRequest.of(safePage, safeSize, sortMapper.toSort(sort));
+        var pageable = PageRequest.of(safePage, safeSize, sortMapper.toSort(sort));
 
-        Page<AlbumListProjection> result = albumRepository.findAllWithHashes(query, pageable);
+        var result = albumRepository.findAllWithHashes(query, pageable);
 
-        List<AlbumExpandedDto> content = result.getContent().stream().map(proj -> {
+        var content = result.getContent().stream().map(proj -> {
             AlbumExpandedDto dto = albumMapper.toExpandedDto(proj);
             String csv = proj.getSongFileHashesCsv();
             dto.setSongFileHashes(csv != null && !csv.isBlank()
                     ? Arrays.stream(csv.split(",")).toList() : List.of());
-            if (proj.getArtistId() != null) {
-                ArtistDto artistDto = new ArtistDto();
-                artistDto.setId(proj.getArtistId());
-                artistDto.setName(proj.getArtistName());
-                dto.setArtist(artistDto);
-            }
             return dto;
         }).toList();
 

@@ -1,7 +1,11 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_expanded_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
@@ -20,52 +24,28 @@ class AlbumService {
     this._albumRestService,
   );
 
-  Stream watchAlbums() => _albumRepository.watchAlbums();
-
   Map<String, dynamic> get sortFields => _albumRepository.sortFields;
 
-  Album getAlbum(int albumId) {
-    try {
-      return _albumRepository.getAlbum(albumId)!;
-    } catch (e) {
-      throw Exception("Album with ID $albumId not found.");
-    }
-  }
-
-  Album? getAlbumByServerId(int serverId) {
-    return _albumRepository.getAlbumByServerId(serverId);
-  }
-
-  Album getOrCreateAlbum(String albumName, int artistId, {Uint8List? image}) {
-    Album? existingAlbum = _albumRepository.getAlbumByName(albumName);
-    if (existingAlbum != null) {
-      existingAlbum.imageBytes ??= image;
-      _albumRepository.saveAlbum(existingAlbum);
-      return existingAlbum;
-    }
-    Album newAlbum = Album();
-    newAlbum.name = albumName;
-    newAlbum.imageBytes = image;
-    newAlbum.artist.targetId = artistId;
-    return _albumRepository.saveAlbum(newAlbum);
-  }
-
-  List<Album> getAllAlbums() {
-    return _albumRepository.getAllAlbums();
+  Album getOrCreateAlbum(String albumName, Artist artist) {
+    var albumHash =
+        sha256
+            .convert(utf8.encode('${artist.getName()} - $albumName'))
+            .toString();
+    return _albumRepository.getOrCreateAlbum(albumHash, albumName, artist);
   }
 
   void updateAlbum(Album album) {
     _albumRepository.updateAlbum(album);
   }
 
-  Future<Album> fetchAlbumDetails(int albumId) async {
+  Future<Album?> fetchAlbumDetails(String albumHash) async {
     try {
-      final serverAlbum = await _albumRestService.getAlbumById(albumId);
+      final serverAlbum = await _albumRestService.getAlbumByHash(albumHash);
       return cacheServerAlbumDetail(serverAlbum!);
     } catch (e) {
       debugPrint('AlbumService: server fetch failed, using local: $e');
     }
-    return _albumRepository.getAlbumByServerId(albumId)!;
+    return _albumRepository.getAlbumByNameAndArtist(albumName, artist);
   }
 
   Future<({List<Album> content, int totalPages, int page})> getAlbumsPage(

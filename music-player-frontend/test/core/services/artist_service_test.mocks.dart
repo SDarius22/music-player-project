@@ -3,9 +3,8 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i9;
-import 'dart:io' as _i16;
-import 'dart:typed_data' as _i15;
+import 'dart:async' as _i11;
+import 'dart:io' as _i15;
 
 import 'package:http/http.dart' as _i7;
 import 'package:mockito/mockito.dart' as _i1;
@@ -18,11 +17,11 @@ import 'package:music_player_frontend/core/entities/album.dart' as _i3;
 import 'package:music_player_frontend/core/entities/artist.dart' as _i2;
 import 'package:music_player_frontend/core/entities/song.dart' as _i4;
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart'
-    as _i10;
+    as _i9;
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart'
     as _i8;
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart'
-    as _i11;
+    as _i10;
 import 'package:music_player_frontend/core/rest_clients/artist_rest_client.dart'
     as _i12;
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart'
@@ -87,15 +86,6 @@ class MockArtistRepository extends _i1.Mock implements _i8.ArtistRepository {
           as Map<String, dynamic>);
 
   @override
-  _i9.Stream<dynamic> watchArtists() =>
-      (super.noSuchMethod(
-            Invocation.method(#watchArtists, []),
-            returnValue: _i9.Stream<dynamic>.empty(),
-            returnValueForMissingStub: _i9.Stream<dynamic>.empty(),
-          )
-          as _i9.Stream<dynamic>);
-
-  @override
   _i2.Artist saveArtist(_i2.Artist? artist) =>
       (super.noSuchMethod(
             Invocation.method(#saveArtist, [artist]),
@@ -111,40 +101,24 @@ class MockArtistRepository extends _i1.Mock implements _i8.ArtistRepository {
           as _i2.Artist);
 
   @override
-  _i2.Artist? getArtist(int? artistId) =>
+  _i2.Artist? getArtistByHash(String? artistName) =>
       (super.noSuchMethod(
-            Invocation.method(#getArtist, [artistId]),
+            Invocation.method(#getArtistByHash, [artistName]),
             returnValueForMissingStub: null,
           )
           as _i2.Artist?);
 
   @override
-  _i2.Artist? getArtistByName(String? artistName) =>
+  _i2.Artist getOrCreateArtist(String? artistHash, String? artistName) =>
       (super.noSuchMethod(
-            Invocation.method(#getArtistByName, [artistName]),
-            returnValueForMissingStub: null,
-          )
-          as _i2.Artist?);
-
-  @override
-  _i2.Artist? getArtistByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getArtistByServerId, [serverId]),
-            returnValueForMissingStub: null,
-          )
-          as _i2.Artist?);
-
-  @override
-  _i2.Artist getOrCreateArtistByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getOrCreateArtistByServerId, [serverId]),
+            Invocation.method(#getOrCreateArtist, [artistHash, artistName]),
             returnValue: _FakeArtist_0(
               this,
-              Invocation.method(#getOrCreateArtistByServerId, [serverId]),
+              Invocation.method(#getOrCreateArtist, [artistHash, artistName]),
             ),
             returnValueForMissingStub: _FakeArtist_0(
               this,
-              Invocation.method(#getOrCreateArtistByServerId, [serverId]),
+              Invocation.method(#getOrCreateArtist, [artistHash, artistName]),
             ),
           )
           as _i2.Artist);
@@ -184,15 +158,6 @@ class MockArtistRepository extends _i1.Mock implements _i8.ArtistRepository {
           as List<_i2.Artist>);
 
   @override
-  List<_i2.Artist> getAllArtists() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllArtists, []),
-            returnValue: <_i2.Artist>[],
-            returnValueForMissingStub: <_i2.Artist>[],
-          )
-          as List<_i2.Artist>);
-
-  @override
   void updateArtist(_i2.Artist? artist) => super.noSuchMethod(
     Invocation.method(#updateArtist, [artist]),
     returnValueForMissingStub: null,
@@ -202,7 +167,7 @@ class MockArtistRepository extends _i1.Mock implements _i8.ArtistRepository {
 /// A class which mocks [AlbumRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAlbumRepository extends _i1.Mock implements _i10.AlbumRepository {
+class MockAlbumRepository extends _i1.Mock implements _i9.AlbumRepository {
   @override
   Map<String, dynamic> get sortFields =>
       (super.noSuchMethod(
@@ -211,15 +176,6 @@ class MockAlbumRepository extends _i1.Mock implements _i10.AlbumRepository {
             returnValueForMissingStub: <String, dynamic>{},
           )
           as Map<String, dynamic>);
-
-  @override
-  _i9.Stream<dynamic> watchAlbums() =>
-      (super.noSuchMethod(
-            Invocation.method(#watchAlbums, []),
-            returnValue: _i9.Stream<dynamic>.empty(),
-            returnValueForMissingStub: _i9.Stream<dynamic>.empty(),
-          )
-          as _i9.Stream<dynamic>);
 
   @override
   _i3.Album saveAlbum(_i3.Album? album) =>
@@ -237,54 +193,40 @@ class MockAlbumRepository extends _i1.Mock implements _i10.AlbumRepository {
           as _i3.Album);
 
   @override
-  _i3.Album? getAlbum(int? albumId) =>
+  _i3.Album? getAlbumByHash(String? albumHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getAlbum, [albumId]),
+            Invocation.method(#getAlbumByHash, [albumHash]),
             returnValueForMissingStub: null,
           )
           as _i3.Album?);
 
   @override
-  _i3.Album? getAlbumByName(String? albumName) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAlbumByName, [albumName]),
-            returnValueForMissingStub: null,
-          )
-          as _i3.Album?);
-
-  @override
-  _i3.Album? getAlbumByNameAndArtistName(
+  _i3.Album getOrCreateAlbum(
+    String? albumHash,
     String? albumName,
-    String? artistName,
+    _i2.Artist? artist,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#getAlbumByNameAndArtistName, [
+            Invocation.method(#getOrCreateAlbum, [
+              albumHash,
               albumName,
-              artistName,
+              artist,
             ]),
-            returnValueForMissingStub: null,
-          )
-          as _i3.Album?);
-
-  @override
-  _i3.Album? getAlbumByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAlbumByServerId, [serverId]),
-            returnValueForMissingStub: null,
-          )
-          as _i3.Album?);
-
-  @override
-  _i3.Album getOrCreateAlbumByServerId(int? serverId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getOrCreateAlbumByServerId, [serverId]),
             returnValue: _FakeAlbum_1(
               this,
-              Invocation.method(#getOrCreateAlbumByServerId, [serverId]),
+              Invocation.method(#getOrCreateAlbum, [
+                albumHash,
+                albumName,
+                artist,
+              ]),
             ),
             returnValueForMissingStub: _FakeAlbum_1(
               this,
-              Invocation.method(#getOrCreateAlbumByServerId, [serverId]),
+              Invocation.method(#getOrCreateAlbum, [
+                albumHash,
+                albumName,
+                artist,
+              ]),
             ),
           )
           as _i3.Album);
@@ -324,15 +266,6 @@ class MockAlbumRepository extends _i1.Mock implements _i10.AlbumRepository {
           as List<_i3.Album>);
 
   @override
-  List<_i3.Album> getAllAlbums() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllAlbums, []),
-            returnValue: <_i3.Album>[],
-            returnValueForMissingStub: <_i3.Album>[],
-          )
-          as List<_i3.Album>);
-
-  @override
   void updateAlbum(_i3.Album? album) => super.noSuchMethod(
     Invocation.method(#updateAlbum, [album]),
     returnValueForMissingStub: null,
@@ -342,7 +275,7 @@ class MockAlbumRepository extends _i1.Mock implements _i10.AlbumRepository {
 /// A class which mocks [SongRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSongRepository extends _i1.Mock implements _i11.SongRepository {
+class MockSongRepository extends _i1.Mock implements _i10.SongRepository {
   @override
   Map<String, dynamic> get sortFields =>
       (super.noSuchMethod(
@@ -353,13 +286,13 @@ class MockSongRepository extends _i1.Mock implements _i11.SongRepository {
           as Map<String, dynamic>);
 
   @override
-  _i9.Stream<dynamic> watchSongs() =>
+  _i11.Stream<dynamic> watchSongs() =>
       (super.noSuchMethod(
             Invocation.method(#watchSongs, []),
-            returnValue: _i9.Stream<dynamic>.empty(),
-            returnValueForMissingStub: _i9.Stream<dynamic>.empty(),
+            returnValue: _i11.Stream<dynamic>.empty(),
+            returnValueForMissingStub: _i11.Stream<dynamic>.empty(),
           )
-          as _i9.Stream<dynamic>);
+          as _i11.Stream<dynamic>);
 
   @override
   _i4.Song saveSong(_i4.Song? song) =>
@@ -593,7 +526,7 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
   );
 
   @override
-  _i9.Future<_i6.ArtistPageDto> getArtistsPage({
+  _i11.Future<_i6.ArtistPageDto> getArtistsPage({
     String? query,
     int? page = 0,
     int? size = 30,
@@ -606,7 +539,7 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
               #size: size,
               #sort: sort,
             }),
-            returnValue: _i9.Future<_i6.ArtistPageDto>.value(
+            returnValue: _i11.Future<_i6.ArtistPageDto>.value(
               _FakeArtistPageDto_4(
                 this,
                 Invocation.method(#getArtistsPage, [], {
@@ -617,7 +550,7 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
                 }),
               ),
             ),
-            returnValueForMissingStub: _i9.Future<_i6.ArtistPageDto>.value(
+            returnValueForMissingStub: _i11.Future<_i6.ArtistPageDto>.value(
               _FakeArtistPageDto_4(
                 this,
                 Invocation.method(#getArtistsPage, [], {
@@ -629,90 +562,84 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
               ),
             ),
           )
-          as _i9.Future<_i6.ArtistPageDto>);
+          as _i11.Future<_i6.ArtistPageDto>);
 
   @override
-  _i9.Future<_i14.ArtistDetailDto?> getArtistById(int? artistId) =>
+  _i11.Future<_i14.ArtistDetailDto?> getArtistByHash(String? artistHash) =>
       (super.noSuchMethod(
-            Invocation.method(#getArtistById, [artistId]),
-            returnValue: _i9.Future<_i14.ArtistDetailDto?>.value(),
+            Invocation.method(#getArtistByHash, [artistHash]),
+            returnValue: _i11.Future<_i14.ArtistDetailDto?>.value(),
             returnValueForMissingStub:
-                _i9.Future<_i14.ArtistDetailDto?>.value(),
+                _i11.Future<_i14.ArtistDetailDto?>.value(),
           )
-          as _i9.Future<_i14.ArtistDetailDto?>);
+          as _i11.Future<_i14.ArtistDetailDto?>);
 
   @override
-  _i9.Future<_i15.Uint8List?> getArtistCover(int? artistId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getArtistCover, [artistId]),
-            returnValue: _i9.Future<_i15.Uint8List?>.value(),
-            returnValueForMissingStub: _i9.Future<_i15.Uint8List?>.value(),
-          )
-          as _i9.Future<_i15.Uint8List?>);
-
-  @override
-  _i9.Future<_i7.Response> post(String? endpoint, Map<String, dynamic>? body) =>
+  _i11.Future<_i7.Response> post(
+    String? endpoint,
+    Map<String, dynamic>? body,
+  ) =>
       (super.noSuchMethod(
             Invocation.method(#post, [endpoint, body]),
-            returnValue: _i9.Future<_i7.Response>.value(
+            returnValue: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(this, Invocation.method(#post, [endpoint, body])),
             ),
-            returnValueForMissingStub: _i9.Future<_i7.Response>.value(
+            returnValueForMissingStub: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(this, Invocation.method(#post, [endpoint, body])),
             ),
           )
-          as _i9.Future<_i7.Response>);
+          as _i11.Future<_i7.Response>);
 
   @override
-  _i9.Future<_i7.Response> get(
+  _i11.Future<_i7.Response> get(
     String? endpoint, {
     Map<String, String>? headers = const {'Content-Type': 'application/json'},
   }) =>
       (super.noSuchMethod(
             Invocation.method(#get, [endpoint], {#headers: headers}),
-            returnValue: _i9.Future<_i7.Response>.value(
+            returnValue: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(
                 this,
                 Invocation.method(#get, [endpoint], {#headers: headers}),
               ),
             ),
-            returnValueForMissingStub: _i9.Future<_i7.Response>.value(
+            returnValueForMissingStub: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(
                 this,
                 Invocation.method(#get, [endpoint], {#headers: headers}),
               ),
             ),
           )
-          as _i9.Future<_i7.Response>);
+          as _i11.Future<_i7.Response>);
 
   @override
-  _i9.Future<_i7.Response> put(String? endpoint, Map<String, dynamic>? body) =>
+  _i11.Future<_i7.Response> put(String? endpoint, Map<String, dynamic>? body) =>
       (super.noSuchMethod(
             Invocation.method(#put, [endpoint, body]),
-            returnValue: _i9.Future<_i7.Response>.value(
+            returnValue: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(this, Invocation.method(#put, [endpoint, body])),
             ),
-            returnValueForMissingStub: _i9.Future<_i7.Response>.value(
+            returnValueForMissingStub: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(this, Invocation.method(#put, [endpoint, body])),
             ),
           )
-          as _i9.Future<_i7.Response>);
+          as _i11.Future<_i7.Response>);
 
   @override
-  _i9.Future<_i7.Response> delete(String? endpoint) =>
+  _i11.Future<_i7.Response> delete(String? endpoint) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [endpoint]),
-            returnValue: _i9.Future<_i7.Response>.value(
+            returnValue: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(this, Invocation.method(#delete, [endpoint])),
             ),
-            returnValueForMissingStub: _i9.Future<_i7.Response>.value(
+            returnValueForMissingStub: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(this, Invocation.method(#delete, [endpoint])),
             ),
           )
-          as _i9.Future<_i7.Response>);
+          as _i11.Future<_i7.Response>);
 
   @override
-  _i9.Future<_i7.Response> multipartRequest(
+  _i11.Future<_i7.Response> multipartRequest(
     String? method,
     String? endpoint, {
     Map<String, String>? fields,
@@ -724,7 +651,7 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
               [method, endpoint],
               {#fields: fields, #files: files},
             ),
-            returnValue: _i9.Future<_i7.Response>.value(
+            returnValue: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(
                 this,
                 Invocation.method(
@@ -734,7 +661,7 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
                 ),
               ),
             ),
-            returnValueForMissingStub: _i9.Future<_i7.Response>.value(
+            returnValueForMissingStub: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(
                 this,
                 Invocation.method(
@@ -745,13 +672,13 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
               ),
             ),
           )
-          as _i9.Future<_i7.Response>);
+          as _i11.Future<_i7.Response>);
 
   @override
-  _i9.Future<_i7.Response> multipartRequestWithProgress(
+  _i11.Future<_i7.Response> multipartRequestWithProgress(
     String? method,
     String? endpoint,
-    _i16.File? file,
+    _i15.File? file,
     Map<String, String>? fields,
     void Function(int, int)? onProgress,
   ) =>
@@ -763,7 +690,7 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
               fields,
               onProgress,
             ]),
-            returnValue: _i9.Future<_i7.Response>.value(
+            returnValue: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(
                 this,
                 Invocation.method(#multipartRequestWithProgress, [
@@ -775,7 +702,7 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
                 ]),
               ),
             ),
-            returnValueForMissingStub: _i9.Future<_i7.Response>.value(
+            returnValueForMissingStub: _i11.Future<_i7.Response>.value(
               _FakeResponse_5(
                 this,
                 Invocation.method(#multipartRequestWithProgress, [
@@ -788,5 +715,5 @@ class MockArtistRestClient extends _i1.Mock implements _i12.ArtistRestClient {
               ),
             ),
           )
-          as _i9.Future<_i7.Response>);
+          as _i11.Future<_i7.Response>);
 }

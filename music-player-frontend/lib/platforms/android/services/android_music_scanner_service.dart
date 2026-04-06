@@ -27,14 +27,37 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
   @override
   Future<void> performQuickScan() async {
     final songs = await _fileService.getAudioFiles(null);
-    int addedCount = 0;
 
     for (final songModel in songs) {
-      final existing = _songService.getLocalSong(songModel.data);
-      if (existing == null) {
-        _addSong(songModel);
-        addedCount++;
+      String fileHash = '';
+      try {
+        final bytes = await File(songModel.data).readAsBytes();
+        fileHash = sha256.convert(bytes).toString();
+      } catch (_) {
+
       }
+      final existing = _songService.getOrCreateSongByFileHash(songModel.data);
+
+      var artist = _artistService.getOrCreateArtist(
+        songModel.artist ?? 'Unknown Artist',
+      );
+      var album = _albumService.getOrCreateAlbum(
+        songModel.album ?? 'Unknown Album',
+        artist.id,
+        image: await _fileService.getImage(songModel.id),
+      );
+
+      existing
+        ..path = songModel.data
+        ..name = songModel.title
+        ..durationInSeconds = (songModel.duration ?? 0) ~/ 1000
+        ..trackNumber = songModel.track ?? 0
+        ..discNumber = -1
+        ..year = -1
+        ..fileHash = fileHash
+        ..artist.target = artist
+        ..album.target = album
+        ..fullyLoaded = false;
     }
 
     debugPrint(
@@ -43,33 +66,11 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
   }
 
   Future<void> _addSong(SongModel songModel) async {
-    String fileHash = '';
-    try {
-      final bytes = await File(songModel.data).readAsBytes();
-      fileHash = sha256.convert(bytes).toString();
-    } catch (_) {}
 
-    var artist = _artistService.getOrCreateArtist(
-      songModel.artist ?? 'Unknown Artist',
-    );
-    var album = _albumService.getOrCreateAlbum(
-      songModel.album ?? 'Unknown Album',
-      artist.id,
-      image: await _fileService.getImage(songModel.id),
-    );
 
     final song =
         Song()
-          ..path = songModel.data
-          ..name = songModel.title
-          ..durationInSeconds = (songModel.duration ?? 0) ~/ 1000
-          ..trackNumber = songModel.track ?? 0
-          ..discNumber = -1
-          ..year = -1
-          ..fileHash = fileHash
-          ..artist.target = artist
-          ..album.target = album
-          ..fullyLoaded = false;
+
 
     album.songs.add(song);
     _albumService.updateAlbum(album);
@@ -78,7 +79,7 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
     artist.albums.add(album);
     _artistService.updateArtist(artist);
 
-    _songService.addSongEntity(song);
+    _songService.updateSong(song);
   }
 
   @override

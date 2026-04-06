@@ -144,12 +144,12 @@ void main() {
     test('returns artist when found', () {
       final artist = makeArtist(name: 'Found');
       when(mockRepo.getArtistByName('Found')).thenReturn(artist);
-      expect(service.getArtistByName('Found'), same(artist));
+      expect(service.fetchArtistDetails('Found'), same(artist));
     });
 
     test('throws when not found', () {
       when(mockRepo.getArtistByName(any)).thenReturn(null);
-      expect(() => service.getArtistByName('Missing'), throwsException);
+      expect(() => service.fetchArtistDetails('Missing'), throwsException);
     });
   });
 

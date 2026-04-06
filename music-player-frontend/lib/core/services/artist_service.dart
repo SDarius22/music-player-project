@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_expanded_dto.dart';
@@ -20,48 +23,24 @@ class ArtistService {
     this._artistRestService,
   );
 
-  Stream watchArtists() => _artistRepository.watchArtists();
-
   Map<String, dynamic> get sortFields => _artistRepository.sortFields;
 
-  Artist getArtist(int artistId) {
-    try {
-      return _artistRepository.getArtist(artistId)!;
-    } catch (e) {
-      throw Exception("Artist with ID $artistId not found.");
+  Future<Artist?> fetchArtistDetails(String name) async {
+    if (name.isEmpty || name.trim().isEmpty) {
+      throw Exception("Artist name cannot be empty.");
     }
-  }
-
-  Future<Artist> getArtistByServerId(int serverId) async {
     try {
-      final result = await _artistRestService.getArtistById(serverId);
+      String artistHash = sha256.convert(utf8.encode(name)).toString();
+      final result = await _artistRestService.getArtistByHash(artistHash);
       return cacheServerArtistDetail(result!);
     } catch (e) {
-      debugPrint('Failed to fetch artist by server ID $serverId: $e');
+      debugPrint('Failed to fetch artist by server ID $name: $e');
     }
-    return _artistRepository.getArtistByServerId(serverId)!;
+    return _artistRepository.getArtistByName(name);
   }
 
   Artist getOrCreateArtist(String artistName) {
-    Artist? existingArtist = _artistRepository.getArtistByName(artistName);
-    if (existingArtist != null) {
-      return existingArtist;
-    }
-    Artist newArtist = Artist();
-    newArtist.name = artistName;
-    return _artistRepository.saveArtist(newArtist);
-  }
-
-  Artist getArtistByName(String artistName) {
-    try {
-      return _artistRepository.getArtistByName(artistName)!;
-    } catch (e) {
-      throw Exception("Artist with name $artistName not found.");
-    }
-  }
-
-  List<Artist> getAllArtists() {
-    return _artistRepository.getAllArtists();
+    return _artistRepository.getOrCreateArtistByName(artistName);
   }
 
   void updateArtist(Artist artist) {
@@ -113,14 +92,9 @@ class ArtistService {
   }
 
   Artist cacheServerArtist(ArtistExpandedDto serverArtist) {
-    if (serverArtist.id <= 0) {
-      throw Exception('Server artist must have a valid ID');
-    }
-
-    var cachedArtist = _artistRepository.getOrCreateArtistByServerId(
-      serverArtist.id,
+    var cachedArtist = _artistRepository.getOrCreateArtistByName(
+      serverArtist.name,
     );
-    cachedArtist.name = serverArtist.name;
 
     for (var songHash in serverArtist.songFileHashes) {
       var cachedSong = _songRepository.getOrCreateSongByFileHash(songHash);
@@ -133,22 +107,17 @@ class ArtistService {
   }
 
   Artist cacheServerArtistDetail(ArtistDetailDto serverArtist) {
-    if (serverArtist.id <= 0) {
-      throw Exception('Server artist must have a valid ID');
-    }
-
-    var cachedArtist = _artistRepository.getOrCreateArtistByServerId(
-      serverArtist.id,
+    var cachedArtist = _artistRepository.getOrCreateArtistByName(
+      serverArtist.name,
     );
-    cachedArtist.name = serverArtist.name;
 
     for (var song in serverArtist.songs) {
       var cachedSong = _songRepository.getOrCreateSongByFileHash(song.fileHash);
 
-      var cachedAlbum = _albumRepository.getOrCreateAlbumByServerId(
-        song.album.id,
+      var cachedAlbum = _albumRepository.getOrCreateAlbumByNameAndArtist(
+        song.album.name,
+        cachedArtist,
       );
-      cachedAlbum.name = song.album.name;
       cachedAlbum.artist.targetId = cachedArtist.id;
       cachedAlbum.songs.add(cachedSong);
       _albumRepository.updateAlbum(cachedAlbum);

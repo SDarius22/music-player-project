@@ -52,16 +52,16 @@ class AlbumRestClient extends AbstractRestClient {
     );
   }
 
-  Future<AlbumDetailDto?> getAlbumById(int albumId) async {
+  Future<AlbumDetailDto?> getAlbumByHash(String albumHash) async {
     try {
-      final response = await get('/albums/$albumId');
+      final response = await get('/albums/$albumHash');
       if (response.statusCode == 200) {
         return AlbumDetailDto.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       }
     } catch (e) {
-      debugPrint('Error fetching album $albumId: $e');
+      debugPrint('Error fetching album: $e');
     }
     return null;
   }

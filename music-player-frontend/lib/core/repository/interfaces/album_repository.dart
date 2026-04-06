@@ -1,21 +1,14 @@
 import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 
 abstract class AlbumRepository {
-  Stream watchAlbums();
-
   Map<String, dynamic> get sortFields;
 
   Album saveAlbum(Album album);
 
-  Album? getAlbum(int albumId);
+  Album? getAlbumByHash(String albumHash);
 
-  Album? getAlbumByName(String albumName);
-
-  Album? getAlbumByNameAndArtistName(String albumName, String artistName);
-
-  Album? getAlbumByServerId(int serverId);
-
-  Album getOrCreateAlbumByServerId(int serverId);
+  Album getOrCreateAlbum(String albumHash, String albumName, Artist artist);
 
   List<Album> getAlbums(String query, String sortField, bool ascending);
 
@@ -26,8 +19,6 @@ abstract class AlbumRepository {
     int offset,
     int limit,
   );
-
-  List<Album> getAllAlbums();
 
   void updateAlbum(Album album);
 }

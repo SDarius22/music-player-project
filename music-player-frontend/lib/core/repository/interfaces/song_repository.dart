@@ -11,15 +11,9 @@ abstract class SongRepository {
 
   int getSongCount();
 
-  Song getSongByPath(String path);
-
   Song? getSongByFileHash(String fileHash);
 
-  Song getOrCreateSongByFileHash(String fileHas);
-
-  Song getSong(int id);
-
-  Song? getSongContaining(String query);
+  Song getOrCreateSong(String fileHash);
 
   Song? getMostRecentPlayedSong();
 

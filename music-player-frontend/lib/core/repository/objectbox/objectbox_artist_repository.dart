@@ -7,9 +7,6 @@ class ObjectBoxArtistRepository implements ArtistRepository {
   Box<Artist> get _artistBox => ObjectBox.store.box<Artist>();
 
   @override
-  Stream watchArtists() => _artistBox.query().watch(triggerImmediately: true);
-
-  @override
   Map<String, dynamic> get sortFields => {'Name': Artist_.name};
 
   @override
@@ -19,35 +16,19 @@ class ObjectBoxArtistRepository implements ArtistRepository {
   }
 
   @override
-  Artist? getArtist(int artistId) {
-    return _artistBox.get(artistId);
-  }
-
-  @override
-  Artist? getArtistByName(String artistName) {
+  Artist? getArtistByHash(String artistHash) {
     return _artistBox
-        .query(Artist_.name.equals(artistName))
+        .query(Artist_.getHash().equals(artistHash))
         .build()
         .findFirst();
   }
 
   @override
-  Artist? getArtistByServerId(int serverId) {
-    return _artistBox
-        .query(Artist_.serverId.equals(serverId))
-        .build()
-        .findFirst();
-  }
-
-  @override
-  Artist getOrCreateArtistByServerId(int serverId) {
-    Artist? existingArtist = getArtistByServerId(serverId);
-    if (existingArtist != null) {
-      return existingArtist;
-    }
-    Artist newArtist = Artist();
-    newArtist.serverId = serverId;
-    return saveArtist(newArtist);
+  Artist getOrCreateArtist(String artistHash, String name) {
+    final existing = getArtistByHash(artistHash);
+    if (existing != null) return existing;
+    Artist artist = Artist(artistHash, name);
+    return saveArtist(artist);
   }
 
   @override
@@ -99,11 +80,6 @@ class ObjectBoxArtistRepository implements ArtistRepository {
     q.offset = offset;
     q.limit = limit;
     return q.find();
-  }
-
-  @override
-  List<Artist> getAllArtists() {
-    return _artistBox.getAll();
   }
 
   @override

@@ -1,13 +1,11 @@
 import 'package:music_player_frontend/core/database/object_box_store.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 
 class ObjectBoxAlbumRepository implements AlbumRepository {
   Box<Album> get _albumBox => ObjectBox.store.box<Album>();
-
-  @override
-  Stream watchAlbums() => _albumBox.query().watch(triggerImmediately: true);
 
   @override
   Map<String, dynamic> get sortFields => {'Name': Album_.name};
@@ -19,42 +17,19 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
   }
 
   @override
-  Album? getAlbum(int albumId) {
-    return _albumBox.get(albumId);
-  }
-
-  @override
-  Album? getAlbumByName(String albumName) {
-    return _albumBox.query(Album_.name.equals(albumName)).build().findFirst();
-  }
-
-  @override
-  Album? getAlbumByNameAndArtistName(String albumName, String artistName) {
-    final candidates =
-        _albumBox.query(Album_.name.equals(albumName)).build().find();
-    for (final album in candidates) {
-      if (album.artist.target?.name == artistName) return album;
-    }
-    return null;
-  }
-
-  @override
-  Album? getAlbumByServerId(int serverId) {
+  Album? getAlbumByHash(String albumHash) {
     return _albumBox
-        .query(Album_.serverId.equals(serverId))
+        .query(Album_.getHash().equals(albumHash))
         .build()
         .findFirst();
   }
 
   @override
-  Album getOrCreateAlbumByServerId(int serverId) {
-    final existingAlbum = getAlbumByServerId(serverId);
-    if (existingAlbum != null) {
-      return existingAlbum;
-    }
-    Album newAlbum = Album();
-    newAlbum.serverId = serverId;
-    return saveAlbum(newAlbum);
+  Album getOrCreateAlbum(String albumHash, String albumName, Artist artist) {
+    final existing = getAlbumByHash(albumHash);
+    if (existing != null) return existing;
+    var album = Album(albumHash, albumName, artist);
+    return saveAlbum(album);
   }
 
   @override
@@ -106,11 +81,6 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
     q.offset = offset;
     q.limit = limit;
     return q.find();
-  }
-
-  @override
-  List<Album> getAllAlbums() {
-    return _albumBox.getAll();
   }
 
   @override

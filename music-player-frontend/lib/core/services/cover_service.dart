@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
@@ -59,6 +60,13 @@ class CoverService {
       };
     }
 
+    if (entity is Artist) {
+      return (bytes) {
+        entity.imageBytes = bytes;
+        artistService.updateArtist(entity);
+      };
+    }
+
     if (entity is Song) {
       final album = entity.album.target;
       if (album != null) {
@@ -77,7 +85,6 @@ class CoverService {
       };
     }
 
-    // Artist has no local imageBytes field; nothing to persist.
     return null;
   }
 

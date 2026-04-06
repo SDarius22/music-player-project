@@ -2,26 +2,23 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 
 @Entity()
-class Album with AbstractCollection implements BaseEntity {
+class Album implements BaseEntity {
   @Id()
   int id = 0;
 
-  @Index()
-  @Unique()
-  int serverId = -1;
-
-  @override
-  String get cloudId => serverId > 0 ? serverId.toString() : '';
-
   bool requiresSync = false;
 
-  String _name = "Unknown album";
+  @Index()
+  @Unique()
+  final String _hash;
+
+  final String _name;
+  int _duration = 0;
 
   @Property(type: PropertyType.byteVector)
   Uint8List? imageBytes;
@@ -30,19 +27,50 @@ class Album with AbstractCollection implements BaseEntity {
   List<Color> colors = [];
 
   @Backlink('album')
-  final _songs = ToMany<Song>();
-  final artist = ToOne<Artist>();
+  final ToMany<Song> _songs = ToMany<Song>();
+  final ToOne<Artist> _artist = ToOne<Artist>();
+
+  Album(this._hash, this._name, Artist artist, {List<Song> songs = const []}) {
+    assert(_hash.isNotEmpty, 'Album hash cannot be empty');
+    assert(_name.isNotEmpty, 'Album name cannot be empty');
+    assert(artist.getName().isNotEmpty, 'Artist name cannot be empty');
+    _artist.target = artist;
+    for (var song in songs) {
+      addSong(song);
+    }
+  }
+
+  void addSong(Song song) {
+    _songs.add(song);
+    _duration += song.durationInSeconds;
+  }
+
+  List<Song> getSongs() {
+    return List.unmodifiable(_songs);
+  }
+
+  String getArtistName() {
+    return _artist.target?.getName() ?? 'Unknown Artist';
+  }
 
   @override
-  String get name => _name;
+  String getName() {
+    return _name;
+  }
 
   @override
-  set name(String value) => _name = value;
+  String getHash() {
+    return _hash;
+  }
 
   @override
-  bool get isLocal {
+  bool isLocal() {
+    if (_songs.isEmpty) {
+      return false;
+    }
+
     for (var song in _songs) {
-      if (!song.isLocal) {
+      if (!song.isLocal()) {
         return false;
       }
     }
@@ -50,30 +78,21 @@ class Album with AbstractCollection implements BaseEntity {
   }
 
   @override
-  ToMany<Song> get songs => _songs;
+  Uint8List? getCoverArt() {
+    return imageBytes;
+  }
 
   @override
-  Uint8List? get coverArt => imageBytes;
+  String getImageUrl() {
+    return '/albums/$_hash/cover';
+  }
 
-  @override
-  String? get imageUrl => serverId > 0 ? '/albums/$serverId/cover' : null;
-
-  int _duration = -1;
-
-  int get durationInSeconds {
-    if (_duration != -1) {
-      return _duration;
-    }
-    int total = 0;
-    for (var song in _songs) {
-      total += song.durationInSeconds;
-    }
-    _duration = total;
-    return total;
+  int getDurationInSeconds() {
+    return _duration;
   }
 
   @override
   String toString() {
-    return name;
+    return "Album{name: $_name, hash: $_hash, songs: ${_songs.length}, artist: ${_artist.target?.getName() ?? 'Unknown Artist'}}";
   }
 }

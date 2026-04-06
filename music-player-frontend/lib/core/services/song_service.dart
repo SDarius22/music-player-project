@@ -58,6 +58,13 @@ class SongService {
     }
   }
 
+  Song getOrCreateSongByFileHash(String fileHash) {
+    if (fileHash.isEmpty) {
+      throw ArgumentError('File hash cannot be empty');
+    }
+    return _songRepository.getOrCreateSongByFileHash(fileHash);
+  }
+
   Future<Song?> fetchSongByFileHash(String fileHash) async {
     final local = _songRepository.getSongByFileHash(fileHash);
     if (local != null) return local;

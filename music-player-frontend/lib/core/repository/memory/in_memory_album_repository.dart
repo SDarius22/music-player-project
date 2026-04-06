@@ -1,30 +1,10 @@
-import 'dart:async';
-
 import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 
 class InMemoryAlbumRepository implements AlbumRepository {
   final Map<int, Album> _byId = {};
   int _nextId = 1;
-
-  final StreamController<List<Album>> _controller =
-      StreamController<List<Album>>.broadcast();
-
-  void _emit() => _controller.add(getAllAlbums());
-
-  @override
-  Stream watchAlbums() {
-    return _controller.stream.transform(
-      StreamTransformer.fromHandlers(
-        handleData: (albums, sink) {
-          sink.add(albums);
-        },
-        handleDone: (sink) {
-          sink.close();
-        },
-      ),
-    );
-  }
 
   @override
   Map<String, dynamic> get sortFields => const {'Name': null};
@@ -35,54 +15,33 @@ class InMemoryAlbumRepository implements AlbumRepository {
       album.id = _nextId++;
     }
     _byId[album.id] = album;
-    _emit();
     return album;
   }
 
   @override
-  Album? getAlbum(int albumId) => _byId[albumId];
-
-  @override
-  Album? getAlbumByName(String albumName) {
+  Album? getAlbumByHash(String hash) {
     for (final a in _byId.values) {
-      if (a.name == albumName) return a;
+      if (a.getHash() == hash) return a;
     }
     return null;
   }
 
   @override
-  Album? getAlbumByNameAndArtistName(String albumName, String artistName) {
-    for (final a in _byId.values) {
-      if (a.name == albumName && a.artist.target?.name == artistName) return a;
-    }
-    return null;
-  }
-
-  @override
-  Album? getAlbumByServerId(int serverId) {
-    for (final a in _byId.values) {
-      if (a.serverId == serverId) return a;
-    }
-    return null;
-  }
-
-  @override
-  Album getOrCreateAlbumByServerId(int serverId) {
-    Album? existingAlbum = getAlbumByServerId(serverId);
-    if (existingAlbum != null) {
-      return existingAlbum;
-    }
-    Album newAlbum = Album();
-    newAlbum.serverId = serverId;
-    return saveAlbum(newAlbum);
+  Album getOrCreateAlbum(String albumHash, String albumName, Artist artist) {
+    final existing = getAlbumByHash(albumHash);
+    if (existing != null) return existing;
+    var album = Album(albumHash, albumName, artist);
+    return saveAlbum(album);
   }
 
   @override
   List<Album> getAlbums(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final list =
-        _byId.values.where((a) => a.name.toLowerCase().contains(q)).toList();
-    list.sort((a, b) => a.name.compareTo(b.name));
+        _byId.values
+            .where((a) => a.getName().toLowerCase().contains(q))
+            .toList();
+    list.sort((a, b) => a.getName().compareTo(b.getName()));
     if (!ascending) list.reversed;
     return list;
   }
@@ -101,15 +60,7 @@ class InMemoryAlbumRepository implements AlbumRepository {
   }
 
   @override
-  List<Album> getAllAlbums() {
-    final list = _byId.values.toList();
-    list.sort((a, b) => a.name.compareTo(b.name));
-    return list;
-  }
-
-  @override
   void updateAlbum(Album album) {
     _byId[album.id] = album;
-    _emit();
   }
 }

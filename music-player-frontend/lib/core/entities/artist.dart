@@ -1,64 +1,88 @@
 import 'dart:typed_data';
 
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
-import 'package:music_player_frontend/core/entities/abstract/abstract_collection.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 
 @Entity()
-class Artist with AbstractCollection implements BaseEntity {
+class Artist implements BaseEntity {
   @Id()
   int id = 0;
 
-  @Index()
-  @Unique()
-  int serverId = -1;
-
-  @override
-  String get cloudId => serverId > 0 ? serverId.toString() : '';
-
   bool requiresSync = false;
 
+  @Index()
+  @Unique()
+  final String _hash;
+
+  @Unique()
+  final String _name;
+
+  @Property(type: PropertyType.byteVector)
+  Uint8List? imageBytes;
+
+  @Backlink('artist')
+  final _songs = ToMany<Song>();
+
+  Artist(this._hash, this._name, {List<Song> songs = const []}) {
+    assert(_hash.isNotEmpty, 'Artist hash cannot be empty');
+    assert(_name.isNotEmpty, 'Artist name cannot be empty');
+    for (var song in songs) {
+      addSong(song);
+    }
+  }
+
+  void addSong(Song song) {
+    _songs.add(song);
+  }
+
+  List<Song> getSongs() {
+    return List.unmodifiable(_songs);
+  }
+
   @override
-  bool get isLocal {
+  String getName() {
+    return _name;
+  }
+
+  @override
+  String getHash() {
+    return _hash;
+  }
+
+  @override
+  bool isLocal() {
+    if (_songs.isEmpty) {
+      return false;
+    }
     for (var song in _songs) {
-      if (!song.isLocal) {
+      if (!song.isLocal()) {
         return false;
       }
     }
     return true;
   }
 
-  @Unique()
-  String _name = "Unknown artist";
-
-  @Backlink('artist')
-  final _songs = ToMany<Song>();
-
-  @Backlink('artist')
-  final albums = ToMany<Album>();
-
-  @Transient()
-  List<String> serverSongFileHashes = [];
-
   @override
-  String get name => _name;
-
-  @override
-  set name(String value) => _name = value;
-
-  @override
-  ToMany<Song> get songs => _songs;
-
-  @override
-  String toString() {
-    return name;
+  Uint8List? getCoverArt() {
+    if (imageBytes != null) {
+      return imageBytes;
+    }
+    for (var song in _songs) {
+      if (song.album.target != null && song.album.target!.imageBytes != null) {
+        return song.album.target!.imageBytes;
+      }
+    }
+    return null;
   }
 
   @override
-  Uint8List? get coverArt => albums.isNotEmpty ? albums.first.coverArt : null;
+  String getImageUrl() {
+    return '/artists/$_hash/image';
+  }
 
   @override
-  String? get imageUrl => serverId > 0 ? '/artists/$serverId/cover' : null;
+  String toString() {
+    return "Artist{name: $_name, hash: $_hash, songs: ${_songs.length}}";
+  }
 }

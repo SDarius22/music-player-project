@@ -1,15 +1,13 @@
 import 'dart:typed_data';
 
 abstract class BaseEntity {
-  String get cloudId;
+  String getName();
 
-  String get name;
+  String getHash();
 
-  set name(String value);
+  Uint8List? getCoverArt();
 
-  Uint8List? get coverArt;
+  bool isLocal();
 
-  bool get isLocal;
-
-  String? get imageUrl;
+  String getImageUrl();
 }

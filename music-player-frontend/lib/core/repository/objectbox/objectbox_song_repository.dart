@@ -40,49 +40,17 @@ class ObjectBoxSongRepository implements SongRepository {
   }
 
   @override
-  Song getSongByPath(String path) {
-    try {
-      return _songBox.query(Song_.path.equals(path)).build().findFirst()!;
-    } catch (e) {
-      throw Exception('Song with path $path not found');
-    }
-  }
-
-  @override
   Song? getSongByFileHash(String fileHash) {
     if (fileHash.isEmpty) return null;
     return _songBox.query(Song_.fileHash.equals(fileHash)).build().findFirst();
   }
 
   @override
-  Song getOrCreateSongByFileHash(String fileHash) {
-    if (fileHash.isEmpty) {
-      throw Exception('File hash cannot be empty');
-    }
-    Song? existingSong = getSongByFileHash(fileHash);
-    if (existingSong != null) {
-      return existingSong;
-    }
-    Song newSong = Song();
-    newSong.fileHash = fileHash;
-    return saveSong(newSong);
-  }
-
-  @override
-  Song getSong(int id) {
-    try {
-      return _songBox.get(id)!;
-    } catch (e) {
-      throw Exception('Song with id $id not found');
-    }
-  }
-
-  @override
-  Song? getSongContaining(String query) {
-    return _songBox
-        .query(Song_.path.contains(query, caseSensitive: false))
-        .build()
-        .findFirst();
+  Song getOrCreateSong(String fileHash) {
+    final existing = getSongByFileHash(fileHash);
+    if (existing != null) return existing;
+    Song song = Song(fileHash);
+    return saveSong(song);
   }
 
   @override

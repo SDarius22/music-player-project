@@ -7,13 +7,9 @@ abstract class PlaylistRepository {
 
   Playlist savePlaylist(Playlist playlist);
 
-  Playlist? getPlaylistByName(String name);
+  Playlist? getPlaylistByServerIdAndName(int serverId, String name);
 
-  Playlist? getPlaylist(int id);
-
-  Playlist? getPlaylistByServerId(int serverId);
-
-  Playlist getOrCreatePlaylistByServerId(int serverId);
+  Playlist getOrCreatePlaylist(int serverId, String name);
 
   List<Playlist> getIndestructiblePlaylists();
 

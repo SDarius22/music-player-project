@@ -43,44 +43,32 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   }
 
   @override
-  Playlist? getPlaylistByName(String name) {
+  Playlist? getPlaylistByServerIdAndName(int serverId, String name) {
     for (final p in _byId.values) {
-      if (p.name == name) return p;
+      if (p.serverId == serverId && p.getName() == name) return p;
     }
     return null;
   }
 
   @override
-  Playlist? getPlaylist(int id) => _byId[id];
-
-  @override
-  Playlist? getPlaylistByServerId(int serverId) {
-    for (final p in _byId.values) {
-      if (p.serverId == serverId) return p;
-    }
-    return null;
-  }
-
-  @override
-  Playlist getOrCreatePlaylistByServerId(int serverId) {
-    Playlist? existingPlaylist = getPlaylistByServerId(serverId);
+  Playlist getOrCreatePlaylist(int serverId, String name) {
+    Playlist? existingPlaylist = getPlaylistByServerIdAndName(serverId, name);
     if (existingPlaylist != null) {
       return existingPlaylist;
     }
-    Playlist newPlaylist = Playlist();
-    newPlaylist.serverId = serverId;
+    Playlist newPlaylist = Playlist(serverId, name);
     return savePlaylist(newPlaylist);
   }
 
   @override
   List<Playlist> getIndestructiblePlaylists() =>
       _byId.values.where((p) => p.indestructible == true).toList()
-        ..sort((a, b) => a.name.compareTo(b.name));
+        ..sort((a, b) => a.getName().compareTo(b.getName()));
 
   @override
   List<Playlist> getNormalPlaylists() =>
       _byId.values.where((p) => p.indestructible != true).toList()
-        ..sort((a, b) => a.name.compareTo(b.name));
+        ..sort((a, b) => a.getName().compareTo(b.getName()));
 
   @override
   List<Playlist> getAllPlaylists() {
@@ -88,7 +76,7 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
     list.sort((a, b) {
       final ind = (b.indestructible ? 1 : 0) - (a.indestructible ? 1 : 0);
       if (ind != 0) return ind;
-      return a.name.compareTo(b.name);
+      return a.getName().compareTo(b.getName());
     });
     return list;
   }
@@ -97,8 +85,10 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   List<Playlist> getPlaylists(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final list =
-        _byId.values.where((p) => p.name.toLowerCase().contains(q)).toList();
-    list.sort((a, b) => a.name.compareTo(b.name));
+        _byId.values
+            .where((p) => p.getName().toLowerCase().contains(q))
+            .toList();
+    list.sort((a, b) => a.getName().compareTo(b.getName()));
     if (!ascending) list.reversed;
     return list;
   }

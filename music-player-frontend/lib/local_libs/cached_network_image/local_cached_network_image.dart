@@ -79,18 +79,17 @@ class _LocalCachedNetworkImageState extends State<LocalCachedNetworkImage> {
   void didUpdateWidget(covariant LocalCachedNetworkImage old) {
     super.didUpdateWidget(old);
     if (old.imageUrl != widget.imageUrl) {
-      setState(() => _future = _load());
+      _future = _load();
+      setState(() {});
     }
   }
 
   Future<Uint8List?> _load() async {
     if (widget.imageUrl.isEmpty) return null;
 
-    // 1. Memory hit
     final mem = _MemoryCache.get(widget.imageUrl);
     if (mem != null) return mem;
 
-    // 2. Disk hit (non-web)
     final file = await _cacheFile(widget.imageUrl);
     if (file != null && file.existsSync()) {
       final bytes = await file.readAsBytes();
@@ -100,7 +99,6 @@ class _LocalCachedNetworkImageState extends State<LocalCachedNetworkImage> {
       }
     }
 
-    // 3. Network fetch
     try {
       final response = await http.get(
         Uri.parse(widget.imageUrl),
@@ -113,6 +111,9 @@ class _LocalCachedNetworkImageState extends State<LocalCachedNetworkImage> {
         widget.onBytesLoaded?.call(bytes);
         return bytes;
       }
+      throw HttpException(
+        'Failed to load image: ${response.statusCode} ${response.reasonPhrase}',
+      );
     } catch (e) {
       debugPrint(
         'LocalCachedNetworkImage: error loading ${widget.imageUrl}: $e',

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 
@@ -58,45 +57,20 @@ class InMemorySongRepository implements SongRepository {
   int getSongCount() => _byId.length;
 
   @override
-  Song getSongByPath(String path) {
-    try {
-      return _byId.values.firstWhere((s) => s.path == path);
-    } catch (_) {
-      throw Exception('Song with path $path not found');
-    }
-  }
-
-  @override
   Song? getSongByFileHash(String fileHash) {
     if (fileHash.isEmpty) return null;
     for (final s in _byId.values) {
-      if (s.fileHash == fileHash) return s;
+      if (s.getHash() == fileHash) return s;
     }
     return null;
   }
 
   @override
-  Song getOrCreateSongByFileHash(String fileHash) {
-    if (fileHash.isEmpty) throw Exception('File hash cannot be empty');
+  Song getOrCreateSong(String fileHash) {
     final existing = getSongByFileHash(fileHash);
     if (existing != null) return existing;
-    final newSong = Song();
-    newSong.fileHash = fileHash;
+    final newSong = Song(fileHash);
     return saveSong(newSong);
-  }
-
-  @override
-  Song getSong(int id) {
-    final s = _byId[id];
-    if (s == null) throw Exception('Song with id $id not found');
-    return s;
-  }
-
-  @override
-  Song? getSongContaining(String query) {
-    return _byId.values.firstWhereOrNull(
-      (s) => s.path.toLowerCase().contains(query.toLowerCase()),
-    );
   }
 
   @override
@@ -132,7 +106,9 @@ class InMemorySongRepository implements SongRepository {
   List<Song> getSongs(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final filtered =
-        _byId.values.where((s) => s.name.toLowerCase().contains(q)).toList();
+        _byId.values
+            .where((s) => s.getName().toLowerCase().contains(q))
+            .toList();
 
     int compare(Song a, Song b) {
       int res;
@@ -145,7 +121,7 @@ class InMemorySongRepository implements SongRepository {
           break;
         case 'Title':
         default:
-          res = a.name.compareTo(b.name);
+          res = a.getName().compareTo(b.getName());
       }
       return ascending ? res : -res;
     }
@@ -170,7 +146,7 @@ class InMemorySongRepository implements SongRepository {
   @override
   List<Song> getAllSongs() {
     final all = _byId.values.toList();
-    all.sort((a, b) => a.name.compareTo(b.name));
+    all.sort((a, b) => a.getName().compareTo(b.getName()));
     return all;
   }
 
