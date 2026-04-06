@@ -46,14 +46,14 @@ public class AlbumService {
                 result.getTotalElements(), result.getTotalPages());
     }
 
-    public AlbumDetailDto getAlbumById(Long id) {
-        Album album = albumRepository.findById(id)
+    public AlbumDetailDto getAlbumByHash(String albumHash) {
+        Album album = albumRepository.findByHash(albumHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
 
         ArtistDto artistDto = null;
         if (album.getArtist() != null) {
             artistDto = new ArtistDto();
-            artistDto.setId(album.getArtist().getId());
+            artistDto.setHash(album.getArtist().getHash());
             artistDto.setName(album.getArtist().getName());
         }
 
@@ -61,15 +61,15 @@ public class AlbumService {
                 album.getSongs().stream().map(songMapper::toDto).toList();
 
         AlbumDetailDto dto = new AlbumDetailDto();
-        dto.setId(album.getId());
+        dto.setHash(album.getHash());
         dto.setName(album.getName());
         dto.setArtist(artistDto);
         dto.setSongs(songs);
         return dto;
     }
 
-    public byte[] getAlbumCover(Long id) {
-        Album album = albumRepository.findById(id)
+    public byte[] getAlbumCover(String albumHash) {
+        Album album = albumRepository.findByHash(albumHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
         return CoverDecoder.decodeCoverImage(album.getCoverImage());
     }

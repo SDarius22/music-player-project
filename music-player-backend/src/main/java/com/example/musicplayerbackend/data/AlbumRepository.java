@@ -13,9 +13,7 @@ import java.util.Optional;
 
 @Repository
 public interface AlbumRepository extends JpaRepository<Album, Long> {
-    Optional<Album> findByName(String albumName);
-
-    Optional<Album> findByNameAndArtistId(String albumName, Long artistId);
+    Optional<Album> findByHash(String hash);
 
     @Query(
             value = """

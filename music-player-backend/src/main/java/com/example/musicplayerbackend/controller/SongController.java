@@ -34,7 +34,6 @@ public class SongController implements SongsApi {
 
     private final SongService songService;
     private final RecommendationService recommendationService;
-    private final AlbumService albumService;
 
     @Override
     public ResponseEntity<SongPageDto> getAllSongs(@Nullable String q, Integer page, Integer size, String sort) {
@@ -87,11 +86,7 @@ public class SongController implements SongsApi {
 
     @Override
     public ResponseEntity<Resource> getSongCover(String fileHash) {
-        SongDto song = songService.getSongByFileHash(fileHash);
-        if (song.getAlbum() == null || song.getAlbum().getId() == null) {
-            return ResponseEntity.notFound().build();
-        }
-        byte[] bytes = albumService.getAlbumCover(song.getAlbum().getId());
+        byte[] bytes = songService.getSongCover(fileHash);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
@@ -101,8 +96,14 @@ public class SongController implements SongsApi {
     @Override
     public ResponseEntity<NegotiationResponseDto> negotiateUserUpload(NegotiationRequestDto negotiationRequestDto) {
         User user = getCurrentUser();
-        var response = songService.initiateNegotiation(negotiationRequestDto, Objects.requireNonNull(user).getId());
-        return ResponseEntity.ok(response);
+        try {
+            var response = songService.initiateNegotiation(negotiationRequestDto, Objects.requireNonNull(user).getId());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("[SONG] Negotiation failed for userId={}: {}", user.getId(), e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+
     }
 
     @Override

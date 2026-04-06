@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 public interface ArtistRepository extends JpaRepository<Artist, Long> {
-    Optional<Artist> findByName(String artistName);
+    Optional<Artist> findByHash(String hash);
 
     @Query(
             value = """

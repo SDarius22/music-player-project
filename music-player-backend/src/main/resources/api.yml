@@ -297,7 +297,7 @@ paths:
 
   /albums/{albumHash}:
     get:
-      summary: Get album by hash (base64-encoded album name + artist name)
+      summary: Get album by hash
       operationId: getAlbumByHash
       tags:
         - Albums
@@ -318,19 +318,18 @@ paths:
         '404':
           description: Album not found
 
-  /albums/{albumId}/cover:
+  /albums/{albumHash}/cover:
     get:
       summary: Get album cover art
       operationId: getAlbumCover
       tags:
         - Albums
       parameters:
-        - name: albumId
+        - name: albumHash
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
       responses:
         '200':
           description: Cover image bytes
@@ -384,19 +383,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ArtistPageDto'
 
-  /artists/{artistId}:
+  /artists/{artistHash}:
     get:
-      summary: Get artist by ID
-      operationId: getArtistById
+      summary: Get artist by hash
+      operationId: getArtistByHash
       tags:
         - Artists
       parameters:
-        - name: artistId
+        - name: artistHash
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
       responses:
         '200':
           description: Artist with albums
@@ -407,7 +405,7 @@ paths:
         '404':
           description: Artist not found
 
-  /artists/{artistId}/cover:
+  /artists/{artistHash}/cover:
     get:
       summary: Get artist cover art
       description: Returns the cover image of the artist's first album that has one.
@@ -415,12 +413,11 @@ paths:
       tags:
         - Artists
       parameters:
-        - name: artistId
+        - name: artistHash
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
       responses:
         '200':
           description: Cover image bytes
@@ -919,6 +916,8 @@ components:
     ArtistDto:
       type: object
       properties:
+        hash:
+          type: string
         name:
           type: string
 
@@ -926,6 +925,8 @@ components:
       type: object
       description: Artist summary used in paginated list responses. Includes ordered song file hashes.
       properties:
+        hash:
+          type: string
         name:
           type: string
         songFileHashes:
@@ -937,6 +938,8 @@ components:
     ArtistDetailDto:
       type: object
       properties:
+        hash:
+          type: string
         name:
           type: string
         songs:
@@ -974,6 +977,8 @@ components:
     AlbumDto:
       type: object
       properties:
+        hash:
+          type: string
         name:
           type: string
         artist:
@@ -982,6 +987,8 @@ components:
     AlbumDetailDto:
       type: object
       properties:
+        hash:
+          type: string
         name:
           type: string
         songs:
@@ -995,6 +1002,8 @@ components:
       type: object
       description: Album summary used in paginated list responses. Includes ordered song file hashes.
       properties:
+        hash:
+          type: string
         name:
           type: string
         songFileHashes:

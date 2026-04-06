@@ -25,13 +25,13 @@ public class AlbumController implements AlbumsApi {
     }
 
     @Override
-    public ResponseEntity<AlbumDetailDto> getAlbumById(Long albumId) {
-        return ResponseEntity.ok(albumService.getAlbumById(albumId));
+    public ResponseEntity<AlbumDetailDto> getAlbumByHash(String albumHash) {
+        return ResponseEntity.ok(albumService.getAlbumByHash(albumHash));
     }
 
     @Override
-    public ResponseEntity<Resource> getAlbumCover(Long albumId) {
-        byte[] bytes = albumService.getAlbumCover(albumId);
+    public ResponseEntity<Resource> getAlbumCover(String albumHash) {
+        byte[] bytes = albumService.getAlbumCover(albumHash);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")

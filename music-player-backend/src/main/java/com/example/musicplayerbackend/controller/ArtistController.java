@@ -25,13 +25,13 @@ public class ArtistController implements ArtistsApi {
     }
 
     @Override
-    public ResponseEntity<ArtistDetailDto> getArtistById(Long artistId) {
-        return ResponseEntity.ok(artistService.getArtistById(artistId));
+    public ResponseEntity<ArtistDetailDto> getArtistByHash(String artistHash) {
+        return ResponseEntity.ok(artistService.getArtistByHash(artistHash));
     }
 
     @Override
-    public ResponseEntity<Resource> getArtistCover(Long artistId) {
-        byte[] bytes = artistService.getArtistCover(artistId);
+    public ResponseEntity<Resource> getArtistCover(String artistHash) {
+        byte[] bytes = artistService.getArtistCover(artistHash);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")

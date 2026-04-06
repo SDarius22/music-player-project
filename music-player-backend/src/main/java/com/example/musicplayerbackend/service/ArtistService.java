@@ -49,22 +49,22 @@ public class ArtistService {
     }
 
     @Transactional(readOnly = true)
-    public ArtistDetailDto getArtistById(Long id) {
-        Artist artist = artistRepository.findById(id)
+    public ArtistDetailDto getArtistByHash(String artistHash) {
+        Artist artist = artistRepository.findByHash(artistHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
 
         List<SongDto> songs = artist.getSongs() == null ? List.of() :
                 artist.getSongs().stream().map(songMapper::toDto).toList();
 
         ArtistDetailDto dto = new ArtistDetailDto();
-        dto.setId(artist.getId());
+        dto.setHash(artist.getHash());
         dto.setName(artist.getName());
         dto.setSongs(songs);
         return dto;
     }
 
-    public byte[] getArtistCover(Long id) {
-        Artist artist = artistRepository.findById(id)
+    public byte[] getArtistCover(String artistHash) {
+        Artist artist = artistRepository.findByHash(artistHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
 
         if (artist.getAlbums() == null || artist.getAlbums().isEmpty()) {

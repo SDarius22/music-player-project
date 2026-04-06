@@ -2,6 +2,7 @@ package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.*;
 import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.NegotiationMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +18,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -51,6 +49,19 @@ public class SongService {
                 .orElseThrow(() -> new RuntimeException("Song not found with fileHash: " + fileHash));
     }
 
+    @Transactional(readOnly = true)
+    public byte[] getSongCover(String fileHash) {
+        Song song = songRepository.findByFileHash(fileHash)
+                .orElseThrow(() -> new RuntimeException("Song not found with fileHash: " + fileHash));
+
+        if (song.getAlbum() != null && song.getAlbum().getCoverImage() != null) {
+            return CoverDecoder.decodeCoverImage(song.getAlbum().getCoverImage());
+        } else {
+            log.info("[SONG] No cover image found for fileHash={}", fileHash);
+            return new byte[0];
+        }
+    }
+
 
     @Transactional
     public void uploadSong(User user, String name, String artistName, String albumName, String photo,
@@ -67,12 +78,21 @@ public class SongService {
             return;
         }
 
-        Artist artist = artistRepository.findByName(artistName)
-                .orElseGet(() -> artistRepository.save(Artist.builder().name(artistName).artistType(ContentType.STREAMABLE).build()));
+        var artistHash = Arrays.toString(MessageDigest.getInstance("SHA-256").digest(artistName.getBytes()));
+        var albumHash = Arrays.toString(MessageDigest.getInstance("SHA-256").digest((artistName + " - " + albumName).getBytes()));
 
-        Album album = albumRepository.findByNameAndArtistId(albumName, artist.getId())
+        Artist artist = artistRepository.findByHash(artistHash)
+                .orElseGet(() -> artistRepository.save(
+                        Artist.builder()
+                                .hash(artistHash)
+                                .name(artistName)
+                                .artistType(ContentType.STREAMABLE)
+                                .build()));
+
+        Album album = albumRepository.findByHash(albumHash)
                 .orElseGet(() -> albumRepository.save(
                         Album.builder()
+                                .hash(albumHash)
                                 .name(albumName)
                                 .coverImage(photo)
                                 .artist(artist)
@@ -99,7 +119,7 @@ public class SongService {
     }
 
     @Transactional
-    public NegotiationResponseDto initiateNegotiation(NegotiationRequestDto request, Long userId) {
+    public NegotiationResponseDto initiateNegotiation(NegotiationRequestDto request, Long userId) throws Exception {
         log.info("[SONG] Negotiation initiated: name='{}', userId={}, totalChunks={}", request.getName(), userId, request.getHashes().size());
         Optional<Song> existingSongOpt = songRepository.findByFileHash(request.getFileHash());
         Song song;
@@ -107,11 +127,27 @@ public class SongService {
         if (existingSongOpt.isPresent()) {
             song = existingSongOpt.get();
         } else {
-            Artist artist = artistRepository.findByName(request.getArtistName())
-                    .orElseGet(() -> artistRepository.save(Artist.builder().name(request.getArtistName()).artistType(ContentType.USER_UPLOAD).ownerId(userId).build()));
 
-            Album album = albumRepository.findByNameAndArtistId(request.getAlbumName(), artist.getId())
-                    .orElseGet(() -> albumRepository.save(Album.builder().name(request.getAlbumName()).artist(artist).albumType(ContentType.USER_UPLOAD).ownerId(userId).build()));
+            var artistHash = Arrays.toString(MessageDigest.getInstance("SHA-256").digest(request.getArtistName().getBytes()));
+            var albumHash = Arrays.toString(MessageDigest.getInstance("SHA-256").digest((request.getArtistName() + " - " + request.getAlbumName()).getBytes()));
+
+
+            Artist artist = artistRepository.findByHash(artistHash)
+                    .orElseGet(() -> artistRepository.save(
+                            Artist.builder()
+                                    .hash(artistHash)
+                                    .name(request.getArtistName())
+                                    .artistType(ContentType.USER_UPLOAD)
+                                    .ownerId(userId).build()));
+
+            Album album = albumRepository.findByHash(albumHash)
+                    .orElseGet(() -> albumRepository.save(
+                            Album.builder()
+                                    .hash(albumHash)
+                                    .name(request.getAlbumName())
+                                    .artist(artist)
+                                    .albumType(ContentType.USER_UPLOAD)
+                                    .ownerId(userId).build()));
 
             song = songRepository.save(Song.builder()
                     .name(request.getName())

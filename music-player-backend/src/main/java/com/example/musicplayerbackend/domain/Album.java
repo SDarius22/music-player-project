@@ -7,7 +7,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "albums", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"name", "artist_id"})
+        @UniqueConstraint(columnNames = {"name", "artist_id"})
 })
 @Getter
 @Setter
@@ -23,7 +23,8 @@ public class Album {
     @Column(nullable = false)
     private String name;
 
-    private String coverImage; // base64 encoded image
+    @Column(nullable = false, unique = true)
+    private String hash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -31,6 +32,7 @@ public class Album {
     private ContentType albumType = ContentType.STREAMABLE;
 
     private Long ownerId; // null for streamable albums, user ID for user-uploaded albums
+    private String coverImage; // base64 encoded image
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "artist_id")
