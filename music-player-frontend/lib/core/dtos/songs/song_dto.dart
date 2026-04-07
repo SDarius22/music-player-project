@@ -29,7 +29,7 @@ class SongDto {
       durationInSeconds: (json['durationInSeconds'] as num).toInt(),
       trackNumber: (json['trackNumber'] as num).toInt(),
       discNumber: (json['discNumber'] as num).toInt(),
-      releaseYear: (json['releaseYear'] as num).toInt(),
+      releaseYear: (json['year'] as num).toInt(),
       artist: ArtistDto.fromJson(json['artist'] as Map<String, dynamic>),
       album: AlbumDto.fromJson(json['album'] as Map<String, dynamic>),
     );

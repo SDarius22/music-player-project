@@ -13,7 +13,6 @@ class Playlist implements BaseEntity {
   bool indestructible = false;
 
   @Index()
-  @Unique()
   int serverId = -1;
 
   @Unique()
