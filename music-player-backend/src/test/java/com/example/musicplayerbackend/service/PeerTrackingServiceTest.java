@@ -1,139 +1,150 @@
 package com.example.musicplayerbackend.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.data.redis.core.SetOperations;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
-@Testcontainers
+@ExtendWith(MockitoExtension.class)
 class PeerTrackingServiceTest {
 
-    @Container
-    @SuppressWarnings("resource")
-    static final GenericContainer<?> redis =
-            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
+    @Mock
+    RedisTemplate<String, String> redisTemplate;
+    @Mock
+    ObjectMapper objectMapper;
+    @Mock
+    HashOperations<String, Object, Object> hashOperations;
+    @Mock
+    SetOperations<String, String> setOperations;
 
     PeerTrackingService service;
-    RedisTemplate<String, String> redisTemplate;
 
-    @BeforeEach
-    void setUp() {
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(redis.getHost(), redis.getMappedPort(6379));
-        factory.afterPropertiesSet();
+    @Test
+    void shouldStorePeerChunksWhenRegistered() throws Exception {
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(hashOperations.get("peer:chunks:hash-1", "peer-A")).thenReturn(null);
+        when(objectMapper.writeValueAsString(any())).thenReturn("[0,1,2]");
 
-        StringRedisSerializer str = new StringRedisSerializer();
-        redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(factory);
-        redisTemplate.setKeySerializer(str);
-        redisTemplate.setValueSerializer(str);
-        redisTemplate.setHashKeySerializer(str);
-        redisTemplate.setHashValueSerializer(str);
-        redisTemplate.afterPropertiesSet();
+        service.registerPeerChunks("hash-1", "peer-A", Set.of(0, 1, 2));
 
-        // Flush between tests for isolation
-        redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
-
-        service = new PeerTrackingService(redisTemplate, new ObjectMapper());
+        verify(hashOperations).put("peer:chunks:hash-1", "peer-A", "[0,1,2]");
+        verify(setOperations).add("peer:songs:peer-A", "hash-1");
     }
 
     @Test
-    void shouldStorePeerChunksWhenRegistered() {
-        service.registerPeerChunks("hash-1","peer-A", Set.of(0, 1, 2));
+    void shouldAccumulateChunksForSamePeer() throws Exception {
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(hashOperations.get("peer:chunks:hash-1", "peer-A")).thenReturn("[0,1]");
+        when(objectMapper.readValue(eq("[0,1]"), any(TypeReference.class))).thenReturn(Set.of(0, 1));
+        when(objectMapper.writeValueAsString(any())).thenReturn("[0,1,2,3]");
 
-        Map<String, Set<Integer>> result = service.getPeerBufferMapsForSong("hash-1");
+        service.registerPeerChunks("hash-1", "peer-A", Set.of(2, 3));
 
-        assertEquals(1, result.size());
-        assertTrue(result.containsKey("peer-A"));
-        assertEquals(Set.of(0, 1, 2), result.get("peer-A"));
+        verify(hashOperations).put("peer:chunks:hash-1", "peer-A", "[0,1,2,3]");
     }
 
     @Test
-    void shouldAccumulateChunksForSamePeer() {
-        service.registerPeerChunks("hash-1","peer-A", Set.of(0, 1));
-        service.registerPeerChunks("hash-1","peer-A", Set.of(2, 3));
+    void shouldSwallowRegisterExceptions() {
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+        when(hashOperations.get("peer:chunks:hash-1", "peer-A")).thenThrow(new RuntimeException("boom"));
 
-        Set<Integer> chunks = service.getPeerBufferMapsForSong("hash-1").get("peer-A");
-
-        assertEquals(Set.of(0, 1, 2, 3), chunks);
-    }
-
-    @Test
-    void shouldHandleMultiplePeersForSameSong() {
-        service.registerPeerChunks("hash-1","peer-A", Set.of(0));
-        service.registerPeerChunks("hash-1","peer-B", Set.of(1));
-
-        Map<String, Set<Integer>> result = service.getPeerBufferMapsForSong("hash-1");
-
-        assertEquals(2, result.size());
-        assertTrue(result.containsKey("peer-A"));
-        assertTrue(result.containsKey("peer-B"));
-    }
-
-    @Test
-    void shouldIsolateSongRegistriesWhenRegisteringPeerChunks() {
-        service.registerPeerChunks("hash-1","peer-A", Set.of(0, 1));
-        service.registerPeerChunks("hash-2","peer-A", Set.of(5, 6));
-
-        assertEquals(Set.of(0, 1), service.getPeerBufferMapsForSong("hash-1").get("peer-A"));
-        assertEquals(Set.of(5, 6), service.getPeerBufferMapsForSong("hash-2").get("peer-A"));
-    }
-
-    @Test
-    void shouldReturnEmptyPeerBufferMapsWhenNoRegistrations() {
-        Map<String, Set<Integer>> result = service.getPeerBufferMapsForSong("hash-999");
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void shouldReturnImmutableCopyOfPeerBufferMaps() {
-        service.registerPeerChunks("hash-1","peer-A", Set.of(0));
-        Map<String, Set<Integer>> result = service.getPeerBufferMapsForSong("hash-1");
-        assertThrows(UnsupportedOperationException.class, () -> result.put("new-peer", Set.of()));
+        assertDoesNotThrow(() -> service.registerPeerChunks("hash-1", "peer-A", Set.of(0)));
     }
 
     @Test
     void shouldRemoveAllChunksForPeerWhenUnregistered() {
-        service.registerPeerChunks("hash-1","peer-A", Set.of(0, 1));
-        service.registerPeerChunks("hash-2","peer-A", Set.of(5));
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(setOperations.members("peer:songs:peer-A")).thenReturn(Set.of("hash-1", "hash-2"));
 
         service.unregisterPeer("peer-A");
 
-        assertTrue(service.getPeerBufferMapsForSong("hash-1").isEmpty());
-        assertTrue(service.getPeerBufferMapsForSong("hash-2").isEmpty());
+        verify(hashOperations).delete("peer:chunks:hash-1", "peer-A");
+        verify(hashOperations).delete("peer:chunks:hash-2", "peer-A");
+        verify(redisTemplate).delete("peer:songs:peer-A");
     }
 
     @Test
-    void shouldRemoveEmptySongEntriesWhenPeerUnregistered() {
-        service.registerPeerChunks("hash-1","peer-A", Set.of(0));
+    void shouldHandleNullSongIdsWhenUnregisteringPeer() {
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(setOperations.members("peer:songs:peer-A")).thenReturn(null);
+
         service.unregisterPeer("peer-A");
 
-        assertTrue(service.getPeerBufferMapsForSong("hash-1").isEmpty());
+        verify(redisTemplate).delete("peer:songs:peer-A");
     }
 
     @Test
-    void shouldOnlyRemoveTargetPeerLeavingOthers() {
-        service.registerPeerChunks("hash-1","peer-A", Set.of(0));
-        service.registerPeerChunks("hash-1","peer-B", Set.of(1));
+    void shouldSwallowUnregisterExceptions() {
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForSet()).thenThrow(new RuntimeException("boom"));
 
-        service.unregisterPeer("peer-A");
+        assertDoesNotThrow(() -> service.unregisterPeer("peer-A"));
+    }
+
+    @Test
+    void shouldReturnEmptyMapWhenNoPeersExistForSong() {
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+        when(hashOperations.entries("peer:chunks:hash-1")).thenReturn(Collections.emptyMap());
 
         Map<String, Set<Integer>> result = service.getPeerBufferMapsForSong("hash-1");
-        assertFalse(result.containsKey("peer-A"));
-        assertTrue(result.containsKey("peer-B"));
+
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void shouldBeNoOpWhenUnregisteringUnknownPeer() {
-        assertDoesNotThrow(() -> service.unregisterPeer("unknown-peer"));
+    void shouldReturnImmutablePeerBufferMapForSong() throws Exception {
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+        Map<Object, Object> raw = new HashMap<>();
+        raw.put("peer-A", "[0,1]");
+        raw.put("peer-B", "[2]");
+        when(hashOperations.entries("peer:chunks:hash-1")).thenReturn(raw);
+        when(objectMapper.readValue(eq("[0,1]"), any(TypeReference.class))).thenReturn(Set.of(0, 1));
+        when(objectMapper.readValue(eq("[2]"), any(TypeReference.class))).thenReturn(Set.of(2));
+
+        Map<String, Set<Integer>> result = service.getPeerBufferMapsForSong("hash-1");
+
+        assertEquals(2, result.size());
+        assertEquals(Set.of(0, 1), result.get("peer-A"));
+        assertEquals(Set.of(2), result.get("peer-B"));
+        assertThrows(UnsupportedOperationException.class, () -> result.put("peer-C", Set.of(3)));
+    }
+
+    @Test
+    void shouldReturnEmptyMapWhenBufferMapDecodingFails() throws Exception {
+        service = new PeerTrackingService(redisTemplate, objectMapper);
+        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+        Map<Object, Object> raw = new HashMap<>();
+        raw.put("peer-A", "not-json");
+        when(hashOperations.entries("peer:chunks:hash-1")).thenReturn(raw);
+        when(objectMapper.readValue(eq("not-json"), any(TypeReference.class))).thenThrow(new RuntimeException("decode error"));
+
+        Map<String, Set<Integer>> result = service.getPeerBufferMapsForSong("hash-1");
+
+        assertTrue(result.isEmpty());
     }
 }

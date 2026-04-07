@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.domain;
 
+import com.example.musicplayerbackend.helpers.EntityHashHelper;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -40,4 +41,12 @@ public class Album {
 
     @OneToMany(mappedBy = "album")
     private List<Song> songs;
+
+    @PrePersist
+    @PreUpdate
+    void ensureHash() {
+        if (hash == null || hash.isBlank()) {
+            hash = EntityHashHelper.albumHash(artist != null ? artist.getName() : null, name);
+        }
+    }
 }

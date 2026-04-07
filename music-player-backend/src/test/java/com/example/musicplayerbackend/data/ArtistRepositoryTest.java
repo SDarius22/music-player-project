@@ -22,34 +22,34 @@ class ArtistRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void shouldPersistArtist() {
-        Artist saved = artistRepository.save(Artist.builder().name("Led Zeppelin").build());
+        Artist saved = artistRepository.save(Artist.builder().name("Led Zeppelin").hash("led-hash").build());
 
         assertThat(saved.getId()).isNotNull().isPositive();
         assertThat(saved.getName()).isEqualTo("Led Zeppelin");
     }
 
     @Test
-    void shouldReturnArtistWhenNameExists() {
-        artistRepository.save(Artist.builder().name("Pink Floyd").build());
+    void shouldReturnArtistWhenHashExists() {
+        artistRepository.save(Artist.builder().name("Pink Floyd").hash("pink-hash").build());
 
-        var found = artistRepository.findByName("Pink Floyd");
+        var found = artistRepository.findByHash("pink-hash");
 
         assertThat(found).isPresent();
         assertThat(found.get().getName()).isEqualTo("Pink Floyd");
     }
 
     @Test
-    void shouldReturnEmptyWhenArtistNameNotFound() {
-        var found = artistRepository.findByName("Ghost Artist");
+    void shouldReturnEmptyWhenArtistHashNotFound() {
+        var found = artistRepository.findByHash("ghost-hash");
 
         assertThat(found).isEmpty();
     }
 
     @Test
     void shouldMatchSubstringWhenSearchingArtistsByNameIgnoreCase() {
-        artistRepository.save(Artist.builder().name("The Beatles").build());
-        artistRepository.save(Artist.builder().name("The Rolling Stones").build());
-        artistRepository.save(Artist.builder().name("Radiohead").build());
+        artistRepository.save(Artist.builder().name("The Beatles").hash("beatles-hash").build());
+        artistRepository.save(Artist.builder().name("The Rolling Stones").hash("stones-hash").build());
+        artistRepository.save(Artist.builder().name("Radiohead").hash("radiohead-hash").build());
 
         Page<ArtistListProjection> result = artistRepository.findAllWithHashes("the", PageRequest.of(0, 10));
 
@@ -60,7 +60,7 @@ class ArtistRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void shouldBeCaseInsensitiveWhenSearchingArtistsByName() {
-        artistRepository.save(Artist.builder().name("Nirvana").build());
+        artistRepository.save(Artist.builder().name("Nirvana").hash("nirvana-hash").build());
 
         Page<ArtistListProjection> lower = artistRepository.findAllWithHashes("nirvana", PageRequest.of(0, 10));
         Page<ArtistListProjection> upper = artistRepository.findAllWithHashes("NIRVANA", PageRequest.of(0, 10));
@@ -71,7 +71,7 @@ class ArtistRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void shouldReturnEmptyWhenNoArtistNameMatches() {
-        artistRepository.save(Artist.builder().name("Metallica").build());
+        artistRepository.save(Artist.builder().name("Metallica").hash("metallica-hash").build());
 
         Page<ArtistListProjection> result = artistRepository.findAllWithHashes("zzznomatch", PageRequest.of(0, 10));
 
@@ -81,7 +81,7 @@ class ArtistRepositoryTest extends BaseRepositoryTest {
     @Test
     void shouldRespectPaginationWhenSearchingArtistsByName() {
         for (int i = 0; i < 6; i++) {
-            artistRepository.save(Artist.builder().name("Band " + i).build());
+            artistRepository.save(Artist.builder().name("Band " + i).hash("band-hash-" + i).build());
         }
 
         Page<ArtistListProjection> page0 = artistRepository.findAllWithHashes("Band", PageRequest.of(0, 3));

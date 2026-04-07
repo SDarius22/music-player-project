@@ -17,3 +17,5 @@ databaseChangeLog:
       file: db/changelog/changes/008-unique-artist-album.sql
   - include:
       file: db/changelog/changes/009-play-duration.sql
+  - include:
+      file: db/changelog/changes/010-artist-album-hash.sql

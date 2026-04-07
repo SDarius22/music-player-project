@@ -21,8 +21,8 @@ class SongMapperTest {
 
     @Test
     void shouldMapAllSongFieldsToDto() {
-        Artist artist = Artist.builder().id(1L).name("Queen").build();
-        Album album = Album.builder().id(2L).name("Innuendo").coverImage("base64").build();
+        Artist artist = Artist.builder().id(1L).hash("queen-hash").name("Queen").build();
+        Album album = Album.builder().id(2L).hash("innuendo-hash").name("Innuendo").coverImage("base64").build();
         Song song = Song.builder()
                 .id(10L)
                 .name("Bohemian Rhapsody")
@@ -38,8 +38,8 @@ class SongMapperTest {
 
         assertEquals("bohemian-hash", dto.getFileHash());
         assertEquals("Bohemian Rhapsody", dto.getName());
-        assertEquals(1L, dto.getArtist().getId());
-        assertEquals(2L, dto.getAlbum().getId());
+        assertEquals("queen-hash", dto.getArtist().getHash());
+        assertEquals("innuendo-hash", dto.getAlbum().getHash());
         assertEquals(354, dto.getDurationInSeconds());
         assertEquals(1, dto.getTrackNumber());
         assertEquals(1, dto.getDiscNumber());

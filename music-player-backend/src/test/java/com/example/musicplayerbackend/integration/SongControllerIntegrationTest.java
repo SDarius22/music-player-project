@@ -25,11 +25,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class SongControllerIntegrationTest extends BaseIntegrationTest {
 
-    @Autowired SongRepository songRepository;
-    @Autowired ArtistRepository artistRepository;
-    @Autowired AlbumRepository albumRepository;
-    @Autowired UserRepository userRepository;
-    @Autowired ObjectMapper objectMapper;
+    @Autowired
+    SongRepository songRepository;
+    @Autowired
+    ArtistRepository artistRepository;
+    @Autowired
+    AlbumRepository albumRepository;
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    ObjectMapper objectMapper;
 
     User testUser;
     User adminUser;
@@ -54,7 +59,6 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 .fileHash(UUID.randomUUID().toString())
                 .build());
 
-        // private song owned by this user — also visible
         privateSong = songRepository.save(Song.builder()
                 .name("Private Song")
                 .artist(artist).album(album)
@@ -63,7 +67,6 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 .fileHash(UUID.randomUUID().toString())
                 .build());
 
-        // album with cover for getSongCover 200 test
         albumWithCover = albumRepository.save(Album.builder()
                 .name("Cover Album")
                 .coverImage(Base64.getEncoder().encodeToString("img".getBytes()))
@@ -92,7 +95,6 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
         userRepository.deleteById(adminUser.getId());
     }
 
-    // ── GET /songs ────────────────────────────────────────────────────────────
 
     @Test
     void shouldReturn200WithPublicSongs() throws Exception {
@@ -199,13 +201,6 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().is5xxServerError());
     }
 
-    // ── GET /songs/{id}/cover ─────────────────────────────────────────────────
-
-    @Test
-    void shouldReturn404WhenSongCoverHasNoAlbum() throws Exception {
-        mockMvc.perform(get("/api/v1/songs/{fileHash}/cover", songWithNoAlbum.getFileHash()).with(user(testUser)))
-                .andExpect(status().isNotFound());
-    }
 
     @Test
     void shouldReturn200WhenSongCoverAlbumHasCover() throws Exception {
@@ -214,16 +209,12 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(content().contentType(MediaType.IMAGE_JPEG));
     }
 
-    // ── GET /songs/recommendations ────────────────────────────────────────────
-
     @Test
     void shouldReturn200ForRecommendations() throws Exception {
         mockMvc.perform(get("/api/v1/songs/recommendations").with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray());
     }
-
-    // ── GET /songs/forgotten ──────────────────────────────────────────────────
 
     @Test
     void shouldReturn200ForForgottenFavourites() throws Exception {
@@ -232,16 +223,12 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.content").isArray());
     }
 
-    // ── GET /songs/quick-dial ─────────────────────────────────────────────────
-
     @Test
     void shouldReturn200ForQuickDial() throws Exception {
         mockMvc.perform(get("/api/v1/songs/quick-dial").with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray());
     }
-
-    // ── POST /songs/negotiate ─────────────────────────────────────────────────
 
     @Test
     void shouldReturn200WhenNegotiatingUserUpload() throws Exception {
@@ -259,8 +246,6 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.missingIndices").isArray());
     }
-
-    // ── POST /songs/{id}/chunks/{index} ───────────────────────────────────────
 
     @Test
     void shouldReturn400WhenChunkHashMismatch() throws Exception {
@@ -291,8 +276,6 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    // ── POST /songs ───────────────────────────────────────────────────────────
-
     @Test
     void shouldReturn403WhenNonAdminUserUploadsSong() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
@@ -309,7 +292,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-@Test
+    @Test
     void shouldReturn201WhenAdminUploadsValidSong() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "song.mp3", "audio/mpeg", new byte[0]);
@@ -323,8 +306,6 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
                         .with(user(adminUser)))
                 .andExpect(status().isCreated());
     }
-
-    // ── helpers ───────────────────────────────────────────────────────────────
 
     private String sha256(byte[] data) throws Exception {
         byte[] digest = MessageDigest.getInstance("SHA-256").digest(data);

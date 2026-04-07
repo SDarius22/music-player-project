@@ -19,10 +19,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class ArtistControllerIntegrationTest extends BaseIntegrationTest {
 
-    @Autowired ArtistRepository artistRepository;
-    @Autowired AlbumRepository albumRepository;
-    @Autowired SongRepository songRepository;
-    @Autowired UserRepository userRepository;
+    @Autowired
+    ArtistRepository artistRepository;
+    @Autowired
+    AlbumRepository albumRepository;
+    @Autowired
+    SongRepository songRepository;
+    @Autowired
+    UserRepository userRepository;
 
     User testUser;
     Artist artist;
@@ -31,7 +35,9 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         testUser = userRepository.save(buildUser("artist-test@example.com", Role.USER));
-        artist = artistRepository.save(Artist.builder().name("Test Artist").build());
+        artist = artistRepository.save(Artist.builder()
+                .name("Test Artist")
+                .build());
         album = albumRepository.save(Album.builder()
                 .name("Test Album")
                 .artist(artist)
@@ -59,8 +65,10 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/v1/artists").with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", not(empty())))
-                .andExpect(jsonPath("$.content[?(@.id == " + artist.getId() + ")].name",
-                        contains("Test Artist")));
+                .andExpect(jsonPath("$.content[0].hash").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].hash").value(artist.getHash()))
+                .andExpect(jsonPath("$.content[0].name").value("Test Artist"))
+                .andExpect(jsonPath("$.content[0].songFileHashes", contains("artist-test-hash-001")));
     }
 
     @Test
@@ -78,10 +86,10 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void shouldReturn200ForArtistById() throws Exception {
-        mockMvc.perform(get("/api/v1/artists/{id}", artist.getId()).with(user(testUser)))
+    void shouldReturn200ForArtistByHash() throws Exception {
+        mockMvc.perform(get("/api/v1/artists/{artistHash}", artist.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(artist.getId()))
+                .andExpect(jsonPath("$.hash").value(artist.getHash()))
                 .andExpect(jsonPath("$.name").value("Test Artist"));
     }
 
@@ -93,7 +101,7 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn200ForArtistCover() throws Exception {
-        mockMvc.perform(get("/api/v1/artists/{id}/cover", artist.getId()).with(user(testUser)))
+        mockMvc.perform(get("/api/v1/artists/{artistHash}/cover", artist.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("image/jpeg"));
     }
@@ -106,7 +114,7 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnSongsForArtist() throws Exception {
-        mockMvc.perform(get("/api/v1/artists/{id}", artist.getId()).with(user(testUser)))
+        mockMvc.perform(get("/api/v1/artists/{artistHash}", artist.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.songs", not(empty())));
     }

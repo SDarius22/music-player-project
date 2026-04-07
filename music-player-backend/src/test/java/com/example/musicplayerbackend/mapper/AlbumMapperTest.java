@@ -22,13 +22,14 @@ class AlbumMapperTest {
     void shouldMapAllFieldsToDto() {
         Album album = Album.builder()
                 .id(1L)
+                .hash("album-hash")
                 .name("Abbey Road")
                 .coverImage("base64data")
                 .build();
 
         AlbumDto dto = albumMapper.toDto(album);
 
-        assertEquals(1L, dto.getId());
+        assertEquals("album-hash", dto.getHash());
         assertEquals("Abbey Road", dto.getName());
     }
 
@@ -39,23 +40,23 @@ class AlbumMapperTest {
 
     @Test
     void shouldMapIdAndNameWhenCoverImageIsNull() {
-        Album album = Album.builder().id(2L).name("No Cover").build();
+        Album album = Album.builder().id(2L).hash("no-cover-hash").name("No Cover").build();
 
         AlbumDto dto = albumMapper.toDto(album);
 
-        assertEquals(2L, dto.getId());
+        assertEquals("no-cover-hash", dto.getHash());
         assertEquals("No Cover", dto.getName());
     }
 
     @Test
-    void shouldMapAlbumIdAndNameToEntity() {
+    void shouldMapAlbumHashAndNameToEntity() {
         AlbumDto dto = new AlbumDto();
-        dto.setId(5L);
+        dto.setHash("help-hash");
         dto.setName("Help!");
 
         Album entity = albumMapper.toEntity(dto);
 
-        assertEquals(5L, entity.getId());
+        assertEquals("help-hash", entity.getHash());
         assertEquals("Help!", entity.getName());
     }
 

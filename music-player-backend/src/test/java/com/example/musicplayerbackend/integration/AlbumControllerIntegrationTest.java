@@ -18,9 +18,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class AlbumControllerIntegrationTest extends BaseIntegrationTest {
 
-    @Autowired AlbumRepository albumRepository;
-    @Autowired ArtistRepository artistRepository;
-    @Autowired UserRepository userRepository;
+    @Autowired
+    AlbumRepository albumRepository;
+    @Autowired
+    ArtistRepository artistRepository;
+    @Autowired
+    UserRepository userRepository;
 
     User testUser;
     Album album;
@@ -49,8 +52,7 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/v1/albums").with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", not(empty())))
-                .andExpect(jsonPath("$.content[?(@.id == " + album.getId() + ")].name",
-                        contains("Test Album")));
+                .andExpect(jsonPath("$.content[*].name", hasItem("Test Album")));
     }
 
     @Test
@@ -68,22 +70,22 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void shouldReturn200ForAlbumById() throws Exception {
-        mockMvc.perform(get("/api/v1/albums/{id}", album.getId()).with(user(testUser)))
+    void shouldReturn200ForAlbumByHash() throws Exception {
+        mockMvc.perform(get("/api/v1/albums/{hash}", album.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(album.getId()))
+                .andExpect(jsonPath("$.hash").value(album.getHash()))
                 .andExpect(jsonPath("$.name").value("Test Album"));
     }
 
     @Test
     void shouldReturn404WhenAlbumNotFound() throws Exception {
-        mockMvc.perform(get("/api/v1/albums/999999").with(user(testUser)))
+        mockMvc.perform(get("/api/v1/albums/nonexistent-hash").with(user(testUser)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldReturn200WithAlbumCoverImageBytes() throws Exception {
-        mockMvc.perform(get("/api/v1/albums/{id}/cover", album.getId()).with(user(testUser)))
+        mockMvc.perform(get("/api/v1/albums/{hash}/cover", album.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("image/jpeg"));
     }
@@ -91,7 +93,7 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn404WhenAlbumHasNoCover() throws Exception {
         Album noCoverAlbum = albumRepository.save(Album.builder().name("No Cover Album").build());
-        mockMvc.perform(get("/api/v1/albums/{id}/cover", noCoverAlbum.getId()).with(user(testUser)))
+        mockMvc.perform(get("/api/v1/albums/{hash}/cover", noCoverAlbum.getHash()).with(user(testUser)))
                 .andExpect(status().isNotFound());
         albumRepository.delete(noCoverAlbum);
     }
@@ -105,7 +107,7 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnArtistWhenPresentOnAlbum() throws Exception {
-        mockMvc.perform(get("/api/v1/albums/{id}", album.getId()).with(user(testUser)))
+        mockMvc.perform(get("/api/v1/albums/{hash}", album.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.artist.name").value("Test Artist"));
     }

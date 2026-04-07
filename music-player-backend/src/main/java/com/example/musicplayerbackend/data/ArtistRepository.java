@@ -18,13 +18,14 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
     @Query(
             value = """
                     SELECT ar.id,
+                           ar.hash,
                            ar.name,
                            STRING_AGG(s.file_hash, ',' ORDER BY s.name)
                                FILTER (WHERE s.file_hash IS NOT NULL AND s.file_hash <> '') AS songfilehashescsv
                     FROM music_library.artists ar
                     LEFT JOIN music_library.songs s  ON s.artist_id = ar.id
                     WHERE LOWER(ar.name) LIKE LOWER(CONCAT('%', :query, '%'))
-                    GROUP BY ar.id, LOWER(ar.name)
+                    GROUP BY ar.id, ar.hash, LOWER(ar.name)
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT ar.id)

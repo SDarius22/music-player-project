@@ -16,11 +16,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.time.Instant;
 
-/**
- * Base class for all integration tests. Provides shared Testcontainers setup
- * (PostgreSQL + Redis) and mocks out the SignalingHandler to prevent Redis pub/sub
- * during tests. Containers are started once per JVM via static initializer.
- */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {"MAIL_HOST=localhost", "MAIL_USER=test@example.com", "MAIL_PASSWORD=test"}
@@ -41,6 +36,11 @@ public abstract class BaseIntegrationTest {
         REDIS.start();
     }
 
+    @Autowired
+    protected MockMvc mockMvc;
+    @MockitoBean
+    SignalingHandler signalingHandler;
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
@@ -49,12 +49,6 @@ public abstract class BaseIntegrationTest {
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
     }
-
-    @MockitoBean
-    SignalingHandler signalingHandler;
-
-    @Autowired
-    protected MockMvc mockMvc;
 
     protected User buildUser(String email, Role role) {
         return User.builder()

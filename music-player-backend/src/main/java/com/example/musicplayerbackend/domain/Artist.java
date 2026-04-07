@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.domain;
 
+import com.example.musicplayerbackend.helpers.EntityHashHelper;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -36,4 +37,12 @@ public class Artist {
 
     @OneToMany(mappedBy = "artist", fetch = FetchType.LAZY)
     private List<Song> songs;
+
+    @PrePersist
+    @PreUpdate
+    void ensureHash() {
+        if (hash == null || hash.isBlank()) {
+            hash = EntityHashHelper.artistHash(name);
+        }
+    }
 }

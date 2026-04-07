@@ -3,6 +3,7 @@ package com.example.musicplayerbackend.service;
 import com.example.musicplayerbackend.data.*;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
+import com.example.musicplayerbackend.helpers.EntityHashHelper;
 import com.example.musicplayerbackend.mapper.NegotiationMapper;
 import com.example.musicplayerbackend.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
@@ -78,8 +79,8 @@ public class SongService {
             return;
         }
 
-        var artistHash = Arrays.toString(MessageDigest.getInstance("SHA-256").digest(artistName.getBytes()));
-        var albumHash = Arrays.toString(MessageDigest.getInstance("SHA-256").digest((artistName + " - " + albumName).getBytes()));
+        var artistHash = EntityHashHelper.artistHash(artistName);
+        var albumHash = EntityHashHelper.albumHash(artistName, albumName);
 
         Artist artist = artistRepository.findByHash(artistHash)
                 .orElseGet(() -> artistRepository.save(
@@ -128,8 +129,8 @@ public class SongService {
             song = existingSongOpt.get();
         } else {
 
-            var artistHash = Arrays.toString(MessageDigest.getInstance("SHA-256").digest(request.getArtistName().getBytes()));
-            var albumHash = Arrays.toString(MessageDigest.getInstance("SHA-256").digest((request.getArtistName() + " - " + request.getAlbumName()).getBytes()));
+            var artistHash = EntityHashHelper.artistHash(request.getArtistName());
+            var albumHash = EntityHashHelper.albumHash(request.getArtistName(), request.getAlbumName());
 
 
             Artist artist = artistRepository.findByHash(artistHash)

@@ -13,11 +13,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.time.Instant;
 
-/**
- * Base class for all repository-level integration tests.
- * Containers are started once per JVM via static initializer — no port changes between test classes.
- * Each subclass is responsible for cleaning up test data in {@code @AfterEach}.
- */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = {"MAIL_HOST=localhost", "MAIL_USER=test@example.com", "MAIL_PASSWORD=test"}
@@ -37,6 +32,9 @@ public abstract class BaseRepositoryTest {
         REDIS.start();
     }
 
+    @MockitoBean
+    SignalingHandler signalingHandler;
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
@@ -45,9 +43,6 @@ public abstract class BaseRepositoryTest {
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
     }
-
-    @MockitoBean
-    SignalingHandler signalingHandler;
 
     protected User buildUser(String email) {
         return User.builder()

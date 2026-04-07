@@ -17,12 +17,12 @@ class ArtistMapperTest {
     @Autowired ArtistMapper artistMapper;
 
     @Test
-    void shouldMapArtistIdAndNameToDto() {
-        Artist artist = Artist.builder().id(1L).name("The Beatles").build();
+    void shouldMapArtistHashAndNameToDto() {
+        Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("The Beatles").build();
 
         ArtistDto dto = artistMapper.toDto(artist);
 
-        assertEquals(1L, dto.getId());
+        assertEquals("beatles-hash", dto.getHash());
         assertEquals("The Beatles", dto.getName());
     }
 
@@ -32,14 +32,14 @@ class ArtistMapperTest {
     }
 
     @Test
-    void shouldMapArtistIdAndNameToEntity() {
+    void shouldMapArtistHashAndNameToEntity() {
         ArtistDto dto = new ArtistDto();
-        dto.setId(2L);
+        dto.setHash("led-hash");
         dto.setName("Led Zeppelin");
 
         Artist entity = artistMapper.toEntity(dto);
 
-        assertEquals(2L, entity.getId());
+        assertEquals("led-hash", entity.getHash());
         assertEquals("Led Zeppelin", entity.getName());
     }
 

@@ -89,14 +89,14 @@ class AlbumServiceTest {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn(null);
         AlbumExpandedDto listDto = new AlbumExpandedDto();
-        listDto.setId(1L);
+        listDto.setHash("album-hash");
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
         assertEquals(1, result.getContent().size());
-        assertEquals(1L, result.getContent().getFirst().getId());
+        assertEquals("album-hash", result.getContent().getFirst().getHash());
     }
 
     @Test
@@ -167,47 +167,47 @@ class AlbumServiceTest {
         assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
 
-    // ── getAlbumById ─────────────────────────────────────────────────────────
+    // ── getAlbumByHash ───────────────────────────────────────────────────────
 
     @Test
     void shouldReturnNullArtistDtoWhenAlbumArtistIsNull() {
-        Album album = Album.builder().id(1L).name("Thriller").artist(null).build();
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").artist(null).build();
+        when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumById(1L);
+        AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
 
         assertNull(result.getArtist());
     }
 
     @Test
     void shouldReturnAlbumDetailDto() {
-        Album album = Album.builder().id(1L).name("Thriller").build();
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").build();
+        when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumById(1L);
+        AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
 
-        assertEquals(1L, result.getId());
+        assertEquals("thriller-hash", result.getHash());
         assertEquals("Thriller", result.getName());
     }
 
     @Test
-    void shouldThrow404WhenAlbumByIdNotFound() {
-        when(albumRepository.findById(99L)).thenReturn(Optional.empty());
+    void shouldThrow404WhenAlbumByHashNotFound() {
+        when(albumRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getAlbumById(99L));
+                () -> service.getAlbumByHash("missing-hash"));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
     @Test
     void shouldMapArtistWhenAlbumArtistIsPresent() {
-        Artist artist = Artist.builder().id(5L).name("MJ").build();
-        Album album = Album.builder().id(1L).name("Thriller").artist(artist).build();
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        Artist artist = Artist.builder().id(5L).hash("mj-hash").name("MJ").build();
+        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").artist(artist).build();
+        when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumById(1L);
+        AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
 
         assertNotNull(result.getArtist());
-        assertEquals(5L, result.getArtist().getId());
+        assertEquals("mj-hash", result.getArtist().getHash());
         assertEquals("MJ", result.getArtist().getName());
     }
 
@@ -215,13 +215,13 @@ class AlbumServiceTest {
     void shouldMapSongsWhenGettingAlbumById() {
         Song song = Song.builder().id(100L).name("Billie Jean").songType(ContentType.STREAMABLE)
                 .fileHash("hash").build();
-        Album album = Album.builder().id(1L).name("Thriller").songs(List.of(song)).build();
+        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").songs(List.of(song)).build();
         SongDto songDto = new SongDto();
         songDto.setFileHash("hash");
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
         when(songMapper.toDto(song)).thenReturn(songDto);
 
-        AlbumDetailDto result = service.getAlbumById(1L);
+        AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
 
         assertEquals(1, result.getSongs().size());
         assertEquals("hash", result.getSongs().getFirst().getFileHash());
@@ -229,10 +229,10 @@ class AlbumServiceTest {
 
     @Test
     void shouldReturnEmptySongsWhenAlbumSongsAreNull() {
-        Album album = Album.builder().id(1L).name("No Songs").songs(null).build();
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        Album album = Album.builder().id(1L).hash("no-songs-hash").name("No Songs").songs(null).build();
+        when(albumRepository.findByHash("no-songs-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumById(1L);
+        AlbumDetailDto result = service.getAlbumByHash("no-songs-hash");
 
         assertTrue(result.getSongs().isEmpty());
     }
@@ -242,25 +242,25 @@ class AlbumServiceTest {
     @Test
     void shouldReturnAlbumCoverBytes() {
         byte[] img = "imgdata".getBytes();
-        Album album = Album.builder().id(1L)
+        Album album = Album.builder().id(1L).hash("album-hash")
                 .coverImage(Base64.getEncoder().encodeToString(img)).build();
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByHash("album-hash")).thenReturn(Optional.of(album));
 
-        assertArrayEquals(img, service.getAlbumCover(1L));
+        assertArrayEquals(img, service.getAlbumCover("album-hash"));
     }
 
     @Test
     void shouldThrow404WhenAlbumCoverAlbumNotFound() {
-        when(albumRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResponseStatusException.class, () -> service.getAlbumCover(1L));
+        when(albumRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> service.getAlbumCover("missing-hash"));
     }
 
     @Test
     void shouldThrow404WhenAlbumCoverIsNull() {
-        Album album = Album.builder().id(1L).coverImage(null).build();
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        Album album = Album.builder().id(1L).hash("null-cover-hash").coverImage(null).build();
+        when(albumRepository.findByHash("null-cover-hash")).thenReturn(Optional.of(album));
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getAlbumCover(1L));
+                () -> service.getAlbumCover("null-cover-hash"));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }

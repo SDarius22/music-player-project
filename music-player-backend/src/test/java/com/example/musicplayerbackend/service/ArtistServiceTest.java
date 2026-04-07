@@ -47,7 +47,7 @@ class ArtistServiceTest {
         ArtistListProjection proj = mock(ArtistListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn(null);
         ArtistExpandedDto listDto = new ArtistExpandedDto();
-        listDto.setId(1L);
+        listDto.setHash("artist-hash");
         listDto.setName("Beatles");
         when(artistRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(artistMapper.toExpandedDto(proj)).thenReturn(listDto);
@@ -55,7 +55,7 @@ class ArtistServiceTest {
         ArtistPageDto result = service.getArtists(null, 0, 20, null);
 
         assertEquals(1, result.getContent().size());
-        assertEquals(1L, result.getContent().getFirst().getId());
+        assertEquals("artist-hash", result.getContent().getFirst().getHash());
         assertEquals("Beatles", result.getContent().getFirst().getName());
     }
 
@@ -127,25 +127,25 @@ class ArtistServiceTest {
         assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
 
-    // ── getArtistById ────────────────────────────────────────────────────────
+    // ── getArtistByHash ──────────────────────────────────────────────────────
 
     @Test
     void shouldReturnArtistDetailDto() {
-        Artist artist = Artist.builder().id(1L).name("Beatles").songs(List.of()).build();
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
+        Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of()).build();
+        when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
 
-        ArtistDetailDto result = service.getArtistById(1L);
+        ArtistDetailDto result = service.getArtistByHash("beatles-hash");
 
-        assertEquals(1L, result.getId());
+        assertEquals("beatles-hash", result.getHash());
         assertEquals("Beatles", result.getName());
         assertTrue(result.getSongs().isEmpty());
     }
 
     @Test
-    void shouldThrow404WhenArtistByIdNotFound() {
-        when(artistRepository.findById(99L)).thenReturn(Optional.empty());
+    void shouldThrow404WhenArtistByHashNotFound() {
+        when(artistRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getArtistById(99L));
+                () -> service.getArtistByHash("missing-hash"));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
@@ -155,11 +155,11 @@ class ArtistServiceTest {
                 .songType(ContentType.STREAMABLE).build();
         SongDto songDto = new SongDto();
         songDto.setFileHash("hash1");
-        Artist artist = Artist.builder().id(1L).name("Beatles").songs(List.of(song)).build();
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
+        Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of(song)).build();
+        when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
         when(songMapper.toDto(song)).thenReturn(songDto);
 
-        ArtistDetailDto result = service.getArtistById(1L);
+        ArtistDetailDto result = service.getArtistByHash("beatles-hash");
 
         assertEquals(1, result.getSongs().size());
         assertEquals("hash1", result.getSongs().getFirst().getFileHash());
@@ -167,10 +167,10 @@ class ArtistServiceTest {
 
     @Test
     void shouldReturnEmptySongsWhenArtistSongsAreNull() {
-        Artist artist = Artist.builder().id(1L).name("Solo").songs(null).build();
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
+        Artist artist = Artist.builder().id(1L).hash("solo-hash").name("Solo").songs(null).build();
+        when(artistRepository.findByHash("solo-hash")).thenReturn(Optional.of(artist));
 
-        ArtistDetailDto result = service.getArtistById(1L);
+        ArtistDetailDto result = service.getArtistByHash("solo-hash");
 
         assertTrue(result.getSongs().isEmpty());
     }
@@ -179,17 +179,17 @@ class ArtistServiceTest {
 
     @Test
     void shouldThrow404WhenArtistCoverHasNoAlbums() {
-        Artist artist = Artist.builder().id(1L).name("Artist").albums(List.of()).build();
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover(1L));
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(List.of()).build();
+        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash"));
     }
 
     @Test
     void shouldThrow404WhenAllArtistAlbumsHaveNoImage() {
         Album album = Album.builder().id(1L).name("No Cover").coverImage(null).build();
-        Artist artist = Artist.builder().id(1L).name("Artist").albums(List.of(album)).build();
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover(1L));
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(List.of(album)).build();
+        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash"));
     }
 
     @Test
@@ -198,33 +198,33 @@ class ArtistServiceTest {
         Album album1 = Album.builder().id(1L).coverImage(null).build();
         Album album2 = Album.builder().id(2L)
                 .coverImage(Base64.getEncoder().encodeToString(img)).build();
-        Artist artist = Artist.builder().id(1L).name("Artist")
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist")
                 .albums(List.of(album1, album2)).build();
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
+        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
 
-        assertArrayEquals(img, service.getArtistCover(1L));
+        assertArrayEquals(img, service.getArtistCover("artist-hash"));
     }
 
     @Test
     void shouldThrow404WhenArtistCoverArtistNotFound() {
-        when(artistRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover(1L));
+        when(artistRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("missing-hash"));
     }
 
     @Test
     void shouldThrow404WhenAllArtistAlbumsHaveBlankImage() {
         Album album = Album.builder().id(1L).name("Album").coverImage("   ").build();
-        Artist artist = Artist.builder().id(1L).name("Artist").albums(List.of(album)).build();
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(List.of(album)).build();
+        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getArtistCover(1L));
+                () -> service.getArtistCover("artist-hash"));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
     @Test
     void shouldThrow404WhenArtistAlbumsAreNull() {
-        Artist artist = Artist.builder().id(1L).name("Artist").albums(null).build();
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover(1L));
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(null).build();
+        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash"));
     }
 }

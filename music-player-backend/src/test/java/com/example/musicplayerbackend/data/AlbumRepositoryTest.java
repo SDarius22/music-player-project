@@ -24,7 +24,7 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        artist = artistRepository.save(Artist.builder().name("Test Artist").build());
+        artist = artistRepository.save(Artist.builder().name("Test Artist").hash("artist-hash").build());
     }
 
     @AfterEach
@@ -34,7 +34,7 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
     }
 
     private Album buildAlbum(String name) {
-        return Album.builder().name(name).artist(artist).build();
+        return Album.builder().name(name).hash("album-" + name).artist(artist).build();
     }
 
     @Test
@@ -46,18 +46,19 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    void shouldReturnAlbumWhenNameExists() {
-        albumRepository.save(buildAlbum("Rumours"));
+    void shouldReturnAlbumWhenHashExists() {
+        Album album = buildAlbum("Rumours");
+        albumRepository.save(album);
 
-        var found = albumRepository.findByName("Rumours");
+        var found = albumRepository.findByHash(album.getHash());
 
         assertThat(found).isPresent();
         assertThat(found.get().getName()).isEqualTo("Rumours");
     }
 
     @Test
-    void shouldReturnEmptyWhenAlbumNameNotFound() {
-        var found = albumRepository.findByName("NonExistentAlbum");
+    void shouldReturnEmptyWhenAlbumHashNotFound() {
+        var found = albumRepository.findByHash("missing-hash");
 
         assertThat(found).isEmpty();
     }
