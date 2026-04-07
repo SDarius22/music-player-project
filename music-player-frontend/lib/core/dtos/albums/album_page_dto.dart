@@ -16,7 +16,7 @@ class AlbumPageDto {
   });
 
   factory AlbumPageDto.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw = (json['content'] as List<dynamic>? ?? const []);
+    final List<dynamic> raw = (json['content'] as List<dynamic>);
     return AlbumPageDto(
       content:
           raw

@@ -35,9 +35,7 @@ class Song implements BaseEntity {
   int playCount = 0;
   bool likedByUser = false;
 
-  Song(this.fileHash) {
-    assert(fileHash.isNotEmpty, 'File hash cannot be empty');
-  }
+  Song(this.fileHash);
 
   @override
   String getName() {

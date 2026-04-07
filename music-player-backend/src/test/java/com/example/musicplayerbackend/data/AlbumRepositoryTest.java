@@ -90,6 +90,29 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    void shouldReturnAlbumProjectionWithHashAndArtistFields() {
+        Album album = albumRepository.save(buildAlbum("The Wall"));
+
+        Page<AlbumListProjection> result = albumRepository.findAllWithHashes("The Wall", PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(1);
+        AlbumListProjection projection = result.getContent().getFirst();
+        assertThat(projection.getHash()).isEqualTo(album.getHash());
+        assertThat(projection.getArtistHash()).isEqualTo(artist.getHash());
+        assertThat(projection.getArtistName()).isEqualTo(artist.getName());
+    }
+
+    @Test
+    void shouldFindAlbumsByArtistName() {
+        albumRepository.save(buildAlbum("Artist Search Album"));
+
+        Page<AlbumListProjection> result = albumRepository.findAllWithHashes("test artist", PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst().getName()).isEqualTo("Artist Search Album");
+    }
+
+    @Test
     void shouldReturnEmptyWhenNoAlbumNameMatches() {
         albumRepository.save(buildAlbum("Something Blue"));
 

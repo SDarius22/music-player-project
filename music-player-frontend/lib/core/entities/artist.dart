@@ -25,8 +25,6 @@ class Artist implements BaseEntity {
   final _songs = ToMany<Song>();
 
   Artist(this.hash, this.name, {List<Song> songs = const []}) {
-    assert(hash.isNotEmpty, 'Artist hash cannot be empty');
-    assert(name.isNotEmpty, 'Artist name cannot be empty');
     for (var song in songs) {
       addSong(song);
     }

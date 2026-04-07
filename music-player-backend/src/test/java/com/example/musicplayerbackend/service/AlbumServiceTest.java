@@ -100,6 +100,30 @@ class AlbumServiceTest {
     }
 
     @Test
+    void shouldKeepMappedArtistWhenSplittingHashes() {
+        AlbumListProjection proj = mock(AlbumListProjection.class);
+        when(proj.getSongFileHashesCsv()).thenReturn("h1,h2");
+
+        ArtistDto artistDto = new ArtistDto();
+        artistDto.setHash("artist-hash");
+        artistDto.setName("Artist Name");
+
+        AlbumExpandedDto listDto = new AlbumExpandedDto();
+        listDto.setHash("album-hash");
+        listDto.setName("Album Name");
+        listDto.setArtist(artistDto);
+
+        when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
+
+        AlbumPageDto result = service.getAlbums(null, 0, 20, null);
+
+        assertEquals("album-hash", result.getContent().getFirst().getHash());
+        assertEquals("artist-hash", result.getContent().getFirst().getArtist().getHash());
+        assertEquals(List.of("h1", "h2"), result.getContent().getFirst().getSongFileHashes());
+    }
+
+    @Test
     void shouldPassBlankAlbumQueryAsEmpty() {
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(Page.empty());
         service.getAlbums("   ", 0, 20, null);

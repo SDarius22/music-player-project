@@ -30,10 +30,7 @@ class Album implements BaseEntity {
   final ToMany<Song> _songs = ToMany<Song>();
   final ToOne<Artist> _artist = ToOne<Artist>();
 
-  Album(this.hash, this.name) {
-    assert(hash.isNotEmpty, 'Album hash cannot be empty');
-    assert(name.isNotEmpty, 'Album name cannot be empty');
-  }
+  Album(this.hash, this.name);
 
   void addSong(Song song) {
     int index = _songs.indexWhere((s) {

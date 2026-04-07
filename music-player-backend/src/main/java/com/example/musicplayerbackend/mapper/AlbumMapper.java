@@ -20,6 +20,7 @@ public interface AlbumMapper {
     AlbumDto toDto(Album album);
 
     @Mapping(target = "songFileHashes", ignore = true)
-    @Mapping(target = "artist", ignore = true)
+    @Mapping(target = "artist.hash", source = "artistHash")
+    @Mapping(target = "artist.name", source = "artistName")
     AlbumExpandedDto toExpandedDto(AlbumListProjection projection);
 }

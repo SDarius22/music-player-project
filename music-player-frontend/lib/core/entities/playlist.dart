@@ -29,7 +29,6 @@ class Playlist implements BaseEntity {
   final List<String> _songFileHashes = [];
 
   Playlist(this.name, {List<Song> songs = const []}) {
-    assert(name.isNotEmpty, 'Playlist name cannot be empty');
     for (var song in songs) {
       addSong(song);
     }

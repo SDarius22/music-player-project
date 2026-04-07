@@ -30,9 +30,6 @@ public interface UserLibraryRepository extends JpaRepository<UserLibrary, UserLi
     @Query("SELECT ul FROM UserLibrary ul WHERE ul.id.userId = :userId AND ul.isDeleted = false ORDER BY ul.addedAt DESC")
     List<UserLibrary> findRecentlyAddedByUserId(@Param("userId") Long userId, Pageable pageable);
 
-    /**
-     * Most recently played (lastPlayed IS NOT NULL), newest first.
-     */
     @Query("SELECT ul FROM UserLibrary ul WHERE ul.id.userId = :userId AND ul.isDeleted = false AND ul.lastPlayed IS NOT NULL ORDER BY ul.lastPlayed DESC")
     List<UserLibrary> findRecentlyPlayedByUserId(@Param("userId") Long userId, Pageable pageable);
 }

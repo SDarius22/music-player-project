@@ -52,7 +52,10 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/v1/albums").with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", not(empty())))
-                .andExpect(jsonPath("$.content[*].name", hasItem("Test Album")));
+                .andExpect(jsonPath("$.content[*].name", hasItem("Test Album")))
+                .andExpect(jsonPath("$.content[0].hash", not(isEmptyOrNullString())))
+                .andExpect(jsonPath("$.content[0].artist.name", not(isEmptyOrNullString())))
+                .andExpect(jsonPath("$.content[0].songFileHashes").isArray());
     }
 
     @Test

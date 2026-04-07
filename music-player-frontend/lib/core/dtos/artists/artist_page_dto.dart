@@ -16,16 +16,16 @@ class ArtistPageDto {
   });
 
   factory ArtistPageDto.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw = (json['content'] as List<dynamic>? ?? const []);
+    final List<dynamic> raw = (json['content'] as List<dynamic>);
     return ArtistPageDto(
       content:
           raw
               .map((e) => ArtistExpandedDto.fromJson(e as Map<String, dynamic>))
               .toList(),
-      page: (json['page'] as num? ?? 0).toInt(),
-      size: (json['size'] as num? ?? raw.length).toInt(),
-      totalPages: (json['totalPages'] as num? ?? 1).toInt(),
-      totalElements: (json['totalElements'] as num? ?? raw.length).toInt(),
+      page: (json['page']).toInt(),
+      size: (json['size']).toInt(),
+      totalPages: (json['totalPages']).toInt(),
+      totalElements: (json['totalElements']).toInt(),
     );
   }
 }
