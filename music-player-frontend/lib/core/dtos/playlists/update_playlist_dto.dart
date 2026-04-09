@@ -1,6 +1,8 @@
+import 'package:music_player_frontend/core/dtos/playlists/playlist_song_position_dto.dart';
+
 class UpdatePlaylistDto {
   final String name;
-  final List<String> songFileHashes;
+  final List<PlaylistSongPositionDto> songFileHashes;
   final String coverImageBase64;
 
   UpdatePlaylistDto({
@@ -12,7 +14,7 @@ class UpdatePlaylistDto {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'songFileHashes': songFileHashes,
+      'songFileHashes': songFileHashes.map((e) => e.toJson()).toList(),
       'coverImage': coverImageBase64,
     };
   }

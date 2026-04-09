@@ -3,7 +3,10 @@ package com.example.musicplayerbackend.integration;
 import com.example.musicplayerbackend.data.AlbumRepository;
 import com.example.musicplayerbackend.data.ArtistRepository;
 import com.example.musicplayerbackend.data.UserRepository;
-import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.domain.Album;
+import com.example.musicplayerbackend.domain.Artist;
+import com.example.musicplayerbackend.domain.Role;
+import com.example.musicplayerbackend.domain.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -113,6 +116,6 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturnArtistWhenPresentOnAlbum() throws Exception {
         mockMvc.perform(get("/api/v1/albums/{hash}", album.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.artists[0].name").value("Test Artist"));
+                .andExpect(jsonPath("$.artist.name").value("Test Artist"));
     }
 }

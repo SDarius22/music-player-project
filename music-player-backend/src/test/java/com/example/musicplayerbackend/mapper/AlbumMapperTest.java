@@ -1,20 +1,21 @@
 package com.example.musicplayerbackend.mapper;
 
-import com.example.musicplayerbackend.data.projection.AlbumListProjection;
 import com.example.musicplayerbackend.domain.Album;
 import com.example.musicplayerbackend.domain.AlbumDto;
 import com.example.musicplayerbackend.domain.AlbumExpandedDto;
 import com.example.musicplayerbackend.domain.Artist;
+import com.example.musicplayerbackend.domain.ContentType;
+import com.example.musicplayerbackend.domain.Song;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 @Import({AlbumMapperImpl.class, ArtistMapperImpl.class, SongMapperImpl.class})
@@ -58,15 +59,22 @@ class AlbumMapperTest {
 
 
     @Test
-    void shouldMapProjectionToExpandedDtoWithoutArtists() {
-        AlbumListProjection projection = mock(AlbumListProjection.class);
-        when(projection.getHash()).thenReturn("album-hash");
-        when(projection.getName()).thenReturn("Album Name");
+    void shouldMapAlbumAndMainArtistToExpandedDto() {
+        Artist mainArtist = Artist.builder().hash("artist-hash").name("Artist Name").build();
+        Song songA = Song.builder().name("Track A").fileHash("hash-a").songType(ContentType.STREAMABLE).artist(mainArtist).build();
+        Song songB = Song.builder().name("Track B").fileHash("hash-b").songType(ContentType.STREAMABLE).artist(mainArtist).build();
+        Album album = Album.builder()
+                .hash("album-hash")
+                .name("Album Name")
+                .songs(List.of(songA, songB))
+                .build();
 
-        AlbumExpandedDto dto = albumMapper.toExpandedDto(projection);
+        AlbumExpandedDto dto = albumMapper.toExpandedDto(album, mainArtist);
 
         assertEquals("album-hash", dto.getHash());
         assertEquals("Album Name", dto.getName());
-        assertNull(dto.getArtist());
+        assertEquals("artist-hash", dto.getArtist().getHash());
+        assertEquals("Artist Name", dto.getArtist().getName());
+        assertEquals(List.of("hash-a", "hash-b"), dto.getSongFileHashes());
     }
 }

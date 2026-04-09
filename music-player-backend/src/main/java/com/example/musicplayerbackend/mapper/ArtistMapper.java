@@ -1,10 +1,6 @@
 package com.example.musicplayerbackend.mapper;
 
-import com.example.musicplayerbackend.data.projection.ArtistListProjection;
-import com.example.musicplayerbackend.domain.Artist;
-import com.example.musicplayerbackend.domain.ArtistDetailDto;
-import com.example.musicplayerbackend.domain.ArtistDto;
-import com.example.musicplayerbackend.domain.ArtistExpandedDto;
+import com.example.musicplayerbackend.domain.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -27,13 +23,12 @@ public interface ArtistMapper {
 
     ArtistDetailDto toDetailDto(Artist artist);
 
-    @Mapping(target = "songFileHashes", source = "songFileHashesCsv")
-    ArtistExpandedDto toExpandedDto(ArtistListProjection projection);
+    @Mapping(target = "songFileHashes", source = "artist.songs")
+    @Mapping(target = "hash", source = "artist.hash")
+    @Mapping(target = "name", source = "artist.name")
+    ArtistExpandedDto toExpandedDto(Artist artist);
 
-    default List<String> mapSongFileHashes(String songFileHashesCsv) {
-        if (songFileHashesCsv == null || songFileHashesCsv.isEmpty()) {
-            return List.of();
-        }
-        return List.of(songFileHashesCsv.split(","));
+    default List<String> mapToHash(List<Song> value) {
+        return value.stream().map(Song::getFileHash).toList();
     }
 }

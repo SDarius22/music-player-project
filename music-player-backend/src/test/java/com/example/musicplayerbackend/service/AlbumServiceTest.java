@@ -1,7 +1,6 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.AlbumRepository;
-import com.example.musicplayerbackend.data.projection.AlbumListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
@@ -20,6 +19,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Base64;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -97,11 +97,15 @@ class AlbumServiceTest {
 
     @Test
     void shouldReturnPagedAlbumResults() {
-        AlbumListProjection proj = mock(AlbumListProjection.class);
-        when(proj.getHash()).thenReturn("album-hash");
-        when(proj.getName()).thenReturn("Album Name");
-        when(proj.getSongFileHashesCsv()).thenReturn(null);
-        when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist Name").build();
+        Song song = Song.builder().name("Track").fileHash("song-hash").songType(ContentType.STREAMABLE).artist(artist).build();
+        Album album = Album.builder()
+                .hash("album-hash")
+                .name("Album Name")
+                .artists(Set.of(artist))
+                .songs(List.of(song))
+                .build();
+        when(albumRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(album)));
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -111,14 +115,17 @@ class AlbumServiceTest {
 
     @Test
     void shouldKeepMappedArtistWhenSplittingHashes() {
-        AlbumListProjection proj = mock(AlbumListProjection.class);
-        when(proj.getHash()).thenReturn("album-hash");
-        when(proj.getName()).thenReturn("Album Name");
-        when(proj.getSongFileHashesCsv()).thenReturn("h1,h2");
-        when(proj.getArtistHash()).thenReturn("artist-hash");
-        when(proj.getArtistName()).thenReturn("Artist Name");
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist Name").build();
+        Song song1 = Song.builder().name("Track 1").fileHash("h1").songType(ContentType.STREAMABLE).artist(artist).build();
+        Song song2 = Song.builder().name("Track 2").fileHash("h2").songType(ContentType.STREAMABLE).artist(artist).build();
+        Album album = Album.builder()
+                .hash("album-hash")
+                .name("Album Name")
+                .artists(Set.of(artist))
+                .songs(List.of(song1, song2))
+                .build();
 
-        when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(albumRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(album)));
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -129,28 +136,28 @@ class AlbumServiceTest {
 
     @Test
     void shouldPassBlankAlbumQueryAsEmpty() {
-        when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(Page.empty());
+        when(albumRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(Page.empty());
         service.getAlbums("   ", 0, 20, null);
-        verify(albumRepository).findAllWithHashes(eq(""), any());
+        verify(albumRepository).findAllByNameContainingIgnoreCase(eq(""), any());
     }
 
     @Test
     void shouldPassNonBlankAlbumQueryThrough() {
-        when(albumRepository.findAllWithHashes(eq("rock"), any())).thenReturn(Page.empty());
+        when(albumRepository.findAllByNameContainingIgnoreCase(eq("rock"), any())).thenReturn(Page.empty());
         service.getAlbums("rock", 0, 20, null);
-        verify(albumRepository).findAllWithHashes(eq("rock"), any());
+        verify(albumRepository).findAllByNameContainingIgnoreCase(eq("rock"), any());
     }
 
     @Test
     void shouldSortAlbumsAscendingWhenExplicitAscProvided() {
         when(sortMapper.toSort("name,asc")).thenReturn(
                 org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name")));
-        when(albumRepository.findAllWithHashes(any(),
+        when(albumRepository.findAllByNameContainingIgnoreCase(any(),
                 argThat(p -> p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isAscending())))
                 .thenReturn(Page.empty());
         service.getAlbums(null, 0, 20, "name,asc");
-        verify(albumRepository).findAllWithHashes(any(),
+        verify(albumRepository).findAllByNameContainingIgnoreCase(any(),
                 argThat(p -> p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isAscending()));
     }
@@ -159,24 +166,25 @@ class AlbumServiceTest {
     void shouldSortAlbumsDescendingWhenRequested() {
         when(sortMapper.toSort("name,desc")).thenReturn(
                 org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.desc("name")));
-        when(albumRepository.findAllWithHashes(any(),
+        when(albumRepository.findAllByNameContainingIgnoreCase(any(),
                 argThat(p -> p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isDescending())))
                 .thenReturn(Page.empty());
         service.getAlbums(null, 0, 20, "name,desc");
-        verify(albumRepository).findAllWithHashes(any(),
+        verify(albumRepository).findAllByNameContainingIgnoreCase(any(),
                 argThat(p -> p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isDescending()));
     }
 
     @Test
-    void shouldSplitCsvHashesFromProjection() {
-        AlbumListProjection proj = mock(AlbumListProjection.class);
-        when(proj.getSongFileHashesCsv()).thenReturn("hash1,hash2,hash3");
-        when(proj.getArtistHash()).thenReturn(null);
-        when(proj.getArtistName()).thenReturn(null);
+    void shouldSplitSongHashesFromAlbumSongs() {
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist Name").build();
+        Song song1 = Song.builder().name("Track 1").fileHash("hash1").songType(ContentType.STREAMABLE).artist(artist).build();
+        Song song2 = Song.builder().name("Track 2").fileHash("hash2").songType(ContentType.STREAMABLE).artist(artist).build();
+        Song song3 = Song.builder().name("Track 3").fileHash("hash3").songType(ContentType.STREAMABLE).artist(artist).build();
+        Album album = Album.builder().hash("album-hash").name("Album Name").artists(Set.of(artist)).songs(List.of(song1, song2, song3)).build();
 
-        when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(albumRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(album)));
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -184,29 +192,57 @@ class AlbumServiceTest {
     }
 
     @Test
-    void shouldReturnEmptyHashesWhenProjectionCsvIsNull() {
-        AlbumListProjection proj = mock(AlbumListProjection.class);
-        when(proj.getSongFileHashesCsv()).thenReturn(null);
-        when(proj.getArtistHash()).thenReturn(null);
-        when(proj.getArtistName()).thenReturn(null);
-        when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
+    void shouldReturnEmptyHashesWhenAlbumSongsAreEmpty() {
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist Name").build();
+        Album album = Album.builder().hash("album-hash").name("Album Name").artists(Set.of(artist)).songs(List.of()).build();
+        when(albumRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(album)));
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
         assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
 
-    // ── getAlbumByHash ───────────────────────────────────────────────────────
+    @Test
+    void shouldPickArtistWithMostSongsAsMainArtist() {
+        Artist mainArtist = Artist.builder().id(1L).hash("main-hash").name("Main Artist").build();
+        Artist featuredArtist = Artist.builder().id(2L).hash("featured-hash").name("Featured Artist").build();
+        Album album = Album.builder().hash("album-hash").name("Album Name").artists(Set.of(mainArtist, featuredArtist)).build();
+
+        Song mainSong1 = Song.builder().id(10L).name("Track 1").fileHash("h1").songType(ContentType.STREAMABLE).artist(mainArtist).album(album).build();
+        Song mainSong2 = Song.builder().id(11L).name("Track 2").fileHash("h2").songType(ContentType.STREAMABLE).artist(mainArtist).album(album).build();
+        Song featuredSong = Song.builder().id(12L).name("Track 3").fileHash("h3").songType(ContentType.STREAMABLE).artist(featuredArtist).album(album).build();
+        album.setSongs(List.of(mainSong1, mainSong2, featuredSong));
+
+        when(albumRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(album)));
+
+        AlbumPageDto result = service.getAlbums(null, 0, 20, null);
+
+        assertEquals("main-hash", result.getContent().getFirst().getArtist().getHash());
+    }
 
     @Test
-    void shouldReturnEmptyArtistsWhenAlbumHasNoArtists() {
-        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").artists(Set.of()).build();
-        when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
+    void shouldFallbackToFirstArtistWhenNoSongsMatchAnyArtist() {
+        Artist firstArtist = Artist.builder().id(1L).hash("first-hash").name("First Artist").build();
+        Artist secondArtist = Artist.builder().id(2L).hash("second-hash").name("Second Artist").build();
+        var artists = new LinkedHashSet<Artist>();
+        artists.add(firstArtist);
+        artists.add(secondArtist);
 
-        AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
+        Album album = Album.builder()
+                .hash("album-hash")
+                .name("Album Name")
+                .artists(artists)
+                .songs(List.of())
+                .build();
 
-        assertTrue(result.getArtists().isEmpty());
+        when(albumRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(album)));
+
+        AlbumPageDto result = service.getAlbums(null, 0, 20, null);
+
+        assertEquals("first-hash", result.getContent().getFirst().getArtist().getHash());
     }
+
+    // ── getAlbumByHash ───────────────────────────────────────────────────────
 
     @Test
     void shouldReturnAlbumDetailDto() {
@@ -227,19 +263,6 @@ class AlbumServiceTest {
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
-    @Test
-    void shouldMapArtistsWhenAlbumArtistsArePresent() {
-        Artist artistA = Artist.builder().id(5L).hash("mj-hash").name("MJ").build();
-        Artist artistB = Artist.builder().id(6L).hash("guest-hash").name("Guest").build();
-        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").artists(Set.of(artistA, artistB)).build();
-        when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
-
-        AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
-
-        assertEquals(2, result.getArtists().size());
-        assertTrue(result.getArtists().stream().anyMatch(a -> "guest-hash".equals(a.getHash()) && "Guest".equals(a.getName())));
-        assertTrue(result.getArtists().stream().anyMatch(a -> "mj-hash".equals(a.getHash()) && "MJ".equals(a.getName())));
-    }
 
     @Test
     void shouldMapSongsWhenGettingAlbumById() {

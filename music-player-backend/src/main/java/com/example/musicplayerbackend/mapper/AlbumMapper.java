@@ -1,10 +1,6 @@
 package com.example.musicplayerbackend.mapper;
 
-import com.example.musicplayerbackend.data.projection.AlbumListProjection;
-import com.example.musicplayerbackend.domain.Album;
-import com.example.musicplayerbackend.domain.AlbumDetailDto;
-import com.example.musicplayerbackend.domain.AlbumDto;
-import com.example.musicplayerbackend.domain.AlbumExpandedDto;
+import com.example.musicplayerbackend.domain.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -19,9 +15,15 @@ public interface AlbumMapper {
 
     AlbumDto toDto(Album album);
 
-    AlbumDetailDto toDetailDto(Album album);
+    @Mapping(target = "artist", source = "mainArtist")
+    @Mapping(target = "hash", source = "album.hash")
+    @Mapping(target = "name", source = "album.name")
+    @Mapping(target = "songs", source = "album.songs")
+    AlbumDetailDto toDetailDto(Album album, Artist mainArtist);
 
-    @Mapping(target = "songFileHashes", source = "songFileHashesCsv")
-    @Mapping(target = "artist", expression = "java(artistMapper.toDto(projection.getArtistHash(), projection.getArtistName()))")
-    AlbumExpandedDto toExpandedDto(AlbumListProjection projection);
+    @Mapping(target = "songFileHashes", source = "album.songs")
+    @Mapping(target = "artist", source = "mainArtist")
+    @Mapping(target = "hash", source = "album.hash")
+    @Mapping(target = "name", source = "album.name")
+    AlbumExpandedDto toExpandedDto(Album album, Artist mainArtist);
 }

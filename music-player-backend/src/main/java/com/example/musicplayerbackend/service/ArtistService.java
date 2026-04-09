@@ -31,7 +31,7 @@ public class ArtistService {
         query = (query == null || query.isBlank()) ? "" : query;
         Pageable pageable = PageRequest.of(safePage, safeSize, sortMapper.toSort(sort));
 
-        var result = artistRepository.findAllWithHashes(query, pageable);
+        var result = artistRepository.findAllByNameContainingIgnoreCase(query, pageable);
 
         var content = result.getContent()
                 .stream().map(artistMapper::toExpandedDto)

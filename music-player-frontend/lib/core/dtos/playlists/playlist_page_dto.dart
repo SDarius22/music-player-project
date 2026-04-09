@@ -16,16 +16,16 @@ class PlaylistPageDto {
   });
 
   factory PlaylistPageDto.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw = (json['content'] as List<dynamic>? ?? const []);
+    final List<dynamic> raw = (json['content'] as List<dynamic>);
     return PlaylistPageDto(
       content:
           raw
               .map((e) => PlaylistDto.fromJson(e as Map<String, dynamic>))
               .toList(),
-      page: (json['page'] as num? ?? 0).toInt(),
-      size: (json['size'] as num? ?? raw.length).toInt(),
-      totalPages: (json['totalPages'] as num? ?? 1).toInt(),
-      totalElements: (json['totalElements'] as num? ?? raw.length).toInt(),
+      page: (json['page'] as num).toInt(),
+      size: (json['size'] as num).toInt(),
+      totalPages: (json['totalPages'] as num).toInt(),
+      totalElements: (json['totalElements'] as num).toInt(),
     );
   }
 }

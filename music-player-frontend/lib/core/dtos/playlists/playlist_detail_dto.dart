@@ -4,25 +4,20 @@ class PlaylistDetailDto {
   final int id;
   final String name;
   final List<SongDto> songs;
-  final bool hasCover;
 
   PlaylistDetailDto({
     required this.id,
     required this.name,
     required this.songs,
-    required this.hasCover,
   });
 
   factory PlaylistDetailDto.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw = (json['songs'] as List<dynamic>? ?? const []);
+    final List<dynamic> raw = (json['songs'] as List<dynamic>);
     return PlaylistDetailDto(
-      id: (json['id'] as num? ?? 0).toInt(),
-      name: json['name'] as String? ?? 'Unknown playlist',
+      id: (json['id'] as num).toInt(),
+      name: json['name'] as String,
       songs:
-          raw
-              .map((e) => SongDto.fromJson(e as Map<String, dynamic>? ?? {}))
-              .toList(),
-      hasCover: json['hasCover'] as bool? ?? false,
+          raw.map((e) => SongDto.fromJson(e as Map<String, dynamic>)).toList(),
     );
   }
 }
