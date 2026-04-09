@@ -14,16 +14,18 @@ import java.util.List;
 
 @Mapper(
         componentModel = MappingConstants.ComponentModel.SPRING,
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {SongMapper.class}
 )
 public interface ArtistMapper {
 
+    @Mapping(target = "hash", source = "hash")
+    @Mapping(target = "name", source = "artistName")
     ArtistDto toDto(String hash, String artistName);
 
     ArtistDto toDto(Artist artist);
 
     ArtistDetailDto toDetailDto(Artist artist);
-
 
     @Mapping(target = "songFileHashes", source = "songFileHashesCsv")
     ArtistExpandedDto toExpandedDto(ArtistListProjection projection);

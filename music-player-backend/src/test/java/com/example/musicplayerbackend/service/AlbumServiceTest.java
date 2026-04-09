@@ -5,7 +5,8 @@ import com.example.musicplayerbackend.data.projection.AlbumListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
-import com.example.musicplayerbackend.mapper.SongMapper;
+import com.example.musicplayerbackend.mapper.AlbumMapperImpl;
+import com.example.musicplayerbackend.mapper.ArtistMapperImpl;
 import com.example.musicplayerbackend.mapper.SortMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Base64;
@@ -29,16 +31,24 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AlbumServiceTest {
 
-    @Mock AlbumRepository albumRepository;
-    @Mock AlbumMapper albumMapper;
-    @Mock SongMapper songMapper;
-    @Mock SortMapper sortMapper;
+    @Mock
+    AlbumRepository albumRepository;
+
+    @Mock
+    SortMapper sortMapper;
+
+    AlbumMapper albumMapper;
+
 
     AlbumService service;
 
     @BeforeEach
     void setUp() {
-        service = new AlbumService(albumRepository, albumMapper, songMapper, sortMapper);
+        AlbumMapperImpl mapper = new AlbumMapperImpl();
+        ReflectionTestUtils.setField(mapper, "artistMapper", new ArtistMapperImpl());
+        albumMapper = mapper;
+
+        service = new AlbumService(albumRepository, albumMapper, sortMapper);
         org.mockito.Mockito.lenient().when(sortMapper.toSort(any())).thenReturn(org.springframework.data.domain.Sort.by("name"));
     }
 
@@ -88,11 +98,10 @@ class AlbumServiceTest {
     @Test
     void shouldReturnPagedAlbumResults() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
+        when(proj.getHash()).thenReturn("album-hash");
+        when(proj.getName()).thenReturn("Album Name");
         when(proj.getSongFileHashesCsv()).thenReturn(null);
-        AlbumExpandedDto listDto = new AlbumExpandedDto();
-        listDto.setHash("album-hash");
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -103,20 +112,13 @@ class AlbumServiceTest {
     @Test
     void shouldKeepMappedArtistWhenSplittingHashes() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
+        when(proj.getHash()).thenReturn("album-hash");
+        when(proj.getName()).thenReturn("Album Name");
         when(proj.getSongFileHashesCsv()).thenReturn("h1,h2");
-        when(proj.getArtistJson()).thenReturn("{\"hash\":\"artist-hash\",\"name\":\"Artist Name\"}");
-
-        ArtistDto artistDto = new ArtistDto();
-        artistDto.setHash("artist-hash");
-        artistDto.setName("Artist Name");
-
-        AlbumExpandedDto listDto = new AlbumExpandedDto();
-        listDto.setHash("album-hash");
-        listDto.setName("Album Name");
-        listDto.setArtist(artistDto);
+        when(proj.getArtistHash()).thenReturn("artist-hash");
+        when(proj.getArtistName()).thenReturn("Artist Name");
 
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -171,10 +173,10 @@ class AlbumServiceTest {
     void shouldSplitCsvHashesFromProjection() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn("hash1,hash2,hash3");
-        when(proj.getArtistJson()).thenReturn(null);
-        AlbumExpandedDto listDto = new AlbumExpandedDto();
+        when(proj.getArtistHash()).thenReturn(null);
+        when(proj.getArtistName()).thenReturn(null);
+
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -185,10 +187,9 @@ class AlbumServiceTest {
     void shouldReturnEmptyHashesWhenProjectionCsvIsNull() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn(null);
-        when(proj.getArtistJson()).thenReturn(null);
-        AlbumExpandedDto listDto = new AlbumExpandedDto();
+        when(proj.getArtistHash()).thenReturn(null);
+        when(proj.getArtistName()).thenReturn(null);
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
-        when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
 
         AlbumPageDto result = service.getAlbums(null, 0, 20, null);
 
@@ -236,8 +237,8 @@ class AlbumServiceTest {
         AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
 
         assertEquals(2, result.getArtists().size());
-        assertEquals("guest-hash", result.getArtists().getFirst().getHash());
-        assertEquals("Guest", result.getArtists().getFirst().getName());
+        assertTrue(result.getArtists().stream().anyMatch(a -> "guest-hash".equals(a.getHash()) && "Guest".equals(a.getName())));
+        assertTrue(result.getArtists().stream().anyMatch(a -> "mj-hash".equals(a.getHash()) && "MJ".equals(a.getName())));
     }
 
     @Test
@@ -245,10 +246,7 @@ class AlbumServiceTest {
         Song song = Song.builder().id(100L).name("Billie Jean").songType(ContentType.STREAMABLE)
                 .fileHash("hash").build();
         Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").songs(List.of(song)).build();
-        SongDto songDto = new SongDto();
-        songDto.setFileHash("hash");
         when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
-        when(songMapper.toDto(song)).thenReturn(songDto);
 
         AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
 
@@ -263,7 +261,7 @@ class AlbumServiceTest {
 
         AlbumDetailDto result = service.getAlbumByHash("no-songs-hash");
 
-        assertTrue(result.getSongs().isEmpty());
+        assertNull(result.getSongs());
     }
 
     // ── getAlbumCover ────────────────────────────────────────────────────────

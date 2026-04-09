@@ -17,7 +17,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @Import({SongMapperImpl.class, ArtistMapperImpl.class, AlbumMapperImpl.class})
 class SongMapperTest {
 
-    @Autowired SongMapper songMapper;
+    @Autowired
+    SongMapper songMapper;
+
+    @Autowired
+    ArtistMapper artistMapper;
+
+    @Autowired
+    AlbumMapper albumMapper;
 
     @Test
     void shouldMapAllSongFieldsToDto() {
@@ -61,24 +68,6 @@ class SongMapperTest {
         assertNull(dto.getAlbum());
     }
 
-    @Test
-    void shouldMapSongIdAndNameToEntity() {
-        SongDto dto = new SongDto();
-        dto.setFileHash("stairway-hash");
-        dto.setName("Stairway to Heaven");
-        dto.setDurationInSeconds(482);
-
-        Song entity = songMapper.toEntity(dto);
-
-        assertEquals("stairway-hash", entity.getFileHash());
-        assertEquals("Stairway to Heaven", entity.getName());
-        assertEquals(482, entity.getDurationInSeconds());
-    }
-
-    @Test
-    void shouldReturnNullWhenSongToEntityInputIsNull() {
-        assertNull(songMapper.toEntity(null));
-    }
 
     @Test
     void shouldConvertInstantToUtcOffsetDateTime() {

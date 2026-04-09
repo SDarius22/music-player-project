@@ -4,7 +4,6 @@ import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.Playlist;
 import com.example.musicplayerbackend.domain.PlaylistDetailDto;
 import com.example.musicplayerbackend.domain.PlaylistDto;
-import com.example.musicplayerbackend.domain.PlaylistPageDto;
 import com.example.musicplayerbackend.domain.SongDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +13,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ExtendWith(SpringExtension.class)
 @Import(PlaylistMapperImpl.class)
@@ -74,20 +74,6 @@ class PlaylistMapperTest {
         assertEquals(11L, dto.getId());
         assertEquals("Focus", dto.getName());
         assertEquals(1, dto.getSongs().size());
-    }
-
-    @Test
-    void shouldMapPlaylistPageDtoMetadata() {
-        PlaylistDto playlistDto = new PlaylistDto();
-        playlistDto.setName("Mix");
-
-        PlaylistPageDto dto = playlistMapper.toPageDto(List.of(playlistDto), 2, 10, 42L, 5);
-
-        assertEquals(1, dto.getContent().size());
-        assertEquals(2, dto.getPage());
-        assertEquals(10, dto.getSize());
-        assertEquals(42L, dto.getTotalElements());
-        assertEquals(5, dto.getTotalPages());
     }
 
     @Test

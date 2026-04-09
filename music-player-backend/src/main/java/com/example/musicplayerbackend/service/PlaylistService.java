@@ -38,7 +38,7 @@ public class PlaylistService {
                 .map(playlistMapper::toDto)
                 .toList();
 
-        return playlistMapper.toPageDto(
+        return new PlaylistPageDto(
                 content,
                 result.getNumber(),
                 result.getSize(),

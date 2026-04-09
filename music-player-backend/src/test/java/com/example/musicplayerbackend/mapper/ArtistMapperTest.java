@@ -8,13 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ExtendWith(SpringExtension.class)
-@Import(ArtistMapperImpl.class)
+@Import({ArtistMapperImpl.class, SongMapperImpl.class})
 class ArtistMapperTest {
 
-    @Autowired ArtistMapper artistMapper;
+    @Autowired
+    ArtistMapper artistMapper;
 
     @Test
     void shouldMapArtistHashAndNameToDto() {
@@ -29,22 +31,5 @@ class ArtistMapperTest {
     @Test
     void shouldReturnNullWhenArtistToDtoInputIsNull() {
         assertNull(artistMapper.toDto(null));
-    }
-
-    @Test
-    void shouldMapArtistHashAndNameToEntity() {
-        ArtistDto dto = new ArtistDto();
-        dto.setHash("led-hash");
-        dto.setName("Led Zeppelin");
-
-        Artist entity = artistMapper.toEntity(dto);
-
-        assertEquals("led-hash", entity.getHash());
-        assertEquals("Led Zeppelin", entity.getName());
-    }
-
-    @Test
-    void shouldReturnNullWhenArtistToEntityInputIsNull() {
-        assertNull(artistMapper.toEntity(null));
     }
 }

@@ -106,8 +106,8 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
         assertThat(result.getContent()).hasSize(1);
         AlbumListProjection projection = result.getContent().getFirst();
         assertThat(projection.getHash()).isEqualTo(album.getHash());
-        assertThat(projection.getArtistJson()).contains("\"hash\":\"artist-hash\"");
-        assertThat(projection.getArtistJson()).contains("\"name\":\"Test Artist\"");
+        assertThat(projection.getArtistHash()).isEqualTo(artist.getHash());
+        assertThat(projection.getArtistName()).isEqualTo(artist.getName());
     }
 
     @Test
@@ -130,7 +130,9 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
         Page<AlbumListProjection> result = albumRepository.findAllWithHashes("Ranked Album", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().getFirst().getArtistJson()).contains("\"hash\":\"main-hash\"");
+        assertThat(result.getContent().getFirst().getArtistHash()).isEqualTo(mainArtist.getHash());
+        assertThat(result.getContent().getFirst().getArtistName()).isEqualTo(mainArtist.getName());
+
     }
 
     @Test

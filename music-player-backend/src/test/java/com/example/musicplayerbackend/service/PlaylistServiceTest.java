@@ -30,13 +30,19 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PlaylistServiceTest {
 
-    @Mock PlaylistRepository playlistRepository;
-    @Mock PlaylistSongRepository playlistSongRepository;
-    @Mock SongRepository songRepository;
-    @Mock PlaylistMapper playlistMapper;
-    @Mock SongMapper songMapper;
+    @Mock
+    PlaylistRepository playlistRepository;
+    @Mock
+    PlaylistSongRepository playlistSongRepository;
+    @Mock
+    SongRepository songRepository;
+    @Mock
+    PlaylistMapper playlistMapper;
+    @Mock
+    SongMapper songMapper;
 
-    @Captor ArgumentCaptor<List<PlaylistSong>> playlistSongsCaptor;
+    @Captor
+    ArgumentCaptor<List<PlaylistSong>> playlistSongsCaptor;
 
     PlaylistService service;
     User owner;
@@ -46,15 +52,6 @@ class PlaylistServiceTest {
         service = new PlaylistService(playlistRepository, playlistSongRepository, songRepository, playlistMapper, songMapper);
         owner = User.builder().id(1L).email("u@test.com").role(Role.USER)
                 .provider(AuthProvider.LOCAL).build();
-
-        lenient().when(playlistMapper.toPageDto(anyList(), anyInt(), anyInt(), anyLong(), anyInt()))
-                .thenAnswer(invocation -> new PlaylistPageDto(
-                        invocation.getArgument(0),
-                        invocation.getArgument(1),
-                        invocation.getArgument(2),
-                        invocation.getArgument(3),
-                        invocation.getArgument(4)
-                ));
 
         lenient().when(playlistMapper.toDetailDto(any(Playlist.class), anyList()))
                 .thenAnswer(invocation -> {

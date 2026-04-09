@@ -17,7 +17,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-@Import(AlbumMapperImpl.class)
+@Import({AlbumMapperImpl.class, ArtistMapperImpl.class, SongMapperImpl.class})
 class AlbumMapperTest {
 
     @Autowired
@@ -56,17 +56,6 @@ class AlbumMapperTest {
         assertEquals("No Cover", dto.getName());
     }
 
-    @Test
-    void shouldMapAlbumHashAndNameToEntity() {
-        AlbumDto dto = new AlbumDto();
-        dto.setHash("help-hash");
-        dto.setName("Help!");
-
-        Album entity = albumMapper.toEntity(dto);
-
-        assertEquals("help-hash", entity.getHash());
-        assertEquals("Help!", entity.getName());
-    }
 
     @Test
     void shouldMapProjectionToExpandedDtoWithoutArtists() {
@@ -79,10 +68,5 @@ class AlbumMapperTest {
         assertEquals("album-hash", dto.getHash());
         assertEquals("Album Name", dto.getName());
         assertNull(dto.getArtist());
-    }
-
-    @Test
-    void shouldReturnNullWhenAlbumToEntityInputIsNull() {
-        assertNull(albumMapper.toEntity(null));
     }
 }

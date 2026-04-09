@@ -2,8 +2,8 @@ package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.*;
 import com.example.musicplayerbackend.domain.*;
-import com.example.musicplayerbackend.mapper.NegotiationMapper;
-import com.example.musicplayerbackend.mapper.SongMapper;
+import com.example.musicplayerbackend.mapper.NegotiationMapperImpl;
+import com.example.musicplayerbackend.mapper.SongMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,10 +41,6 @@ class SongServiceTest {
     ChunkRepository chunkRepository;
     @Mock
     SongChunkRepository songChunkRepository;
-    @Mock
-    SongMapper songMapper;
-    @Mock
-    NegotiationMapper negotiationMapper;
 
     @TempDir
     Path tempDir;
@@ -54,7 +50,7 @@ class SongServiceTest {
     @BeforeEach
     void setUp() throws Exception {
         service = new SongService(songRepository, artistRepository, albumRepository,
-                chunkRepository, songChunkRepository, songMapper, negotiationMapper);
+                chunkRepository, songChunkRepository, new SongMapperImpl(), new NegotiationMapperImpl());
         Field storageRoot = SongService.class.getDeclaredField("STORAGE_ROOT");
         storageRoot.setAccessible(true);
         storageRoot.set(service, tempDir.toString());
@@ -101,12 +97,9 @@ class SongServiceTest {
     @Test
     void shouldReturnPageOfDtosVisibleToUser() {
         Song song = Song.builder().id(1L).name("Test").songType(ContentType.STREAMABLE).fileHash("h").build();
-        SongDto dto = new SongDto();
-        dto.setFileHash("h");
         User user = regularUser();
         when(songRepository.findVisibleToUser(eq(""), eq(2L), any()))
                 .thenReturn(new PageImpl<>(List.of(song)));
-        when(songMapper.toDto(song)).thenReturn(dto);
 
         Page<SongDto> result = service.getSongsVisibleToUser(null, user, Pageable.unpaged());
 
@@ -127,10 +120,7 @@ class SongServiceTest {
     @Test
     void shouldReturnSongDto() {
         Song song = Song.builder().id(1L).name("S").songType(ContentType.STREAMABLE).fileHash("h").build();
-        SongDto dto = new SongDto();
-        dto.setFileHash("h");
         when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
-        when(songMapper.toDto(song)).thenReturn(dto);
 
         assertEquals("h", service.getSongByFileHash("h").getFileHash());
     }
@@ -256,12 +246,10 @@ class SongServiceTest {
         when(songRepository.save(any())).thenReturn(newSong);
         when(songChunkRepository.existsBySongAndOrderIndex(any(), anyInt())).thenReturn(false);
         when(chunkRepository.findByContentHash(any())).thenReturn(Optional.empty());
-        when(negotiationMapper.toNegotiationResponseDto(eq("new-hash"), any())).thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 
         verify(songRepository).save(any());
-        verify(negotiationMapper).toNegotiationResponseDto(eq("new-hash"), eq(List.of(0, 1)));
     }
 
     @Test
@@ -282,12 +270,10 @@ class SongServiceTest {
                 .size(100).storagePath("/tmp/chunk").build();
         when(chunkRepository.findByContentHash("existing-chunk-hash")).thenReturn(Optional.of(existingChunk));
         when(chunkRepository.findByContentHash("new-chunk-hash")).thenReturn(Optional.empty());
-        when(negotiationMapper.toNegotiationResponseDto(eq("fh"), any())).thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 
         // only index 1 should be missing (index 0 deduped)
-        verify(negotiationMapper).toNegotiationResponseDto(eq("fh"), eq(List.of(1)));
         verify(songChunkRepository).saveAll(argThat(list ->
                 ((List<?>) list).size() == 1)); // 1 deduped link saved
     }
@@ -310,7 +296,6 @@ class SongServiceTest {
         when(songRepository.save(any())).thenReturn(song);
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(false);
         when(chunkRepository.findByContentHash("chunk-hash")).thenReturn(Optional.empty());
-        when(negotiationMapper.toNegotiationResponseDto(eq("fh-reuse"), any())).thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 
@@ -329,12 +314,10 @@ class SongServiceTest {
 
         Song song = Song.builder().id(4L).name("Song").fileHash("fh-empty").songType(ContentType.USER_UPLOAD).build();
         when(songRepository.findByFileHash("fh-empty")).thenReturn(Optional.of(song));
-        when(negotiationMapper.toNegotiationResponseDto(eq("fh-empty"), eq(List.of()))).thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 
         verify(songChunkRepository, never()).saveAll(any());
-        verify(negotiationMapper).toNegotiationResponseDto(eq("fh-empty"), eq(List.of()));
     }
 
     @Test
@@ -350,8 +333,6 @@ class SongServiceTest {
                 .songType(ContentType.USER_UPLOAD).build();
         when(songRepository.findByFileHash("fh2")).thenReturn(Optional.of(song));
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(true); // already linked
-        when(negotiationMapper.toNegotiationResponseDto(eq("fh2"), eq(List.of())))
-                .thenReturn(new NegotiationResponseDto());
 
         service.initiateNegotiation(req, 1L);
 

@@ -17,10 +17,10 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
 
     @Query(
             value = """
-                    SELECT  a.hash,
-                            a.name,
-                            main_artist.hash,
-                            main_artist.name,
+                    SELECT  a.hash as hash,
+                            a.name as name,
+                            main_artist.hash as artisthash,
+                            main_artist.name as artistname,
                             STRING_AGG(s.file_hash, ',' ORDER BY s.disc_number, s.track_number) AS songfilehashescsv
                     FROM music_library.albums a
                     LEFT JOIN LATERAL (
@@ -43,6 +43,7 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
                              AND LOWER(ar2.name) LIKE LOWER(CONCAT('%', :query, '%'))
                        )
                     GROUP BY a.id, a.hash, a.name, main_artist.hash, main_artist.name
+                    ORDER BY a.name
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT a.id)
