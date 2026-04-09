@@ -4,6 +4,7 @@ import com.example.musicplayerbackend.data.projection.AlbumListProjection;
 import com.example.musicplayerbackend.domain.Album;
 import com.example.musicplayerbackend.domain.AlbumDto;
 import com.example.musicplayerbackend.domain.AlbumExpandedDto;
+import com.example.musicplayerbackend.domain.Artist;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +25,14 @@ class AlbumMapperTest {
 
     @Test
     void shouldMapAllFieldsToDto() {
+        Artist artistA = Artist.builder().hash("a-hash").name("A Artist").build();
+        Artist artistB = Artist.builder().hash("b-hash").name("B Artist").build();
         Album album = Album.builder()
                 .id(1L)
                 .hash("album-hash")
                 .name("Abbey Road")
                 .coverImage("base64data")
+                .artists(java.util.Set.of(artistB, artistA))
                 .build();
 
         AlbumDto dto = albumMapper.toDto(album);
@@ -65,19 +69,16 @@ class AlbumMapperTest {
     }
 
     @Test
-    void shouldMapProjectionToExpandedDtoWithArtist() {
+    void shouldMapProjectionToExpandedDtoWithoutArtists() {
         AlbumListProjection projection = mock(AlbumListProjection.class);
         when(projection.getHash()).thenReturn("album-hash");
         when(projection.getName()).thenReturn("Album Name");
-        when(projection.getArtistHash()).thenReturn("artist-hash");
-        when(projection.getArtistName()).thenReturn("Artist Name");
 
         AlbumExpandedDto dto = albumMapper.toExpandedDto(projection);
 
         assertEquals("album-hash", dto.getHash());
         assertEquals("Album Name", dto.getName());
-        assertEquals("artist-hash", dto.getArtist().getHash());
-        assertEquals("Artist Name", dto.getArtist().getName());
+        assertNull(dto.getArtist());
     }
 
     @Test

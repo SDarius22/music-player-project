@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -103,6 +104,7 @@ class AlbumServiceTest {
     void shouldKeepMappedArtistWhenSplittingHashes() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn("h1,h2");
+        when(proj.getArtistJson()).thenReturn("{\"hash\":\"artist-hash\",\"name\":\"Artist Name\"}");
 
         ArtistDto artistDto = new ArtistDto();
         artistDto.setHash("artist-hash");
@@ -169,6 +171,7 @@ class AlbumServiceTest {
     void shouldSplitCsvHashesFromProjection() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn("hash1,hash2,hash3");
+        when(proj.getArtistJson()).thenReturn(null);
         AlbumExpandedDto listDto = new AlbumExpandedDto();
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
@@ -182,6 +185,7 @@ class AlbumServiceTest {
     void shouldReturnEmptyHashesWhenProjectionCsvIsNull() {
         AlbumListProjection proj = mock(AlbumListProjection.class);
         when(proj.getSongFileHashesCsv()).thenReturn(null);
+        when(proj.getArtistJson()).thenReturn(null);
         AlbumExpandedDto listDto = new AlbumExpandedDto();
         when(albumRepository.findAllWithHashes(eq(""), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(albumMapper.toExpandedDto(proj)).thenReturn(listDto);
@@ -194,13 +198,13 @@ class AlbumServiceTest {
     // ── getAlbumByHash ───────────────────────────────────────────────────────
 
     @Test
-    void shouldReturnNullArtistDtoWhenAlbumArtistIsNull() {
-        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").artist(null).build();
+    void shouldReturnEmptyArtistsWhenAlbumHasNoArtists() {
+        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").artists(Set.of()).build();
         when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
         AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
 
-        assertNull(result.getArtist());
+        assertTrue(result.getArtists().isEmpty());
     }
 
     @Test
@@ -223,16 +227,17 @@ class AlbumServiceTest {
     }
 
     @Test
-    void shouldMapArtistWhenAlbumArtistIsPresent() {
-        Artist artist = Artist.builder().id(5L).hash("mj-hash").name("MJ").build();
-        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").artist(artist).build();
+    void shouldMapArtistsWhenAlbumArtistsArePresent() {
+        Artist artistA = Artist.builder().id(5L).hash("mj-hash").name("MJ").build();
+        Artist artistB = Artist.builder().id(6L).hash("guest-hash").name("Guest").build();
+        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").artists(Set.of(artistA, artistB)).build();
         when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
         AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
 
-        assertNotNull(result.getArtist());
-        assertEquals("mj-hash", result.getArtist().getHash());
-        assertEquals("MJ", result.getArtist().getName());
+        assertEquals(2, result.getArtists().size());
+        assertEquals("guest-hash", result.getArtists().getFirst().getHash());
+        assertEquals("Guest", result.getArtists().getFirst().getName());
     }
 
     @Test

@@ -292,7 +292,7 @@ void main() {
             discNumber: 1,
             releaseYear: 2024,
             artist: ArtistDto(hash: 'ar', name: 'Artist'),
-            album: AlbumDto(hash: 'al', name: 'Album'),
+            album: AlbumDto(hash: 'al', name: 'Album', artists: const []),
           ),
         ],
         hasCover: false,

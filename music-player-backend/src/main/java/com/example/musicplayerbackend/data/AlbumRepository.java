@@ -17,25 +17,44 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
 
     @Query(
             value = """
-                    SELECT a.hash,
-                           a.name,
-                           ar.hash           AS artisthash,
-                           ar.name           AS artistname,
-                           STRING_AGG(s.file_hash, ',' ORDER BY s.disc_number, s.track_number)
-                               FILTER (WHERE s.file_hash IS NOT NULL AND s.file_hash <> '') AS songfilehashescsv
+                    SELECT  a.hash,
+                            a.name,
+                            main_artist.hash,
+                            main_artist.name,
+                            STRING_AGG(s.file_hash, ',' ORDER BY s.disc_number, s.track_number) AS songfilehashescsv
                     FROM music_library.albums a
-                    LEFT JOIN music_library.artists ar ON ar.id = a.artist_id
+                    LEFT JOIN LATERAL (
+                        SELECT ar.hash, ar.name
+                        FROM music_library.album_artists aa
+                        JOIN music_library.artists ar ON ar.id = aa.artist_id
+                        LEFT JOIN music_library.songs s_artist ON s_artist.album_id = a.id AND s_artist.artist_id = ar.id
+                        WHERE aa.album_id = a.id
+                        GROUP BY ar.id, ar.hash, ar.name
+                        ORDER BY COUNT(s_artist.id) DESC, MIN(s_artist.id) NULLS LAST, ar.id
+                        LIMIT 1
+                        ) main_artist ON true
                     LEFT JOIN music_library.songs s ON s.album_id = a.id
                     WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :query, '%'))
-                       OR LOWER(ar.name) LIKE LOWER(CONCAT('%', :query, '%'))
-                    GROUP BY a.id, a.hash, a.name, ar.id, ar.hash, ar.name
+                       OR EXISTS (
+                           SELECT 1
+                           FROM music_library.album_artists aa2
+                           JOIN music_library.artists ar2 ON ar2.id = aa2.artist_id
+                           WHERE aa2.album_id = a.id
+                             AND LOWER(ar2.name) LIKE LOWER(CONCAT('%', :query, '%'))
+                       )
+                    GROUP BY a.id, a.hash, a.name, main_artist.hash, main_artist.name
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT a.id)
                     FROM music_library.albums a
-                    LEFT JOIN music_library.artists ar ON ar.id = a.artist_id
                     WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :query, '%'))
-                       OR LOWER(ar.name) LIKE LOWER(CONCAT('%', :query, '%'))
+                       OR EXISTS (
+                           SELECT 1
+                           FROM music_library.album_artists aa
+                           JOIN music_library.artists ar ON ar.id = aa.artist_id
+                           WHERE aa.album_id = a.id
+                             AND LOWER(ar.name) LIKE LOWER(CONCAT('%', :query, '%'))
+                       )
                     """,
             nativeQuery = true
     )

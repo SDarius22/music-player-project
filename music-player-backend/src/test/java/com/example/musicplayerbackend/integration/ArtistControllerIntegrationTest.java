@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Base64;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -40,7 +41,7 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
                 .build());
         album = albumRepository.save(Album.builder()
                 .name("Test Album")
-                .artist(artist)
+                .artists(Set.of(artist))
                 .coverImage(Base64.getEncoder().encodeToString("img".getBytes()))
                 .build());
         songRepository.save(Song.builder()

@@ -6,8 +6,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
-import com.example.musicplayerbackend.mapper.ArtistMapper;
-import com.example.musicplayerbackend.mapper.AlbumMapper;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -24,8 +22,6 @@ public interface SongMapper {
     @Mapping(target = "album", source = "album")
     @Mapping(target = "year", source = "releaseYear")
     SongDto toDto(Song song);
-
-    Song toEntity(SongDto songDto);
 
     default OffsetDateTime map(Instant value) {
         if (value == null) {

@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_expanded_dto.dart';
+import 'package:music_player_frontend/core/dtos/artists/artist_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
@@ -94,9 +95,10 @@ class AlbumService {
   }
 
   Album cacheServerAlbum(AlbumExpandedDto serverAlbum) {
+    final primaryArtist = _pickPrimaryArtist(serverAlbum.hash, serverAlbum.artists);
     var cachedArtist = _artistRepository.getOrCreateArtist(
-      serverAlbum.artist.hash,
-      serverAlbum.artist.name,
+      primaryArtist.hash,
+      primaryArtist.name,
     );
 
     var cachedAlbum = _albumRepository.getOrCreateAlbum(
@@ -122,9 +124,10 @@ class AlbumService {
   }
 
   Album cacheServerAlbumDetail(AlbumDetailDto serverAlbum) {
+    final primaryArtist = _pickPrimaryArtist(serverAlbum.hash, serverAlbum.artists);
     var cachedArtist = _artistRepository.getOrCreateArtist(
-      serverAlbum.artist.hash,
-      serverAlbum.artist.name,
+      primaryArtist.hash,
+      primaryArtist.name,
     );
 
     var cachedAlbum = _albumRepository.getOrCreateAlbum(
@@ -159,5 +162,12 @@ class AlbumService {
       'name' => 'name',
       _ => 'name',
     };
+  }
+
+  ArtistDto _pickPrimaryArtist(String albumHash, List<ArtistDto> artists) {
+    if (artists.isNotEmpty) {
+      return artists.first;
+    }
+    return ArtistDto(hash: 'unknown-$albumHash', name: 'Unknown Artist');
   }
 }

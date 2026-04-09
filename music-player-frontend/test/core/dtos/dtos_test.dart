@@ -15,7 +15,9 @@ void main() {
             'hash': 'album-hash',
             'name': 'Album One',
             'songFileHashes': ['s1'],
-            'artist': {'hash': 'artist-hash', 'name': 'Artist One'},
+            'artists': [
+              {'hash': 'artist-hash', 'name': 'Artist One'},
+            ],
           },
         ],
         'page': 0,
@@ -25,7 +27,7 @@ void main() {
       });
 
       expect(dto.content.single.hash, 'album-hash');
-      expect(dto.content.single.artist.hash, 'artist-hash');
+      expect(dto.content.single.artists.single.hash, 'artist-hash');
       expect(dto.totalElements, 1);
     });
 

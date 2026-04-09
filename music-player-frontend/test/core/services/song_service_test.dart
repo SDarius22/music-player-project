@@ -45,7 +45,7 @@ void main() {
       discNumber: 1,
       releaseYear: 2024,
       artist: ArtistDto(hash: 'artist-h', name: 'Artist'),
-      album: AlbumDto(hash: 'album-h', name: 'Album'),
+      album: AlbumDto(hash: 'album-h', name: 'Album', artists: const []),
     );
   }
 

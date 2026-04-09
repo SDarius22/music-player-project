@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.UUID;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,7 +38,7 @@ class SongRepositoryTest extends BaseRepositoryTest {
     @BeforeEach
     void setUp() {
         artist = artistRepository.save(Artist.builder().name("Queen").build());
-        album  = albumRepository.save(Album.builder().name("A Kind of Magic").artist(artist).build());
+        album  = albumRepository.save(Album.builder().name("A Kind of Magic").artists(Set.of(artist)).build());
         user   = userRepository.save(buildUser("songs@example.com"));
     }
 

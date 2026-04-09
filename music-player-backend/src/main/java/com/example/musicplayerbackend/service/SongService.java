@@ -80,7 +80,7 @@ public class SongService {
         }
 
         var artistHash = EntityHashHelper.artistHash(artistName);
-        var albumHash = EntityHashHelper.albumHash(artistName, albumName);
+        var albumHash = EntityHashHelper.albumHash(albumName);
 
         Artist artist = artistRepository.findByHash(artistHash)
                 .orElseGet(() -> artistRepository.save(
@@ -96,9 +96,15 @@ public class SongService {
                                 .hash(albumHash)
                                 .name(albumName)
                                 .coverImage(photo)
-                                .artist(artist)
                                 .albumType(ContentType.STREAMABLE)
                                 .build()));
+
+        boolean artistAlreadyLinked = album.getArtists().stream()
+                .anyMatch(existing -> existing.getId().equals(artist.getId()));
+        if (!artistAlreadyLinked) {
+            album.getArtists().add(artist);
+            album = albumRepository.save(album);
+        }
 
         Song song = Song.builder()
                 .name(name)
@@ -130,7 +136,7 @@ public class SongService {
         } else {
 
             var artistHash = EntityHashHelper.artistHash(request.getArtistName());
-            var albumHash = EntityHashHelper.albumHash(request.getArtistName(), request.getAlbumName());
+            var albumHash = EntityHashHelper.albumHash(request.getAlbumName());
 
 
             Artist artist = artistRepository.findByHash(artistHash)
@@ -146,9 +152,15 @@ public class SongService {
                             Album.builder()
                                     .hash(albumHash)
                                     .name(request.getAlbumName())
-                                    .artist(artist)
                                     .albumType(ContentType.USER_UPLOAD)
                                     .ownerId(userId).build()));
+
+            boolean artistAlreadyLinked = album.getArtists().stream()
+                    .anyMatch(existing -> existing.getId().equals(artist.getId()));
+            if (!artistAlreadyLinked) {
+                album.getArtists().add(artist);
+                album = albumRepository.save(album);
+            }
 
             song = songRepository.save(Song.builder()
                     .name(request.getName())

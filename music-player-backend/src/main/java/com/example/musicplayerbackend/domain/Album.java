@@ -4,11 +4,13 @@ import com.example.musicplayerbackend.helpers.EntityHashHelper;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "albums", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"name", "artist_id"})
+        @UniqueConstraint(columnNames = {"name"})
 })
 @Getter
 @Setter
@@ -35,9 +37,14 @@ public class Album {
     private Long ownerId; // null for streamable albums, user ID for user-uploaded albums
     private String coverImage; // base64 encoded image
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "artist_id")
-    private Artist artist;
+    @Builder.Default
+    @ManyToMany
+    @JoinTable(
+            name = "album_artists",
+            joinColumns = @JoinColumn(name = "album_id"),
+            inverseJoinColumns = @JoinColumn(name = "artist_id")
+    )
+    private Set<Artist> artists = new HashSet<>();
 
     @OneToMany(mappedBy = "album")
     private List<Song> songs;
@@ -46,7 +53,7 @@ public class Album {
     @PreUpdate
     void ensureHash() {
         if (hash == null || hash.isBlank()) {
-            hash = EntityHashHelper.albumHash(artist != null ? artist.getName() : null, name);
+            hash = EntityHashHelper.albumHash(name);
         }
     }
 }

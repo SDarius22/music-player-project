@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -89,9 +90,9 @@ class SongServiceTest {
         }
     }
 
-    private String albumHash(String artistName, String albumName) {
+    private String albumHash(String albumName) {
         try {
-            return sha256Hex((artistName + " - " + albumName).getBytes());
+            return sha256Hex(albumName.getBytes());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -173,7 +174,7 @@ class SongServiceTest {
         when(songRepository.findByFileHash(hash)).thenReturn(Optional.empty());
         when(artistRepository.findByHash(artistHash("Artist"))).thenReturn(Optional.empty());
         when(artistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(albumRepository.findByHash(albumHash("Artist", "Album"))).thenReturn(Optional.empty());
+        when(albumRepository.findByHash(albumHash("Album"))).thenReturn(Optional.empty());
         when(albumRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         Song savedSong = Song.builder().id(10L).name("New Song").songType(ContentType.STREAMABLE)
                 .fileHash(hash).build();
@@ -196,8 +197,8 @@ class SongServiceTest {
         when(songRepository.findByFileHash(hash)).thenReturn(Optional.empty());
         Artist existingArtist = Artist.builder().id(1L).hash(artistHash("Artist")).name("Artist").build();
         when(artistRepository.findByHash(artistHash("Artist"))).thenReturn(Optional.of(existingArtist));
-        Album existingAlbum = Album.builder().id(1L).hash(albumHash("Artist", "Album")).name("Album").build();
-        when(albumRepository.findByHash(albumHash("Artist", "Album"))).thenReturn(Optional.of(existingAlbum));
+        Album existingAlbum = Album.builder().id(1L).hash(albumHash("Album")).name("Album").artists(Set.of(existingArtist)).build();
+        when(albumRepository.findByHash(albumHash("Album"))).thenReturn(Optional.of(existingAlbum));
         Song savedSong = Song.builder().id(10L).name("New").songType(ContentType.STREAMABLE).fileHash(hash).build();
         when(songRepository.save(any())).thenReturn(savedSong);
         when(chunkRepository.findByContentHash(any())).thenReturn(Optional.empty());
@@ -248,7 +249,7 @@ class SongServiceTest {
         when(songRepository.findByFileHash("new-hash")).thenReturn(Optional.empty());
         when(artistRepository.findByHash(artistHash("Artist"))).thenReturn(Optional.empty());
         when(artistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(albumRepository.findByHash(albumHash("Artist", "Album"))).thenReturn(Optional.empty());
+        when(albumRepository.findByHash(albumHash("Album"))).thenReturn(Optional.empty());
         when(albumRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         Song newSong = Song.builder().id(5L).name("Upload Song").songType(ContentType.USER_UPLOAD)
                 .fileHash("new-hash").build();
@@ -303,8 +304,8 @@ class SongServiceTest {
         when(songRepository.findByFileHash("fh-reuse")).thenReturn(Optional.empty());
         Artist existingArtist = Artist.builder().id(1L).hash(artistHash("ExistingArtist")).name("ExistingArtist").build();
         when(artistRepository.findByHash(artistHash("ExistingArtist"))).thenReturn(Optional.of(existingArtist));
-        Album existingAlbum = Album.builder().id(1L).hash(albumHash("ExistingArtist", "ExistingAlbum")).name("ExistingAlbum").build();
-        when(albumRepository.findByHash(albumHash("ExistingArtist", "ExistingAlbum"))).thenReturn(Optional.of(existingAlbum));
+        Album existingAlbum = Album.builder().id(1L).hash(albumHash("ExistingAlbum")).name("ExistingAlbum").artists(Set.of(existingArtist)).build();
+        when(albumRepository.findByHash(albumHash("ExistingAlbum"))).thenReturn(Optional.of(existingAlbum));
         Song song = Song.builder().id(3L).name("Song").fileHash("fh-reuse").songType(ContentType.USER_UPLOAD).build();
         when(songRepository.save(any())).thenReturn(song);
         when(songChunkRepository.existsBySongAndOrderIndex(song, 0)).thenReturn(false);

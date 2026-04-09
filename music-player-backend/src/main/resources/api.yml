@@ -985,8 +985,6 @@ components:
           type: string
         name:
           type: string
-        artist:
-          $ref: '#/components/schemas/ArtistDto'
 
     AlbumDetailDto:
       type: object
@@ -999,8 +997,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SongDto'
-        artist:
-          $ref: '#/components/schemas/ArtistDto'
+        artists:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtistDto'
 
     AlbumExpandedDto:
       type: object

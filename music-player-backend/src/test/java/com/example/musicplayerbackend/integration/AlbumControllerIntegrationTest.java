@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Base64;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -35,7 +36,7 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
         Artist artist = artistRepository.save(Artist.builder().name("Test Artist").build());
         album = albumRepository.save(Album.builder()
                 .name("Test Album")
-                .artist(artist)
+                .artists(Set.of(artist))
                 .coverImage(Base64.getEncoder().encodeToString("img".getBytes()))
                 .build());
     }
@@ -112,6 +113,6 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturnArtistWhenPresentOnAlbum() throws Exception {
         mockMvc.perform(get("/api/v1/albums/{hash}", album.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.artist.name").value("Test Artist"));
+                .andExpect(jsonPath("$.artists[0].name").value("Test Artist"));
     }
 }

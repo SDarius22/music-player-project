@@ -14,8 +14,8 @@ public final class EntityHashHelper {
         return sha256Hex(normalize(artistName));
     }
 
-    public static String albumHash(String artistName, String albumName) {
-        return sha256Hex(normalize(artistName) + " - " + normalize(albumName));
+    public static String albumHash(String albumName) {
+        return sha256Hex(normalize(albumName));
     }
 
     private static String sha256Hex(String value) {

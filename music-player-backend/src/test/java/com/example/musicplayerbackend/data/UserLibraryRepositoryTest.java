@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +41,7 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
     void setUp() {
         user = userRepository.save(buildUser("library@example.com"));
         Artist artist = artistRepository.save(Artist.builder().name("Artist").build());
-        Album album = albumRepository.save(Album.builder().name("Album").artist(artist).build());
+        Album album = albumRepository.save(Album.builder().name("Album").artists(Set.of(artist)).build());
 
         song1 = songRepository.save(Song.builder().name("Song 1").artist(artist).album(album)
                 .songType(ContentType.STREAMABLE).fileHash(UUID.randomUUID().toString()).build());

@@ -3,12 +3,16 @@ package com.example.musicplayerbackend.data;
 import com.example.musicplayerbackend.data.projection.AlbumListProjection;
 import com.example.musicplayerbackend.domain.Album;
 import com.example.musicplayerbackend.domain.Artist;
+import com.example.musicplayerbackend.domain.ContentType;
+import com.example.musicplayerbackend.domain.Song;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,6 +24,9 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
     @Autowired
     ArtistRepository artistRepository;
 
+    @Autowired
+    SongRepository songRepository;
+
     private Artist artist;
 
     @BeforeEach
@@ -29,12 +36,13 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
 
     @AfterEach
     void tearDown() {
+        songRepository.deleteAll();
         albumRepository.deleteAll();
         artistRepository.deleteAll();
     }
 
     private Album buildAlbum(String name) {
-        return Album.builder().name(name).hash("album-" + name).artist(artist).build();
+        return Album.builder().name(name).hash("album-" + name).artists(Set.of(artist)).build();
     }
 
     @Test
@@ -90,7 +98,7 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    void shouldReturnAlbumProjectionWithHashAndArtistFields() {
+    void shouldReturnAlbumProjectionWithHashAndArtistJson() {
         Album album = albumRepository.save(buildAlbum("The Wall"));
 
         Page<AlbumListProjection> result = albumRepository.findAllWithHashes("The Wall", PageRequest.of(0, 10));
@@ -98,8 +106,31 @@ class AlbumRepositoryTest extends BaseRepositoryTest {
         assertThat(result.getContent()).hasSize(1);
         AlbumListProjection projection = result.getContent().getFirst();
         assertThat(projection.getHash()).isEqualTo(album.getHash());
-        assertThat(projection.getArtistHash()).isEqualTo(artist.getHash());
-        assertThat(projection.getArtistName()).isEqualTo(artist.getName());
+        assertThat(projection.getArtistJson()).contains("\"hash\":\"artist-hash\"");
+        assertThat(projection.getArtistJson()).contains("\"name\":\"Test Artist\"");
+    }
+
+    @Test
+    void shouldSelectMainArtistByMostSongsWithinAlbum() {
+        Artist mainArtist = artistRepository.save(Artist.builder().name("Main Artist").hash("main-hash").build());
+        Artist featuredArtist = artistRepository.save(Artist.builder().name("Featured Artist").hash("featured-hash").build());
+        Album album = albumRepository.save(Album.builder()
+                .name("Ranked Album")
+                .hash("album-ranked")
+                .artists(Set.of(mainArtist, featuredArtist))
+                .build());
+
+        songRepository.save(Song.builder().name("Track 1").fileHash("main-track-1").songType(ContentType.STREAMABLE)
+                .artist(mainArtist).album(album).discNumber(1).trackNumber(1).build());
+        songRepository.save(Song.builder().name("Track 2").fileHash("main-track-2").songType(ContentType.STREAMABLE)
+                .artist(mainArtist).album(album).discNumber(1).trackNumber(2).build());
+        songRepository.save(Song.builder().name("Track 3").fileHash("featured-track-1").songType(ContentType.STREAMABLE)
+                .artist(featuredArtist).album(album).discNumber(1).trackNumber(3).build());
+
+        Page<AlbumListProjection> result = albumRepository.findAllWithHashes("Ranked Album", PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst().getArtistJson()).contains("\"hash\":\"main-hash\"");
     }
 
     @Test

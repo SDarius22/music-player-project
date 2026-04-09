@@ -70,7 +70,7 @@ void main() {
         hash: 'album-hash',
         name: 'Album',
         songFileHashes: ['s1', 's2'],
-        artist: ArtistDto(hash: 'artist-hash', name: 'Artist'),
+        artists: [ArtistDto(hash: 'artist-hash', name: 'Artist')],
       );
       final cachedArtist = Artist('artist-hash', 'Artist')..id = 10;
       final cachedAlbum = Album('album-hash', 'Album')..id = 20;
@@ -109,7 +109,7 @@ void main() {
             hash: 'album-hash',
             name: 'Album',
             songFileHashes: const [],
-            artist: ArtistDto(hash: 'artist-hash', name: 'Artist'),
+            artists: [ArtistDto(hash: 'artist-hash', name: 'Artist')],
           ),
         ],
         page: 0,

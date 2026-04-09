@@ -5,13 +5,13 @@ class AlbumDetailDto {
   final String hash;
   final String name;
   final List<SongDto> songs;
-  final ArtistDto artist;
+  final List<ArtistDto> artists;
 
   AlbumDetailDto({
     required this.hash,
     required this.name,
     required this.songs,
-    required this.artist,
+    required this.artists,
   });
 
   factory AlbumDetailDto.fromJson(Map<String, dynamic> json) {
@@ -22,7 +22,10 @@ class AlbumDetailDto {
           (json['songs'] as List<dynamic>)
               .map((e) => SongDto.fromJson(e as Map<String, dynamic>))
               .toList(),
-      artist: ArtistDto.fromJson(json['artist'] as Map<String, dynamic>),
+      artists:
+          (json['artists'] as List<dynamic>? ?? const <dynamic>[])
+              .map((e) => ArtistDto.fromJson(e as Map<String, dynamic>))
+              .toList(),
     );
   }
 }

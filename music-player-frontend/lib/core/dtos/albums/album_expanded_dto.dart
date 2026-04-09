@@ -4,13 +4,13 @@ class AlbumExpandedDto {
   final String hash;
   final String name;
   final List<String> songFileHashes;
-  final ArtistDto artist;
+  final List<ArtistDto> artists;
 
   AlbumExpandedDto({
     required this.hash,
     required this.name,
     required this.songFileHashes,
-    required this.artist,
+    required this.artists,
   });
 
   factory AlbumExpandedDto.fromJson(Map<String, dynamic> json) {
@@ -19,7 +19,10 @@ class AlbumExpandedDto {
       hash: json['hash'] as String,
       name: json['name'] as String,
       songFileHashes: raw.map((e) => e as String).toList(),
-      artist: ArtistDto.fromJson(json['artist'] as Map<String, dynamic>),
+      artists:
+          (json['artists'] as List<dynamic>? ?? const <dynamic>[])
+              .map((e) => ArtistDto.fromJson(e as Map<String, dynamic>))
+              .toList(),
     );
   }
 }

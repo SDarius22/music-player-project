@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +35,7 @@ class SongChunkRepositoryTest extends BaseRepositoryTest {
     @BeforeEach
     void setUp() {
         Artist artist = artistRepository.save(Artist.builder().name("Artist").build());
-        Album album = albumRepository.save(Album.builder().name("Album").artist(artist).build());
+        Album album = albumRepository.save(Album.builder().name("Album").artists(Set.of(artist)).build());
 
         songA = songRepository.save(Song.builder()
                 .name("Song A").artist(artist).album(album)

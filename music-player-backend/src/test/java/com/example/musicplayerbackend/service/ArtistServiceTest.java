@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -179,7 +180,7 @@ class ArtistServiceTest {
 
     @Test
     void shouldThrow404WhenArtistCoverHasNoAlbums() {
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(List.of()).build();
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of()).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
         assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash"));
     }
@@ -187,7 +188,7 @@ class ArtistServiceTest {
     @Test
     void shouldThrow404WhenAllArtistAlbumsHaveNoImage() {
         Album album = Album.builder().id(1L).name("No Cover").coverImage(null).build();
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(List.of(album)).build();
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of(album)).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
         assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash"));
     }
@@ -199,7 +200,7 @@ class ArtistServiceTest {
         Album album2 = Album.builder().id(2L)
                 .coverImage(Base64.getEncoder().encodeToString(img)).build();
         Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist")
-                .albums(List.of(album1, album2)).build();
+                .albums(Set.of(album1, album2)).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
 
         assertArrayEquals(img, service.getArtistCover("artist-hash"));
@@ -214,7 +215,7 @@ class ArtistServiceTest {
     @Test
     void shouldThrow404WhenAllArtistAlbumsHaveBlankImage() {
         Album album = Album.builder().id(1L).name("Album").coverImage("   ").build();
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(List.of(album)).build();
+        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of(album)).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> service.getArtistCover("artist-hash"));

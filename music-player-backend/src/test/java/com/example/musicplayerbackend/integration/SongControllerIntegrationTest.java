@@ -16,6 +16,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -50,7 +51,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
         adminUser = userRepository.save(buildUser("song-admin@example.com", Role.ADMIN));
 
         Artist artist = artistRepository.save(Artist.builder().name("Test Artist").build());
-        Album album = albumRepository.save(Album.builder().name("Test Album").build());
+        Album album = albumRepository.save(Album.builder().name("Test Album").artists(Set.of(artist)).build());
 
         publicSong = songRepository.save(Song.builder()
                 .name("Public Song")
@@ -69,6 +70,7 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
 
         albumWithCover = albumRepository.save(Album.builder()
                 .name("Cover Album")
+                .artists(Set.of(artist))
                 .coverImage(Base64.getEncoder().encodeToString("img".getBytes()))
                 .build());
         songWithCover = songRepository.save(Song.builder()
