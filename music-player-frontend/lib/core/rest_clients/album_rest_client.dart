@@ -56,12 +56,13 @@ class AlbumRestClient extends AbstractRestClient {
     try {
       final response = await get('/albums/$albumHash');
       if (response.statusCode == 200) {
+        debugPrint('Album detail response: ${response.body}');
         return AlbumDetailDto.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       }
     } catch (e) {
-      debugPrint('Error fetching album: $e');
+      debugPrint('Error fetching album by hash: $e');
     }
     return null;
   }

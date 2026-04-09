@@ -1,5 +1,6 @@
 import 'package:duration/duration.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
@@ -32,8 +33,10 @@ class TrackScreen extends EntityScreen {
   }
 
   @override
-  Widget buildBody(BuildContext context, double width, double height) {
+  Widget buildBody(BuildContext context, BaseEntity entity) {
     var song = entity as Song;
+    var width = MediaQuery.of(context).size.width;
+    var height = MediaQuery.of(context).size.height;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -359,5 +362,11 @@ class TrackScreen extends EntityScreen {
         ),
       ],
     );
+  }
+
+  @override
+  Future<BaseEntity> loadEntityData(BuildContext context) {
+    final entity = this.entity as Song;
+    return Future.value(entity); // TODO
   }
 }

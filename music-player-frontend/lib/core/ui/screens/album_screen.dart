@@ -1,5 +1,6 @@
 import 'package:duration/duration.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -26,14 +27,33 @@ class AlbumScreen extends EntityScreen {
   const AlbumScreen({super.key, required super.entity});
 
   @override
-  Future<void> loadEntityData(BuildContext context) async {
+  Future<BaseEntity> loadEntityData(BuildContext context) async {
     final album = entity as Album;
-    await context.read<AlbumProvider>().fetchAlbumDetails(album.getHash());
+    try {
+      var fetchedAlbum = await context.read<AlbumProvider>().fetchAlbumDetails(
+            album.getHash(),
+          );
+      fetchedAlbum!.songs.sort((a, b) {
+        final discComparison = a.discNumber.compareTo(b.discNumber);
+        if (discComparison != 0) return discComparison;
+
+        final trackComparison = a.trackNumber.compareTo(b.trackNumber);
+        if (trackComparison != 0) return trackComparison;
+
+        return a.name.compareTo(b.name);
+      });
+      return fetchedAlbum;
+    } catch (e) {
+      debugPrint("Error loading album details: $e");
+      return album;
+    }
   }
 
   @override
-  Widget buildBody(BuildContext context, double width, double height) {
-    var album = entity as Album;
+  Widget buildBody(BuildContext context, BaseEntity entity) {
+    final album = entity as Album;
+    var width = MediaQuery.of(context).size.width;
+    var height = MediaQuery.of(context).size.height;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

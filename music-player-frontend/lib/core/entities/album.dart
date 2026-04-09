@@ -33,18 +33,10 @@ class Album implements BaseEntity {
   Album(this.hash, this.name);
 
   void addSong(Song song) {
-    int index = songs.indexWhere((s) {
-      if (s.discNumber != song.discNumber) {
-        return s.discNumber > song.discNumber;
-      }
-      return s.trackNumber > song.trackNumber;
-    });
-    if (index == -1) {
+    if (!songs.contains(song)) {
       songs.add(song);
-    } else {
-      songs.insert(index, song);
+      duration += song.durationInSeconds;
     }
-    duration += song.durationInSeconds;
   }
 
   List<Song> getSongs() {

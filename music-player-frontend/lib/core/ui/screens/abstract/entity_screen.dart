@@ -26,7 +26,10 @@ abstract class EntityScreen extends StatelessWidget {
                 child: Text("Error loading data: ${snapshot.error}"),
               );
             } else {
-              return buildBody(context, width, height);
+              return buildBody(
+                context,
+                snapshot.hasData ? snapshot.data! : entity,
+              );
             }
           },
         ),
@@ -45,9 +48,7 @@ abstract class EntityScreen extends StatelessWidget {
     return EdgeInsets.zero;
   }
 
-  Widget buildBody(BuildContext context, double width, double height);
+  Widget buildBody(BuildContext context, BaseEntity entity);
 
-  Future<void> loadEntityData(BuildContext context) async {
-    return;
-  }
+  Future<BaseEntity> loadEntityData(BuildContext context);
 }

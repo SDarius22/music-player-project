@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -33,8 +34,10 @@ class PlaylistScreen extends EntityScreen {
   }
 
   @override
-  Widget buildBody(BuildContext context, double width, double height) {
+  Widget buildBody(BuildContext context, BaseEntity entity) {
     final playlist = entity as Playlist;
+    var width = MediaQuery.of(context).size.width;
+    var height = MediaQuery.of(context).size.height;
     final List<Song> songs = playlist.getSongs();
 
     final ValueNotifier<bool> editMode = ValueNotifier<bool>(false);
@@ -641,5 +644,11 @@ class PlaylistScreen extends EntityScreen {
         ),
       ],
     );
+  }
+
+  @override
+  Future<BaseEntity> loadEntityData(BuildContext context) {
+    final playlist = entity as Playlist;
+    return Future.value(playlist); //TODO
   }
 }

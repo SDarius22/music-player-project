@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -25,14 +26,25 @@ class ArtistScreen extends EntityScreen {
   const ArtistScreen({super.key, required super.entity});
 
   @override
-  Future<void> loadEntityData(BuildContext context) async {
+  Future<BaseEntity> loadEntityData(BuildContext context) async {
     final artist = entity as Artist;
-    await context.read<ArtistProvider>().fetchArtistDetails(artist.hash);
+    try {
+      final fetchedArtist = await context
+          .read<ArtistProvider>()
+          .fetchArtistDetails(artist.hash);
+      fetchedArtist!.songs.sort((a, b) => a.name.compareTo(b.name));
+      return fetchedArtist;
+    } catch (e) {
+      debugPrint("Error fetching artist details: $e");
+      return artist;
+    }
   }
 
   @override
-  Widget buildBody(BuildContext context, double width, double height) {
+  Widget buildBody(BuildContext context, BaseEntity entity) {
     var artist = entity as Artist;
+    var width = MediaQuery.of(context).size.width;
+    var height = MediaQuery.of(context).size.height;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
