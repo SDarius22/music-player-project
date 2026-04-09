@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -1001,8 +1002,13 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
         final ProcessingState processingState = values[0] as ProcessingState;
         final bool isPlaying = values[1] as bool;
 
-        if (processingState == ProcessingState.loading ||
-            processingState == ProcessingState.buffering) {
+        final bool showBufferingIndicator =
+            processingState == ProcessingState.loading ||
+            (processingState == ProcessingState.buffering &&
+                // On web, just_audio may report buffering while playback is still advancing.
+                (!kIsWeb || !isPlaying));
+
+        if (showBufferingIndicator) {
           debugPrint(
             "Processing state is ${processingState == ProcessingState.loading ? "loading" : "buffering"}, showing progress indicator",
           );
