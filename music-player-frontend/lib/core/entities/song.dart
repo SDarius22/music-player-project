@@ -90,4 +90,9 @@ class Song implements BaseEntity {
     }
     return [];
   }
+
+  @override
+  String toString() {
+    return 'Song{id: $id, fileHash: $fileHash, name: $name, artist: ${artist.target?.name}, album: ${album.target?.name}}';
+  }
 }

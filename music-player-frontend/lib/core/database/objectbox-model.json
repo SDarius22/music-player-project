@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:5434110965985548662",
-      "lastPropertyId": "15:2682527400088150990",
+      "lastPropertyId": "17:5708510744567757844",
       "name": "Album",
       "properties": [
         {
@@ -35,6 +35,19 @@
           "id": "15:2682527400088150990",
           "name": "name",
           "type": 9
+        },
+        {
+          "id": "16:2704059834894349220",
+          "name": "duration",
+          "type": 6
+        },
+        {
+          "id": "17:5708510744567757844",
+          "name": "artistId",
+          "indexId": "29:9108164602987110845",
+          "type": 11,
+          "flags": 520,
+          "relationTarget": "Artist"
         }
       ],
       "relations": []
@@ -352,7 +365,7 @@
     }
   ],
   "lastEntityId": "13:9001332223065747901",
-  "lastIndexId": "28:4584941921594753216",
+  "lastIndexId": "29:9108164602987110845",
   "lastRelationId": "9:7632131054866366746",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_dto.dart';
 
 class AlbumExpandedDto {
@@ -16,7 +15,6 @@ class AlbumExpandedDto {
 
   factory AlbumExpandedDto.fromJson(Map<String, dynamic> json) {
     final List<dynamic> raw = (json['songFileHashes'] as List<dynamic>);
-    debugPrint('AlbumExpandedDto.fromJson: $json');
     return AlbumExpandedDto(
       hash: json['hash'] as String,
       name: json['name'] as String,

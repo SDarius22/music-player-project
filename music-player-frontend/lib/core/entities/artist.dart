@@ -22,7 +22,7 @@ class Artist implements BaseEntity {
   Uint8List? imageBytes;
 
   @Backlink('artist')
-  final _songs = ToMany<Song>();
+  final songs = ToMany<Song>();
 
   Artist(this.hash, this.name, {List<Song> songs = const []}) {
     for (var song in songs) {
@@ -31,11 +31,11 @@ class Artist implements BaseEntity {
   }
 
   void addSong(Song song) {
-    _songs.add(song);
+    songs.add(song);
   }
 
   List<Song> getSongs() {
-    return List.unmodifiable(_songs);
+    return List.unmodifiable(songs);
   }
 
   @override
@@ -50,10 +50,10 @@ class Artist implements BaseEntity {
 
   @override
   bool isLocal() {
-    if (_songs.isEmpty) {
+    if (songs.isEmpty) {
       return false;
     }
-    for (var song in _songs) {
+    for (var song in songs) {
       if (!song.isLocal()) {
         return false;
       }
@@ -66,7 +66,7 @@ class Artist implements BaseEntity {
     if (imageBytes != null) {
       return imageBytes;
     }
-    for (var song in _songs) {
+    for (var song in songs) {
       if (song.album.target != null && song.album.target!.imageBytes != null) {
         return song.album.target!.imageBytes;
       }
@@ -76,11 +76,11 @@ class Artist implements BaseEntity {
 
   @override
   String getImageUrl() {
-    return '/artists/$hash/image';
+    return '/artists/$hash/cover';
   }
 
   @override
   String toString() {
-    return "Artist{name: $name, hash: $hash, songs: ${_songs.length}}";
+    return "Artist{id: $id, hash: $hash, name: $name, songs: ${songs.length}}";
   }
 }

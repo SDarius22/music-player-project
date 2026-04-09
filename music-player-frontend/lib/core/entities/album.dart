@@ -18,7 +18,7 @@ class Album implements BaseEntity {
   final String hash;
 
   final String name;
-  int _duration = 0;
+  int duration = 0;
 
   @Property(type: PropertyType.byteVector)
   Uint8List? imageBytes;
@@ -27,36 +27,36 @@ class Album implements BaseEntity {
   List<Color> colors = [];
 
   @Backlink('album')
-  final ToMany<Song> _songs = ToMany<Song>();
-  final ToOne<Artist> _artist = ToOne<Artist>();
+  final ToMany<Song> songs = ToMany<Song>();
+  final ToOne<Artist> artist = ToOne<Artist>();
 
   Album(this.hash, this.name);
 
   void addSong(Song song) {
-    int index = _songs.indexWhere((s) {
+    int index = songs.indexWhere((s) {
       if (s.discNumber != song.discNumber) {
         return s.discNumber > song.discNumber;
       }
       return s.trackNumber > song.trackNumber;
     });
     if (index == -1) {
-      _songs.add(song);
+      songs.add(song);
     } else {
-      _songs.insert(index, song);
+      songs.insert(index, song);
     }
-    _duration += song.durationInSeconds;
+    duration += song.durationInSeconds;
   }
 
   List<Song> getSongs() {
-    return List.unmodifiable(_songs);
+    return List.unmodifiable(songs);
   }
 
   String getArtistName() {
-    return _artist.target?.getName() ?? 'Unknown Artist';
+    return artist.target?.getName() ?? 'Unknown Artist';
   }
 
   void setArtist(Artist artist) {
-    _artist.target = artist;
+    this.artist.target = artist;
   }
 
   @override
@@ -71,11 +71,11 @@ class Album implements BaseEntity {
 
   @override
   bool isLocal() {
-    if (_songs.isEmpty) {
+    if (songs.isEmpty) {
       return false;
     }
 
-    for (var song in _songs) {
+    for (var song in songs) {
       if (!song.isLocal()) {
         return false;
       }
@@ -94,11 +94,11 @@ class Album implements BaseEntity {
   }
 
   int getDurationInSeconds() {
-    return _duration;
+    return duration;
   }
 
   @override
   String toString() {
-    return "Album{name: $name, hash: $hash, songs: ${_songs.length}, artist: ${_artist.target?.getName() ?? 'Unknown Artist'}}";
+    return "Album{id: $id, hash: $hash, name: $name, artist: ${artist.target?.name}, songs: ${songs.length}}";
   }
 }

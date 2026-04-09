@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/database/object_box_store.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -27,6 +28,7 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
     if (existing != null) return existing;
     var album = Album(albumHash, albumName);
     album.setArtist(artist);
+    debugPrint('Creating new album: $album');
     return saveAlbum(album);
   }
 

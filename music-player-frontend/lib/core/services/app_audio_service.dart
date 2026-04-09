@@ -80,7 +80,7 @@ class AppAudioService {
     _currentAudioSettings = settingsService.getAudioSettings();
     currentSong = playlistService.getMostRecentPlayedSong();
     _queuePlaylist = playlistService.getQueuePlaylist();
-    _normalQueue = _queuePlaylist.getSongs();
+    _normalQueue = List.from(_queuePlaylist.getSongs());
     _initPlayer();
 
     this.audioPlayer.processingStateStream.listen((state) {

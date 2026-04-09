@@ -97,7 +97,7 @@ class ArtistService {
 
     for (var songHash in serverArtist.songFileHashes) {
       var cachedSong = _songRepository.getOrCreateSong(songHash);
-      cachedSong.artist.targetId = cachedArtist.id;
+      cachedSong.artist.target = cachedArtist;
       _songRepository.updateSong(cachedSong);
 
       cachedArtist.addSong(cachedSong);
@@ -122,8 +122,8 @@ class ArtistService {
       );
 
       cachedSong.setName(song.name);
-      cachedSong.artist.targetId = cachedArtist.id;
-      cachedSong.album.targetId = cachedAlbum.id;
+      cachedSong.artist.target = cachedArtist;
+      cachedSong.album.target = cachedAlbum;
       cachedSong.discNumber = song.discNumber;
       cachedSong.trackNumber = song.trackNumber;
       cachedSong.durationInSeconds = song.durationInSeconds;
