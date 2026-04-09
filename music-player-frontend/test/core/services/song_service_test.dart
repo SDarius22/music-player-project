@@ -45,7 +45,7 @@ void main() {
       discNumber: 1,
       releaseYear: 2024,
       artist: ArtistDto(hash: 'artist-h', name: 'Artist'),
-      album: AlbumDto(hash: 'album-h', name: 'Album', artists: const []),
+      album: AlbumDto(hash: 'album-h', name: 'Album'),
     );
   }
 
@@ -60,7 +60,9 @@ void main() {
     when(mockSongRestClient.authService).thenReturn(mockAuthService);
     when(mockSongRepo.watchSongs()).thenAnswer((_) => const Stream.empty());
     when(mockSongRepo.getSongs(any, any, any)).thenReturn(const []);
-    when(mockSongRepo.getSongsPaged(any, any, any, any, any)).thenReturn(const []);
+    when(
+      mockSongRepo.getSongsPaged(any, any, any, any, any),
+    ).thenReturn(const []);
 
     service = SongService(
       mockSongRepo,
@@ -95,7 +97,9 @@ void main() {
     });
 
     test('returns null when repository throws', () {
-      when(mockSongRepo.getSongByFileHash('broken')).thenThrow(Exception('boom'));
+      when(
+        mockSongRepo.getSongByFileHash('broken'),
+      ).thenThrow(Exception('boom'));
       expect(service.getLocalSong('broken'), isNull);
     });
   });
@@ -122,10 +126,16 @@ void main() {
         callCount['lookup'] = c + 1;
         return c == 0 ? null : cachedSong;
       });
-      when(mockSongRestClient.getServerSong('song-hash')).thenAnswer((_) async => makeSongDto());
+      when(
+        mockSongRestClient.getServerSong('song-hash'),
+      ).thenAnswer((_) async => makeSongDto());
       when(mockSongRepo.getOrCreateSong('song-hash')).thenReturn(cachedSong);
-      when(mockArtistRepo.getOrCreateArtist('artist-h', 'Artist')).thenReturn(artist);
-      when(mockAlbumRepo.getOrCreateAlbum('album-h', 'Album', artist)).thenReturn(album);
+      when(
+        mockArtistRepo.getOrCreateArtist('artist-h', 'Artist'),
+      ).thenReturn(artist);
+      when(
+        mockAlbumRepo.getOrCreateAlbum('album-h', 'Album', artist),
+      ).thenReturn(album);
       when(mockSongRepo.saveSong(cachedSong)).thenReturn(cachedSong);
 
       final result = await service.fetchSongByFileHash('song-hash');
@@ -160,10 +170,16 @@ void main() {
         ),
       );
       when(mockSongRepo.getOrCreateSong('song-hash')).thenReturn(cachedSong);
-      when(mockArtistRepo.getOrCreateArtist('artist-h', 'Artist')).thenReturn(artist);
-      when(mockAlbumRepo.getOrCreateAlbum('album-h', 'Album', artist)).thenReturn(album);
+      when(
+        mockArtistRepo.getOrCreateArtist('artist-h', 'Artist'),
+      ).thenReturn(artist);
+      when(
+        mockAlbumRepo.getOrCreateAlbum('album-h', 'Album', artist),
+      ).thenReturn(album);
       when(mockSongRepo.saveSong(cachedSong)).thenReturn(cachedSong);
-      when(mockSongRepo.getSongsPaged(any, any, any, any, any)).thenReturn([cachedSong]);
+      when(
+        mockSongRepo.getSongsPaged(any, any, any, any, any),
+      ).thenReturn([cachedSong]);
 
       final result = await service.getSongsPage('', 'duration', true, 0, 20);
 
@@ -189,7 +205,9 @@ void main() {
           sort: anyNamed('sort'),
         ),
       ).thenThrow(Exception('offline'));
-      when(mockSongRepo.getSongsPaged(any, any, any, any, any)).thenReturn(local);
+      when(
+        mockSongRepo.getSongsPaged(any, any, any, any, any),
+      ).thenReturn(local);
       when(mockSongRepo.getSongs(any, any, any)).thenReturn(local);
 
       final result = await service.getSongsPage('', 'name', true, 0, 20);
@@ -215,8 +233,12 @@ void main() {
         ),
       );
       when(mockSongRepo.getOrCreateSong('song-hash')).thenReturn(cachedSong);
-      when(mockArtistRepo.getOrCreateArtist('artist-h', 'Artist')).thenReturn(artist);
-      when(mockAlbumRepo.getOrCreateAlbum('album-h', 'Album', artist)).thenReturn(album);
+      when(
+        mockArtistRepo.getOrCreateArtist('artist-h', 'Artist'),
+      ).thenReturn(artist);
+      when(
+        mockAlbumRepo.getOrCreateAlbum('album-h', 'Album', artist),
+      ).thenReturn(album);
       when(mockSongRepo.saveSong(cachedSong)).thenReturn(cachedSong);
 
       final result = await service.getRecommendations();
@@ -241,12 +263,13 @@ void main() {
     });
 
     test('syncs pending songs and clears pending counters', () async {
-      final pendingSong = Song('sync-hash')
-        ..requiresSync = true
-        ..pendingPlayCountDelta = 3
-        ..pendingPlayDurationSeconds = 120
-        ..likedByUser = true
-        ..lastPlayed = DateTime(2026, 1, 1);
+      final pendingSong =
+          Song('sync-hash')
+            ..requiresSync = true
+            ..pendingPlayCountDelta = 3
+            ..pendingPlayDurationSeconds = 120
+            ..likedByUser = true
+            ..lastPlayed = DateTime(2026, 1, 1);
 
       when(mockAuthService.isLoggedIn).thenReturn(true);
       when(mockSongRepo.getAllSongs()).thenReturn([pendingSong]);

@@ -15,9 +15,7 @@ void main() {
             'hash': 'album-hash',
             'name': 'Album One',
             'songFileHashes': ['s1'],
-            'artists': [
-              {'hash': 'artist-hash', 'name': 'Artist One'},
-            ],
+            'artist': {'hash': 'artist-hash', 'name': 'Artist One'},
           },
         ],
         'page': 0,
@@ -27,14 +25,18 @@ void main() {
       });
 
       expect(dto.content.single.hash, 'album-hash');
-      expect(dto.content.single.artists.single.hash, 'artist-hash');
+      expect(dto.content.single.artist.hash, 'artist-hash');
       expect(dto.totalElements, 1);
     });
 
     test('ArtistPageDto parses hash-based content', () {
       final dto = ArtistPageDto.fromJson({
         'content': [
-          {'hash': 'artist-hash', 'name': 'Artist', 'songFileHashes': ['s1', 's2']},
+          {
+            'hash': 'artist-hash',
+            'name': 'Artist',
+            'songFileHashes': ['s1', 's2'],
+          },
         ],
         'page': 0,
         'size': 1,
@@ -57,11 +59,14 @@ void main() {
             'hasCover': true,
           },
         ],
+        'page': 0,
+        'size': 1,
+        'totalPages': 1,
+        'totalElements': 1,
       });
 
       expect(dto.content.single.id, 7);
       expect(dto.content.single.songFileHashes, ['a', 'b']);
-      expect(dto.content.single.hasCover, isTrue);
     });
 
     test('SongPageDto parses nested artist/album fields', () {

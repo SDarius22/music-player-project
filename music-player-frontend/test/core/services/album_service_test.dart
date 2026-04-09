@@ -45,23 +45,26 @@ void main() {
   });
 
   group('getOrCreateAlbum', () {
-    test('derives album hash from artist + name and delegates to repository', () {
-      final artist = Artist('artist-hash', 'Artist Name');
-      final expectedHash =
-          sha256.convert(utf8.encode('Artist Name - Album Name')).toString();
-      final cached = Album(expectedHash, 'Album Name');
+    test(
+      'derives album hash from artist + name and delegates to repository',
+      () {
+        final artist = Artist('artist-hash', 'Artist Name');
+        final expectedHash =
+            sha256.convert(utf8.encode('Artist Name - Album Name')).toString();
+        final cached = Album(expectedHash, 'Album Name');
 
-      when(
-        mockAlbumRepo.getOrCreateAlbum(expectedHash, 'Album Name', artist),
-      ).thenReturn(cached);
+        when(
+          mockAlbumRepo.getOrCreateAlbum(expectedHash, 'Album Name', artist),
+        ).thenReturn(cached);
 
-      final result = service.getOrCreateAlbum('Album Name', artist);
+        final result = service.getOrCreateAlbum('Album Name', artist);
 
-      expect(result, same(cached));
-      verify(
-        mockAlbumRepo.getOrCreateAlbum(expectedHash, 'Album Name', artist),
-      ).called(1);
-    });
+        expect(result, same(cached));
+        verify(
+          mockAlbumRepo.getOrCreateAlbum(expectedHash, 'Album Name', artist),
+        ).called(1);
+      },
+    );
   });
 
   group('cacheServerAlbum', () {
@@ -70,7 +73,7 @@ void main() {
         hash: 'album-hash',
         name: 'Album',
         songFileHashes: ['s1', 's2'],
-        artists: [ArtistDto(hash: 'artist-hash', name: 'Artist')],
+        artist: ArtistDto(hash: 'artist-hash', name: 'Artist'),
       );
       final cachedArtist = Artist('artist-hash', 'Artist')..id = 10;
       final cachedAlbum = Album('album-hash', 'Album')..id = 20;
@@ -109,7 +112,7 @@ void main() {
             hash: 'album-hash',
             name: 'Album',
             songFileHashes: const [],
-            artists: [ArtistDto(hash: 'artist-hash', name: 'Artist')],
+            artist: ArtistDto(hash: 'artist-hash', name: 'Artist'),
           ),
         ],
         page: 0,
@@ -134,8 +137,12 @@ void main() {
       when(
         mockAlbumRepo.getOrCreateAlbum('album-hash', 'Album', cachedArtist),
       ).thenReturn(local.first);
-      when(mockAlbumRepo.saveAlbum(any)).thenAnswer((inv) => inv.positionalArguments.first as Album);
-      when(mockAlbumRepo.getAlbumsPaged(any, any, any, any, any)).thenReturn(local);
+      when(
+        mockAlbumRepo.saveAlbum(any),
+      ).thenAnswer((inv) => inv.positionalArguments.first as Album);
+      when(
+        mockAlbumRepo.getAlbumsPaged(any, any, any, any, any),
+      ).thenReturn(local);
 
       final result = await service.getAlbumsPage('', 'name', true, 0, 20);
 
@@ -154,7 +161,9 @@ void main() {
           sort: anyNamed('sort'),
         ),
       ).thenThrow(Exception('timeout'));
-      when(mockAlbumRepo.getAlbumsPaged(any, any, any, any, any)).thenReturn(local);
+      when(
+        mockAlbumRepo.getAlbumsPaged(any, any, any, any, any),
+      ).thenReturn(local);
       when(mockAlbumRepo.getAlbums(any, any, any)).thenReturn(local);
 
       final result = await service.getAlbumsPage('', 'name', true, 0, 20);

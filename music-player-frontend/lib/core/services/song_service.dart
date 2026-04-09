@@ -177,7 +177,6 @@ class SongService {
 
         final song = unsyncedSongs[i];
         if (song.path == null) {
-          debugPrint('Song ${song.getName()} has no file path, skipping');
           continue;
         }
 
