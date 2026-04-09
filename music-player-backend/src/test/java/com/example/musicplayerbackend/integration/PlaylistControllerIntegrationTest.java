@@ -21,9 +21,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
-    @Autowired PlaylistRepository playlistRepository;
-    @Autowired UserRepository userRepository;
-    @Autowired ObjectMapper objectMapper;
+    @Autowired
+    PlaylistRepository playlistRepository;
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    ObjectMapper objectMapper;
 
     User testUser;
     User otherUser;
@@ -46,7 +49,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn200WithOwnedPlaylists() throws Exception {
         playlistRepository.save(Playlist.builder().user(testUser).name("My Mix")
-                .songIdsJson("[]").createdAt(Instant.now()).updatedAt(Instant.now()).build());
+                .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         mockMvc.perform(get("/api/v1/playlists").with(user(testUser)))
                 .andExpect(status().isOk())
@@ -57,7 +60,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldNotReturnOtherUserPlaylists() throws Exception {
         playlistRepository.save(Playlist.builder().user(otherUser).name("Other Mix")
-                .songIdsJson("[]").createdAt(Instant.now()).updatedAt(Instant.now()).build());
+                .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         mockMvc.perform(get("/api/v1/playlists").with(user(testUser)))
                 .andExpect(status().isOk())
@@ -86,7 +89,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn200ForPlaylistById() throws Exception {
         Playlist playlist = playlistRepository.save(Playlist.builder().user(testUser)
-                .name("Detail Mix").songIdsJson("[]")
+                .name("Detail Mix")
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         mockMvc.perform(get("/api/v1/playlists/{id}", playlist.getId()).with(user(testUser)))
@@ -104,7 +107,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn403WhenPlaylistOwnedByOther() throws Exception {
         Playlist other = playlistRepository.save(Playlist.builder().user(otherUser)
-                .name("Other").songIdsJson("[]")
+                .name("Other")
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         mockMvc.perform(get("/api/v1/playlists/{id}", other.getId()).with(user(testUser)))
@@ -116,7 +119,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn200AndUpdatePlaylistName() throws Exception {
         Playlist playlist = playlistRepository.save(Playlist.builder().user(testUser)
-                .name("Old Name").songIdsJson("[]")
+                .name("Old Name")
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
@@ -133,7 +136,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn403WhenUpdatingPlaylistOwnedByOther() throws Exception {
         Playlist other = playlistRepository.save(Playlist.builder().user(otherUser)
-                .name("Other").songIdsJson("[]")
+                .name("Other")
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
@@ -151,7 +154,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn204WhenDeletingPlaylist() throws Exception {
         Playlist playlist = playlistRepository.save(Playlist.builder().user(testUser)
-                .name("Delete Me").songIdsJson("[]")
+                .name("Delete Me")
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         mockMvc.perform(delete("/api/v1/playlists/{id}", playlist.getId()).with(user(testUser)))
@@ -161,7 +164,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn403WhenDeletingPlaylistOwnedByOther() throws Exception {
         Playlist other = playlistRepository.save(Playlist.builder().user(otherUser)
-                .name("Other").songIdsJson("[]")
+                .name("Other")
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         mockMvc.perform(delete("/api/v1/playlists/{id}", other.getId()).with(user(testUser)))
@@ -174,7 +177,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturn200ForPlaylistCover() throws Exception {
         byte[] img = "imgbytes".getBytes();
         Playlist playlist = playlistRepository.save(Playlist.builder().user(testUser)
-                .name("With Cover").songIdsJson("[]")
+                .name("With Cover")
                 .coverImage(Base64.getEncoder().encodeToString(img))
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
@@ -186,7 +189,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturn403WhenPlaylistCoverOwnedByOther() throws Exception {
         byte[] img = "imgbytes".getBytes();
         Playlist other = playlistRepository.save(Playlist.builder().user(otherUser)
-                .name("Other Cover").songIdsJson("[]")
+                .name("Other Cover")
                 .coverImage(Base64.getEncoder().encodeToString(img))
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
@@ -197,7 +200,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldReturn404WhenPlaylistHasNoCover() throws Exception {
         Playlist playlist = playlistRepository.save(Playlist.builder().user(testUser)
-                .name("No Cover").songIdsJson("[]")
+                .name("No Cover")
                 .createdAt(Instant.now()).updatedAt(Instant.now()).build());
 
         mockMvc.perform(get("/api/v1/playlists/{id}/cover", playlist.getId()).with(user(testUser)))

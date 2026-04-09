@@ -432,6 +432,7 @@ paths:
   /playlists:
     get:
       summary: Get the current user's playlists
+      description: Returns playlists where `songFileHashes` preserves each playlist's persisted song order.
       operationId: getPlaylists
       tags:
         - Playlists
@@ -464,6 +465,7 @@ paths:
           description: Unauthorized
     post:
       summary: Create a playlist
+      description: Creates a playlist using the exact order of `songFileHashes` as playlist positions.
       operationId: createPlaylist
       tags:
         - Playlists
@@ -488,6 +490,7 @@ paths:
   /playlists/{playlistId}:
     get:
       summary: Get playlist by ID
+      description: Returns playlist songs in persisted playlist order.
       operationId: getPlaylistById
       tags:
         - Playlists
@@ -515,6 +518,7 @@ paths:
           description: Playlist not found
     put:
       summary: Update a playlist
+      description: Updates playlist metadata and, when `songFileHashes` is present, replaces playlist songs in the provided order.
       operationId: updatePlaylist
       tags:
         - Playlists
@@ -1053,8 +1057,7 @@ components:
           type: array
           items:
             type: string
-        hasCover:
-          type: boolean
+          description: Ordered song file hashes for this playlist (index equals playlist position).
 
     PlaylistDetailDto:
       type: object
@@ -1068,8 +1071,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SongDto'
-        hasCover:
-          type: boolean
+          description: Songs in playlist order (position ascending).
 
     PlaylistPageDto:
       type: object
@@ -1102,14 +1104,17 @@ components:
       type: object
       required:
         - name
+        - songFileHashes
       properties:
         name:
           type: string
         songFileHashes:
           type: array
+          minItems: 1
           items:
-            type: string
+            $ref: '#/components/schemas/PlaylistSongPositionDto'
           default: [ ]
+          description: Song file hashes with explicit playlist positions.
         coverImage:
           type: string
           description: Base64-encoded cover image (optional)
@@ -1123,8 +1128,9 @@ components:
         songFileHashes:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/PlaylistSongPositionDto'
           nullable: true
+          description: When present, replaces playlist songs using these explicit positions.
         coverImage:
           type: string
           nullable: true
@@ -1154,6 +1160,18 @@ components:
           type: string
           format: date-time
           readOnly: true
+
+    PlaylistSongPositionDto:
+      type: object
+      required:
+        - songFileHash
+        - position
+      properties:
+        songFileHash:
+          type: string
+        position:
+          type: integer
+          minimum: 0
 
     SongDto:
       type: object

@@ -33,10 +33,6 @@ public class Playlist {
     @Column(columnDefinition = "TEXT")
     private String coverImage;
 
-    @Column(name = "song_ids", columnDefinition = "TEXT", nullable = false)
-    @Builder.Default
-    private String songIdsJson = "[]";
-
     @Column(nullable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();

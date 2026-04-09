@@ -1,12 +1,18 @@
 package com.example.musicplayerbackend.mapper;
 
 import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
+import com.example.musicplayerbackend.domain.Playlist;
+import com.example.musicplayerbackend.domain.PlaylistDetailDto;
 import com.example.musicplayerbackend.domain.PlaylistDto;
+import com.example.musicplayerbackend.domain.PlaylistPageDto;
+import com.example.musicplayerbackend.domain.SongDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,7 +24,7 @@ class PlaylistMapperTest {
     PlaylistMapper playlistMapper;
 
     @Test
-    void shouldMapProjectionCoreFieldsAndIgnoreSongHashes() {
+    void shouldMapProjectionIncludingSongHashesFromCsv() {
         PlaylistListProjection projection = new PlaylistListProjection() {
             @Override
             public Long getId() {
@@ -41,11 +47,6 @@ class PlaylistMapperTest {
             }
 
             @Override
-            public Boolean getHasCover() {
-                return true;
-            }
-
-            @Override
             public String getSongFileHashesCsv() {
                 return "a,b,c";
             }
@@ -55,9 +56,38 @@ class PlaylistMapperTest {
 
         assertEquals(42L, dto.getId());
         assertEquals("Road Trip", dto.getName());
-        assertTrue(dto.getHasCover());
-        assertNotNull(dto.getSongFileHashes());
-        assertTrue(dto.getSongFileHashes().isEmpty());
+        assertEquals(List.of("a", "b", "c"), dto.getSongFileHashes());
+    }
+
+    @Test
+    void shouldMapPlaylistDetailDtoWithSongs() {
+        Playlist playlist = Playlist.builder()
+                .id(11L)
+                .name("Focus")
+                .coverImage("base64-image")
+                .build();
+        SongDto songDto = new SongDto();
+        songDto.setName("Track 1");
+
+        PlaylistDetailDto dto = playlistMapper.toDetailDto(playlist, List.of(songDto));
+
+        assertEquals(11L, dto.getId());
+        assertEquals("Focus", dto.getName());
+        assertEquals(1, dto.getSongs().size());
+    }
+
+    @Test
+    void shouldMapPlaylistPageDtoMetadata() {
+        PlaylistDto playlistDto = new PlaylistDto();
+        playlistDto.setName("Mix");
+
+        PlaylistPageDto dto = playlistMapper.toPageDto(List.of(playlistDto), 2, 10, 42L, 5);
+
+        assertEquals(1, dto.getContent().size());
+        assertEquals(2, dto.getPage());
+        assertEquals(10, dto.getSize());
+        assertEquals(42L, dto.getTotalElements());
+        assertEquals(5, dto.getTotalPages());
     }
 
     @Test
@@ -65,4 +95,3 @@ class PlaylistMapperTest {
         assertNull(playlistMapper.toDto(null));
     }
 }
-

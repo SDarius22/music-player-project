@@ -18,16 +18,13 @@ public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
                    p.name,
                    p.playlist_type                                                       AS type,
                    p.user_id                                                             AS userid,
-                   (p.cover_image IS NOT NULL AND TRIM(p.cover_image) <> '')             AS hascover,
-                   STRING_AGG(s.file_hash, ',' ORDER BY elem.ordinality)
-                       FILTER (WHERE s.file_hash IS NOT NULL AND s.file_hash <> '')     AS songfilehashescsv
+                   STRING_AGG(s.file_hash, ',' ORDER BY ps.position)
+                       FILTER (WHERE s.file_hash IS NOT NULL AND s.file_hash <> '')      AS songfilehashescsv
             FROM music_library.playlists p
-            LEFT JOIN LATERAL jsonb_array_elements_text(
-                COALESCE(NULLIF(TRIM(p.song_ids), ''), '[]')::jsonb
-            ) WITH ORDINALITY AS elem(song_id_text, ordinality) ON true
-            LEFT JOIN music_library.songs s ON s.id = elem.song_id_text::bigint
+            LEFT JOIN music_library.playlist_songs ps ON ps.playlist_id = p.id
+            LEFT JOIN music_library.songs s ON s.id = ps.song_id
             WHERE p.user_id = :userId
-            GROUP BY p.id, p.name, p.playlist_type, p.user_id, p.cover_image
+            GROUP BY p.id, p.name, p.playlist_type, p.user_id
             """,
         countQuery = """
             SELECT COUNT(*) FROM music_library.playlists p WHERE p.user_id = :userId

@@ -48,7 +48,6 @@ class PlaylistRepositoryTest extends BaseRepositoryTest {
 
         assertThat(saved.getId()).isNotNull().isPositive();
         assertThat(saved.getName()).isEqualTo("Chill Vibes");
-        assertThat(saved.getSongIdsJson()).isEqualTo("[]");
     }
 
     @Test
