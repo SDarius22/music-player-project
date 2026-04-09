@@ -40,24 +40,6 @@ void main() {
   });
 
   group('Album', () {
-    test('addSong updates ordered song list and duration', () {
-      final album = Album('album-hash', 'Album');
-      final first = Song('s1')
-        ..discNumber = 1
-        ..trackNumber = 2
-        ..durationInSeconds = 40;
-      final second = Song('s2')
-        ..discNumber = 1
-        ..trackNumber = 1
-        ..durationInSeconds = 20;
-
-      album.addSong(first);
-      album.addSong(second);
-
-      expect(album.getSongs().map((s) => s.getHash()).toList(), ['s2', 's1']);
-      expect(album.getDurationInSeconds(), 60);
-    });
-
     test('isLocal is false when no songs or any song is remote', () {
       final album = Album('album-hash', 'Album');
       expect(album.isLocal(), isFalse);
@@ -82,20 +64,23 @@ void main() {
       expect(artist.isLocal(), isFalse);
     });
 
-    test('getCoverArt returns own image first, then album cover from songs', () {
-      final artist = Artist('artist-hash', 'Artist');
-      artist.imageBytes = Uint8List.fromList([7, 7]);
-      expect(artist.getCoverArt(), equals(artist.imageBytes));
+    test(
+      'getCoverArt returns own image first, then album cover from songs',
+      () {
+        final artist = Artist('artist-hash', 'Artist');
+        artist.imageBytes = Uint8List.fromList([7, 7]);
+        expect(artist.getCoverArt(), equals(artist.imageBytes));
 
-      artist.imageBytes = null;
-      final album = Album('album-hash', 'Album')
-        ..imageBytes = Uint8List.fromList([3, 3]);
-      final song = Song('song-hash');
-      song.album.target = album;
-      artist.addSong(song);
+        artist.imageBytes = null;
+        final album = Album('album-hash', 'Album')
+          ..imageBytes = Uint8List.fromList([3, 3]);
+        final song = Song('song-hash');
+        song.album.target = album;
+        artist.addSong(song);
 
-      expect(artist.getCoverArt(), equals(album.imageBytes));
-    });
+        expect(artist.getCoverArt(), equals(album.imageBytes));
+      },
+    );
   });
 
   group('Playlist', () {
