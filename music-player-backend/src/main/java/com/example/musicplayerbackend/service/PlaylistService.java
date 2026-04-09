@@ -77,7 +77,7 @@ public class PlaylistService {
         if (req.getName() != null) {
             playlist.setName(req.getName());
         }
-        if (req.getSongFileHashes() != null) {
+        if (req.getSongFileHashes() != null && !req.getSongFileHashes().isEmpty()) {
             replacePlaylistSongs(playlist, resolveSongInputs(req.getSongFileHashes()));
         }
         if (req.getCoverImage() != null) {

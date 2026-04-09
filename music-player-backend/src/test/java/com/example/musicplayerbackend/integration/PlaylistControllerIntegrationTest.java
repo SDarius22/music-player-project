@@ -1,6 +1,7 @@
 package com.example.musicplayerbackend.integration;
 
 import com.example.musicplayerbackend.data.PlaylistRepository;
+import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.UserRepository;
 import com.example.musicplayerbackend.domain.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +27,8 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     UserRepository userRepository;
     @Autowired
+    SongRepository songRepository;
+    @Autowired
     ObjectMapper objectMapper;
 
     User testUser;
@@ -40,6 +43,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         playlistRepository.deleteAll();
+        songRepository.deleteAll();
         userRepository.deleteById(testUser.getId());
         userRepository.deleteById(otherUser.getId());
     }
@@ -71,9 +75,19 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn201WhenCreatingPlaylist() throws Exception {
+        Song song = songRepository.save(Song.builder()
+                .name("Seed Song")
+                .songType(ContentType.STREAMABLE)
+                .fileHash("seed-hash-1")
+                .build());
+
+        PlaylistSongPositionDto item = new PlaylistSongPositionDto();
+        item.setSongFileHash(song.getFileHash());
+        item.setPosition(0);
+
         CreatePlaylistDto req = new CreatePlaylistDto();
         req.setName("New Playlist");
-        req.setSongFileHashes(List.of());
+        req.setSongFileHashes(List.of(item));
 
         mockMvc.perform(post("/api/v1/playlists")
                         .with(user(testUser))
@@ -124,6 +138,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
         req.setName("New Name");
+        req.setSongFileHashes(null);
 
         mockMvc.perform(put("/api/v1/playlists/{id}", playlist.getId())
                         .with(user(testUser))
@@ -141,6 +156,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
         req.setName("Hijack");
+        req.setSongFileHashes(null);
 
         mockMvc.perform(put("/api/v1/playlists/{id}", other.getId())
                         .with(user(testUser))
