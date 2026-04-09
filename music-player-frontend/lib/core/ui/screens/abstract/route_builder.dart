@@ -11,7 +11,13 @@ Route<T> buildFadeRoute<T>(
     reverseTransitionDuration: const Duration(milliseconds: 500),
     pageBuilder: pageBuilder,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(opacity: animation, child: child);
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.0, 0.1),
+          end: Offset.zero,
+        ).animate(animation),
+        child: FadeTransition(opacity: animation, child: child),
+      );
     },
   );
 }

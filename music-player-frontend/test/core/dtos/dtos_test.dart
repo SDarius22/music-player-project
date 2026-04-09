@@ -34,6 +34,10 @@ void main() {
         'content': [
           {'hash': 'artist-hash', 'name': 'Artist', 'songFileHashes': ['s1', 's2']},
         ],
+        'page': 0,
+        'size': 1,
+        'totalPages': 1,
+        'totalElements': 1,
       });
 
       expect(dto.content.single.hash, 'artist-hash');
@@ -67,7 +71,7 @@ void main() {
             'durationInSeconds': 180,
             'trackNumber': 1,
             'discNumber': 1,
-            'releaseYear': 2024,
+            'year': 2024,
             'artist': {'hash': 'artist-hash', 'name': 'Artist'},
             'album': {'hash': 'album-hash', 'name': 'Album'},
           },

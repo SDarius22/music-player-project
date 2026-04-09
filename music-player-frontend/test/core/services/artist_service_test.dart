@@ -46,7 +46,7 @@ void main() {
       );
 
       expect(cached.getSongs().map((s) => s.getHash()).toSet(), {'s1', 's2'});
-      expect(songRepo.getSongByFileHash('s1')?.artist.targetId, cached.id);
+      expect(songRepo.getSongByFileHash('s1')?.artist.target, same(cached));
     });
   });
 }

@@ -18,10 +18,10 @@ void main() {
     test('watchPlaylists emits after save', () async {
       final repo = InMemoryPlaylistRepository();
 
-      final future = repo.watchPlaylists().first as Future<List<Playlist>>;
+      final future = repo.watchPlaylists().first;
       repo.savePlaylist(Playlist('Queue'));
 
-      final emitted = await future;
+      final emitted = await future as List<Playlist>;
       expect(emitted, isNotEmpty);
       expect(emitted.first.getName(), isNotEmpty);
     });

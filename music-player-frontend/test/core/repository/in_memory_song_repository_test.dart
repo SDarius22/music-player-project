@@ -18,10 +18,10 @@ void main() {
     test('watchSongs emits after save', () async {
       final repo = InMemorySongRepository();
 
-      final future = repo.watchSongs().first as Future<List<Song>>;
+      final future = repo.watchSongs().first;
       repo.saveSong(Song('new-song')..setName('Hello'));
 
-      final emitted = await future;
+      final emitted = await future as List<Song>;
       expect(emitted, hasLength(1));
       expect(emitted.first.getHash(), 'new-song');
     });

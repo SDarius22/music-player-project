@@ -33,7 +33,6 @@ void main() {
   late MockPlaybackRestClient mockPlaybackRestService;
   late MockAudioPlayer mockAudioPlayer;
 
-  // Builds a service with all mocks injected.
   AppAudioService buildService({bool includeRestService = true}) {
     return AppAudioService(
       mockSongService,
@@ -57,7 +56,7 @@ void main() {
 
     when(mockSettingsService.getAudioSettings()).thenReturn(AudioSettings());
     when(mockPlaylistService.getMostRecentPlayedSong()).thenReturn(null);
-    when(mockPlaylistService.getQueuePlaylist()).thenReturn(Playlist());
+    when(mockPlaylistService.getQueuePlaylist()).thenReturn(Playlist('Queue'));
     when(
       mockAudioPlayer.processingStateStream,
     ).thenAnswer((_) => const Stream.empty());
@@ -71,7 +70,7 @@ void main() {
   group('pushStateToServer', () {
     test('does nothing when playbackRestService is null', () async {
       final service = buildService(includeRestService: false);
-      await Future.delayed(Duration.zero); // let _initPlayer complete
+      await Future.delayed(Duration.zero);
 
       service.pushStateToServer();
 
@@ -82,15 +81,10 @@ void main() {
       final service = buildService();
       await Future.delayed(Duration.zero);
 
-      // Populate the queue with one server and one local song.
-      final serverSong =
-          Song()
-            ..id = 1
-            ..fileHash = 'deadbeef42';
-      final localSong =
-          Song()
-            ..id = 2
-            ..path = '/music/local.mp3'; // fileHash stays empty
+      final serverSong = Song('deadbeef42')..id = 1;
+      final localSong = Song('local-hash')
+        ..id = 2
+        ..path = '/music/local.mp3';
 
       when(mockPlaylistService.addToPlaylist(any, any)).thenReturn(null);
       await service.addToQueue([serverSong, localSong]);
@@ -104,14 +98,13 @@ void main() {
               as PlaybackStateDto;
 
       expect(captured.queueFileHashes, equals(['deadbeef42']));
-      expect(captured.queueFileHashes, isNot(contains('')));
+      expect(captured.queueFileHashes, isNot(contains('local-hash')));
     });
 
     test('payload includes current positionMs, shuffle, and repeat', () async {
       final service = buildService();
       await Future.delayed(Duration.zero);
 
-      // Set shuffle and repeat on the internal audio settings.
       service.setRepeat(true);
       when(
         mockAudioPlayer.position,
@@ -173,8 +166,8 @@ void main() {
         final service = buildService();
         await Future.delayed(Duration.zero);
 
-        final songA = Song()..fileHash = 'hash10';
-        final songB = Song()..fileHash = 'hash20';
+        final songA = Song('hash10');
+        final songB = Song('hash20');
         when(
           mockSongService.fetchSongByFileHash('hash10'),
         ).thenAnswer((_) async => songA);
@@ -198,11 +191,10 @@ void main() {
 
         await service.restoreFromServerState(dto);
 
-        // With shuffle on, the queue is the shuffled queue, which puts the
-        // current song (songB) first. Both songs must be present.
         expect(service.queue, containsAll([songA, songB]));
-        expect(service.queue.first.fileHash, equals('hash20'));
-        expect(service.currentSong.fileHash, equals('hash20'));
+        expect(service.queue.first.getHash(), equals('hash20'));
+        expect(service.currentSong, isNotNull);
+        expect(service.currentSong!.getHash(), equals('hash20'));
         expect(service.currentAudioSettings.shuffle, isTrue);
         expect(service.currentAudioSettings.repeat, isTrue);
         verify(mockSettingsService.updateAudioSettings(any)).called(1);
@@ -218,8 +210,8 @@ void main() {
         final service = buildService();
         await Future.delayed(Duration.zero);
 
-        final songA = Song()..fileHash = 'hash10';
-        final songB = Song()..fileHash = 'hash20';
+        final songA = Song('hash10');
+        final songB = Song('hash20');
         when(
           mockSongService.fetchSongByFileHash('hash10'),
         ).thenAnswer((_) async => songA);
@@ -233,7 +225,6 @@ void main() {
           ),
         ).thenAnswer((_) async => null);
 
-        // currentFileHash 'hash99' does not appear in the resolved queue
         const dto = PlaybackStateDto(
           queueFileHashes: ['hash10', 'hash20'],
           currentFileHash: 'hash99',
@@ -242,10 +233,8 @@ void main() {
 
         await service.restoreFromServerState(dto);
 
-        expect(
-          service.currentSong.fileHash,
-          equals('hash10'),
-        ); // first in queue
+        expect(service.currentSong, isNotNull);
+        expect(service.currentSong!.getHash(), equals('hash10'));
       },
     );
   });

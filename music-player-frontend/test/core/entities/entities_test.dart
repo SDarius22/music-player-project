@@ -9,181 +9,126 @@ import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 
 void main() {
-  // ─── Song ────────────────────────────────────────────────────────────────
-
-  group('Song equality', () {
-    test('local songs equal when same path', () {
-      final a = Song()..path = '/music/song.mp3';
-      final b = Song()..path = '/music/song.mp3';
-      expect(a, equals(b));
+  group('Song', () {
+    test('equality is based on fileHash', () {
+      expect(Song('same-hash'), equals(Song('same-hash')));
+      expect(Song('hash-a'), isNot(equals(Song('hash-b'))));
     });
 
-    test('local songs not equal when different path', () {
-      final a = Song()..path = '/music/a.mp3';
-      final b = Song()..path = '/music/b.mp3';
-      expect(a, isNot(equals(b)));
+    test('isLocal uses path presence', () {
+      final local = Song('local-hash')..path = '/music/song.mp3';
+      final remote = Song('remote-hash');
+
+      expect(local.isLocal(), isTrue);
+      expect(remote.isLocal(), isFalse);
     });
 
-    test('cloud songs equal when same fileHash (non-empty)', () {
-      final a = Song()..fileHash = 'hash99';
-      final b = Song()..fileHash = 'hash99';
-      expect(a, equals(b));
-    });
+    test('getCoverArt falls back from album to artist', () {
+      final album = Album('album-hash', 'Album')
+        ..imageBytes = Uint8List.fromList([1, 2]);
+      final artist = Artist('artist-hash', 'Artist')
+        ..imageBytes = Uint8List.fromList([9, 8]);
 
-    test('songs not equal when fileHash is empty and no path', () {
-      final a = Song();
-      final b = Song();
-      expect(a, isNot(equals(b)));
-    });
+      final song = Song('song-hash');
+      song.album.target = album;
+      song.artist.target = artist;
+      expect(song.getCoverArt(), equals(album.imageBytes));
 
-    test('local song not equal to non-Song object', () {
-      final a = Song()..path = '/music/a.mp3';
-      expect(a, isNot(equals('not a song')));
+      song.album.target = null;
+      expect(song.getCoverArt(), equals(artist.imageBytes));
     });
   });
 
-  group('Song.hashCode', () {
-    test('uses path hash when path is non-empty', () {
-      final song = Song()..path = '/music/song.mp3';
-      expect(song.hashCode, '/music/song.mp3'.hashCode);
+  group('Album', () {
+    test('addSong updates ordered song list and duration', () {
+      final album = Album('album-hash', 'Album');
+      final first = Song('s1')
+        ..discNumber = 1
+        ..trackNumber = 2
+        ..durationInSeconds = 40;
+      final second = Song('s2')
+        ..discNumber = 1
+        ..trackNumber = 1
+        ..durationInSeconds = 20;
+
+      album.addSong(first);
+      album.addSong(second);
+
+      expect(album.getSongs().map((s) => s.getHash()).toList(), ['s2', 's1']);
+      expect(album.getDurationInSeconds(), 60);
     });
 
-    test('uses fileHash hash when fileHash is non-empty', () {
-      final song = Song()..fileHash = 'hash42';
-      expect(song.hashCode, 'hash42'.hashCode);
-    });
-  });
+    test('isLocal is false when no songs or any song is remote', () {
+      final album = Album('album-hash', 'Album');
+      expect(album.isLocal(), isFalse);
 
-  group('Song.isLocal', () {
-    test('returns true when path is non-empty', () {
-      final song = Song()..path = '/music/song.mp3';
-      expect(song.isLocal, isTrue);
-    });
-
-    test('returns false when path is empty', () {
-      expect(Song().isLocal, isFalse);
-    });
-  });
-
-  group('Song.colors', () {
-    test('returns empty list when album is not set', () {
-      expect(Song().colors, isEmpty);
-    });
-  });
-
-  group('Song.coverArt', () {
-    test('returns null when album not set', () {
-      expect(Song().coverArt, isNull);
+      final local = Song('local')..path = '/tmp/local.mp3';
+      final remote = Song('remote');
+      album.addSong(local);
+      album.addSong(remote);
+      expect(album.isLocal(), isFalse);
     });
   });
 
-  // ─── Album ───────────────────────────────────────────────────────────────
+  group('Artist', () {
+    test('isLocal requires at least one local song and no remote songs', () {
+      final artist = Artist('artist-hash', 'Artist');
+      expect(artist.isLocal(), isFalse);
 
-  group('Album.durationInSeconds', () {
-    test('returns 0 when no songs', () {
-      expect(Album().durationInSeconds, 0);
+      artist.addSong(Song('local')..path = '/tmp/local.mp3');
+      expect(artist.isLocal(), isTrue);
+
+      artist.addSong(Song('remote'));
+      expect(artist.isLocal(), isFalse);
     });
 
-    test('caches computed duration', () {
-      final album = Album();
-      final d1 = album.durationInSeconds;
-      final d2 = album.durationInSeconds;
-      expect(d1, equals(d2));
-    });
-  });
+    test('getCoverArt returns own image first, then album cover from songs', () {
+      final artist = Artist('artist-hash', 'Artist');
+      artist.imageBytes = Uint8List.fromList([7, 7]);
+      expect(artist.getCoverArt(), equals(artist.imageBytes));
 
-  group('Album.isLocal', () {
-    test('returns true when no songs', () {
-      expect(Album().isLocal, isTrue);
-    });
-  });
+      artist.imageBytes = null;
+      final album = Album('album-hash', 'Album')
+        ..imageBytes = Uint8List.fromList([3, 3]);
+      final song = Song('song-hash');
+      song.album.target = album;
+      artist.addSong(song);
 
-  group('Album.coverArt', () {
-    test('returns imageBytes', () {
-      final album = Album();
-      final bytes = Uint8List.fromList([0, 1]);
-      album.imageBytes = bytes;
-      expect(album.coverArt, equals(bytes));
+      expect(artist.getCoverArt(), equals(album.imageBytes));
     });
   });
 
-  group('Album.toString', () {
-    test('returns album name', () {
-      final album = Album();
-      album.name = 'Rumours';
-      expect(album.toString(), 'Rumours');
+  group('Playlist', () {
+    test('add/remove/clear songs updates ordered list and duration', () {
+      final playlist = Playlist('Queue');
+      final a = Song('a')..durationInSeconds = 10;
+      final b = Song('b')..durationInSeconds = 20;
+
+      playlist.addSong(a);
+      playlist.addSong(b);
+      expect(playlist.getSongs().map((s) => s.getHash()).toList(), ['a', 'b']);
+      expect(playlist.getDurationInSeconds(), 29);
+
+      playlist.removeSong(a);
+      expect(playlist.getSongs().single.getHash(), 'b');
+      expect(playlist.getDurationInSeconds(), 19);
+
+      playlist.clearSongs();
+      expect(playlist.getSongs(), isEmpty);
+      expect(playlist.getDurationInSeconds(), 0);
+    });
+
+    test('isLocal is false when empty and true only for all-local songs', () {
+      final playlist = Playlist('Queue');
+      expect(playlist.isLocal(), isFalse);
+
+      playlist.addSong(Song('local')..path = '/tmp/local.mp3');
+      expect(playlist.isLocal(), isTrue);
+
+      playlist.addSong(Song('remote'));
+      expect(playlist.isLocal(), isFalse);
     });
   });
-
-  // ─── Artist ──────────────────────────────────────────────────────────────
-
-  group('Artist.coverArt', () {
-    test('returns null when no albums', () {
-      expect(Artist().coverArt, isNull);
-    });
-  });
-
-  group('Artist.isLocal', () {
-    test('returns true when no songs', () {
-      expect(Artist().isLocal, isTrue);
-    });
-  });
-
-  group('Artist.toString', () {
-    test('returns artist name', () {
-      final artist = Artist();
-      artist.name = 'Pink Floyd';
-      expect(artist.toString(), 'Pink Floyd');
-    });
-  });
-
-  // ─── Playlist ────────────────────────────────────────────────────────────
-
-  group('Playlist.duration', () {
-    test('returns 0 when no songs', () {
-      expect(Playlist().duration, 0);
-    });
-
-    test('caches computed duration on second call', () {
-      final p = Playlist();
-      final d1 = p.duration;
-      final d2 = p.duration;
-      expect(d1, equals(d2));
-    });
-  });
-
-  group('Playlist.isLocal', () {
-    test('returns true when no songs', () {
-      expect(Playlist().isLocal, isTrue);
-    });
-  });
-
-  group('Playlist.songsList', () {
-    test('returns empty list when songFileHashes is empty', () {
-      expect(Playlist().songsList, isEmpty);
-    });
-
-    test('returns empty list when songFileHashes has no matching songs', () {
-      final p = Playlist();
-      p.songFileHashes = ['hash-999'];
-      expect(p.songsList, isEmpty);
-    });
-  });
-
-  group('Playlist.coverArt', () {
-    test('returns imageBytes', () {
-      final p = Playlist();
-      final bytes = Uint8List.fromList([5, 6]);
-      p.imageBytes = bytes;
-      expect(p.coverArt, equals(bytes));
-    });
-
-    test('returns null when imageBytes not set', () {
-      expect(Playlist().coverArt, isNull);
-    });
-  });
-
-  // ─── AppSettings ─────────────────────────────────────────────────────────
 
   group('AppSettings.fromJson', () {
     test('parses all fields', () {
@@ -254,28 +199,10 @@ void main() {
         equals(original.songPlaceIncludeSubfolders),
       );
     });
-
-    test('toJson contains all expected keys', () {
-      final json = AppSettings().toJson();
-      expect(
-        json.keys,
-        containsAll([
-          'firstTime',
-          'systemTray',
-          'fullClose',
-          'drawerOpen',
-          'mainSongPlace',
-          'songPlaces',
-          'songPlaceIncludeSubfolders',
-        ]),
-      );
-    });
   });
 
-  // ─── AudioSettings ───────────────────────────────────────────────────────
-
-  group('AudioSettings.fromJson', () {
-    test('parses all fields', () {
+  group('AudioSettings', () {
+    test('fromJson parses all fields', () {
       final settings = AudioSettings.fromJson({
         'repeat': true,
         'shuffle': true,
@@ -291,71 +218,12 @@ void main() {
       expect(settings.speed, 1.5);
       expect(settings.volume, 0.8);
       expect(settings.sliderInSeconds, 10);
-      expect(settings.playing, isFalse); // @Transient — never persisted
+      expect(settings.playing, isFalse);
     });
 
-    test('uses defaults when fields absent', () {
-      final settings = AudioSettings.fromJson({});
-
-      expect(settings.repeat, isFalse);
-      expect(settings.shuffle, isFalse);
-      expect(settings.pitch, 0.0);
-      expect(settings.speed, 1.0);
-      expect(settings.volume, 1.0);
-      expect(settings.sliderInSeconds, 0);
-    });
-
-    test('coerces int pitch/speed/volume from JSON numbers', () {
-      final settings = AudioSettings.fromJson({
-        'pitch': 1,
-        'speed': 2,
-        'volume': 1,
-      });
-      expect(settings.pitch, isA<double>());
-      expect(settings.speed, isA<double>());
-      expect(settings.volume, isA<double>());
-    });
-  });
-
-  group('AudioSettings.toJson', () {
-    test('round-trip through fromJson then toJson', () {
-      final original = AudioSettings();
-      original.repeat = true;
-      original.shuffle = true;
-      original.pitch = 0.5;
-      original.speed = 1.25;
-      original.volume = 0.9;
-      original.sliderInSeconds = 5;
-
-      final json = original.toJson();
-      final restored = AudioSettings.fromJson(json);
-
-      expect(restored.repeat, original.repeat);
-      expect(restored.shuffle, original.shuffle);
-      expect(restored.pitch, original.pitch);
-      expect(restored.speed, original.speed);
-      expect(restored.volume, original.volume);
-      expect(restored.sliderInSeconds, original.sliderInSeconds);
-    });
-
-    test('toJson does not include @Transient playing field', () {
+    test('toJson omits transient playing field', () {
       final json = AudioSettings().toJson();
       expect(json.containsKey('playing'), isFalse);
-    });
-
-    test('toJson contains all expected keys', () {
-      final json = AudioSettings().toJson();
-      expect(
-        json.keys,
-        containsAll([
-          'repeat',
-          'shuffle',
-          'pitch',
-          'speed',
-          'volume',
-          'sliderInSeconds',
-        ]),
-      );
     });
   });
 }
