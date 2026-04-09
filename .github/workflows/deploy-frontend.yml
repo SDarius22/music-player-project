@@ -23,7 +23,7 @@ jobs:
           filters: |
             lib:
               - 'music-player-frontend/lib/**'
-	      - 'music-player-frontend/test/**'
+              - 'music-player-frontend/test/**'
 
   test:
     needs: check-changes
