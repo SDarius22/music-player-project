@@ -19,7 +19,7 @@ void main() {
       final repo = InMemorySongRepository();
 
       final future = repo.watchSongs().first;
-      repo.saveSong(Song('new-song')..setName('Hello'));
+      repo.saveSong(Song('new-song')..name = 'New Song');
 
       final emitted = await future as List<Song>;
       expect(emitted, hasLength(1));
@@ -28,11 +28,11 @@ void main() {
 
     test('favorite and most played queries return expected songs', () {
       final repo = InMemorySongRepository();
-      final a = Song('a')
-        ..likedByUser = true
-        ..playCount = 1;
-      final b = Song('b')
-        ..playCount = 5;
+      final a =
+          Song('a')
+            ..likedByUser = true
+            ..playCount = 1;
+      final b = Song('b')..playCount = 5;
       repo.saveSongs([a, b]);
 
       expect(repo.getFavoriteSongs().map((s) => s.getHash()), ['a']);
