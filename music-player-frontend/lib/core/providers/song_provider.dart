@@ -28,8 +28,9 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     if (_isInitialized) return;
 
     debugPrint("Performing initial quick scan...");
-    await _scannerService.performQuickScan();
-    runSync();
+    //TODO: change this later on
+    // await _scannerService.performQuickScan();
+    // runSync();
 
     _isInitialized = true;
   }
