@@ -16,6 +16,8 @@ class LyricsProvider with ChangeNotifier {
     if (!_hasBeenInitialized) {
       _hasBeenInitialized = true;
     }
+    _buildLyricsModel();
+
     _audioService.currentSongNotifier.addListener(() {
       _buildLyricsModel();
     });
