@@ -133,7 +133,8 @@ class WebRTCService {
   }
 
   Future<void> registerCache(String fileHash, List<int> chunkIndices) async {
-    if (!authService.isLoggedIn || !await _isP2PAllowed()) {
+    final allowed = await _isP2PAllowed();
+    if (!authService.isLoggedIn || !allowed) {
       debugPrint(
         '[P2P] Skipping cache registration for $fileHash — not allowed',
       );
@@ -152,7 +153,10 @@ class WebRTCService {
   }
 
   Future<void> discoverPeers(String fileHash) async {
-    if (!authService.isLoggedIn || !await _isP2PAllowed()) return;
+    final allowed = await _isP2PAllowed();
+    if (!authService.isLoggedIn || !allowed) {
+      return;
+    }
     signalingSocket.sink.add(
       jsonEncode({
         'type': 'DISCOVER_PEERS',
@@ -336,7 +340,7 @@ class WebRTCService {
   ) async {
     if (_peerConnections.containsKey(remotePeerId)) return;
 
-    _iceQueues[remotePeerId] = [];
+    _iceQueues.putIfAbsent(remotePeerId, () => []);
     final pc = await createPeerConnection(_iceServers);
     _peerConnections[remotePeerId] = pc;
 
@@ -662,7 +666,7 @@ class WebRTCService {
 
   void _cleanupStaleRequests() {
     final cutoff = DateTime.now().subtract(const Duration(seconds: 2));
-    _outstandingChunkRequests.removeWhere((_, v) {
+    _outstandingChunkRequests.removeWhere((key, v) {
       if (v.sentAt.isBefore(cutoff)) {
         _peerStats.putIfAbsent(v.peerId, _PeerStats.new).recordFailure();
         return true;
@@ -777,7 +781,8 @@ class WebRTCService {
           if (icePc != null && await icePc.getRemoteDescription() != null) {
             await icePc.addCandidate(candidate);
           } else {
-            _iceQueues[senderId]?.add(candidate);
+            final queue = _iceQueues.putIfAbsent(senderId, () => []);
+            queue.add(candidate);
           }
       }
     }, onError: (e) => debugPrint('[P2P] signaling error: $e'));
@@ -790,8 +795,12 @@ class WebRTCService {
     final mode = settings.peerNetworkMode; // 0=WiFi 1=Cellular 2=Both
     if (mode == 2) return true;
     final results = await Connectivity().checkConnectivity();
-    if (mode == 0) return results.contains(ConnectivityResult.wifi);
-    if (mode == 1) return results.contains(ConnectivityResult.mobile);
+    if (mode == 0) {
+      return results.contains(ConnectivityResult.wifi);
+    }
+    if (mode == 1) {
+      return results.contains(ConnectivityResult.mobile);
+    }
     return true;
   }
 

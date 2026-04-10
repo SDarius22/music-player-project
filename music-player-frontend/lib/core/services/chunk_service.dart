@@ -20,6 +20,9 @@ class ChunkService {
   ChunkManifestDto? manifest;
 
   static const int _preloadAhead = 16;
+  static const Duration _playbackPeerTimeout = Duration(milliseconds: 1700);
+  static const Duration _prefetchPeerTimeout = Duration(milliseconds: 2500);
+  static const Duration _peerFanoutStep = Duration(milliseconds: 150);
 
   final Map<int, Future<Uint8List>> _activeRequests = {};
   final Map<int, Completer<Uint8List>> _p2pCompleters = {};
@@ -136,20 +139,13 @@ class ChunkService {
           data = await _requestFromPeers(
             index,
             peers,
-          ).timeout(const Duration(seconds: 1));
+          ).timeout(_playbackPeerTimeout);
           source = _ChunkSource.p2p;
-          debugPrint('[P2P] song=$fileHash chunk=$index — served by peer');
         } catch (_) {
           _p2pCompleters.remove(index);
-          debugPrint(
-            '[P2P] song=$fileHash chunk=$index — peer timeout/fail, falling back to server',
-          );
           data = await _streamingClient.downloadChunkFallback(fileHash, index);
         }
       } else {
-        debugPrint(
-          '[P2P] song=$fileHash chunk=$index — no peers available, fetching from server',
-        );
         data = await _streamingClient.downloadChunkFallback(fileHash, index);
       }
     }
@@ -211,11 +207,13 @@ class ChunkService {
     final completer = Completer<Uint8List>();
     _p2pCompleters[index] = completer;
 
-    _webrtcManager.requestChunkFromPeer(peers[0], fileHash, index);
+    final peersToTry = peers.take(3).toList(growable: false);
 
-    for (var i = 1; i < peers.length && i <= 2; i++) {
-      final peerId = peers[i];
-      Future.delayed(Duration(milliseconds: 200 * i), () {
+    _webrtcManager.requestChunkFromPeer(peersToTry[0], fileHash, index);
+
+    for (var i = 1; i < peersToTry.length; i++) {
+      final peerId = peersToTry[i];
+      Future.delayed(_peerFanoutStep * i, () {
         if (!completer.isCompleted) {
           _webrtcManager.requestChunkFromPeer(peerId, fileHash, index);
         }
@@ -246,7 +244,7 @@ class ChunkService {
         data = await _requestFromPeers(
           index,
           peers,
-        ).timeout(const Duration(seconds: 2));
+        ).timeout(_prefetchPeerTimeout);
       } catch (_) {
         _p2pCompleters.remove(index);
         try {
