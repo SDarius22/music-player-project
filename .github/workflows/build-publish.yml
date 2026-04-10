@@ -52,7 +52,7 @@ jobs:
 
           - os: macos-latest
             target: macos
-            build_cmd: flutter build macos --release --no-codesign --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling
+            build_cmd: flutter build macos --release --config-only --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling && xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Release -derivedDataPath build/macos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM=""
             artifact_name: music-player-macos
             artifact_path: music-player-frontend/music-player-macos.zip
 
