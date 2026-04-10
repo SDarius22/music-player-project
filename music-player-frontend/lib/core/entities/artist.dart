@@ -24,11 +24,7 @@ class Artist implements BaseEntity {
   @Backlink('artist')
   final songs = ToMany<Song>();
 
-  Artist(this.hash, this.name, {List<Song> songs = const []}) {
-    for (var song in songs) {
-      addSong(song);
-    }
-  }
+  Artist(this.hash, this.name);
 
   void addSong(Song song) {
     songs.add(song);
@@ -41,6 +37,11 @@ class Artist implements BaseEntity {
   @override
   String getName() {
     return name;
+  }
+
+  @override
+  String getSecondaryText() {
+    return "${songs.length} Songs";
   }
 
   @override

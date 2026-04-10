@@ -94,11 +94,9 @@ class LinuxMusicScannerService implements AbstractMusicScannerService {
 
           var album = _albumService.getOrCreateAlbum(albumName, artist);
 
-          existing.setName(
-            metadata['title'] ?? _getFileNameWithoutExtension(file.path),
-          );
-
           existing
+            ..name =
+                metadata['title'] ?? _getFileNameWithoutExtension(file.path)
             ..durationInSeconds = metadata['duration'] ?? 0
             ..trackNumber = metadata['trackNumber'] ?? 0
             ..discNumber = metadata['discNumber'] ?? 0
@@ -120,8 +118,8 @@ class LinuxMusicScannerService implements AbstractMusicScannerService {
           var artist = _artistService.getOrCreateArtist('Unknown Artist');
           var album = _albumService.getOrCreateAlbum('Unknown Album', artist);
 
-          existing.setName(_getFileNameWithoutExtension(file.path));
           existing
+            ..name = _getFileNameWithoutExtension(file.path)
             ..fullyLoaded = true
             ..requiresSync = true
             ..artist.target = artist

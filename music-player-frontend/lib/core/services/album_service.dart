@@ -138,7 +138,7 @@ class AlbumService {
 
       cachedSong.artist.targetId = cachedArtist.id;
       cachedSong.album.targetId = cachedAlbum.id;
-      cachedSong.setName(song.name);
+      cachedSong.name = song.name;
       cachedSong.discNumber = song.discNumber;
       cachedSong.trackNumber = song.trackNumber;
       cachedSong.durationInSeconds = song.durationInSeconds;

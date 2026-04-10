@@ -65,6 +65,11 @@ class Playlist implements BaseEntity {
     return name;
   }
 
+  @override
+  String getSecondaryText() {
+    return "${_songs.length} Songs";
+  }
+
   void setName(String value) {
     name = value;
   }

@@ -42,8 +42,9 @@ class Song implements BaseEntity {
     return name;
   }
 
-  void setName(String value) {
-    name = value;
+  @override
+  String getSecondaryText() {
+    return artist.target?.name ?? 'Unknown Artist';
   }
 
   @override

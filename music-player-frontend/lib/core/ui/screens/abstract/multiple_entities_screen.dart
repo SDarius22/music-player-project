@@ -40,36 +40,41 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
 
 class _MultipleEntitiesScreenState<T extends QueryableProvider>
     extends State<MultipleEntitiesScreen<T>> {
+  static const int _pageSize = 30;
+
   late String _sortField;
   late bool _ascending;
   String _query = '';
-  int _currentPage = 0;
-  bool _isLoading = false;
-  bool _hasMore = true;
-  final List<dynamic> _items = [];
   late ScrollController _scrollController;
+  late final ValueNotifier<_PagedViewState> _viewState;
+  late final ValueNotifier<Future<void>> _loadFuture;
+  int _requestId = 0;
 
   @override
   void initState() {
     super.initState();
     _sortField = widget.provider.sortFields.keys.firstOrNull ?? 'Name';
     _ascending = true;
+    _viewState = ValueNotifier<_PagedViewState>(const _PagedViewState());
+    _loadFuture = ValueNotifier<Future<void>>(Future.value());
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     (widget.provider as ChangeNotifier).addListener(_onProviderChanged);
-    _fetchPage(0, reset: true);
+    _runLoad(() => _fetchPage(0, reset: true));
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _viewState.dispose();
+    _loadFuture.dispose();
     (widget.provider as ChangeNotifier).removeListener(_onProviderChanged);
     super.dispose();
   }
 
   void _onProviderChanged() {
-    _fetchPage(0, reset: true);
+    _runLoad(() => _fetchPage(0, reset: true));
   }
 
   void _onScroll() {
@@ -80,48 +85,67 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
   }
 
   void _fetchNextPage() {
-    if (!_hasMore || _isLoading) return;
-    _fetchPage(_currentPage + 1);
+    final state = _viewState.value;
+    if (!state.hasMore || state.isLoading) return;
+    _runLoad(() => _fetchPage(state.currentPage + 1));
   }
 
   Future<void> _fetchPage(int page, {bool reset = false}) async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
+    final state = _viewState.value;
+    if (state.isLoading) return;
+
+    final requestId = ++_requestId;
+    _viewState.value = state.copyWith(isLoading: true, clearError: true);
+
     try {
       final result = await widget.provider.fetchPage(
         _query,
         _sortField,
         _ascending,
         page,
-        30,
+        _pageSize,
       );
-      if (!mounted) return;
-      setState(() {
-        if (reset) _items.clear();
-        _items.addAll(result.content);
-        _currentPage = result.page;
-        _hasMore = result.page < result.totalPages - 1;
-      });
+      if (!mounted || requestId != _requestId) return;
+
+      final current = _viewState.value;
+      final nextItems =
+          reset
+              ? List<dynamic>.from(result.content)
+              : <dynamic>[...current.items, ...result.content];
+
+      _viewState.value = current.copyWith(
+        items: nextItems,
+        currentPage: result.page,
+        hasMore: result.page < result.totalPages - 1,
+        isLoading: false,
+      );
     } catch (e) {
+      if (!mounted || requestId != _requestId) return;
       debugPrint('MultipleEntitiesScreen: fetchPage error: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      _viewState.value = _viewState.value.copyWith(
+        isLoading: false,
+        error: e,
+      );
     }
+  }
+
+  void _runLoad(Future<void> Function() action) {
+    _loadFuture.value = action();
   }
 
   void _onQuery(String q) {
     _query = q;
-    _fetchPage(0, reset: true);
+    _runLoad(() => _fetchPage(0, reset: true));
   }
 
   void _onSortField(String field) {
     _sortField = field;
-    _fetchPage(0, reset: true);
+    _runLoad(() => _fetchPage(0, reset: true));
   }
 
   void _onAscending(bool asc) {
     _ascending = asc;
-    _fetchPage(0, reset: true);
+    _runLoad(() => _fetchPage(0, reset: true));
   }
 
   @override
@@ -154,27 +178,52 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
             child: RefreshIndicator(
               onRefresh: () async {
                 await widget.provider.refresh();
-                await _fetchPage(0, reset: true);
+                _runLoad(() => _fetchPage(0, reset: true));
+                await _loadFuture.value;
               },
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: EdgeInsets.only(
-                      left: width * 0.01,
-                      right: width * 0.01,
-                    ),
-                    sliver: _buildGrid(context),
-                  ),
-                  if (_isLoading)
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    ),
-                ],
+              child: ValueListenableBuilder<Future<void>>(
+                valueListenable: _loadFuture,
+                builder: (context, future, _) {
+                  return FutureBuilder<void>(
+                    future: future,
+                    builder: (context, snapshot) {
+                      return ValueListenableBuilder<_PagedViewState>(
+                        valueListenable: _viewState,
+                        builder: (context, state, _) {
+                          return CustomScrollView(
+                            controller: _scrollController,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            slivers: [
+                              if (snapshot.connectionState == ConnectionState.waiting &&
+                                  state.items.isEmpty)
+                                const SliverFillRemaining(
+                                  hasScrollBody: false,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              else
+                                SliverPadding(
+                                  padding: EdgeInsets.only(
+                                    left: width * 0.01,
+                                    right: width * 0.01,
+                                  ),
+                                  sliver: _buildGrid(context, state),
+                                ),
+                              if (state.isLoading && state.items.isNotEmpty)
+                                const SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ),
@@ -183,7 +232,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     );
   }
 
-  Widget _buildGrid(BuildContext context) {
+  Widget _buildGrid(BuildContext context, _PagedViewState state) {
     final selectionProvider = Provider.of<SelectionProvider>(
       context,
       listen: false,
@@ -192,7 +241,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
       selector: (context, p) => p.selectedEntities,
       builder: (context, selected, child) {
         return CustomGridComponent(
-          items: _items,
+          items: state.items,
           isSelected: (entity) => selected.contains(entity),
           onTap: (entity) async {
             if (selected.isNotEmpty) {
@@ -203,7 +252,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
               }
               return;
             }
-            await widget.onEntityTap(entity, _items, context);
+            await widget.onEntityTap(entity, state.items, context);
           },
           onLongPress: (entity) {
             if (selected.contains(entity)) {
@@ -241,3 +290,37 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     );
   }
 }
+
+class _PagedViewState {
+  final List<dynamic> items;
+  final int currentPage;
+  final bool isLoading;
+  final bool hasMore;
+  final Object? error;
+
+  const _PagedViewState({
+    this.items = const [],
+    this.currentPage = 0,
+    this.isLoading = false,
+    this.hasMore = true,
+    this.error,
+  });
+
+  _PagedViewState copyWith({
+    List<dynamic>? items,
+    int? currentPage,
+    bool? isLoading,
+    bool? hasMore,
+    Object? error,
+    bool clearError = false,
+  }) {
+    return _PagedViewState(
+      items: items ?? this.items,
+      currentPage: currentPage ?? this.currentPage,
+      isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+

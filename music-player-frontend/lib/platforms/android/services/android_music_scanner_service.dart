@@ -78,9 +78,8 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
 
         var album = _albumService.getOrCreateAlbum(albumName, artist);
 
-        existing.setName(songModel.title);
-
         existing
+          ..name = songModel.title
           ..durationInSeconds = (songModel.duration ?? 0) ~/ 1000
           ..trackNumber = songModel.track ?? 0
           ..discNumber = songModel

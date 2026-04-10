@@ -121,7 +121,7 @@ class ArtistService {
         cachedArtist,
       );
 
-      cachedSong.setName(song.name);
+      cachedSong.name = song.name;
       cachedSong.artist.target = cachedArtist;
       cachedSong.album.target = cachedAlbum;
       cachedSong.discNumber = song.discNumber;

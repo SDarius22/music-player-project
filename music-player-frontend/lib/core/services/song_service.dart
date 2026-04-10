@@ -301,7 +301,7 @@ class SongService {
     }
 
     var cachedSong = _songRepository.getOrCreateSong(serverSong.fileHash);
-    cachedSong.setName(serverSong.name);
+    cachedSong.name = serverSong.name;
     cachedSong.durationInSeconds = serverSong.durationInSeconds;
     cachedSong.trackNumber = serverSong.trackNumber;
     cachedSong.discNumber = serverSong.discNumber;
@@ -311,14 +311,14 @@ class SongService {
       serverSong.artist.hash,
       serverSong.artist.name,
     );
-    cachedSong.artist.targetId = artist.id;
+    cachedSong.artist.target = artist;
 
     var album = _albumRepository.getOrCreateAlbum(
       serverSong.album.hash,
       serverSong.album.name,
       artist,
     );
-    cachedSong.album.targetId = album.id;
+    cachedSong.album.target = album;
 
     var finalSong = _songRepository.saveSong(cachedSong);
 

@@ -57,6 +57,11 @@ class Album implements BaseEntity {
   }
 
   @override
+  String getSecondaryText() {
+    return artist.target?.name ?? 'Unknown Artist';
+  }
+
+  @override
   String getHash() {
     return hash;
   }
