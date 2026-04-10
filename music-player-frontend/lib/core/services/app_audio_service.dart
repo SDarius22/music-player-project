@@ -49,9 +49,6 @@ class AppAudioService {
   StreamSubscription<PlayerState>? _playerStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<PlayerException>? _errorSubscription;
-  String? _lastAutoAdvancedSongToken;
-
-  static const Duration _songEndEpsilon = Duration(milliseconds: 350);
 
   List<Song> _normalQueue = [];
   List<Song> _shuffledQueue = [];
@@ -90,53 +87,22 @@ class AppAudioService {
     _normalQueue = List.from(_queuePlaylist.getSongs());
     _initPlayer();
 
-    _processingStateSubscription = this.audioPlayer.processingStateStream
-        .listen((state) {
-          if (state == ProcessingState.completed) {
-            unawaited(_maybeHandleSongCompletion('processingState.completed'));
-          }
-        });
-
-    _playerStateSubscription = this.audioPlayer.playerStateStream.listen((_) {
-      unawaited(_maybeHandleSongCompletion('playerState.fallback'));
+    this.audioPlayer.processingStateStream.listen((state) {
+      if (state == ProcessingState.completed) {
+        _onSongCompleted();
+      }
     });
 
-    _positionSubscription = this.audioPlayer.positionStream.listen((_) {
-      unawaited(_maybeHandleSongCompletion('position.fallback'));
+    _positionSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (this.audioPlayer.playing) {
+        pushStateToServer();
+        unawaited(_proactivelyCachePrefixes());
+      }
     });
 
-    _errorSubscription = this.audioPlayer.errorStream.listen((error) {
+    this.audioPlayer.errorStream.listen((error) {
       debugPrint("Audio Player Error: $error");
     });
-  }
-
-  Future<void> _maybeHandleSongCompletion(String reason) async {
-    if (_activeQueue.isEmpty || _isSwitchingSong) return;
-    if (_currentAudioSettings.repeat) return;
-
-    final song = currentSong;
-    if (song == null) return;
-
-    final duration = audioPlayer.duration;
-    final position = audioPlayer.position;
-    final completedState =
-        audioPlayer.processingState == ProcessingState.completed;
-    final reachedEnd =
-        duration != null &&
-        duration > Duration.zero &&
-        position + _songEndEpsilon >= duration;
-
-    if (!completedState && !reachedEnd) return;
-
-    final token = '${song.getHash()}::$_currentIndex';
-    if (_lastAutoAdvancedSongToken == token) return;
-    _lastAutoAdvancedSongToken = token;
-
-    debugPrint(
-      '[AppAudioService] End-of-song detected via $reason (completed=$completedState, position=$position, duration=$duration)',
-    );
-
-    await _onSongCompleted();
   }
 
   Future<void> play() {
@@ -197,7 +163,8 @@ class AppAudioService {
     debugPrint(
       '[AppAudioService] Playback stuck for ${maxStuckMs}ms, retrying',
     );
-    await _loadAndPlayIndex(_currentIndex);
+    await _loadIndex(_currentIndex);
+    await play();
   }
 
   Future<void> pause() {
@@ -208,14 +175,16 @@ class AppAudioService {
   Future<void> skipToNext() async {
     if (_activeQueue.isEmpty) return;
     _currentIndex = (_currentIndex + 1) % _activeQueue.length;
-    await _loadAndPlayIndex(_currentIndex);
+    await _loadIndex(_currentIndex);
+    await play();
   }
 
   Future<void> skipToPrevious() async {
     if (_activeQueue.isEmpty) return;
     _currentIndex =
         _currentIndex > 0 ? _currentIndex - 1 : _activeQueue.length - 1;
-    await _loadAndPlayIndex(_currentIndex);
+    await _loadIndex(_currentIndex);
+    await play();
   }
 
   Future<void> seek(Duration position) async {
@@ -254,7 +223,6 @@ class AppAudioService {
     if (shuffle == _currentAudioSettings.shuffle) return;
     _currentAudioSettings.shuffle = shuffle;
     settingsService.updateAudioSettings(_currentAudioSettings);
-    // Find current song in the newly active queue and sync the index.
     final current = currentSong;
     final idx = _activeQueue.indexWhere((s) => s == current);
     _currentIndex = idx < 0 ? 0 : idx;
@@ -332,7 +300,8 @@ class AppAudioService {
     if (wasCurrentSong) {
       if (_activeQueue.isNotEmpty) {
         _currentIndex = _currentIndex.clamp(0, _activeQueue.length - 1);
-        await _loadAndPlayIndex(_currentIndex);
+        await _loadIndex(_currentIndex);
+        await play();
       }
     } else if (activeIdx < _currentIndex) {
       _currentIndex--;
@@ -360,7 +329,8 @@ class AppAudioService {
     try {
       final idx = _activeQueue.indexWhere((s) => s == song);
       _currentIndex = idx < 0 ? 0 : idx;
-      await _loadAndPlayIndex(_currentIndex);
+      await _loadIndex(_currentIndex);
+      await play();
     } catch (e) {
       debugPrint("Error setting current song and playing: $e");
     }
@@ -380,12 +350,9 @@ class AppAudioService {
       _rebuildShuffledQueue(prioritySong: currentSong);
       final idx = _activeQueue.indexWhere((s) => s == currentSong);
       _currentIndex = idx < 0 ? 0 : idx;
-      final source = _buildAudioSource(_activeQueue[_currentIndex]);
-      await audioPlayer.setAudioSource(
-        source,
-        initialPosition: Duration(
-          seconds: _currentAudioSettings.sliderInSeconds,
-        ),
+      await _loadIndex(
+        _currentIndex,
+        position: _currentAudioSettings.sliderInSeconds,
       );
     }
 
@@ -398,16 +365,17 @@ class AppAudioService {
     );
     if (_activeQueue.isEmpty || _isSwitchingSong) return;
     _currentIndex = (_currentIndex + 1) % _activeQueue.length;
-    await _loadAndPlayIndex(_currentIndex);
+    await _loadIndex(_currentIndex);
+    await play();
     unawaited(songService.syncLibraryMetadata());
   }
 
-  Future<void> _loadAndPlayIndex(int idx) async {
+  Future<void> _loadIndex(int idx, {int? position}) async {
     debugPrint('[AppAudioService] _loadAndPlayIndex($idx) called');
     if (_activeQueue.isEmpty) return;
+    _isSwitchingSong = true;
     await _initDone.future;
     _finalizePlayDuration();
-    _isSwitchingSong = true;
 
     try {
       final outgoing = currentSong;
@@ -427,8 +395,10 @@ class AppAudioService {
       if (!UniversalPlatform.isDesktop) {
         await audioPlayer.stop();
       }
-      await audioPlayer.setAudioSource(_buildAudioSource(song));
-      await play();
+      await audioPlayer.setAudioSource(
+        _buildAudioSource(song),
+        initialPosition: Duration(seconds: position ?? 0),
+      );
       _onSongStarted(song);
       pushStateToServer();
     } finally {
@@ -607,7 +577,6 @@ class AppAudioService {
   }
 
   void _onSongStarted(Song song) {
-    _lastAutoAdvancedSongToken = null;
     song.lastPlayed = DateTime.now();
     song.playCount += 1;
     song.pendingPlayCountDelta += 1;

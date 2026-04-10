@@ -133,10 +133,12 @@ class WebRTCService {
   }
 
   Future<void> registerCache(String fileHash, List<int> chunkIndices) async {
-    if (!authService.isLoggedIn || !await _isP2PAllowed()) return;
-    debugPrint(
-      '[P2P] Registering cache — song=$fileHash chunks=${chunkIndices.length}',
-    );
+    if (!authService.isLoggedIn || !await _isP2PAllowed()) {
+      debugPrint(
+        '[P2P] Skipping cache registration for $fileHash — not allowed',
+      );
+      return;
+    }
     signalingSocket.sink.add(
       jsonEncode({
         'type': 'REGISTER_CACHE',
