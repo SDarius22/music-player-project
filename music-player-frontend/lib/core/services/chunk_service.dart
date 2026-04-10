@@ -147,6 +147,9 @@ class ChunkService {
           data = await _streamingClient.downloadChunkFallback(fileHash, index);
         }
       } else {
+        debugPrint(
+          '[P2P] song=$fileHash chunk=$index — no peers available, fetching from server',
+        );
         data = await _streamingClient.downloadChunkFallback(fileHash, index);
       }
     }

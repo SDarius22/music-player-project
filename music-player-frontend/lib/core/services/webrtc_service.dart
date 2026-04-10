@@ -61,6 +61,9 @@ class WebRTCService {
   final Map<String, ({String peerId, DateTime sentAt})>
   _outstandingChunkRequests = {};
 
+  // Tracks peers for which we sent an offer and are waiting for an answer.
+  final Set<String> _awaitingAnswerFromPeers = {};
+
   Timer? _keepaliveTimer;
 
   final Map<String, dynamic> _iceServers = {
@@ -81,6 +84,120 @@ class WebRTCService {
   }) {
     _listenToSignaling();
     _startKeepalive();
+  }
+
+  @visibleForTesting
+  static Map<String, dynamic>? normalizePayload(dynamic payload) {
+    if (payload is! Map) return null;
+    return payload.map((key, value) => MapEntry(key.toString(), value));
+  }
+
+  @visibleForTesting
+  static String? nonEmptyString(dynamic value) {
+    if (value is! String) return null;
+    final normalized = value.trim();
+    return normalized.isEmpty ? null : normalized;
+  }
+
+  @visibleForTesting
+  static ({String sdp, String type})? parseSdpPayload(dynamic payload) {
+    final map = _normalizeSignalMap(payload);
+    if (map == null) return null;
+
+    final sdp = _normalizeSdp(map['sdp']);
+    final type = nonEmptyString(map['type'])?.toLowerCase();
+    if (sdp == null || type == null) return null;
+
+    const validTypes = {'offer', 'answer', 'pranswer', 'rollback'};
+    if (!validTypes.contains(type)) return null;
+
+    // Basic sanity check to avoid passing malformed SDP into native WebRTC.
+    if (!sdp.startsWith('v=')) return null;
+
+    return (sdp: sdp, type: type);
+  }
+
+  static Map<String, dynamic>? _normalizeSignalMap(dynamic payload) {
+    if (payload is Map) {
+      return payload.map((key, value) => MapEntry(key.toString(), value));
+    }
+
+    final payloadString = nonEmptyString(payload);
+    if (payloadString == null) return null;
+
+    try {
+      final decoded = jsonDecode(payloadString);
+      if (decoded is Map) {
+        return decoded.map((key, value) => MapEntry(key.toString(), value));
+      }
+    } catch (_) {
+      // Not a JSON object payload; treat as invalid for SDP parsing.
+    }
+    return null;
+  }
+
+  static String? _normalizeSdp(dynamic value) {
+    var sdp = nonEmptyString(value);
+    if (sdp == null) return null;
+
+    // Some signaling paths may double-encode SDP as a quoted JSON string.
+    if (sdp.length >= 2 && sdp.startsWith('"') && sdp.endsWith('"')) {
+      sdp = sdp.substring(1, sdp.length - 1);
+    }
+
+    // Convert escaped line endings into real line endings before native parsing.
+    sdp = sdp
+        .replaceAll(r'\r\n', '\n')
+        .replaceAll(r'\n', '\n')
+        .trim();
+
+    return sdp.isEmpty ? null : sdp;
+  }
+
+  Future<bool> _applyRemoteDescription(
+    String peerId,
+    RTCPeerConnection pc,
+    ({String sdp, String type}) remote,
+  ) async {
+    try {
+      await pc.setRemoteDescription(RTCSessionDescription(remote.sdp, remote.type));
+      return true;
+    } catch (e) {
+      debugPrint(
+        '[P2P] Failed setRemoteDescription from $peerId '
+        '(type=${remote.type}, sdpLength=${remote.sdp.length}): $e',
+      );
+      _closePeer(peerId);
+      return false;
+    }
+  }
+
+  Future<bool> _isStaleOrUnexpectedAnswer(
+    String senderId,
+    RTCPeerConnection pc,
+  ) async {
+    if (!_awaitingAnswerFromPeers.remove(senderId)) return true;
+
+    final local = await pc.getLocalDescription();
+    return local == null || local.type?.toLowerCase() != 'offer';
+  }
+
+  RTCIceCandidate? _parseIceCandidate(dynamic payload) {
+    final map = normalizePayload(payload);
+    if (map == null) return null;
+
+    final candidate = nonEmptyString(map['candidate']);
+    if (candidate == null) return null;
+
+    final sdpMid = map['sdpMid'] as String?;
+    final mLineRaw = map['sdpMLineIndex'];
+    final sdpMLineIndex = switch (mLineRaw) {
+      int value => value,
+      String value => int.tryParse(value),
+      _ => null,
+    };
+
+    return RTCIceCandidate(candidate, sdpMid, sdpMLineIndex);
   }
 
   void _startKeepalive() {
@@ -252,12 +369,19 @@ class WebRTCService {
       _setupDataChannel(remotePeerId, dc);
 
       final offer = await pc.createOffer();
+      final offerSdp = nonEmptyString(offer.sdp);
+      final offerType = nonEmptyString(offer.type);
+      if (offerSdp == null || offerType == null) {
+        debugPrint('[P2P] Skipping OFFER to $remotePeerId due to empty local SDP');
+        return;
+      }
       await pc.setLocalDescription(offer);
+      _awaitingAnswerFromPeers.add(remotePeerId);
 
       _sendSignal(
         type: 'OFFER',
         targetId: remotePeerId,
-        payload: {'sdp': offer.sdp, 'type': offer.type},
+        payload: {'sdp': offerSdp, 'type': offerType},
       );
     } else {
       pc.onDataChannel = (channel) {
@@ -462,11 +586,12 @@ class WebRTCService {
   void _listenToSignaling() {
     signalingSocket.stream.listen((message) async {
       final signal = jsonDecode(message);
+      if (signal is! Map) return;
       final type = signal['type'];
-      final senderId = signal['senderId'];
+      final senderId = nonEmptyString(signal['senderId']);
       final payload = signal['payload'];
 
-      if (senderId == myDeviceId) return;
+      if (senderId == null || senderId == myDeviceId) return;
 
       switch (type) {
         case 'SYNC_TRIGGER':
@@ -474,8 +599,12 @@ class WebRTCService {
           break;
 
         case 'PEER_BUFFER_MAP':
-          final discoveredFileHash = signal['fileHash'] as String;
-          final Map<String, dynamic> map = payload;
+          final discoveredFileHash = nonEmptyString(signal['fileHash']);
+          final map = normalizePayload(payload);
+          if (discoveredFileHash == null || map == null) {
+            debugPrint('[P2P] Ignoring malformed PEER_BUFFER_MAP signal');
+            break;
+          }
           for (final peerId in map.keys) {
             _peerLibraries.putIfAbsent(peerId, () => {});
             _peerLibraries[peerId]!.add(discoveredFileHash);
@@ -487,21 +616,47 @@ class WebRTCService {
           break;
 
         case 'OFFER':
+          if (_awaitingAnswerFromPeers.contains(senderId)) {
+            // Simple glare handling: deterministically pick one offer to keep.
+            final keepLocalOffer = myDeviceId.compareTo(senderId) > 0;
+            if (keepLocalOffer) {
+              debugPrint(
+                '[P2P] Ignoring OFFER from $senderId due to glare (keeping local offer)',
+              );
+              break;
+            }
+            debugPrint(
+              '[P2P] Glare detected with $senderId, dropping local offer and accepting remote OFFER',
+            );
+            _awaitingAnswerFromPeers.remove(senderId);
+            _closePeer(senderId);
+          }
+
           await _createPeerConnection(senderId, false);
           final pc = _peerConnections[senderId];
           if (pc != null) {
-            await pc.setRemoteDescription(
-              RTCSessionDescription(payload['sdp'], payload['type']),
-            );
+            final remote = parseSdpPayload(payload);
+            if (remote == null) {
+              debugPrint('[P2P] Ignoring malformed OFFER from $senderId');
+              break;
+            }
+            final applied = await _applyRemoteDescription(senderId, pc, remote);
+            if (!applied) break;
 
             _drainIceQueue(senderId, pc);
 
             final answer = await pc.createAnswer();
+            final answerSdp = nonEmptyString(answer.sdp);
+            final answerType = nonEmptyString(answer.type);
+            if (answerSdp == null || answerType == null) {
+              debugPrint('[P2P] Skipping ANSWER to $senderId due to empty local SDP');
+              break;
+            }
             await pc.setLocalDescription(answer);
             _sendSignal(
               type: 'ANSWER',
               targetId: senderId,
-              payload: {'sdp': answer.sdp, 'type': answer.type},
+              payload: {'sdp': answerSdp, 'type': answerType},
             );
           }
           break;
@@ -509,20 +664,26 @@ class WebRTCService {
         case 'ANSWER':
           final pc = _peerConnections[senderId];
           if (pc != null) {
-            await pc.setRemoteDescription(
-              RTCSessionDescription(payload['sdp'], payload['type']),
-            );
+            if (await _isStaleOrUnexpectedAnswer(senderId, pc)) {
+              debugPrint('[P2P] Ignoring stale/unexpected ANSWER from $senderId');
+              break;
+            }
+
+            final remote = parseSdpPayload(payload);
+            if (remote == null) {
+              debugPrint('[P2P] Ignoring malformed ANSWER from $senderId');
+              break;
+            }
+            final applied = await _applyRemoteDescription(senderId, pc, remote);
+            if (!applied) break;
             _drainIceQueue(senderId, pc);
           }
           break;
 
         case 'ICE_CANDIDATE':
           final pc = _peerConnections[senderId];
-          final candidate = RTCIceCandidate(
-            payload['candidate'],
-            payload['sdpMid'],
-            payload['sdpMLineIndex'],
-          );
+          final candidate = _parseIceCandidate(payload);
+          if (candidate == null) break;
 
           if (pc != null && (await pc.getRemoteDescription() != null)) {
             await pc.addCandidate(candidate);
@@ -531,6 +692,8 @@ class WebRTCService {
           }
           break;
       }
+    }, onError: (error) {
+      debugPrint('[P2P] signaling stream error: $error');
     });
   }
 
@@ -554,6 +717,7 @@ class WebRTCService {
     _iceQueues.remove(peerId);
     _peerLibraries.remove(peerId);
     _pendingChunkRequests.remove(peerId);
+    _awaitingAnswerFromPeers.remove(peerId);
 
     // Mark any in-flight requests to this peer as failures.
     _outstandingChunkRequests.removeWhere((_, value) {
