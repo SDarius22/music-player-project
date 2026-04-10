@@ -45,7 +45,7 @@ class LinuxApp extends AbstractApp {
         create: (_) => ObjectBoxSettingsRepository(),
       ),
     ];
-  }
+  } //test
 
   @override
   Widget getAppWidget(BuildContext context) {
