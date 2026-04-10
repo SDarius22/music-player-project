@@ -45,6 +45,13 @@ class AppAudioService {
   final Completer<void> _initDone = Completer<void>();
   Timer? _positionSaveTimer;
   DateTime? _playStartTime;
+  StreamSubscription<ProcessingState>? _processingStateSubscription;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<PlayerException>? _errorSubscription;
+  String? _lastAutoAdvancedSongToken;
+
+  static const Duration _songEndEpsilon = Duration(milliseconds: 350);
 
   List<Song> _normalQueue = [];
   List<Song> _shuffledQueue = [];
@@ -83,22 +90,53 @@ class AppAudioService {
     _normalQueue = List.from(_queuePlaylist.getSongs());
     _initPlayer();
 
-    this.audioPlayer.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
-        _onSongCompleted();
-      }
+    _processingStateSubscription = this.audioPlayer.processingStateStream
+        .listen((state) {
+          if (state == ProcessingState.completed) {
+            unawaited(_maybeHandleSongCompletion('processingState.completed'));
+          }
+        });
+
+    _playerStateSubscription = this.audioPlayer.playerStateStream.listen((_) {
+      unawaited(_maybeHandleSongCompletion('playerState.fallback'));
     });
 
-    _positionSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (this.audioPlayer.playing) {
-        pushStateToServer();
-        unawaited(_proactivelyCachePrefixes());
-      }
+    _positionSubscription = this.audioPlayer.positionStream.listen((_) {
+      unawaited(_maybeHandleSongCompletion('position.fallback'));
     });
 
-    this.audioPlayer.errorStream.listen((error) {
+    _errorSubscription = this.audioPlayer.errorStream.listen((error) {
       debugPrint("Audio Player Error: $error");
     });
+  }
+
+  Future<void> _maybeHandleSongCompletion(String reason) async {
+    if (_activeQueue.isEmpty || _isSwitchingSong) return;
+    if (_currentAudioSettings.repeat) return;
+
+    final song = currentSong;
+    if (song == null) return;
+
+    final duration = audioPlayer.duration;
+    final position = audioPlayer.position;
+    final completedState =
+        audioPlayer.processingState == ProcessingState.completed;
+    final reachedEnd =
+        duration != null &&
+        duration > Duration.zero &&
+        position + _songEndEpsilon >= duration;
+
+    if (!completedState && !reachedEnd) return;
+
+    final token = '${song.getHash()}::$_currentIndex';
+    if (_lastAutoAdvancedSongToken == token) return;
+    _lastAutoAdvancedSongToken = token;
+
+    debugPrint(
+      '[AppAudioService] End-of-song detected via $reason (completed=$completedState, position=$position, duration=$duration)',
+    );
+
+    await _onSongCompleted();
   }
 
   Future<void> play() {
@@ -371,29 +409,31 @@ class AppAudioService {
     _finalizePlayDuration();
     _isSwitchingSong = true;
 
-    final outgoing = currentSong;
-    if (outgoing == null) {
-      debugPrint(
-        '[AppAudioService] No outgoing song to finalize before switching',
-      );
+    try {
+      final outgoing = currentSong;
+      if (outgoing == null) {
+        debugPrint(
+          '[AppAudioService] No outgoing song to finalize before switching',
+        );
+        return;
+      }
+
+      if (!outgoing.isLocal() && outgoing.getHash().isNotEmpty) {
+        createChunkManager(outgoing.getHash()).flushStats();
+      }
+
+      final song = _activeQueue[idx];
+      currentSong = song;
+      if (!UniversalPlatform.isDesktop) {
+        await audioPlayer.stop();
+      }
+      await audioPlayer.setAudioSource(_buildAudioSource(song));
+      await play();
+      _onSongStarted(song);
+      pushStateToServer();
+    } finally {
       _isSwitchingSong = false;
-      return;
     }
-
-    if (!outgoing.isLocal() && outgoing.getHash().isNotEmpty) {
-      createChunkManager(outgoing.getHash()).flushStats();
-    }
-
-    final song = _activeQueue[idx];
-    currentSong = song;
-    if (!UniversalPlatform.isDesktop) {
-      await audioPlayer.stop();
-    }
-    await audioPlayer.setAudioSource(_buildAudioSource(song));
-    await play();
-    _isSwitchingSong = false;
-    _onSongStarted(song);
-    pushStateToServer();
   }
 
   AudioSource _buildAudioSource(Song song) {
@@ -567,6 +607,7 @@ class AppAudioService {
   }
 
   void _onSongStarted(Song song) {
+    _lastAutoAdvancedSongToken = null;
     song.lastPlayed = DateTime.now();
     song.playCount += 1;
     song.pendingPlayCountDelta += 1;
@@ -606,6 +647,10 @@ class AppAudioService {
 
   Future<void> dispose() async {
     _positionSaveTimer?.cancel();
+    await _processingStateSubscription?.cancel();
+    await _playerStateSubscription?.cancel();
+    await _positionSubscription?.cancel();
+    await _errorSubscription?.cancel();
     await audioPlayer.dispose();
   }
 }
