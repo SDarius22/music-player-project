@@ -215,7 +215,7 @@ class AppAudioService {
   void setRepeat(bool repeat) {
     _currentAudioSettings.repeat = repeat;
     settingsService.updateAudioSettings(_currentAudioSettings);
-    audioPlayer.setLoopMode(repeat ? LoopMode.one : LoopMode.off);
+    audioPlayer.setLoopMode(repeat ? LoopMode.one : LoopMode.all);
     pushStateToServer();
   }
 
@@ -343,7 +343,7 @@ class AppAudioService {
     await audioPlayer.setVolume(_currentAudioSettings.volume);
     await audioPlayer.setSpeed(_currentAudioSettings.speed);
     await audioPlayer.setLoopMode(
-      _currentAudioSettings.repeat ? LoopMode.one : LoopMode.off,
+      _currentAudioSettings.repeat ? LoopMode.one : LoopMode.all,
     );
 
     if (_normalQueue.isNotEmpty) {
@@ -408,9 +408,6 @@ class AppAudioService {
 
   AudioSource _buildAudioSource(Song song) {
     final bool isServerTrack = !song.isLocal();
-    debugPrint(
-      "Building audio source for song ${song.getName()} (isLocal: ${song.isLocal})",
-    );
 
     if (isServerTrack) {
       if (UniversalPlatform.isWeb) {
@@ -496,7 +493,7 @@ class AppAudioService {
     _currentAudioSettings.shuffle = dto.shuffle;
     _currentAudioSettings.repeat = dto.repeat;
     settingsService.updateAudioSettings(_currentAudioSettings);
-    await audioPlayer.setLoopMode(dto.repeat ? LoopMode.one : LoopMode.off);
+    await audioPlayer.setLoopMode(dto.repeat ? LoopMode.one : LoopMode.all);
 
     _normalQueue.clear();
     _normalQueue.addAll(resolvedQueue);

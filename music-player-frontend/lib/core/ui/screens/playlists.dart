@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:music_player_frontend/core/constants.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -23,9 +21,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
     );
   }
 
-  final Uint8List _createPlaylistImageBytes = Constants.createPlaylistBytes;
-
-  Playlists({super.key, required super.provider});
+  const Playlists({super.key, required super.provider});
 
   @override
   String get screenTitle => 'Playlists';
@@ -34,7 +30,6 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   Widget Function(BuildContext context)? get buildExtraTile => (context) {
     Playlist emptyPlaylist = Playlist('Create New Playlist');
     emptyPlaylist.indestructible = true;
-    emptyPlaylist.imageBytes = _createPlaylistImageBytes;
     return CustomGridTile(
       onTap: () {
         var appState = Provider.of<AbstractAppStateProvider>(
@@ -48,7 +43,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
       onLongPress: () {},
       entity: emptyPlaylist,
       isSelected: false,
-      mainAction: const Icon(FluentIcons.add, color: Colors.white, size: 28),
+      isExtraTile: true,
     );
   };
 

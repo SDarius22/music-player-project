@@ -20,6 +20,7 @@ class CustomGridTile extends StatelessWidget {
   final GestureTapCallback onLongPress;
   final bool isSelected;
   final bool wide;
+  final bool isExtraTile;
   final BaseEntity entity;
 
   const CustomGridTile({
@@ -29,6 +30,7 @@ class CustomGridTile extends StatelessWidget {
     required this.entity,
     required this.isSelected,
     this.wide = false,
+    this.isExtraTile = false,
     this.leftAction = const SizedBox.shrink(),
     this.mainAction = const SizedBox.shrink(),
     this.rightAction = const SizedBox.shrink(),
@@ -97,7 +99,7 @@ class CustomGridTile extends StatelessWidget {
             alignment: Alignment.topCenter,
             padding: EdgeInsets.only(left: height * 0.01, right: height * 0.01),
             child:
-                wide
+                wide || isExtraTile
                     ? null
                     : CustomTextScroll(
                       text: entity.getSecondaryText(),

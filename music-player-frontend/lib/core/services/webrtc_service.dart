@@ -214,8 +214,9 @@ class WebRTCService {
     if (s == null) return null;
     try {
       final decoded = jsonDecode(s);
-      if (decoded is Map)
+      if (decoded is Map) {
         return decoded.map((k, v) => MapEntry(k.toString(), v));
+      }
     } catch (_) {}
     return null;
   }
@@ -720,8 +721,9 @@ class WebRTCService {
             debugPrint('[P2P] Ignoring malformed OFFER from $senderId');
             break;
           }
-          if (!await _applyRemoteDescription(senderId, offerPc, offerRemote))
+          if (!await _applyRemoteDescription(senderId, offerPc, offerRemote)) {
             break;
+          }
           _drainIceQueue(senderId, offerPc);
 
           final answer = await offerPc.createAnswer();
@@ -759,8 +761,13 @@ class WebRTCService {
             debugPrint('[P2P] Ignoring stale/unexpected ANSWER from $senderId');
             break;
           }
-          if (!await _applyRemoteDescription(senderId, answerPc, answerRemote))
+          if (!await _applyRemoteDescription(
+            senderId,
+            answerPc,
+            answerRemote,
+          )) {
             break;
+          }
           _drainIceQueue(senderId, answerPc);
 
         case 'ICE_CANDIDATE':

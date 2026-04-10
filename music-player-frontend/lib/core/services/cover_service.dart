@@ -35,6 +35,12 @@ class CoverService {
        _authService = authService;
 
   Widget getWidget(BaseEntity entity) {
+    if (entity is Playlist &&
+        entity.name == 'Create New Playlist' &&
+        entity.indestructible) {
+      return Image.asset('assets/create_playlist.png', fit: BoxFit.cover);
+    }
+
     final localBytes = entity.getCoverArt();
     if (localBytes != null && localBytes.isNotEmpty) {
       return Image.memory(localBytes, fit: BoxFit.cover);

@@ -1,39 +1,40 @@
 import 'package:flutter/cupertino.dart';
-import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/services/abstract/file_service.dart';
+import 'package:music_player_frontend/core/services/app_audio_service.dart';
+import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_model_builder.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_model.dart';
 
 class LyricsProvider with ChangeNotifier {
-  final AudioProvider _audioProvider;
-  final AbstractFileService _fileService;
+  final LyricsService _lyricsService;
+  final AppAudioService _audioService;
   LyricsReaderModel lyricsModelBuilder = LyricsReaderModel();
-  String unsyncedLyrics = '';
+  String unsyncedLyrics = 'No lyrics available';
   bool _hasBeenInitialized = false;
+  ValueNotifier<bool> loadingNotifier = ValueNotifier<bool>(false);
 
-  LyricsProvider(this._audioProvider, this._fileService) {
+  LyricsProvider(this._lyricsService, this._audioService) {
     if (!_hasBeenInitialized) {
       _hasBeenInitialized = true;
     }
-    _audioProvider.currentSongNotifier.addListener(() {
-      buildLyricsModel();
+    _audioService.currentSongNotifier.addListener(() {
+      _buildLyricsModel();
     });
   }
 
-  void buildLyricsModel() {
-    String? lyrics = _getLyricsForCurrentSong();
+  void _buildLyricsModel() async {
+    loadingNotifier.value = true;
+    unsyncedLyrics =
+        await _lyricsService.fetchLyricsForSong(_audioService.currentSong) ??
+        'No lyrics available';
     lyricsModelBuilder =
-        LyricsModelBuilder.create().bindLyricToMain(lyrics ?? '').getModel();
+        LyricsModelBuilder.create()
+            .bindLyricToMain(getUnsyncedLyrics())
+            .getModel();
     debugPrint('LyricsModelBuilder: ${lyricsModelBuilder.lyrics.length} lines');
-    if (lyricsModelBuilder.lyrics.isEmpty) {
-      unsyncedLyrics = lyrics ?? '';
-    } else {
-      unsyncedLyrics = '';
-    }
-    notifyListeners();
+    loadingNotifier.value = false;
   }
 
-  String? _getLyricsForCurrentSong() {
-    return _fileService.getLyrics(_audioProvider.currentSong?.path);
+  String getUnsyncedLyrics() {
+    return unsyncedLyrics;
   }
 }

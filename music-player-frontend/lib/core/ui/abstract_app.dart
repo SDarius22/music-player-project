@@ -23,6 +23,7 @@ import 'package:music_player_frontend/core/rest_clients/artist_rest_client.dart'
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/cover_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/data_sync_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/lyrics_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
@@ -164,6 +165,7 @@ abstract class AbstractApp extends StatelessWidget {
               authService: context.read<AuthService>(),
             ),
       ),
+      Provider<LyricsRestClient>(create: (context) => LyricsRestClient()),
       Provider<PlaylistRestClient>(
         create:
             (context) => PlaylistRestClient(
@@ -196,7 +198,6 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<ArtistRestClient>(),
             ),
       ),
-      Provider<LyricsService>(create: (context) => LyricsService()),
       Provider<SettingsService>(
         create:
             (context) => SettingsService(context.read<SettingsRepository>()),
@@ -217,6 +218,13 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<PlaylistRepository>(),
               context.read<SongRepository>(),
               context.read<PlaylistRestClient>(),
+            ),
+      ),
+      Provider<LyricsService>(
+        create:
+            (context) => LyricsService(
+              context.read<AbstractFileService>(),
+              context.read<LyricsRestClient>(),
             ),
       ),
 
@@ -322,8 +330,8 @@ abstract class AbstractApp extends StatelessWidget {
       ChangeNotifierProvider<LyricsProvider>(
         create:
             (context) => LyricsProvider(
-              context.read<AudioProvider>(),
-              context.read<AbstractFileService>(),
+              context.read<LyricsService>(),
+              context.read<AppAudioService>(),
             ),
         lazy: false,
       ),
