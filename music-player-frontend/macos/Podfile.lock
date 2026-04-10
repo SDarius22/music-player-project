@@ -17,9 +17,9 @@ PODS:
   - flutter_secure_storage_darwin (10.0.0):
     - Flutter
     - FlutterMacOS
-  - flutter_webrtc (1.2.0):
+  - flutter_webrtc (1.4.0):
     - FlutterMacOS
-    - WebRTC-SDK (= 137.7151.12)
+    - WebRTC-SDK (= 144.7559.01)
   - FlutterMacOS (1.0.0)
   - just_audio (0.0.1):
     - Flutter
@@ -40,7 +40,7 @@ PODS:
     - FlutterMacOS
   - tray_manager (0.0.1):
     - FlutterMacOS
-  - WebRTC-SDK (137.7151.12)
+  - WebRTC-SDK (144.7559.01)
   - window_manager (0.5.0):
     - FlutterMacOS
 
@@ -116,7 +116,7 @@ SPEC CHECKSUMS:
   file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
   file_saver: e35bd97de451dde55ff8c38862ed7ad0f3418d0f
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
-  flutter_webrtc: 7cda18a9cd917db2f8bfcde8011804f6018a12df
+  flutter_webrtc: 853688474ba6990a1b1649727dc165e1d64d1782
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
   media_kit_libs_macos_audio: 06f3cf88d6d89c7c3c87eae57689d1c6adb335b2
@@ -126,9 +126,9 @@ SPEC CHECKSUMS:
   screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   tray_manager: a104b5c81b578d83f3c3d0f40a997c8b10810166
-  WebRTC-SDK: 1762e2de812354d27a8407d1b2c532064ec39fce
+  WebRTC-SDK: ab9b5319e458c2bfebdc92b3600740da35d5630d
   window_manager: b729e31d38fb04905235df9ea896128991cad99e
 
-PODFILE CHECKSUM: 346bfb2deb41d4a6ebd6f6799f92188bde2d246f
+PODFILE CHECKSUM: efc244058143d1e7c45b3f61fc18aace96733d14
 
 COCOAPODS: 1.16.2

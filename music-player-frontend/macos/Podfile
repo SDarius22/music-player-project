@@ -1,4 +1,6 @@
-platform :osx, '11.0'
+platform :osx, '13.0'
+
+MIN_MACOS_DEPLOYMENT_TARGET = '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -26,6 +28,32 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_macos_podfile_setup
 
+def patch_flutter_webrtc_podspec(min_target)
+  podspec_path = File.join(
+    __dir__,
+    'Flutter',
+    'ephemeral',
+    '.symlinks',
+    'plugins',
+    'flutter_webrtc',
+    'macos',
+    'flutter_webrtc.podspec',
+  )
+  return unless File.exist?(podspec_path)
+
+  content = File.read(podspec_path)
+  patched = content.gsub(
+    /s\.osx\.deployment_target\s*=\s*'[^']+'/,
+    "s.osx.deployment_target = '#{min_target}'",
+  )
+  return if patched == content
+
+  File.write(podspec_path, patched)
+  puts("Patched flutter_webrtc podspec macOS deployment target to #{min_target}")
+end
+
+patch_flutter_webrtc_podspec(MIN_MACOS_DEPLOYMENT_TARGET)
+
 target 'Runner' do
   use_frameworks!
 
@@ -38,5 +66,12 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+
+    target.build_configurations.each do |config|
+      current = config.build_settings['MACOSX_DEPLOYMENT_TARGET']
+      if current.nil? || Gem::Version.new(current) < Gem::Version.new(MIN_MACOS_DEPLOYMENT_TARGET)
+        config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = MIN_MACOS_DEPLOYMENT_TARGET
+      end
+    end
   end
 end
