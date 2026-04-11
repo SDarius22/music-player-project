@@ -14,7 +14,7 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - REDIS_HOST=redis
     volumes:
-      - /home/docker-data/music_data:/root/music-server
+      - /home/deployer/music-player/music_data:/root/music-server
     networks:
       - backend-net
     depends_on:
@@ -36,7 +36,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=music_db
     volumes:
-      - /home/docker-data/postgres_data:/var/lib/postgresql
+      - /home/deployer/music-player/postgres_data:/var/lib/postgresql
     restart: unless-stopped
     networks:
       - backend-net
@@ -49,8 +49,8 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - PGPASSWORD=${DB_PASSWORD}
     volumes:
-      - /home/docker-data/postgres_slave:/var/lib/postgresql/data
-      - /home/docker-data/pg-slave-init.sh:/pg-slave-init.sh
+      - /home/deployer/music-player/postgres_slave:/var/lib/postgresql/data
+      - /home/deployer/music-player/pg-slave-init.sh:/pg-slave-init.sh
     command: bash /pg-slave-init.sh
     restart: unless-stopped
     depends_on:
@@ -79,7 +79,7 @@ services:
     image: allinurl/goaccess
     volumes:
       - /var/log/nginx:/srv/logs:ro
-      - /home/docker-data/goaccess-report:/srv/report
+      - /home/deployer/music-player/goaccess-report:/srv/report
       - /etc/letsencrypt:/etc/letsencrypt:ro
     ports:
       - "127.0.0.1:7890:443"

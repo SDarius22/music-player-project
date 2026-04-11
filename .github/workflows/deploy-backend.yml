@@ -59,7 +59,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "music-player-backend/docker-compose.yml"
-          target: "/home/docker-data/"
+          target: "/home/deployer/music-player/"
           strip_components: 1
 
       - uses: appleboy/ssh-action@v1.0.0
@@ -68,7 +68,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /home/docker-data/
+            cd /home/deployer/music-player
 
             mkdir -p goaccess-report
 
