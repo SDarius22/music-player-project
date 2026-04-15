@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
@@ -48,6 +49,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
   late ScrollController _scrollController;
   late final ValueNotifier<_PagedViewState> _viewState;
   late final ValueNotifier<Future<void>> _loadFuture;
+  late final AbstractAppStateProvider _appStateProvider;
   int _requestId = 0;
 
   @override
@@ -57,9 +59,11 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     _ascending = true;
     _viewState = ValueNotifier<_PagedViewState>(const _PagedViewState());
     _loadFuture = ValueNotifier<Future<void>>(Future.value());
+    _appStateProvider = context.read<AbstractAppStateProvider>();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     (widget.provider as ChangeNotifier).addListener(_onProviderChanged);
+    _appStateProvider.refreshRequestNotifier.addListener(_onGlobalRefresh);
     _runLoad(() => _fetchPage(0, reset: true));
   }
 
@@ -70,7 +74,13 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     _viewState.dispose();
     _loadFuture.dispose();
     (widget.provider as ChangeNotifier).removeListener(_onProviderChanged);
+    _appStateProvider.refreshRequestNotifier.removeListener(_onGlobalRefresh);
     super.dispose();
+  }
+
+  void _onGlobalRefresh() {
+    if (!mounted) return;
+    _runLoad(() => _fetchPage(0, reset: true));
   }
 
   void _onProviderChanged() {

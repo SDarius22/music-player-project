@@ -49,7 +49,9 @@ class LinuxApp extends AbstractApp {
 
   @override
   Widget getAppWidget(BuildContext context) {
+    final appState = context.read<AbstractAppStateProvider>();
     return MaterialApp(
+      navigatorKey: appState.outerNavigatorKey,
       builder:
           (context, child) => BotToastInit()(context, responsiveBuilder(child)),
       debugShowCheckedModeBanner: false,

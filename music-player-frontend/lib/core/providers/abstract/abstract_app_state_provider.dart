@@ -37,6 +37,11 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
 
   ValueNotifier<bool> isPanelOpen = ValueNotifier(false);
   ValueNotifier<double> opacityNotifier = ValueNotifier(1.0);
+  ValueNotifier<int> refreshRequestNotifier = ValueNotifier(0);
+
+  void requestRefresh() {
+    refreshRequestNotifier.value++;
+  }
 
   AbstractAppStateProvider(this.audioProvider, this.settingsService) {
     _initialize();

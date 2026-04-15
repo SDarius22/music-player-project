@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/models/chunk_stat_record.dart';
 import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
@@ -23,11 +24,25 @@ class StatisticsScreen extends StatefulWidget {
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
   late Future<List<ChunkStatRecord>> _future;
+  late final AbstractAppStateProvider _appStateProvider;
 
   @override
   void initState() {
     super.initState();
+    _appStateProvider = context.read<AbstractAppStateProvider>();
+    _appStateProvider.refreshRequestNotifier.addListener(_onGlobalRefresh);
     _future = context.read<StatisticsRestClient>().getStatistics();
+  }
+
+  @override
+  void dispose() {
+    _appStateProvider.refreshRequestNotifier.removeListener(_onGlobalRefresh);
+    super.dispose();
+  }
+
+  void _onGlobalRefresh() {
+    if (!mounted) return;
+    _refresh();
   }
 
   Future<void> _refresh() async {

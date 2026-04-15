@@ -74,7 +74,9 @@ abstract class AbstractApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [..._commonProviders(context), ...extraProviders(context)],
-      child: getAppWidget(context),
+      child: Builder(
+        builder: (innerContext) => getAppWidget(innerContext),
+      ),
     );
   }
 

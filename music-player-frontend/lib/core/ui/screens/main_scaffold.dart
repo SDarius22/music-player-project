@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -29,6 +30,19 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   bool _didPushInitial = false;
+  final FocusNode _shortcutFocusNode = FocusNode(
+    debugLabel: 'main_scaffold_shortcuts',
+  );
+
+  @override
+  void dispose() {
+    _shortcutFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _requestRefresh() {
+    context.read<AbstractAppStateProvider>().requestRefresh();
+  }
 
   Future<void> _handleBackPressed() async {
     final provider = context.read<AbstractAppStateProvider>();
@@ -93,43 +107,64 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
 
     try {
-      return PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, result) async {
-          if (didPop) return;
-          await _handleBackPressed();
+      return CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.f5): _requestRefresh,
+          const SingleActivator(LogicalKeyboardKey.keyR, control: true):
+              _requestRefresh,
+          const SingleActivator(LogicalKeyboardKey.keyR, meta: true):
+              _requestRefresh,
         },
-        child: GlassAnimatedScaffold(
-          scaffoldKey: provider.scaffoldKey,
-          controller: provider.gradientController,
-          extendBody: true,
-          extendBodyBehindAppBar: !UniversalPlatform.isDesktop,
-          appBar: AppBarWidget(),
-          drawer: Drawer(
-            backgroundColor: Colors.transparent,
-            child:
-                ResponsiveBreakpoints.of(context).isMobile
-                    ? DrawerWidget(mobileDrawer: true)
-                    : SizedBox.shrink(),
-          ),
-          endDrawer: provider.getEndDrawer(context),
-          body: Padding(
-            padding: buildPadding(context),
-            child: Stack(
-              children: [
-                ValueListenableBuilder<double>(
-                  valueListenable: provider.opacityNotifier,
-                  child: buildMainContent(),
-                  builder: (context, opacity, child) {
-                    return AnimatedOpacity(
-                      opacity: opacity,
-                      duration: const Duration(milliseconds: 300),
-                      child: child,
-                    );
-                  },
+        child: Focus(
+          focusNode: _shortcutFocusNode,
+          autofocus: true,
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (event) {
+              if ((event.buttons & kBackMouseButton) != 0) {
+                _handleBackPressed();
+              }
+            },
+            child: PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) async {
+                if (didPop) return;
+                await _handleBackPressed();
+              },
+              child: GlassAnimatedScaffold(
+                scaffoldKey: provider.scaffoldKey,
+                controller: provider.gradientController,
+                extendBody: true,
+                extendBodyBehindAppBar: !UniversalPlatform.isDesktop,
+                appBar: AppBarWidget(),
+                drawer: Drawer(
+                  backgroundColor: Colors.transparent,
+                  child:
+                      ResponsiveBreakpoints.of(context).isMobile
+                          ? DrawerWidget(mobileDrawer: true)
+                          : SizedBox.shrink(),
                 ),
-                SongPlayerWidget(),
-              ],
+                endDrawer: provider.getEndDrawer(context),
+                body: Padding(
+                  padding: buildPadding(context),
+                  child: Stack(
+                    children: [
+                      ValueListenableBuilder<double>(
+                        valueListenable: provider.opacityNotifier,
+                        child: buildMainContent(),
+                        builder: (context, opacity, child) {
+                          return AnimatedOpacity(
+                            opacity: opacity,
+                            duration: const Duration(milliseconds: 300),
+                            child: child,
+                          );
+                        },
+                      ),
+                      SongPlayerWidget(),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),

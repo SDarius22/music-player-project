@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
@@ -29,11 +30,25 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Song>> _quickDialFuture;
   late Future<List<Song>> _recommendationsFuture;
   late Future<List<Song>> _rediscoverFuture;
+  late final AbstractAppStateProvider _appStateProvider;
 
   @override
   void initState() {
     super.initState();
+    _appStateProvider = context.read<AbstractAppStateProvider>();
+    _appStateProvider.refreshRequestNotifier.addListener(_onGlobalRefresh);
     _resetSectionFutures();
+  }
+
+  @override
+  void dispose() {
+    _appStateProvider.refreshRequestNotifier.removeListener(_onGlobalRefresh);
+    super.dispose();
+  }
+
+  void _onGlobalRefresh() {
+    if (!mounted) return;
+    _refreshHomeSections();
   }
 
   void _resetSectionFutures() {
