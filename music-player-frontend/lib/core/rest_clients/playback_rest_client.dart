@@ -17,6 +17,7 @@ class PlaybackRestClient extends AbstractRestClient {
   }
 
   Future<PlaybackStateDto?> getPlaybackState() async {
+    _logger.info('Fetching playback state from server');
     try {
       final response = await get('/playback');
       if (response.statusCode == 200) {

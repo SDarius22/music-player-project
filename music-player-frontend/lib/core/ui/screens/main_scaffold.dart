@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
@@ -6,6 +7,7 @@ import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.d
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
+import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -27,6 +29,36 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   bool _didPushInitial = false;
+
+  Future<void> _handleBackPressed() async {
+    final provider = context.read<AbstractAppStateProvider>();
+    final scaffoldState = provider.scaffoldKey.currentState;
+
+    if (scaffoldState?.isEndDrawerOpen ?? false) {
+      scaffoldState?.closeEndDrawer();
+      return;
+    }
+
+    if (scaffoldState?.isDrawerOpen ?? false) {
+      scaffoldState?.closeDrawer();
+      return;
+    }
+
+    if (provider.isPanelOpen.value) {
+      provider.miniPlayerController.animateToHeight(state: PanelState.min);
+      return;
+    }
+
+    final innerNavigator = provider.innerNavigatorKey.currentState;
+    if (innerNavigator != null && innerNavigator.canPop()) {
+      innerNavigator.pop();
+      return;
+    }
+
+    if (UniversalPlatform.isAndroid) {
+      await SystemNavigator.pop();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -61,37 +93,44 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
 
     try {
-      return GlassAnimatedScaffold(
-        scaffoldKey: provider.scaffoldKey,
-        controller: provider.gradientController,
-        extendBody: true,
-        extendBodyBehindAppBar: true,
-        appBar: AppBarWidget(),
-        drawer: Drawer(
-          backgroundColor: Colors.transparent,
-          child:
-              ResponsiveBreakpoints.of(context).isMobile
-                  ? DrawerWidget(mobileDrawer: true)
-                  : SizedBox.shrink(),
-        ),
-        endDrawer: provider.getEndDrawer(context),
-        body: Padding(
-          padding: buildPadding(context),
-          child: Stack(
-            children: [
-              ValueListenableBuilder<double>(
-                valueListenable: provider.opacityNotifier,
-                child: buildMainContent(),
-                builder: (context, opacity, child) {
-                  return AnimatedOpacity(
-                    opacity: opacity,
-                    duration: const Duration(milliseconds: 300),
-                    child: child,
-                  );
-                },
-              ),
-              SongPlayerWidget(),
-            ],
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          await _handleBackPressed();
+        },
+        child: GlassAnimatedScaffold(
+          scaffoldKey: provider.scaffoldKey,
+          controller: provider.gradientController,
+          extendBody: true,
+          extendBodyBehindAppBar: !UniversalPlatform.isDesktop,
+          appBar: AppBarWidget(),
+          drawer: Drawer(
+            backgroundColor: Colors.transparent,
+            child:
+                ResponsiveBreakpoints.of(context).isMobile
+                    ? DrawerWidget(mobileDrawer: true)
+                    : SizedBox.shrink(),
+          ),
+          endDrawer: provider.getEndDrawer(context),
+          body: Padding(
+            padding: buildPadding(context),
+            child: Stack(
+              children: [
+                ValueListenableBuilder<double>(
+                  valueListenable: provider.opacityNotifier,
+                  child: buildMainContent(),
+                  builder: (context, opacity, child) {
+                    return AnimatedOpacity(
+                      opacity: opacity,
+                      duration: const Duration(milliseconds: 300),
+                      child: child,
+                    );
+                  },
+                ),
+                SongPlayerWidget(),
+              ],
+            ),
           ),
         ),
       );
@@ -123,12 +162,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       );
     }
 
-    return EdgeInsets.only(
-      left: width * 0.015,
-      right: width * 0.015,
-      bottom: width * 0.015,
-      top: width * 0.015 + MediaQuery.of(context).padding.top + kToolbarHeight,
-    );
+    return EdgeInsets.all(width * 0.015);
   }
 
   Drawer buildDrawer() {

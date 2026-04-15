@@ -107,16 +107,12 @@ class _HomeScreenState extends State<HomeScreen> {
     BuildContext context, {
     required String title,
     required String subtitle,
-    required List<Song> songs,
+    required AsyncSnapshot<List<Song>> snapshot,
     required _CardStyle cardStyle,
   }) {
     final width = MediaQuery.of(context).size.width;
     final theme = MusicPlayerTheme.getTheme();
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-    final capped =
-        cardStyle == _CardStyle.wide
-            ? songs.take(6).toList()
-            : songs.take(9).toList();
 
     final slivers = <Widget>[
       SliverPadding(
@@ -142,6 +138,38 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       SliverToBoxAdapter(child: SizedBox(height: width * 0.01)),
     ];
+
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      slivers.add(
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: hPadFor(context)),
+          sliver: const SliverToBoxAdapter(
+            child: SizedBox(
+              height: 100,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+        ),
+      );
+      return slivers;
+    }
+
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      slivers.add(
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: hPadFor(context)),
+          sliver: SliverToBoxAdapter(child: _buildEmptyState()),
+        ),
+      );
+      return slivers;
+    }
+
+    final songs = snapshot.data!;
+
+    final capped =
+        cardStyle == _CardStyle.wide
+            ? songs.take(6).toList()
+            : songs.take(9).toList();
 
     if (isMobile && cardStyle == _CardStyle.wide) {
       slivers.add(
@@ -234,39 +262,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return FutureBuilder<List<Song>>(
       future: future,
       builder: (context, snapshot) {
-        final width = MediaQuery.of(context).size.width;
-        final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-        final hPad = hPadFor(context);
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: hPad),
-            sliver: SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: isMobile ? width * 0.075 : width * 0.02,
-                ),
-                child: const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
-        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
-        }
-
         return SliverMainAxisGroup(
           slivers: _buildSectionSlivers(
             context,
             title: title,
             subtitle: subtitle,
-            songs: snapshot.data!,
+            snapshot: snapshot,
             cardStyle: cardStyle,
           ),
         );
@@ -302,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double hPadFor(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-    return isMobile ? width * 0.04 : width * 0.015;
+    return isMobile ? width * 0.04 : width * 0.01;
   }
 
   Widget _buildEmptyState() {
@@ -329,37 +330,35 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final theme = MusicPlayerTheme.getTheme();
-    final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-    final hPad = hPadFor(context);
 
     return GlassScaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: Container(
+          height: kToolbarHeight,
+          padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+          margin: EdgeInsets.symmetric(vertical: width * 0.005),
+          child: Selector<UserProvider, String>(
+            selector: (_, p) => p.currentUser?.email ?? '',
+            builder: (context, email, _) {
+              final name = email.isNotEmpty ? email.split('@').first : '';
+              return Text(
+                name.isNotEmpty ? '${_greeting()}, $name!' : _greeting(),
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ),
+      ),
       body: RefreshIndicator(
         onRefresh: _refreshHomeSections,
         color: Colors.white,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hPad, hPad, hPad, 0),
-                child: Selector<UserProvider, String>(
-                  selector: (_, p) => p.currentUser?.email ?? '',
-                  builder: (context, email, _) {
-                    final name = email.isNotEmpty ? email.split('@').first : '';
-                    return Text(
-                      name.isNotEmpty ? '${_greeting()}, $name!' : _greeting(),
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(height: isMobile ? 20 : width * 0.025),
-            ),
             _buildSectionFutureSliver(
               future: _quickDialFuture,
               title: 'Jump back in',
@@ -379,11 +378,6 @@ class _HomeScreenState extends State<HomeScreen> {
               cardStyle: _CardStyle.square,
             ),
             _buildEmptyStateFutureSliver(),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.15,
-              ),
-            ),
           ],
         ),
       ),

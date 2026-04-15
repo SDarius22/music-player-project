@@ -55,6 +55,10 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     return Consumer<AudioProvider>(
       builder: (_, audioProvider, _) {
         if (audioProvider.currentSong == null) {
+          final appState = context.read<AbstractAppStateProvider>();
+          if (appState.isPanelOpen.value) {
+            appState.isPanelOpen.value = false;
+          }
           debugPrint("Not showing player");
           return const SizedBox.shrink();
         }
@@ -121,6 +125,10 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                   final newOpacity = 1 - (percentage * 1.1).clamp(0.0, 1.0);
                   if (appStateProvider.opacityNotifier.value != newOpacity) {
                     appStateProvider.opacityNotifier.value = newOpacity;
+                  }
+                  final panelOpen = !minimized;
+                  if (appStateProvider.isPanelOpen.value != panelOpen) {
+                    appStateProvider.isPanelOpen.value = panelOpen;
                   }
                 });
 
@@ -873,6 +881,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return MiniPlayer(
+      handleBackButton: false,
       minHeight:
           MediaQuery.of(context).size.height * 0.1 +
           MediaQuery.of(context).padding.bottom,

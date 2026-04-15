@@ -64,6 +64,12 @@ class MiniPlayer extends StatefulWidget {
   ///Sets the border radius when maximized
   final BorderRadius? maxBorderRadius;
 
+  ///Whether this MiniPlayer should intercept the system back button.
+  ///
+  /// Set to false for nested MiniPlayers so they do not consume back events
+  /// that should be handled by a parent MiniPlayer or route.
+  final bool handleBackButton;
+
   const MiniPlayer({
     super.key,
     required this.minHeight,
@@ -84,6 +90,7 @@ class MiniPlayer extends StatefulWidget {
     this.margin = EdgeInsets.zero,
     this.borderRadius,
     this.maxBorderRadius,
+    this.handleBackButton = true,
   });
 
   @override
@@ -189,6 +196,180 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
       return Container();
     }
 
+    final content = MultiValueListenableBuilder(
+      valueListenables: [heightNotifier, widthNotifier],
+      builder: (context, values, _) {
+        var percentage =
+            ((values[0] - widget.minHeight)) /
+            (widget.maxHeight - widget.minHeight);
+
+        final currentBorderRadius = BorderRadius.lerp(
+          widget.borderRadius,
+          widget.maxBorderRadius,
+          percentage,
+        );
+
+        return Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            if (percentage > 0)
+              GestureDetector(
+                onTap: () => _animateToSize(),
+                child: Opacity(
+                  opacity: borderDouble(
+                    minRange: 0.0,
+                    maxRange: 1.0,
+                    value: percentage,
+                  ),
+                  child: Container(color: widget.backgroundColor),
+                ),
+              ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                margin: EdgeInsets.lerp(
+                  widget.margin,
+                  EdgeInsets.zero,
+                  percentage > 0.1 ? 1.0 : percentage / 0.1,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: currentBorderRadius,
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: widget.backgroundBoxShadow,
+                      blurRadius: widget.elevation,
+                      offset: const Offset(0.0, 4),
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  width: values[1],
+                  height: values[0],
+                  child: GestureDetector(
+                    child: ValueListenableBuilder(
+                      valueListenable: dragDownPercentage,
+                      builder: (
+                        BuildContext context,
+                        double value,
+                        Widget? child,
+                      ) {
+                        return Opacity(
+                          opacity: borderDouble(
+                            minRange: 0.0,
+                            maxRange: 1.0,
+                            value: 1 - value * 0.8,
+                          ),
+                          child: Transform.translate(
+                            offset: Offset(
+                              0.0,
+                              widget.minHeight * value * 0.5,
+                            ),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius:
+                            currentBorderRadius ?? BorderRadius.zero,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: Container(
+                            constraints: const BoxConstraints.expand(),
+                            decoration: BoxDecoration(
+                              color:
+                                  widget.backgroundColor ??
+                                  Colors.transparent,
+                            ),
+                            child: widget.builder(values[0], percentage),
+                          ),
+                        ),
+                      ),
+                    ),
+                    onTap:
+                        () =>
+                            _dragHeight == widget.maxHeight &&
+                                    !widget.tapToCollapse
+                                ? null
+                                : _snapToPosition(
+                                  _dragHeight != widget.maxHeight
+                                      ? PanelState.max
+                                      : PanelState.min,
+                                ),
+                    onPanStart: (details) {
+                      _startHeight = _dragHeight;
+                      updateCount = 0;
+
+                      if (animating) {
+                        _resetAnimationController();
+                      }
+                    },
+                    onPanEnd: (details) async {
+                      double speed =
+                          (_dragHeight - _startHeight * _dragHeight <
+                                  _startHeight
+                              ? 1
+                              : -1) /
+                          updateCount *
+                          100;
+
+                      double snapPercentage = 0.005;
+                      if (speed <= 4) {
+                        snapPercentage = 0.2;
+                      } else if (speed <= 9) {
+                        snapPercentage = 0.08;
+                      } else if (speed <= 50) {
+                        snapPercentage = 0.01;
+                      }
+
+                      PanelState snap = PanelState.min;
+
+                      final percentageMax = percentageFromValueInRange(
+                        min: widget.minHeight,
+                        max: widget.maxHeight,
+                        value: _dragHeight,
+                      );
+
+                      if (_startHeight > widget.minHeight) {
+                        if (percentageMax > 1 - snapPercentage) {
+                          snap = PanelState.max;
+                        }
+                      } else {
+                        if (percentageMax > snapPercentage) {
+                          snap = PanelState.max;
+                        } else if (onDismissed != null &&
+                            percentageFromValueInRange(
+                                  min: widget.minHeight,
+                                  max: 0,
+                                  value: _dragHeight,
+                                ) >
+                                snapPercentage) {
+                          snap = PanelState.dismiss;
+                        }
+                      }
+
+                      _snapToPosition(snap);
+                    },
+                    onPanUpdate: (details) {
+                      if (dismissed) return;
+
+                      _dragHeight -= details.delta.dy;
+                      updateCount++;
+
+                      _handleSizeChange();
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!widget.handleBackButton) {
+      return content;
+    }
+
     return MiniplayerWillPopScope(
       onWillPop: () async {
         if (heightNotifier.value > widget.minHeight) {
@@ -197,175 +378,7 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
         }
         return true;
       },
-      child: MultiValueListenableBuilder(
-        valueListenables: [heightNotifier, widthNotifier],
-        builder: (context, values, _) {
-          var percentage =
-              ((values[0] - widget.minHeight)) /
-              (widget.maxHeight - widget.minHeight);
-
-          final currentBorderRadius = BorderRadius.lerp(
-            widget.borderRadius,
-            widget.maxBorderRadius,
-            percentage,
-          );
-
-          return Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              if (percentage > 0)
-                GestureDetector(
-                  onTap: () => _animateToSize(),
-                  child: Opacity(
-                    opacity: borderDouble(
-                      minRange: 0.0,
-                      maxRange: 1.0,
-                      value: percentage,
-                    ),
-                    child: Container(color: widget.backgroundColor),
-                  ),
-                ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  margin: EdgeInsets.lerp(
-                    widget.margin,
-                    EdgeInsets.zero,
-                    percentage > 0.1 ? 1.0 : percentage / 0.1,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: currentBorderRadius,
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: widget.backgroundBoxShadow,
-                        blurRadius: widget.elevation,
-                        offset: const Offset(0.0, 4),
-                      ),
-                    ],
-                  ),
-                  child: SizedBox(
-                    width: values[1],
-                    height: values[0],
-                    child: GestureDetector(
-                      child: ValueListenableBuilder(
-                        valueListenable: dragDownPercentage,
-                        builder: (
-                          BuildContext context,
-                          double value,
-                          Widget? child,
-                        ) {
-                          return Opacity(
-                            opacity: borderDouble(
-                              minRange: 0.0,
-                              maxRange: 1.0,
-                              value: 1 - value * 0.8,
-                            ),
-                            child: Transform.translate(
-                              offset: Offset(
-                                0.0,
-                                widget.minHeight * value * 0.5,
-                              ),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: ClipRRect(
-                          borderRadius:
-                              currentBorderRadius ?? BorderRadius.zero,
-                          child: Material(
-                            type: MaterialType.transparency,
-                            child: Container(
-                              constraints: const BoxConstraints.expand(),
-                              decoration: BoxDecoration(
-                                color:
-                                    widget.backgroundColor ??
-                                    Colors.transparent,
-                              ),
-                              child: widget.builder(values[0], percentage),
-                            ),
-                          ),
-                        ),
-                      ),
-                      onTap:
-                          () =>
-                              _dragHeight == widget.maxHeight &&
-                                      !widget.tapToCollapse
-                                  ? null
-                                  : _snapToPosition(
-                                    _dragHeight != widget.maxHeight
-                                        ? PanelState.max
-                                        : PanelState.min,
-                                  ),
-                      onPanStart: (details) {
-                        _startHeight = _dragHeight;
-                        updateCount = 0;
-
-                        if (animating) {
-                          _resetAnimationController();
-                        }
-                      },
-                      onPanEnd: (details) async {
-                        double speed =
-                            (_dragHeight - _startHeight * _dragHeight <
-                                    _startHeight
-                                ? 1
-                                : -1) /
-                            updateCount *
-                            100;
-
-                        double snapPercentage = 0.005;
-                        if (speed <= 4) {
-                          snapPercentage = 0.2;
-                        } else if (speed <= 9) {
-                          snapPercentage = 0.08;
-                        } else if (speed <= 50) {
-                          snapPercentage = 0.01;
-                        }
-
-                        PanelState snap = PanelState.min;
-
-                        final percentageMax = percentageFromValueInRange(
-                          min: widget.minHeight,
-                          max: widget.maxHeight,
-                          value: _dragHeight,
-                        );
-
-                        if (_startHeight > widget.minHeight) {
-                          if (percentageMax > 1 - snapPercentage) {
-                            snap = PanelState.max;
-                          }
-                        } else {
-                          if (percentageMax > snapPercentage) {
-                            snap = PanelState.max;
-                          } else if (onDismissed != null &&
-                              percentageFromValueInRange(
-                                    min: widget.minHeight,
-                                    max: 0,
-                                    value: _dragHeight,
-                                  ) >
-                                  snapPercentage) {
-                            snap = PanelState.dismiss;
-                          }
-                        }
-
-                        _snapToPosition(snap);
-                      },
-                      onPanUpdate: (details) {
-                        if (dismissed) return;
-
-                        _dragHeight -= details.delta.dy;
-                        updateCount++;
-
-                        _handleSizeChange();
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+      child: content,
     );
   }
 

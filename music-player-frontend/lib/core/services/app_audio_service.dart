@@ -354,6 +354,8 @@ class AppAudioService {
       _currentAudioSettings.repeat ? LoopMode.one : LoopMode.off,
     );
 
+    if (!_initDone.isCompleted) _initDone.complete();
+
     if (_normalQueue.isNotEmpty) {
       _rebuildShuffledQueue(prioritySong: currentSong);
       final idx = _activeQueue.indexWhere((s) => s == currentSong);
@@ -363,8 +365,6 @@ class AppAudioService {
         position: _currentAudioSettings.sliderInSeconds,
       );
     }
-
-    if (!_initDone.isCompleted) _initDone.complete();
   }
 
   Future<void> _onSongCompleted() async {
@@ -384,17 +384,15 @@ class AppAudioService {
     _isSwitchingSong = true;
     await _initDone.future;
     _finalizePlayDuration();
+    _logger.fine(
+      '[AppAudioService] Loading song at index $idx: ${_activeQueue[idx].getName()}',
+    );
 
     try {
       final outgoing = currentSong;
-      if (outgoing == null) {
-        _logger.fine(
-          '[AppAudioService] No outgoing song to finalize before switching',
-        );
-        return;
-      }
-
-      if (!outgoing.isLocal() && outgoing.getHash().isNotEmpty) {
+      if (outgoing != null &&
+          !outgoing.isLocal() &&
+          outgoing.getHash().isNotEmpty) {
         createChunkManager(outgoing.getHash()).flushStats();
       }
 
@@ -511,6 +509,10 @@ class AppAudioService {
       _normalQueue,
     );
 
+    _logger.fine(
+      'Restoring state from server: resolved ${resolvedQueue.length} songs for hashes ${dto.queueFileHashes.join(", ")}',
+    );
+
     Song current = resolvedQueue.first;
     if (dto.currentFileHash != null) {
       final matches = resolvedQueue.where(
@@ -523,7 +525,15 @@ class AppAudioService {
     _currentIndex = idx < 0 ? 0 : idx;
     currentSong = current;
 
+    _logger.fine(
+      'Restored state: queue=${_activeQueue.length} songs, current=${current.getName()}, shuffle=${dto.shuffle}, repeat=${dto.repeat}',
+    );
+
     await _initDone.future;
+
+    _logger.fine(
+      'Loading audio source for restored song: ${current.getName()} at position ${dto.positionMs}ms',
+    );
     await audioPlayer.setAudioSource(
       _buildAudioSource(current),
       initialPosition: Duration(milliseconds: dto.positionMs),

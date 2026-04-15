@@ -27,6 +27,9 @@ class Artist implements BaseEntity {
   Artist(this.hash, this.name);
 
   void addSong(Song song) {
+    if (songs.contains(song)) {
+      songs.remove(song);
+    }
     songs.add(song);
   }
 

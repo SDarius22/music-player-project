@@ -11,6 +11,7 @@ import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dar
 import 'package:music_player_frontend/core/ui/screens/main_scaffold.dart';
 import 'package:music_player_frontend/core/ui/screens/welcome_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/animated_background.dart';
+import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -37,7 +38,8 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassAnimatedScaffold(
+      controller: context.read<AbstractAppStateProvider>().gradientController,
       appBar: AppBarWidget(),
       body: SafeArea(
         child: AnimatedBackground(

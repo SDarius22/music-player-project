@@ -33,10 +33,11 @@ class Album implements BaseEntity {
   Album(this.hash, this.name);
 
   void addSong(Song song) {
-    if (!songs.contains(song)) {
-      songs.add(song);
-      duration += song.durationInSeconds;
+    if (songs.contains(song)) {
+      songs.remove(song);
     }
+    songs.add(song);
+    duration += song.durationInSeconds;
   }
 
   List<Song> getSongs() {

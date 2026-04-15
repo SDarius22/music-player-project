@@ -14,7 +14,7 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
 
   const MultipleEntitiesScreen({super.key, required this.provider});
 
-  String? get screenTitle => null;
+  String get screenTitle;
 
   Widget buildLeftAction(BaseEntity entity, BuildContext context) =>
       const SizedBox.shrink();
@@ -122,10 +122,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     } catch (e) {
       if (!mounted || requestId != _requestId) return;
       debugPrint('MultipleEntitiesScreen: fetchPage error: $e');
-      _viewState.value = _viewState.value.copyWith(
-        isLoading: false,
-        error: e,
-      );
+      _viewState.value = _viewState.value.copyWith(isLoading: false, error: e);
     }
   }
 
@@ -151,83 +148,75 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
   @override
   Widget build(BuildContext context) {
     final title = widget.screenTitle;
-    final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
 
     return GlassScaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (title != null)
-            Container(
-              height: height * 0.065,
-              width: width,
-              padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-              child: SearchHeader(
-                title: title,
-                sortFields: widget.provider.sortFields,
-                initialSortField: _sortField,
-                initialAscending: _ascending,
-                onQuery: _onQuery,
-                onSortField: _onSortField,
-                onAscending: _onAscending,
-              ),
-            ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await widget.provider.refresh();
-                _runLoad(() => _fetchPage(0, reset: true));
-                await _loadFuture.value;
-              },
-              child: ValueListenableBuilder<Future<void>>(
-                valueListenable: _loadFuture,
-                builder: (context, future, _) {
-                  return FutureBuilder<void>(
-                    future: future,
-                    builder: (context, snapshot) {
-                      return ValueListenableBuilder<_PagedViewState>(
-                        valueListenable: _viewState,
-                        builder: (context, state, _) {
-                          return CustomScrollView(
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            slivers: [
-                              if (snapshot.connectionState == ConnectionState.waiting &&
-                                  state.items.isEmpty)
-                                const SliverFillRemaining(
-                                  hasScrollBody: false,
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              else
-                                SliverPadding(
-                                  padding: EdgeInsets.only(
-                                    left: width * 0.01,
-                                    right: width * 0.01,
-                                  ),
-                                  sliver: _buildGrid(context, state),
-                                ),
-                              if (state.isLoading && state.items.isNotEmpty)
-                                const SliverToBoxAdapter(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                    child: Center(child: CircularProgressIndicator()),
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: Container(
+          height: kToolbarHeight,
+          padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+          margin: EdgeInsets.symmetric(vertical: width * 0.005),
+          child: SearchHeader(
+            title: title,
+            sortFields: widget.provider.sortFields,
+            initialSortField: _sortField,
+            initialAscending: _ascending,
+            onQuery: _onQuery,
+            onSortField: _onSortField,
+            onAscending: _onAscending,
           ),
-        ],
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await widget.provider.refresh();
+          _runLoad(() => _fetchPage(0, reset: true));
+          await _loadFuture.value;
+        },
+        child: ValueListenableBuilder<Future<void>>(
+          valueListenable: _loadFuture,
+          builder: (context, future, _) {
+            return FutureBuilder<void>(
+              future: future,
+              builder: (context, snapshot) {
+                return ValueListenableBuilder<_PagedViewState>(
+                  valueListenable: _viewState,
+                  builder: (context, state, _) {
+                    return CustomScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        if (snapshot.connectionState ==
+                                ConnectionState.waiting &&
+                            state.items.isEmpty)
+                          const SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else
+                          SliverPadding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.01,
+                              right: width * 0.01,
+                            ),
+                            sliver: _buildGrid(context, state),
+                          ),
+                        if (state.isLoading && state.items.isNotEmpty)
+                          const SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -323,4 +312,3 @@ class _PagedViewState {
     );
   }
 }
-
