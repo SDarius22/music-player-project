@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
 import 'package:provider/provider.dart';
 
@@ -42,6 +43,16 @@ class QueueTab extends StatelessWidget {
               },
               onLongPress: (entity) {
                 debugPrint("Long pressed on: ${entity.getName()}");
+              },
+              enrichEntity: (entity) async {
+                if (entity is Song) {
+                  var song = await Provider.of<SongProvider>(
+                    context,
+                    listen: false,
+                  ).enrichSong(entity);
+                  return song;
+                }
+                return null;
               },
             ),
           ),

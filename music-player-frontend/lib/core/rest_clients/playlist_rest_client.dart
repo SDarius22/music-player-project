@@ -17,6 +17,18 @@ class PlaylistRestClient extends AbstractRestClient {
     super.authService = authService;
   }
 
+  Future<PlaylistDetailDto?> getPlaylistDetails(int playlistId) async {
+    try {
+      final response = await get('/playlists/$playlistId');
+      if (response.statusCode == 200) {
+        return PlaylistDetailDto.fromJson(jsonDecode(response.body));
+      }
+    } catch (e) {
+      _logger.warning('Error fetching playlist details', e);
+    }
+    return null;
+  }
+
   Future<PlaylistPageDto> getPlaylistsPage({
     int page = 0,
     int size = 50,

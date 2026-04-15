@@ -377,15 +377,15 @@ class MockWebRTCService extends _i1.Mock implements _i12.WebRTCService {
           as _i5.WebSocketChannel);
 
   @override
-  dynamic Function(String, int, _i8.Uint8List) get onChunkReceived =>
+  void Function(String, int, _i8.Uint8List) get onChunkReceived =>
       (super.noSuchMethod(
             Invocation.getter(#onChunkReceived),
             returnValue:
-                (String fileHash, int chunkIndex, _i8.Uint8List data) => null,
+                (String fileHash, int chunkIndex, _i8.Uint8List data) {},
             returnValueForMissingStub:
-                (String fileHash, int chunkIndex, _i8.Uint8List data) => null,
+                (String fileHash, int chunkIndex, _i8.Uint8List data) {},
           )
-          as dynamic Function(String, int, _i8.Uint8List));
+          as void Function(String, int, _i8.Uint8List));
 
   @override
   _i7.Future<_i8.Uint8List?> Function(String, int) get onChunkRequested =>

@@ -283,7 +283,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(5, 8253375800311252238),
     name: 'Playlist',
-    lastPropertyId: const obx_int.IdUid(17, 7664443388874579499),
+    lastPropertyId: const obx_int.IdUid(19, 1745458666783890846),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -330,8 +330,26 @@ final _entities = <obx_int.ModelEntity>[
         flags: 2080,
         indexId: const obx_int.IdUid(27, 8283543813975375268),
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(18, 1856224141031242325),
+        name: 'duration',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(19, 1745458666783890846),
+        name: 'songFileHashes',
+        type: 30,
+        flags: 0,
+      ),
     ],
-    relations: <obx_int.ModelRelation>[],
+    relations: <obx_int.ModelRelation>[
+      obx_int.ModelRelation(
+        id: const obx_int.IdUid(10, 1976178507562192675),
+        name: 'songs',
+        targetId: const obx_int.IdUid(6, 5328859898643810358),
+      ),
+    ],
     backlinks: <obx_int.ModelBacklink>[],
   ),
   obx_int.ModelEntity(
@@ -500,7 +518,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     entities: _entities,
     lastEntityId: const obx_int.IdUid(13, 9001332223065747901),
     lastIndexId: const obx_int.IdUid(29, 9108164602987110845),
-    lastRelationId: const obx_int.IdUid(9, 7632131054866366746),
+    lastRelationId: const obx_int.IdUid(10, 1976178507562192675),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
       8147548360535687209,
@@ -937,7 +955,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Playlist: obx_int.EntityDefinition<Playlist>(
       model: _entities[4],
       toOneRelations: (Playlist object) => [],
-      toManyRelations: (Playlist object) => {},
+      toManyRelations: (Playlist object) => {
+        obx_int.RelInfo<Playlist>.toMany(10, object.id): object.songs,
+      },
       getId: (Playlist object) => object.id,
       setId: (Playlist object, int id) {
         object.id = id;
@@ -947,7 +967,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
             ? null
             : fbb.writeListInt8(object.imageBytes!);
         final nameOffset = fbb.writeString(object.name);
-        fbb.startTable(18);
+        final songFileHashesOffset = fbb.writeList(
+          object.songFileHashes.map(fbb.writeString).toList(growable: false),
+        );
+        fbb.startTable(20);
         fbb.addInt64(0, object.id);
         fbb.addBool(1, object.indestructible);
         fbb.addInt64(7, object.createdAt.millisecondsSinceEpoch);
@@ -955,6 +978,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addBool(12, object.requiresSync);
         fbb.addInt64(13, object.serverId);
         fbb.addOffset(16, nameOffset);
+        fbb.addInt64(17, object.duration);
+        fbb.addOffset(18, songFileHashesOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -991,8 +1016,22 @@ obx_int.ModelDefinition getObjectBoxModel() {
             rootOffset,
             30,
             0,
-          );
-
+          )
+          ..duration = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            38,
+            0,
+          )
+          ..songFileHashes = const fb.ListReader<String>(
+            fb.StringReader(asciiOptimization: true),
+            lazy: false,
+          ).vTableGet(buffer, rootOffset, 40, []);
+        obx_int.InternalToManyAccess.setRelInfo<Playlist>(
+          object.songs,
+          store,
+          obx_int.RelInfo<Playlist>.toMany(10, object.id),
+        );
         return object;
       },
     ),
@@ -1350,6 +1389,21 @@ class Playlist_ {
   /// See [Playlist.name].
   static final name = obx.QueryStringProperty<Playlist>(
     _entities[4].properties[6],
+  );
+
+  /// See [Playlist.duration].
+  static final duration = obx.QueryIntegerProperty<Playlist>(
+    _entities[4].properties[7],
+  );
+
+  /// See [Playlist.songFileHashes].
+  static final songFileHashes = obx.QueryStringVectorProperty<Playlist>(
+    _entities[4].properties[8],
+  );
+
+  /// see [Playlist.songs]
+  static final songs = obx.QueryRelationToMany<Playlist, Song>(
+    _entities[4].relations[0],
   );
 }
 

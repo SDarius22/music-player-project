@@ -73,24 +73,6 @@ void main() {
     );
   });
 
-  group('getOrCreateSongByFileHash', () {
-    test('returns same entity for same hash', () {
-      final cached = Song('song-hash')..id = 1;
-      when(mockSongRepo.getOrCreateSong('song-hash')).thenReturn(cached);
-
-      final first = service.getOrCreateSongByFileHash('song-hash');
-      final second = service.getOrCreateSongByFileHash('song-hash');
-
-      expect(first.id, isPositive);
-      expect(second.id, first.id);
-      verify(mockSongRepo.getOrCreateSong('song-hash')).called(2);
-    });
-
-    test('throws when hash is empty', () {
-      expect(() => service.getOrCreateSongByFileHash(''), throwsArgumentError);
-    });
-  });
-
   group('getLocalSong', () {
     test('validates empty hash', () {
       expect(() => service.getLocalSong(''), throwsArgumentError);

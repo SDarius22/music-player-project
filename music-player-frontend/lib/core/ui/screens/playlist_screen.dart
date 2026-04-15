@@ -29,6 +29,21 @@ class PlaylistScreen extends EntityScreen {
   const PlaylistScreen({super.key, required super.entity});
 
   @override
+  Future<BaseEntity> loadEntityData(BuildContext context) async {
+    final playlist = entity as Playlist;
+    try {
+      final fetchedPlaylist = await context
+          .read<PlaylistProvider>()
+          .fetchPlaylistDetails(playlist);
+      debugPrint("Fetched playlist $fetchedPlaylist");
+      return fetchedPlaylist;
+    } catch (e) {
+      debugPrint("Error fetching playlist details: $e");
+      return playlist;
+    }
+  }
+
+  @override
   EdgeInsetsGeometry buildPadding(double width, double height) {
     return EdgeInsets.only(bottom: height * 0.01);
   }
@@ -644,11 +659,5 @@ class PlaylistScreen extends EntityScreen {
         ),
       ],
     );
-  }
-
-  @override
-  Future<BaseEntity> loadEntityData(BuildContext context) {
-    final playlist = entity as Playlist;
-    return Future.value(playlist); //TODO
   }
 }

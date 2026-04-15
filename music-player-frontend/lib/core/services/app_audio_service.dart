@@ -218,7 +218,7 @@ class AppAudioService {
   void setRepeat(bool repeat) {
     _currentAudioSettings.repeat = repeat;
     settingsService.updateAudioSettings(_currentAudioSettings);
-    audioPlayer.setLoopMode(repeat ? LoopMode.one : LoopMode.all);
+    audioPlayer.setLoopMode(repeat ? LoopMode.one : LoopMode.off);
     pushStateToServer();
   }
 
@@ -264,7 +264,7 @@ class AppAudioService {
 
     _normalQueue.addAll(toAdd);
     _shuffledQueue.addAll(toAdd);
-    playlistService.addToPlaylist(_queuePlaylist, toAdd);
+    _queuePlaylist = await playlistService.addToPlaylist(_queuePlaylist, toAdd);
     pushStateToServer();
   }
 
@@ -315,16 +315,21 @@ class AppAudioService {
   Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
     if (songs.isEmpty) return;
 
+    var loadedSong = await songService.fullyFetchSong(song);
+
     if (!songs.equals(_normalQueue)) {
       _logger.fine("updating queue with new songs");
       _normalQueue.clear();
       _normalQueue.addAll(songs);
       _queuePlaylist.clearSongs();
-      playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
-      _rebuildShuffledQueue(prioritySong: song);
+      _queuePlaylist = await playlistService.addToPlaylist(
+        _queuePlaylist,
+        _normalQueue,
+      );
+      _rebuildShuffledQueue(prioritySong: loadedSong);
     }
 
-    await setCurrentSongAndPlay(song);
+    await setCurrentSongAndPlay(loadedSong);
   }
 
   Future<void> setCurrentSongAndPlay(Song song) async {
@@ -346,7 +351,7 @@ class AppAudioService {
     await audioPlayer.setVolume(_currentAudioSettings.volume);
     await audioPlayer.setSpeed(_currentAudioSettings.speed);
     await audioPlayer.setLoopMode(
-      _currentAudioSettings.repeat ? LoopMode.one : LoopMode.all,
+      _currentAudioSettings.repeat ? LoopMode.one : LoopMode.off,
     );
 
     if (_normalQueue.isNotEmpty) {
@@ -496,12 +501,15 @@ class AppAudioService {
     _currentAudioSettings.shuffle = dto.shuffle;
     _currentAudioSettings.repeat = dto.repeat;
     settingsService.updateAudioSettings(_currentAudioSettings);
-    await audioPlayer.setLoopMode(dto.repeat ? LoopMode.one : LoopMode.all);
+    await audioPlayer.setLoopMode(dto.repeat ? LoopMode.one : LoopMode.off);
 
     _normalQueue.clear();
     _normalQueue.addAll(resolvedQueue);
     _queuePlaylist.clearSongs();
-    playlistService.addToPlaylist(_queuePlaylist, _normalQueue);
+    _queuePlaylist = await playlistService.addToPlaylist(
+      _queuePlaylist,
+      _normalQueue,
+    );
 
     Song current = resolvedQueue.first;
     if (dto.currentFileHash != null) {

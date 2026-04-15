@@ -11,12 +11,13 @@ import 'package:music_player_frontend/local_libs/text_scroll/custom_text_scroll.
 import 'package:provider/provider.dart';
 
 class CustomListTile extends StatelessWidget {
-  final BaseEntity entity;
+  final BaseEntity? entity;
   final Widget? leadingAction;
   final Widget? trailingAction;
-  final GestureTapCallback onTap;
-  final GestureLongPressCallback onLongPress;
+  final GestureTapCallback? onTap;
+  final GestureLongPressCallback? onLongPress;
   final bool isSelected;
+  final bool isLoading;
 
   const CustomListTile({
     super.key,
@@ -26,19 +27,87 @@ class CustomListTile extends StatelessWidget {
     required this.isSelected,
     this.leadingAction = const SizedBox.shrink(),
     this.trailingAction = const SizedBox.shrink(),
+    this.isLoading = false,
   });
+
+  const CustomListTile._loading({super.key})
+    : entity = null,
+      onTap = null,
+      onLongPress = null,
+      isSelected = false,
+      leadingAction = const SizedBox.shrink(),
+      trailingAction = const SizedBox.shrink(),
+      isLoading = true;
+
+  static Widget loading({Key? key}) => CustomListTile._loading(key: key);
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return _buildLoadingTile(context);
+    }
+
     return _buildListTileContent(context);
   }
 
+  Widget _buildLoadingTile(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+    final placeholderColor = Colors.white.withValues(alpha: 0.16);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: height * 0.01),
+      child: Row(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: placeholderColor,
+              borderRadius: BorderRadius.circular(height * 0.015),
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+          SizedBox(width: width * 0.01),
+          SizedBox(
+            width: width * 0.15,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(height: 14, color: placeholderColor),
+                SizedBox(height: height * 0.008),
+                Container(
+                  height: 12,
+                  width: width * 0.1,
+                  color: placeholderColor,
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Container(height: 14, width: 36, color: placeholderColor),
+        ],
+      ),
+    );
+  }
+
   Widget _buildListTileContent(BuildContext context) {
+    final entity = this.entity!;
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      cursor:
+          (onTap != null || onLongPress != null)
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
       child: GestureDetector(
         onTap: onTap,
         onLongPress: onLongPress,
@@ -106,8 +175,7 @@ class CustomListTile extends StatelessWidget {
                                 context,
                               ).textTheme.bodyMedium!.copyWith(
                                 color:
-                                    audioProvider.currentSong ==
-                                            (entity as Song)
+                                    audioProvider.currentSong == entity
                                         ? Colors.blue
                                         : Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -143,13 +211,13 @@ class CustomListTile extends StatelessWidget {
                         builder: (_, audioProvider, _) {
                           return CustomTextScroll(
                             text:
-                                (entity as Song).artist.target?.name ??
+                                (entity).artist.target?.name ??
                                 'Unknown Artist',
                             style: Theme.of(
                               context,
                             ).textTheme.bodySmall!.copyWith(
                               color:
-                                  audioProvider.currentSong == (entity as Song)
+                                  audioProvider.currentSong == entity
                                       ? Colors.blue
                                       : Colors.white,
                               fontWeight: FontWeight.normal,
@@ -171,11 +239,12 @@ class CustomListTile extends StatelessWidget {
               if (entity is Song)
                 Consumer<AudioProvider>(
                   builder: (_, audioProvider, _) {
+                    final song = entity;
                     return Text(
-                      "${(entity as Song).durationInSeconds ~/ 60}:${((entity as Song).durationInSeconds % 60).toString().padLeft(2, '0')}",
+                      "${song.durationInSeconds ~/ 60}:${(song.durationInSeconds % 60).toString().padLeft(2, '0')}",
                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         color:
-                            audioProvider.currentSong == (entity as Song)
+                            audioProvider.currentSong == song
                                 ? Colors.blue
                                 : Colors.white,
                         fontWeight: FontWeight.normal,

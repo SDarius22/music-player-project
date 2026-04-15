@@ -41,10 +41,6 @@ class SongService {
 
   Stream<dynamic> get watchSongs => _songRepository.watchSongs();
 
-  Song addSongEntity(Song song) {
-    return _songRepository.saveSong(song);
-  }
-
   int getSongCount() {
     return _songRepository.getSongCount();
   }
@@ -61,13 +57,6 @@ class SongService {
     }
   }
 
-  Song getOrCreateSongByFileHash(String fileHash) {
-    if (fileHash.isEmpty) {
-      throw ArgumentError('File hash cannot be empty');
-    }
-    return _songRepository.getOrCreateSong(fileHash);
-  }
-
   Future<Song?> fetchSongByFileHash(String fileHash) async {
     final local = _songRepository.getSongByFileHash(fileHash);
     if (local != null) return local;
@@ -76,8 +65,35 @@ class SongService {
       _cacheServerSongs([serverSong]);
       return _songRepository.getSongByFileHash(fileHash);
     } catch (e) {
-      _logger.fine('SongService: failed to fetch song $fileHash from server: $e');
+      _logger.fine(
+        'SongService: failed to fetch song $fileHash from server: $e',
+      );
       return null;
+    }
+  }
+
+  Future<List<Song>> fullyFetchSongs(List<Song> songs) async {
+    List<Song> fullyFetched = [];
+    for (var song in songs) {
+      fullyFetched.add(await fullyFetchSong(song));
+    }
+    return fullyFetched;
+  }
+
+  Future<Song> fullyFetchSong(Song song) async {
+    if (song.fullyLoaded) return song;
+    var localSong = _songRepository.getSongByFileHash(song.getHash());
+    if (localSong != null && localSong.fullyLoaded) return localSong;
+
+    _logger.fine('Fully fetching song ${song.getHash()} from server...');
+    try {
+      final serverSong = await _songRestService.getServerSong(song.getHash());
+      return _cacheServerSong(serverSong);
+    } catch (e) {
+      _logger.fine(
+        'SongService: failed to fully fetch song ${song.getHash()} from server: $e',
+      );
+      return song;
     }
   }
 
@@ -309,6 +325,7 @@ class SongService {
     cachedSong.trackNumber = serverSong.trackNumber;
     cachedSong.discNumber = serverSong.discNumber;
     cachedSong.year = serverSong.releaseYear;
+    cachedSong.fullyLoaded = true;
 
     var artist = _artistRepository.getOrCreateArtist(
       serverSong.artist.hash,

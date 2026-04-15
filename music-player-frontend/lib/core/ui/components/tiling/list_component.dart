@@ -11,6 +11,7 @@ class ListComponent extends StatelessWidget {
   final bool Function(BaseEntity) isSelected;
   final Widget? leadingAction;
   final Widget? trailingAction;
+  final Function(BaseEntity)? enrichEntity;
 
   const ListComponent({
     super.key,
@@ -21,20 +22,30 @@ class ListComponent extends StatelessWidget {
     required this.isSelected,
     this.leadingAction,
     this.trailingAction,
+    this.enrichEntity,
   });
 
   Widget _getCustomListTile(BaseEntity entity) {
-    return CustomListTile(
-      onTap: () {
-        onTap(entity);
+    return FutureBuilder(
+      future: enrichEntity != null ? enrichEntity!(entity) : Future.value(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CustomListTile.loading();
+        } else {
+          return CustomListTile(
+            onTap: () {
+              onTap(entity);
+            },
+            onLongPress: () {
+              onLongPress(entity);
+            },
+            isSelected: isSelected(entity),
+            entity: entity,
+            leadingAction: leadingAction ?? const SizedBox.shrink(),
+            trailingAction: trailingAction ?? const SizedBox.shrink(),
+          );
+        }
       },
-      onLongPress: () {
-        onLongPress(entity);
-      },
-      isSelected: isSelected(entity),
-      entity: entity,
-      leadingAction: leadingAction ?? const SizedBox.shrink(),
-      trailingAction: trailingAction ?? const SizedBox.shrink(),
     );
   }
 

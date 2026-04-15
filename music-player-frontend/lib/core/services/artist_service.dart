@@ -130,6 +130,7 @@ class ArtistService {
       cachedSong.trackNumber = song.trackNumber;
       cachedSong.durationInSeconds = song.durationInSeconds;
       cachedSong.year = song.releaseYear;
+      cachedSong.fullyLoaded = true;
       _songRepository.updateSong(cachedSong);
 
       cachedArtist.addSong(cachedSong);

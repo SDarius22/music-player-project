@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -17,7 +18,7 @@ class Playlist implements BaseEntity {
 
   @Unique()
   String name;
-  int _duration = -1;
+  int duration = -1;
 
   @Property(type: PropertyType.byteVector)
   Uint8List? imageBytes;
@@ -25,8 +26,8 @@ class Playlist implements BaseEntity {
   @Property(type: PropertyType.date)
   DateTime createdAt = DateTime.now();
 
-  final _songs = ToMany<Song>();
-  final List<String> _songFileHashes = [];
+  final songs = ToMany<Song>();
+  List<String> songFileHashes = [];
 
   Playlist(this.name, {List<Song> songs = const []}) {
     for (var song in songs) {
@@ -35,27 +36,33 @@ class Playlist implements BaseEntity {
   }
 
   void addSong(Song song) {
-    _songs.add(song);
-    _songFileHashes.add(song.getHash());
-    _duration += song.durationInSeconds;
+    if (songFileHashes.contains(song.getHash())) {
+      return;
+    }
+    songs.add(song);
+    songFileHashes.add(song.getHash());
+    duration += song.durationInSeconds;
   }
 
   void removeSong(Song song) {
-    _songs.remove(song);
-    _songFileHashes.remove(song.getHash());
-    _duration -= song.durationInSeconds;
+    songs.remove(song);
+    songFileHashes.remove(song.getHash());
+    duration -= song.durationInSeconds;
   }
 
   void clearSongs() {
-    _songs.clear();
-    _songFileHashes.clear();
-    _duration = 0;
+    songs.clear();
+    songFileHashes.clear();
+    duration = 0;
   }
 
   List<Song> getSongs() {
+    debugPrint(
+      "Getting songs for playlist '$name' with ${songFileHashes.length} song hashes",
+    );
     return List.unmodifiable(
-      _songFileHashes.map(
-        (hash) => _songs.firstWhere((song) => song.getHash() == hash),
+      songFileHashes.map(
+        (hash) => songs.firstWhere((song) => song.getHash() == hash),
       ),
     );
   }
@@ -67,7 +74,7 @@ class Playlist implements BaseEntity {
 
   @override
   String getSecondaryText() {
-    return "${_songs.length} Songs";
+    return "${songs.length} Songs";
   }
 
   void setName(String value) {
@@ -81,10 +88,10 @@ class Playlist implements BaseEntity {
 
   @override
   bool isLocal() {
-    if (_songs.isEmpty) {
+    if (songs.isEmpty) {
       return false;
     }
-    for (var song in _songs) {
+    for (var song in songs) {
       if (!song.isLocal()) {
         return false;
       }
@@ -103,11 +110,11 @@ class Playlist implements BaseEntity {
   }
 
   int getDurationInSeconds() {
-    return _duration;
+    return duration;
   }
 
   @override
   String toString() {
-    return 'Playlist{id: $id, serverId: $serverId, name: $name, duration: $_duration seconds, songs: ${_songs.length}}';
+    return 'Playlist{id: $id, serverId: $serverId, name: $name, duration: $duration seconds, songs: ${songs.length}, songFileHashes: ${songFileHashes.length}, indestructible: $indestructible}';
   }
 }

@@ -82,11 +82,14 @@ void main() {
       await Future.delayed(Duration.zero);
 
       final serverSong = Song('deadbeef42')..id = 1;
-      final localSong = Song('local-hash')
-        ..id = 2
-        ..path = '/music/local.mp3';
+      final localSong =
+          Song('local-hash')
+            ..id = 2
+            ..path = '/music/local.mp3';
 
-      when(mockPlaylistService.addToPlaylist(any, any)).thenReturn(null);
+      when(
+        mockPlaylistService.addToPlaylist(any, any),
+      ).thenAnswer((_) async => Future.value(Playlist('Queue')));
       await service.addToQueue([serverSong, localSong]);
 
       service.pushStateToServer();

@@ -242,17 +242,6 @@ void main() {
       expect(service.getMostRecentPlayedSong()?.getHash(), 'played');
     });
 
-    test('getAllPlaylists and getPlaylists delegate to repository', () {
-      playlistRepo.savePlaylist(Playlist('A'));
-      playlistRepo.savePlaylist(Playlist('B'));
-
-      expect(service.getAllPlaylists(), isNotEmpty);
-      expect(
-        service.getPlaylists('A', 'Name', true).map((p) => p.getName()),
-        contains('A'),
-      );
-    });
-
     test('deleteAllSongsFromPlaylist clears and persists', () {
       final playlist =
           Playlist('ToClear')

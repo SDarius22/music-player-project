@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -64,11 +65,11 @@ class PlaylistService {
   Future<Playlist> updatePlaylist(Playlist playlist) async {
     if (playlist.indestructible) {
       final list = playlist.getSongs();
+      _logger.fine('Updating cover art for indestructible playlist $playlist');
       if (list.isNotEmpty) {
         playlist.imageBytes = list.first.getCoverArt();
       }
     }
-    _playlistRepository.savePlaylist(playlist);
 
     if (playlist.serverId > 0) {
       try {
@@ -93,7 +94,7 @@ class PlaylistService {
       }
     }
 
-    return playlist;
+    return _playlistRepository.savePlaylist(playlist);
   }
 
   Song? getMostRecentPlayedSong() {
@@ -222,10 +223,6 @@ class PlaylistService {
     return _playlistRepository.getNormalPlaylists();
   }
 
-  List<Playlist> getPlaylists(String query, String sortField, bool flag) {
-    return _playlistRepository.getPlaylists(query, sortField, flag);
-  }
-
   Future<({List<Playlist> content, int totalPages, int page})> getPlaylistsPage(
     String query,
     String sortField,
@@ -256,6 +253,10 @@ class PlaylistService {
       size,
     );
 
+    for (final playlist in localContent) {
+      _logger.fine('Playlist $playlist}');
+    }
+
     final totalPages =
         (serverTotalPages != null && serverTotalPages > 0)
             ? serverTotalPages
@@ -270,10 +271,41 @@ class PlaylistService {
     return (content: localContent, totalPages: totalPages, page: page);
   }
 
+  Future<Playlist> getPlaylistDetails(Playlist playlist) async {
+    try {
+      if (playlist.serverId <= 0) {
+        throw Exception('Playlist does not have a valid server ID');
+      }
+      final serverPlaylist = await _playlistRestService.getPlaylistDetails(
+        playlist.serverId,
+      );
+      cacheServerPlaylistDetails(serverPlaylist!);
+    } catch (e) {
+      _logger.fine('Failed to fetch playlist details from server: $e');
+    }
+
+    var cached = _playlistRepository.getPlaylistByServerIdAndName(
+      playlist.serverId,
+      playlist.getName(),
+    );
+    if (cached == null) {
+      _logger.fine(
+        'Playlist not found in local cache after server fetch: ${playlist.getName()}',
+      );
+      return playlist;
+    }
+
+    return cached;
+  }
+
   Playlist cacheServerPlaylist(PlaylistDto serverPlaylist) {
     if (serverPlaylist.id <= 0) {
       throw Exception('Server playlist must have a valid ID');
     }
+
+    _logger.fine(
+      'Caching server playlist: ${serverPlaylist.name} with ID ${serverPlaylist.id}',
+    );
 
     var cachedPlaylist = _playlistRepository.getOrCreatePlaylist(
       serverPlaylist.id,
@@ -290,17 +322,36 @@ class PlaylistService {
     return _playlistRepository.savePlaylist(cachedPlaylist);
   }
 
+  Playlist cacheServerPlaylistDetails(PlaylistDetailDto serverPlaylist) {
+    if (serverPlaylist.id <= 0) {
+      throw Exception('Server playlist must have a valid ID');
+    }
+
+    var cachedPlaylist = _playlistRepository.getOrCreatePlaylist(
+      serverPlaylist.id,
+      serverPlaylist.name,
+    );
+
+    cachedPlaylist.clearSongs();
+
+    for (final song in serverPlaylist.songs) {
+      final cachedSong = _songRepository.getOrCreateSong(song.fileHash);
+      cachedPlaylist.addSong(cachedSong);
+    }
+
+    return _playlistRepository.savePlaylist(cachedPlaylist);
+  }
+
   List<Playlist> getAllPlaylists() {
     return _playlistRepository.getAllPlaylists();
   }
 
-  void addToPlaylist(Playlist playlist, List<Song> songs) {
+  Future<Playlist> addToPlaylist(Playlist playlist, List<Song> songs) async {
     for (var song in songs) {
-      if (!playlist.getSongs().contains(song)) {
-        playlist.addSong(song);
-      }
+      playlist.addSong(song);
     }
-    updatePlaylist(playlist);
+    _logger.fine('Updating playlist "$playlist');
+    return await updatePlaylist(playlist);
   }
 
   void deleteFromPlaylist(Song song, Playlist playlist) {

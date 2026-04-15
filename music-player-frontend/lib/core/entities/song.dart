@@ -73,6 +73,31 @@ class Song implements BaseEntity {
     return null;
   }
 
+  List<Color> getColors() {
+    if (album.target != null && album.target!.colors.isNotEmpty) {
+      return album.target!.colors;
+    }
+    return [];
+  }
+
+  void updateFrom(Song other) {
+    if (other.fileHash != fileHash) {
+      throw ArgumentError(
+        'Cannot update from a song with a different file hash',
+      );
+    }
+
+    name = other.name;
+    durationInSeconds = other.durationInSeconds;
+    trackNumber = other.trackNumber;
+    discNumber = other.discNumber;
+    year = other.year;
+    path = other.path;
+    fullyLoaded = other.fullyLoaded;
+    artist.target = other.artist.target;
+    album.target = other.album.target;
+  }
+
   @override
   bool operator ==(Object other) {
     if (other is! Song) return false;
@@ -83,13 +108,6 @@ class Song implements BaseEntity {
   @override
   int get hashCode {
     return fileHash.hashCode;
-  }
-
-  List<Color> getColors() {
-    if (album.target != null && album.target!.colors.isNotEmpty) {
-      return album.target!.colors;
-    }
-    return [];
   }
 
   @override

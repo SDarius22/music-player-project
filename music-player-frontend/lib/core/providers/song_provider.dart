@@ -38,6 +38,10 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     _isInitialized = true;
   }
 
+  Future<Song> enrichSong(Song song) async {
+    return await _songService.fullyFetchSong(song);
+  }
+
   Future<Song?> fetchSongByFileHash(String fileHash) async {
     return await _songService.fetchSongByFileHash(fileHash);
   }

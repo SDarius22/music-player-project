@@ -34,15 +34,22 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     int page,
     int size,
   ) async {
-    final all = _playlistService.getPlaylists(query, sortField, ascending);
-    final totalElements = all.length;
-    final totalPages = totalElements == 0 ? 1 : (totalElements / size).ceil();
-    final offset = page * size;
-    final content =
-        offset >= totalElements
-            ? <Playlist>[]
-            : all.sublist(offset, (offset + size).clamp(0, totalElements));
-    return PageResult(content: content, totalPages: totalPages, page: page);
+    final result = await _playlistService.getPlaylistsPage(
+      query,
+      sortField,
+      ascending,
+      page,
+      size,
+    );
+    return PageResult(
+      content: result.content,
+      totalPages: result.totalPages,
+      page: result.page,
+    );
+  }
+
+  Future<Playlist> fetchPlaylistDetails(Playlist playlist) async {
+    return await _playlistService.getPlaylistDetails(playlist);
   }
 
   @override

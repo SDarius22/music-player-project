@@ -215,7 +215,7 @@
     },
     {
       "id": "5:8253375800311252238",
-      "lastPropertyId": "17:7664443388874579499",
+      "lastPropertyId": "19:1745458666783890846",
       "name": "Playlist",
       "properties": [
         {
@@ -257,9 +257,25 @@
           "indexId": "27:8283543813975375268",
           "type": 9,
           "flags": 2080
+        },
+        {
+          "id": "18:1856224141031242325",
+          "name": "duration",
+          "type": 6
+        },
+        {
+          "id": "19:1745458666783890846",
+          "name": "songFileHashes",
+          "type": 30
         }
       ],
-      "relations": []
+      "relations": [
+        {
+          "id": "10:1976178507562192675",
+          "name": "songs",
+          "targetId": "6:5328859898643810358"
+        }
+      ]
     },
     {
       "id": "6:5328859898643810358",
@@ -366,7 +382,7 @@
   ],
   "lastEntityId": "13:9001332223065747901",
   "lastIndexId": "29:9108164602987110845",
-  "lastRelationId": "9:7632131054866366746",
+  "lastRelationId": "10:1976178507562192675",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
