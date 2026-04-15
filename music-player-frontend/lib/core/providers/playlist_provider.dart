@@ -1,17 +1,20 @@
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 
 class PlaylistProvider with ChangeNotifier implements QueryableProvider {
+  static final _logger = Logger('PlaylistProvider');
+
   final PlaylistService _playlistService;
 
   PlaylistProvider(this._playlistService) {
     playlistsStream.listen((event) {
-      debugPrint("Playlists stream updated");
+      _logger.fine('Playlists stream updated');
       notifyListeners();
     });
   }

@@ -1,13 +1,15 @@
 import 'dart:js_interop';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:web/web.dart' as web;
 
 class WebP2PBridge {
+  static final _logger = Logger('WebP2PBridge');
+
   final ChunkService Function(String) chunkManagerFactory;
   final Map<String, ChunkService> _managers = {};
   final Map<String, String> _songNames = {};
@@ -114,7 +116,7 @@ class WebP2PBridge {
         (source as web.Client).postMessage(jsResponse);
       }
     } catch (e) {
-      debugPrint("WebP2PBridge Error: $e");
+      _logger.warning('WebP2PBridge Error', e);
     }
   }
 

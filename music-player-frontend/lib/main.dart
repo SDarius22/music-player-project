@@ -4,7 +4,9 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_fullscreen/flutter_fullscreen.dart';
 import 'package:flutter_single_instance/flutter_single_instance.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/database/initialization/db_init.dart';
+import 'package:music_player_frontend/core/logging/app_logger.dart';
 import 'package:music_player_frontend/local_libs/just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:music_player_frontend/platforms/android/android_app.dart';
 import 'package:music_player_frontend/platforms/linux/linux_app.dart';
@@ -12,14 +14,19 @@ import 'package:music_player_frontend/platforms/macos/macos_app.dart';
 import 'package:music_player_frontend/platforms/windows/windows_app.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+final _logger = Logger('main');
+
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  configureAppLogging();
+  await runWithLoggingZone(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  JustAudioMediaKit.protocolWhitelist = ["http", "https", "file"];
-  JustAudioMediaKit.title = 'Music Player';
-  JustAudioMediaKit.ensureInitialized(linux: true, windows: true, macOS: true);
+    JustAudioMediaKit.protocolWhitelist = ["http", "https", "file"];
+    JustAudioMediaKit.title = 'Music Player';
+    JustAudioMediaKit.ensureInitialized(linux: true, windows: true, macOS: true);
 
-  await runOnTargetPlatform();
+    await runOnTargetPlatform();
+  });
 }
 
 Future<void> runOnTargetPlatform() async {
@@ -31,11 +38,11 @@ Future<void> runOnTargetPlatform() async {
         Permission.storage,
       ].request();
       await initializeDatabase();
-      debugPrint('Running on Android');
+      _logger.info('Running on Android');
       runApp(const AndroidApp());
       break;
     case 'windows':
-      debugPrint('Running on Windows');
+      _logger.info('Running on Windows');
       if (await FlutterSingleInstance().isFirstInstance()) {
         await initializeDatabase();
         appWindow.minSize = const Size(250, 250);
@@ -44,7 +51,7 @@ Future<void> runOnTargetPlatform() async {
       }
       break;
     case 'linux':
-      debugPrint('Running on Linux');
+      _logger.info('Running on Linux');
       if (await FlutterSingleInstance().isFirstInstance()) {
         await initializeDatabase();
         appWindow.minSize = const Size(250, 250);
@@ -53,7 +60,7 @@ Future<void> runOnTargetPlatform() async {
       }
       break;
     case 'macos':
-      debugPrint('Running on macOS');
+      _logger.info('Running on macOS');
       if (await FlutterSingleInstance().isFirstInstance()) {
         await initializeDatabase();
         await FullScreen.ensureInitialized();
@@ -63,6 +70,6 @@ Future<void> runOnTargetPlatform() async {
       }
       break;
     default:
-      debugPrint('Unsupported platform');
+      _logger.warning('Unsupported platform');
   }
 }

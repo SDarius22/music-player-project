@@ -1,12 +1,14 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_page_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class ArtistRestClient extends AbstractRestClient {
+  static final _logger = Logger('ArtistRestClient');
+
   ArtistRestClient({
     required String baseUrl,
     required AuthService authService,
@@ -39,10 +41,10 @@ class ArtistRestClient extends AbstractRestClient {
           return ArtistPageDto.fromJson(decoded);
         }
       } else {
-        debugPrint('Failed to fetch artists: ${response.statusCode}');
+        _logger.warning('Failed to fetch artists: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error fetching artists: $e');
+      _logger.warning('Error fetching artists', e);
     }
 
     return ArtistPageDto(
@@ -63,7 +65,7 @@ class ArtistRestClient extends AbstractRestClient {
         );
       }
     } catch (e) {
-      debugPrint('Error fetching artist with hash: $artistHash: $e');
+      _logger.warning('Error fetching artist with hash: $artistHash', e);
     }
     return null;
   }

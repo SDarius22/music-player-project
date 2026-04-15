@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/dtos/sync/song_sync_dto.dart';
@@ -15,6 +16,8 @@ import 'package:music_player_frontend/core/rest_clients/data_sync_rest_client.da
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
 
 class SongService {
+  static final _logger = Logger('SongService');
+
   final SongRepository _songRepository;
   final ArtistRepository _artistRepository;
   final AlbumRepository _albumRepository;
@@ -73,7 +76,7 @@ class SongService {
       _cacheServerSongs([serverSong]);
       return _songRepository.getSongByFileHash(fileHash);
     } catch (e) {
-      debugPrint('SongService: failed to fetch song $fileHash from server: $e');
+      _logger.fine('SongService: failed to fetch song $fileHash from server: $e');
       return null;
     }
   }
@@ -108,7 +111,7 @@ class SongService {
       serverTotalPages = serverPage.totalPages;
       _cacheServerSongs(serverPage.content);
     } catch (e) {
-      debugPrint('SongService: server fetch failed for getSongsPage: $e');
+      _logger.fine('SongService: server fetch failed for getSongsPage: $e');
     }
     final localSongs = _songRepository.getSongsPaged(
       query,
@@ -149,25 +152,25 @@ class SongService {
     if (_isSyncing) return;
 
     if (kIsWeb) {
-      debugPrint('Song sync is not supported on web; skipping.');
+      _logger.fine('Song sync is not supported on web; skipping.');
       return;
     }
 
     _isSyncing = true;
 
     if (!_songRestService.authService.isLoggedIn) {
-      debugPrint('User not logged in, skipping song sync');
+      _logger.fine('User not logged in, skipping song sync');
       _isSyncing = false;
       return;
     }
 
-    debugPrint('Starting song sync...');
+    _logger.fine('Starting song sync...');
 
     try {
       final unsyncedSongs = _songRepository.getUnsyncedSongs();
 
       if (unsyncedSongs.isEmpty) {
-        debugPrint('No songs to sync');
+        _logger.fine('No songs to sync');
         _isSyncing = false;
         return;
       }
@@ -230,7 +233,7 @@ class SongService {
         }
       }
     } catch (e) {
-      debugPrint(e.toString());
+      _logger.fine(e.toString());
     } finally {
       _isSyncing = false;
     }
@@ -276,12 +279,12 @@ class SongService {
           s.pendingPlayDurationSeconds = 0;
           _songRepository.updateSong(s);
         }
-        debugPrint(
+        _logger.fine(
           '[SongService] Library metadata sync complete — ${pending.length} song(s) synced',
         );
       }
     } catch (e) {
-      debugPrint('[SongService] Library metadata sync failed: $e');
+      _logger.fine('[SongService] Library metadata sync failed: $e');
     } finally {
       _isLibraryMetadataSyncing = false;
     }

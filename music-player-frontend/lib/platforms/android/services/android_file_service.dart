@@ -2,11 +2,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:on_audio_query_forked/on_audio_query.dart';
 
 class AndroidFileService extends AbstractFileService {
+  static final _logger = Logger('AndroidFileService');
+
   final OnAudioQuery audioQuery = OnAudioQuery();
 
   @override
@@ -36,7 +38,7 @@ class AndroidFileService extends AbstractFileService {
     try {
       metadataVar = readMetadata(File(path), getImage: withImage);
     } catch (e) {
-      debugPrint("Error reading metadata for $path: $e");
+      _logger.warning('Error reading metadata for $path', e);
       metadataVariable['title'] = path.replaceAll("\\", "/").split("/").last;
       return metadataVariable;
     }

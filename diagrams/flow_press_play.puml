@@ -2,131 +2,151 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title User Flow — Press Play (P2P + Server Fallback)
+title Playback Flow — Press Play (Hybrid P2P + Server)
 
 actor User
 participant "AudioProvider" as audioProv
 participant "AppAudioService" as audioSvc
-participant "P2PChunkedAudioSource" as p2pSource
+participant "Chunk path\nP2PChunkedAudioSource / WebP2PBridge" as chunkPath
 participant "ChunkService" as chunkSvc
+participant "Local cache\nhot RAM + cache repo" as cache
 participant "WebRTCService" as webrtc
 participant "Backend\n(Signaling WS)" as sigServer
 participant "Peer\n(RTCDataChannel)" as peer
 participant "Backend\n(Streaming REST)" as streamServer
-participant "RAM Cache\n(last 15 chunks)" as ram
-participant "Disk Cache" as disk
 
 == Song Load ==
 
 User -> audioProv: tap Play
 audioProv -> audioSvc: play()
-audioSvc -> audioSvc: _loadAndPlayIndex(idx)
-audioSvc -> audioSvc: _buildAudioSource(song)\n→ P2PChunkedAudioSource [desktop]\n→ AudioSource.uri(...) [web]
-audioSvc -> audioSvc: audioPlayer.setAudioSource(source)
+audioSvc -> audioSvc: _loadIndex(idx)
+audioSvc -> audioSvc: flush previous chunk stats\nif switching streamed songs
+audioSvc -> audioSvc: _buildAudioSource(song)
+
+note over audioSvc, chunkPath
+  Desktop/mobile: P2PChunkedAudioSource
+  Web: /music-player/p2p-stream/{fileHash}
+  intercepted by service worker + WebP2PBridge
+end note
+
+audioSvc -> audioSvc: audioPlayer.setAudioSource(source, initialPosition)
 audioSvc -> audioSvc: audioPlayer.play()
 
 note over audioSvc
   Background: _retryIfStuck()
   polls every 500ms;
   if position stalls > 1s → reload source
+
+  Every 30s while playing:
+  - PUT /playback
+  - proactively prefetch prefixes
+    of nearby queue songs
 end note
 
 == Manifest Fetch + Peer Discovery ==
 
-p2pSource -> chunkSvc: loadManifest()
-chunkSvc -> streamServer: GET /stream/{id}/manifest
+chunkPath -> chunkSvc: loadManifest()
+chunkSvc -> streamServer: GET /stream/{fileHash}/manifest
 streamServer --> chunkSvc: ChunkManifestDto\n(totalChunks, chunkSize, hashes[])
 
-chunkSvc -> webrtc: discoverPeers(songId)
-webrtc -> sigServer: WS DISCOVER_PEERS {songId}
-sigServer -> sigServer: PeerTrackingService\n.getPeerBufferMapsForSong()\n(reads Redis peer:chunks:{songId})
+chunkSvc -> webrtc: discoverPeers(fileHash)
+webrtc -> sigServer: WS DISCOVER_PEERS {fileHash, userId}
+sigServer -> sigServer: SignalingHandler + PeerTrackingService\nlookup cached peers for this fileHash
 sigServer --> webrtc: WS PEER_BUFFER_MAP {peerId → [cachedIndices]}
 
-alt peers available for this song
+chunkSvc -> cache: getAvailableChunkIndices(fileHash)
+cache --> chunkSvc: already cached indices
+chunkSvc -> webrtc: registerCache(fileHash, cachedIndices)
+webrtc -> sigServer: WS REGISTER_CACHE
+
+alt peers available for this file
+  note over webrtc
+    peers are ranked by RTT + throughput;
+    best peers are preferred first
+  end note
   webrtc -> sigServer: WS OFFER → peerId
   sigServer --> peer: WS OFFER
   peer --> sigServer: WS ANSWER
   sigServer --> webrtc: WS ANSWER
   webrtc <-> peer: ICE candidate exchange
-  note over webrtc, peer: RTCDataChannel open\n(binary + text messages)
+  note over webrtc, peer
+    ordered RTCDataChannel opens
+    text: REQUEST_CHUNK:fileHash:index
+    binary: chunk packet(s)
+  end note
 end
-
-chunkSvc -> webrtc: registerCache(songId, alreadyCachedIndices)
-webrtc -> sigServer: WS REGISTER_CACHE
 
 == Chunk Streaming Loop ==
 
-loop for each chunk index N (driven by AudioPlayer reads)
+loop for each needed chunk N / byte range
+  chunkPath -> chunkSvc: getChunk(N)
+  chunkSvc -> cache: lookup chunk N
 
-  p2pSource -> chunkSvc: getChunk(N)
+  alt hot RAM or cached chunk hit
+    cache --> chunkSvc: bytes [local cache]
 
-  chunkSvc -> ram: lookup chunk N
-  alt RAM hit
-    ram --> chunkSvc: bytes (instant)
+  else cache miss
+    alt N < server bootstrap prefix (~5% of song)
+      note over chunkSvc, streamServer
+        earliest chunks always come from server
+        to stabilise startup playback
+      end note
+      chunkSvc -> streamServer: GET /stream/{fileHash}/chunk/{N}
+      streamServer --> chunkSvc: chunk bytes [server bootstrap]
 
-  else RAM miss
-    chunkSvc -> disk: read chunk N
-    alt disk hit
-      disk --> chunkSvc: bytes
+    else peers available
+      chunkSvc -> webrtc: requestChunkFromPeer(top 1..3 peers, staggered 150ms)
+      webrtc -> peer: DataChannel text\nREQUEST_CHUNK:{fileHash}:{N}
+      peer -> peer: read chunk N from local cache
+      peer --> webrtc: DataChannel binary\nchunk packet(s)
 
-    else disk miss — fetch from network
-
-      alt N < 8 (bootstrap: always server)
-        note over chunkSvc, streamServer
-          First 8 chunks always fetched
-          from server to guarantee fast
-          playback start
-        end note
-        chunkSvc -> streamServer: GET /stream/{id}/chunk/{N}
-        streamServer --> chunkSvc: chunk bytes [server]
-
-      else peers available
-        chunkSvc -> webrtc: requestChunk(songId, N)\n(stores Completer, awaits with 1s timeout)
-        webrtc -> peer: DataChannel text\n"REQUEST_CHUNK:{songId}:{N}"
-        peer -> peer: look up chunk N\nin local cache
-        peer -> webrtc: DataChannel binary\n[songId:4B BE][chunkIdx:4B BE][data…]
-
-        alt peer responds within 1s
-          webrtc --> chunkSvc: bytes [P2P]
-        else timeout or peer error
-          chunkSvc -> streamServer: GET /stream/{id}/chunk/{N}
-          streamServer --> chunkSvc: bytes [server fallback]
-        end
-
-      else no peers known
-        chunkSvc -> streamServer: GET /stream/{id}/chunk/{N}
-        streamServer --> chunkSvc: bytes [server]
+      alt peer responds before timeout
+        webrtc --> chunkSvc: bytes [P2P]
+      else timeout / peer miss / failed connection
+        chunkSvc -> streamServer: GET /stream/{fileHash}/chunk/{N}
+        streamServer --> chunkSvc: chunk bytes [server fallback]
       end
 
-      chunkSvc -> chunkSvc: verify SHA-256 vs manifest hash
-      alt hash mismatch (P2P corruption)
-        chunkSvc -> streamServer: GET /stream/{id}/chunk/{N}
-        streamServer --> chunkSvc: bytes [server retry]
-        chunkSvc -> chunkSvc: re-verify SHA-256
-      end
-
-      chunkSvc -> disk: save chunk N
-      chunkSvc -> ram: add to hot cache (evict oldest if > 15)
-
+    else no peers known
+      chunkSvc -> streamServer: GET /stream/{fileHash}/chunk/{N}
+      streamServer --> chunkSvc: chunk bytes [server]
     end
+
+    chunkSvc -> chunkSvc: verify SHA-256 against manifest hash
+    alt hash mismatch
+      chunkSvc -> streamServer: GET /stream/{fileHash}/chunk/{N}
+      streamServer --> chunkSvc: chunk bytes [server retry]
+      chunkSvc -> chunkSvc: re-verify
+    end
+
+    chunkSvc -> cache: save chunk N + update hot cache
+    chunkSvc -> webrtc: registerCache(fileHash, [N])
   end
 
-  chunkSvc --> p2pSource: chunk bytes
-  p2pSource -> p2pSource: slice bytes to requested range
-  p2pSource -> chunkSvc: prefetch N+1 … N+16 (async, non-blocking)
-  p2pSource --> audioSvc: yield bytes to AudioPlayer
+  chunkSvc --> chunkPath: chunk bytes
+  chunkPath -> chunkSvc: prefetch next 1..16 chunks\n(async, non-blocking)
 
+  note over chunkPath
+    Web path still uses the same ChunkService.
+    The service worker requests byte ranges,
+    and WebP2PBridge assembles them from chunks.
+  end note
 end
 
-== Stats Report (end of song / periodic) ==
+== Side Effects ==
 
-chunkSvc -> chunkSvc: tally p2pCount vs serverCount
-chunkSvc -> streamServer: POST /statistics\n{p2pChunks, serverChunks, p2pPercentage, ...}
+audioSvc -> audioSvc: mark song as played locally\n(update play count / last played)
 
-note over audioSvc
-  Every 30s while playing:
-  pushStateToServer() → PUT /playback
-  (queue, position, shuffle, repeat)
+chunkSvc -> streamServer: POST /statistics\n{songFileHash, localCachedChunks, p2pChunks, serverChunks}
+
+note over chunkSvc, streamServer
+  Desktop/mobile: stats emitted when all chunks are seen
+  or when the player switches away from the song.
+
+  Web: service worker counts served byte ranges,
+  reports them back through WebP2PBridge,
+  then ChunkStatsService posts /statistics.
 end note
 
 @enduml
+

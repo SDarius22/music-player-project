@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_model_builder.dart';
 import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_model.dart';
 
 class LyricsProvider with ChangeNotifier {
+  static final _logger = Logger('LyricsProvider');
+
   final LyricsService _lyricsService;
   final AppAudioService _audioService;
   LyricsReaderModel lyricsModelBuilder = LyricsReaderModel();
@@ -32,7 +35,9 @@ class LyricsProvider with ChangeNotifier {
         LyricsModelBuilder.create()
             .bindLyricToMain(getUnsyncedLyrics())
             .getModel();
-    debugPrint('LyricsModelBuilder: ${lyricsModelBuilder.lyrics.length} lines');
+    _logger.fine(
+      'LyricsModelBuilder: ${lyricsModelBuilder.lyrics.length} lines',
+    );
     loadingNotifier.value = false;
   }
 

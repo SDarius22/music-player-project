@@ -1,16 +1,18 @@
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/rest_clients/lyrics_rest_client.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
 class LyricsService {
+  static final _logger = Logger('LyricsService');
+
   final AbstractFileService _fileService;
   final LyricsRestClient _lyricsRestClient;
 
   LyricsService(this._fileService, this._lyricsRestClient);
 
   Future<String?> fetchLyricsForSong(Song? song) async {
-    debugPrint('Fetching lyrics for song: $song');
+    _logger.fine('Fetching lyrics for song: $song');
     if (song == null) return null;
     if (song.path != null && song.path!.isNotEmpty) {
       try {
@@ -23,7 +25,7 @@ class LyricsService {
       }
     }
 
-    debugPrint(
+    _logger.fine(
       'No local lyrics found, fetching from server for song: ${song.name}',
     );
 

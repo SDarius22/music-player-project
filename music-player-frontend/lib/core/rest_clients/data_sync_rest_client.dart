@@ -1,12 +1,14 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/sync/song_sync_dto.dart';
 import 'package:music_player_frontend/core/dtos/sync/sync_response_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class DataSyncClient extends AbstractRestClient {
+  static final _logger = Logger('DataSyncClient');
+
   DataSyncClient({required String baseUrl, required AuthService authService}) {
     super.baseUrl = baseUrl;
     super.authService = authService;
@@ -27,11 +29,11 @@ class DataSyncClient extends AbstractRestClient {
       if (response.statusCode == 200) {
         return SyncResponseDto.fromJson(jsonDecode(response.body));
       } else {
-        debugPrint("DataSyncService: Sync failed ${response.statusCode}");
+        _logger.warning('DataSyncService: Sync failed ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      debugPrint("DataSyncService Error: $e");
+      _logger.warning('DataSyncService Error', e);
       return null;
     }
   }

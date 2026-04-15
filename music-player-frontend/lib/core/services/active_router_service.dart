@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 
 class ActiveChunkRouter {
+  static final _logger = Logger('ActiveChunkRouter');
+
   final Map<String, ChunkService> _activeManagers = {};
   final ChunkCacheRepository _cacheRepo;
 
@@ -19,7 +22,7 @@ class ActiveChunkRouter {
     if (_activeManagers.containsKey(fileHash)) {
       _activeManagers[fileHash]!.resolvePeerRequest(chunkIndex, data);
     } else {
-      debugPrint("Router: Dropped stray chunk $chunkIndex for song $fileHash");
+      _logger.fine('Router: Dropped stray chunk $chunkIndex for song $fileHash');
     }
   }
 

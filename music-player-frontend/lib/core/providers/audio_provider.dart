@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
@@ -10,6 +11,8 @@ import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/worker_service.dart';
 
 class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
+  static final _logger = Logger('AudioProvider');
+
   final AppAudioService _audioService;
   final AbstractFileService _fileService;
 
@@ -90,7 +93,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     try {
       await _audioService.skipToNext();
     } catch (e) {
-      debugPrint("Error skipping to next: $e");
+      _logger.warning('Error skipping to next', e);
     }
   }
 
@@ -104,7 +107,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     try {
       await _audioService.skipToPrevious();
     } catch (e) {
-      debugPrint("Error skipping to previous: $e");
+      _logger.warning('Error skipping to previous', e);
     }
   }
 
@@ -190,7 +193,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       );
       mediaItem.add(item);
     } catch (e) {
-      debugPrint("Error creating media item: $e");
+      _logger.warning('Error creating media item', e);
     }
   }
 
@@ -198,7 +201,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     if (currentSong == null ||
         currentSong?.getCoverArt() == null ||
         currentSong!.getColors().isNotEmpty) {
-      debugPrint("Skipping color extraction");
+      _logger.fine('Skipping color extraction');
       return;
     }
 

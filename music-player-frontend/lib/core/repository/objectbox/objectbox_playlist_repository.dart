@@ -1,10 +1,12 @@
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/database/object_box_store.dart';
 import 'package:music_player_frontend/core/database/objectbox.g.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 
 class ObjectBoxPlaylistRepository implements PlaylistRepository {
+  static final _logger = Logger('ObjectBoxPlaylistRepository');
+
   Box<Playlist> get _playlistBox => ObjectBox.store.box<Playlist>();
 
   @override
@@ -22,7 +24,7 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
     try {
       playlist.id = _playlistBox.put(playlist);
     } catch (e) {
-      debugPrint("Failed to save playlist: $e");
+      _logger.warning('Failed to save playlist', e);
     }
 
     return playlist;

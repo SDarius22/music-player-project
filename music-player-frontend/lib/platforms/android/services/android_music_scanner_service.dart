@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
@@ -11,6 +11,8 @@ import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class AndroidMusicScannerService implements AbstractMusicScannerService {
+  static final _logger = Logger('AndroidMusicScannerService');
+
   final SongService _songService;
   final ArtistService _artistService;
   final AlbumService _albumService;
@@ -57,7 +59,7 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
         final bytes = await File(songModel.data).readAsBytes();
         fileHash = sha256.convert(bytes).toString();
       } catch (_) {
-        debugPrint("Failed to read file for hashing: ${songModel.data}");
+        _logger.warning('Failed to read file for hashing: ${songModel.data}');
         continue;
       }
 

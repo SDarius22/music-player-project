@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -12,6 +12,8 @@ import 'package:music_player_frontend/core/repository/interfaces/song_repository
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 
 class PlaylistService {
+  static final _logger = Logger('PlaylistService');
+
   final PlaylistRepository _playlistRepository;
   final SongRepository _songRepository;
   final PlaylistRestClient _playlistRestService;
@@ -53,7 +55,7 @@ class PlaylistService {
         _playlistRepository.savePlaylist(newPlaylist);
       }
     } catch (e) {
-      debugPrint('PlaylistService: failed to create playlist on server: $e');
+      _logger.fine('failed to create playlist on server: $e');
     }
 
     return newPlaylist;
@@ -87,7 +89,7 @@ class PlaylistService {
           coverBase64,
         );
       } catch (e) {
-        debugPrint('PlaylistService: failed to update playlist on server: $e');
+        _logger.fine('failed to update playlist on server: $e');
       }
     }
 
@@ -117,7 +119,7 @@ class PlaylistService {
   Playlist getQueuePlaylist() {
     var queue = _playlistRepository.getPlaylistByServerIdAndName(-1, "Queue");
     if (queue == null) {
-      debugPrint("Queue playlist not found, initializing...");
+      _logger.fine("Queue playlist not found, initializing...");
       initializeQueue();
       return _playlistRepository.getPlaylistByServerIdAndName(-1, "Queue")!;
     } else {
@@ -141,7 +143,7 @@ class PlaylistService {
       "Favorites",
     );
     if (favorites == null) {
-      debugPrint("Favorites playlist not found, initializing...");
+      _logger.fine("Favorites playlist not found, initializing...");
       initializeFavorites();
       return _playlistRepository.getPlaylistByServerIdAndName(-1, "Favorites")!;
     } else {
@@ -177,11 +179,11 @@ class PlaylistService {
         .getIndestructiblePlaylists()
         .firstWhereOrNull((pl) => pl.getName() == "Most Played");
     if (mostPlayed == null) {
-      debugPrint("Most Played playlist not found");
+      _logger.fine("Most Played playlist not found");
       return;
     }
     List<Song> topSongs = _songRepository.getMostPlayedSongs(50);
-    debugPrint("Updating Most Played with ${topSongs.length} songs");
+    _logger.fine("Updating Most Played with ${topSongs.length} songs");
     mostPlayed.clearSongs();
     addToPlaylist(mostPlayed, topSongs);
   }
@@ -191,7 +193,7 @@ class PlaylistService {
         .getIndestructiblePlaylists()
         .firstWhereOrNull((pl) => pl.getName() == "Recently Played");
     if (recentlyPlayed == null) {
-      debugPrint("Recently Played playlist not found");
+      _logger.fine("Recently Played playlist not found");
       return;
     }
     List<Song> recentSongs = _songRepository.getRecentlyPlayedSongs(50);
@@ -204,7 +206,7 @@ class PlaylistService {
         .getIndestructiblePlaylists()
         .firstWhereOrNull((pl) => pl.getName() == "Favorites");
     if (favorites == null) {
-      debugPrint("Favorites playlist not found");
+      _logger.fine("Favorites playlist not found");
       return;
     }
     List<Song> favoriteSongs = _songRepository.getFavoriteSongs();
@@ -243,7 +245,7 @@ class PlaylistService {
         cacheServerPlaylist(serverPlaylist);
       }
     } catch (e) {
-      debugPrint('PlaylistService: server fetch failed, using local: $e');
+      _logger.fine('server fetch failed, using local: $e');
     }
 
     final localContent = _playlistRepository.getPlaylistsPaged(
@@ -306,7 +308,7 @@ class PlaylistService {
       playlist.removeSong(song);
       _playlistRepository.savePlaylist(playlist);
     } catch (e) {
-      debugPrint("Error removing song from playlist: $e");
+      _logger.fine("Error removing song from playlist: $e");
     }
   }
 
@@ -317,7 +319,7 @@ class PlaylistService {
 
   Future<void> deletePlaylist(Playlist playlist) async {
     if (playlist.indestructible) {
-      debugPrint(
+      _logger.fine(
         "Cannot delete indestructible playlist: ${playlist.getName()}",
       );
       return;
@@ -326,7 +328,7 @@ class PlaylistService {
       try {
         await _playlistRestService.deletePlaylist(playlist.serverId);
       } catch (e) {
-        debugPrint('PlaylistService: failed to delete playlist on server: $e');
+        _logger.fine('failed to delete playlist on server: $e');
       }
     }
     _playlistRepository.deletePlaylist(playlist);

@@ -1,11 +1,13 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/playback_state_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class PlaybackRestClient extends AbstractRestClient {
+  static final _logger = Logger('PlaybackRestClient');
+
   PlaybackRestClient({
     required String baseUrl,
     required AuthService authService,
@@ -24,7 +26,7 @@ class PlaybackRestClient extends AbstractRestClient {
       }
       return null;
     } catch (e) {
-      debugPrint('PlaybackRestService.getPlaybackState error: $e');
+      _logger.warning('PlaybackRestService.getPlaybackState error', e);
       return null;
     }
   }
@@ -33,7 +35,7 @@ class PlaybackRestClient extends AbstractRestClient {
     try {
       await put('/playback', state.toJson());
     } catch (e) {
-      debugPrint('PlaybackRestService.savePlaybackState error: $e');
+      _logger.warning('PlaybackRestService.savePlaybackState error', e);
     }
   }
 }

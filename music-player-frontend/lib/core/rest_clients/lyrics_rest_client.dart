@@ -1,10 +1,12 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 
 class LyricsRestClient {
+  static final _logger = Logger('LyricsRestClient');
+
   Future<String?> fetchLyrics(Song? song) async {
     if (song == null) return null;
     var param =
@@ -22,7 +24,7 @@ class LyricsRestClient {
       }
       throw Exception('Failed to fetch lyrics: ${response.statusCode}');
     } catch (e) {
-      debugPrint('LyricsRestClient.fetchLyrics error: $e');
+      _logger.warning('LyricsRestClient.fetchLyrics error', e);
       return null;
     }
   }

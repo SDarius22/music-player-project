@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_response_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
@@ -13,6 +13,8 @@ import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dar
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class SongRestClient extends AbstractRestClient {
+  static final _logger = Logger('SongRestClient');
+
   SongRestClient({required String baseUrl, required AuthService authService}) {
     super.baseUrl = baseUrl;
     super.authService = authService;
@@ -27,12 +29,12 @@ class SongRestClient extends AbstractRestClient {
       if (response.statusCode == 200) {
         return NegotiationResponseDto.fromJson(jsonDecode(response.body));
       } else {
-        debugPrint(
+        _logger.warning(
           'Negotiation failed: ${response.statusCode} ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint('Error negotiating upload: $e');
+      _logger.warning('Error negotiating upload', e);
     }
     return null;
   }
@@ -60,12 +62,12 @@ class SongRestClient extends AbstractRestClient {
       if (response.statusCode == 201) {
         return true;
       } else {
-        debugPrint(
+        _logger.warning(
           'Chunk upload failed: ${response.statusCode} ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint('Error uploading chunk: $e');
+      _logger.warning('Error uploading chunk', e);
     }
     return false;
   }
@@ -112,12 +114,12 @@ class SongRestClient extends AbstractRestClient {
         return true;
       } else {
         onProgress(0, 1);
-        debugPrint(
+        _logger.warning(
           'Full song upload failed: ${streamedResponse.statusCode} ${streamedResponse.body}',
         );
       }
     } catch (e) {
-      debugPrint('Error uploading full song: $e');
+      _logger.warning('Error uploading full song', e);
     }
     return false;
   }
@@ -129,12 +131,12 @@ class SongRestClient extends AbstractRestClient {
       if (response.statusCode == 200) {
         return SongDto.fromJson(jsonDecode(response.body));
       } else {
-        debugPrint(
+        _logger.warning(
           'Failed to fetch song: ${response.statusCode} ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint('Error fetching song: $e');
+      _logger.warning('Error fetching song', e);
     }
     throw Exception('Failed to fetch song with file hash $fileHash');
   }
@@ -145,7 +147,7 @@ class SongRestClient extends AbstractRestClient {
     int size = 50,
     String sort = 'name,asc',
   }) async {
-    debugPrint('Fetching songs page from server...');
+    _logger.fine('Fetching songs page from server...');
 
     final qp = <String, String>{
       'page': page.toString(),
@@ -164,12 +166,12 @@ class SongRestClient extends AbstractRestClient {
       if (response.statusCode == 200) {
         return SongPageDto.fromJson(jsonDecode(response.body));
       } else {
-        debugPrint(
+        _logger.warning(
           'Failed to fetch songs: ${response.statusCode} ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint('Error fetching songs: $e');
+      _logger.warning('Error fetching songs', e);
     }
 
     return SongPageDto(
@@ -188,7 +190,7 @@ class SongRestClient extends AbstractRestClient {
         return SongPageDto.fromJson(jsonDecode(response.body));
       }
     } catch (e) {
-      debugPrint('Error fetching recommendations: $e');
+      _logger.warning('Error fetching recommendations', e);
     }
     return SongPageDto(
       content: [],
@@ -206,7 +208,7 @@ class SongRestClient extends AbstractRestClient {
         return SongPageDto.fromJson(jsonDecode(response.body));
       }
     } catch (e) {
-      debugPrint('Error fetching forgotten favourites: $e');
+      _logger.warning('Error fetching forgotten favourites', e);
     }
     return SongPageDto(
       content: [],
@@ -224,7 +226,7 @@ class SongRestClient extends AbstractRestClient {
         return SongPageDto.fromJson(jsonDecode(response.body));
       }
     } catch (e) {
-      debugPrint('Error fetching quick dial: $e');
+      _logger.warning('Error fetching quick dial', e);
     }
     return SongPageDto(
       content: [],

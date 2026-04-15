@@ -1,9 +1,11 @@
 import 'package:bot_toast/bot_toast.dart';
-import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
 import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
 
 class ChunkStatsService {
+  static final _logger = Logger('ChunkStatsService');
+
   static final ChunkStatsService instance = ChunkStatsService._();
 
   ChunkStatsService._();
@@ -25,7 +27,7 @@ class ChunkStatsService {
       final pct = stats.p2pPercentage.toStringAsFixed(1);
       msg = '$pct% of "${stats.songName}" was delivered by peers';
     }
-    debugPrint('[ChunkStats] $msg');
+    _logger.info('[ChunkStats] $msg');
 
     BotToast.showText(text: msg, duration: const Duration(seconds: 5));
 

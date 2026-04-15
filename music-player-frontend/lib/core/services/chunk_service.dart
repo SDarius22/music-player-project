@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
@@ -12,6 +13,8 @@ import 'package:music_player_frontend/core/services/webrtc_service.dart';
 enum _ChunkSource { localCached, p2p, server }
 
 class ChunkService {
+  static final _logger = Logger('ChunkService');
+
   final String fileHash;
   final ChunkCacheRepository cacheRepo;
   final StreamingRestClient _streamingClient;
@@ -63,15 +66,23 @@ class ChunkService {
     if (isReady) return;
     try {
       manifest = await _streamingClient.fetchManifest(fileHash);
+      _logger.fine(
+        '[P2P] Manifest loaded for file=$fileHash '
+        'chunks=${manifest?.totalChunks ?? 0} bytes=${manifest?.totalBytes ?? 0} '
+        'serverPrefix=$_serverPrefixCount',
+      );
 
       unawaited(_webrtcManager.discoverPeers(fileHash));
 
       var indices = await cacheRepo.getAvailableChunkIndices(fileHash);
       if (indices.isNotEmpty) {
+        _logger.fine(
+          '[P2P] Registering ${indices.length} cached chunk(s) for file=$fileHash after manifest load',
+        );
         unawaited(_webrtcManager.registerCache(fileHash, indices));
       }
     } catch (e) {
-      debugPrint("Failed to load manifest for $fileHash: $e");
+      _logger.fine("Failed to load manifest for $fileHash: $e");
       rethrow;
     }
   }
@@ -120,7 +131,7 @@ class ChunkService {
     try {
       await future;
     } catch (e) {
-      debugPrint("Preload failed for chunk $index: $e");
+      _logger.fine("Preload failed for chunk $index: $e");
     } finally {
       _activeRequests.remove(index);
     }
@@ -131,21 +142,33 @@ class ChunkService {
     _ChunkSource source = _ChunkSource.server;
 
     if (index < _serverPrefixCount) {
+      _logger.fine(
+        '[P2P] Chunk idx=$index file=$fileHash forced to server bootstrap prefix '
+        'prefixCount=$_serverPrefixCount',
+      );
       data = await _streamingClient.downloadChunkFallback(fileHash, index);
     } else {
       final peers = _webrtcManager.getSortedPeersForSong(fileHash);
       if (peers.isNotEmpty) {
+        _logger.fine(
+          '[P2P] Attempting peer fetch for file=$fileHash idx=$index peers=${peers.take(3).join(',')}',
+        );
         try {
           data = await _requestFromPeers(
             index,
             peers,
           ).timeout(_playbackPeerTimeout);
           source = _ChunkSource.p2p;
-        } catch (_) {
+        } catch (e) {
+          _logger.fine(
+            '[P2P] Peer fetch failed/timed out for file=$fileHash idx=$index; '
+            'falling back to server: $e',
+          );
           _p2pCompleters.remove(index);
           data = await _streamingClient.downloadChunkFallback(fileHash, index);
         }
       } else {
+        _logger.fine('[P2P] No peers available for file=$fileHash idx=$index; using server');
         data = await _streamingClient.downloadChunkFallback(fileHash, index);
       }
     }
@@ -161,6 +184,9 @@ class ChunkService {
           index,
         );
         if (_verifyIntegrity(index, serverData)) {
+          _logger.fine(
+            '[P2P] Integrity recovery succeeded from server for file=$fileHash idx=$index',
+          );
           _saveToCache(index, serverData);
           _recordDelivery(index, _ChunkSource.server);
           return serverData;
@@ -208,6 +234,9 @@ class ChunkService {
     _p2pCompleters[index] = completer;
 
     final peersToTry = peers.take(3).toList(growable: false);
+    _logger.fine(
+      '[P2P] Scheduling peer fanout for file=$fileHash idx=$index peers=${peersToTry.join(',')}',
+    );
 
     _webrtcManager.requestChunkFromPeer(peersToTry[0], fileHash, index);
 
@@ -224,6 +253,9 @@ class ChunkService {
   }
 
   void resolvePeerRequest(int chunkIndex, Uint8List data) {
+    _logger.fine(
+      '[P2P] Resolving peer request for file=$fileHash idx=$chunkIndex bytes=${data.length}',
+    );
     _p2pCompleters.remove(chunkIndex)?.complete(data);
   }
 
@@ -240,12 +272,19 @@ class ChunkService {
     Uint8List data;
     final peers = _webrtcManager.getSortedPeersForSong(fileHash);
     if (peers.isNotEmpty) {
+      _logger.fine(
+        '[P2P] Prefetch attempting peer fetch for file=$fileHash idx=$index peers=${peers.take(3).join(',')}',
+      );
       try {
         data = await _requestFromPeers(
           index,
           peers,
         ).timeout(_prefetchPeerTimeout);
-      } catch (_) {
+      } catch (e) {
+        _logger.fine(
+          '[P2P] Prefetch peer fetch failed/timed out for file=$fileHash idx=$index; '
+          'falling back to server: $e',
+        );
         _p2pCompleters.remove(index);
         try {
           data = await _streamingClient.downloadChunkFallback(fileHash, index);
@@ -281,6 +320,9 @@ class ChunkService {
   void _saveToCache(int index, Uint8List data) {
     _addToHotCache(index, data);
     cacheRepo.saveChunk(fileHash, index, data).then((_) {
+      _logger.fine(
+        '[P2P] Cached chunk for file=$fileHash idx=$index bytes=${data.length}; registering for sharing',
+      );
       unawaited(_webrtcManager.registerCache(fileHash, [index]));
     });
   }

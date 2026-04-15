@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class SongProvider with ChangeNotifier implements QueryableProvider {
+  static final _logger = Logger('SongProvider');
+
   final SongService _songService;
   final AbstractMusicScannerService _scannerService;
 
@@ -12,7 +15,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   SongProvider(this._songService, this._scannerService) {
     _scannerService.progressStream.listen((progress) {
-      debugPrint("Music scan progress: $progress");
+      _logger.fine('Music scan progress: $progress');
       notifyListeners();
     });
   }
@@ -27,7 +30,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
 
-    debugPrint("Performing initial quick scan...");
+    _logger.fine('Performing initial quick scan...');
     //TODO: change this later on
     // await _scannerService.performQuickScan();
     // runSync();

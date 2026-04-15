@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:watcher/watcher.dart';
+
+final _logger = Logger('AbstractFileService');
 
 abstract class AbstractFileService {
   List<String> get supportedAudioExtensions;
@@ -61,10 +63,10 @@ abstract class AbstractFileService {
           return lyricsContent;
         }
       } else {
-        debugPrint("Lyrics file not found at $lyricsPath");
+        _logger.fine('Lyrics file not found at $lyricsPath');
       }
     } catch (e) {
-      debugPrint("Error fetching lyrics: $e");
+      _logger.warning('Error fetching lyrics', e);
     }
     return "";
   }

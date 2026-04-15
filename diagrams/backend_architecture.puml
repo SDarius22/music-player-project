@@ -6,125 +6,54 @@ skinparam defaultFontName monospaced
 
 title Backend Service Architecture
 
-package "HTTP Ingress" {
-  [JWTAuthenticationFilter] as jwtFilter
+package "Spring Boot backend replica(s)" {
+  [REST API adapters\nAuth, Song, Album, Artist, Playlist,\nStreaming, Playback, Sync, Statistics controllers] as api
+
+  [Security & authentication\nSecurityConfig + JWTAuthenticationFilter\nAuthService + JWTService\nemail verification + JWT refresh] as auth
+
+  [Catalog & library\nSongService, AlbumService, ArtistService,\nPlaylistService, RecommendationService\nsearch, metadata, playlists, recommendations] as catalog
+
+  [Upload pipeline\nSongService\n64 KB chunking + SHA-256 dedup\nnegotiated upload + missing chunk ingest] as upload
+
+  [Streaming\nStreamingService\nmanifest, prefix, chunk, full fallback] as streaming
+
+  [State, sync & telemetry\nPlaybackStateService, DataSyncService, StatisticsService] as userState
+
+  [Realtime signaling\n/ws/signaling\nSignalingHandler + RedisSignalingListener\nWebRTC routing + playback/sync fan-out] as signaling
+
+  [Peer Tracking\nPeerTrackingService] as peerTracking
+
+  [Persistence\nJPA repositories\nusers, verification_codes, songs, chunks, song_chunks,\nalbums, artists, playlists, playlist_songs,\nuser_library, user_playback_state, chunk_stats] as repos
 }
 
-package "REST Controllers  (/api/v1)" {
-  [AuthController\n/auth/**] as authCtrl
-  [SongController\n/songs/**] as songCtrl
-  [AlbumController\n/albums/**] as albumCtrl
-  [ArtistController\n/artists/**] as artistCtrl
-  [PlaylistController\n/playlists/**] as playlistCtrl
-  [StreamingController\n/stream/**] as streamCtrl
-  [PlaybackStateController\n/playback] as playbackCtrl
-  [DataSyncController\n/sync] as syncCtrl
-  [StatisticsController\n/statistics] as statsCtrl
-}
+database "PostgreSQL\nmusic_library schema" as postgres
+database "Redis\npub/sub + peer cache" as redis
+storage "Chunk storage\n~/music-server/chunks" as fs
+cloud "SMTP mail" as mail
 
-package "WebSocket Layer  (/ws/signaling)" {
-  [SignalingHandler\n- peer registry (local)\n- userIndex, peerIndex\n- WS message routing] as sigHandler
-  [RedisSignalingListener\n- signaling:sync\n- signaling:playback\n- signaling:webrtc] as redisSigListener
-}
+api --> auth
+api --> catalog
+api --> upload
+api --> streaming
+api --> userState
 
-package "Service Layer" {
-  [AuthService\n(email OTP + Google OAuth)] as authSvc
-  [JWTService\n(HMAC-SHA256, 15min/30d)] as jwtSvc
-  [SongService\n(upload, 64KB chunking,\nSHA-256 dedup)] as songSvc
-  [StreamingService\n(manifest, prefix, full,\nper-chunk)] as streamSvc
-  [AlbumService] as albumSvc
-  [ArtistService] as artistSvc
-  [PlaylistService] as playlistSvc
-  [PlaybackStateService\n(save + broadcast via WS)] as playbackSvc
-  [DataSyncService\n(delta sync, timestamp anchor)] as syncSvc
-  [RecommendationService\n(liked, forgotten, quick-dial)] as recSvc
-  [PeerTrackingService\n(Redis hash/set ops)] as peerSvc
-  [StatisticsService\n(p2p vs server stats)] as statsSvc
-}
+auth --> repos
+auth --> mail
 
-package "Data / Repository Layer" {
-  [UserRepository] as userRepo
-  [SongRepository] as songRepo
-  [ChunkRepository] as chunkRepo
-  [SongChunkRepository] as songChunkRepo
-  [AlbumRepository] as albumRepo
-  [ArtistRepository] as artistRepo
-  [PlaylistRepository] as playlistRepo
-  [UserLibraryRepository] as userLibRepo
-  [UserPlaybackStateRepository] as playbackRepo
-  [ChunkStatRepository] as chunkStatRepo
-  [VerificationCodeRepository] as verifyRepo
-}
+catalog --> repos
+upload --> repos
+upload --> fs : write chunk files
 
-database "PostgreSQL\n(schema: music_library)" as postgres
-database "Redis\n\npub/sub:\n  signaling:sync\n  signaling:playback\n  signaling:webrtc\n\nhashes:\n  peer:chunks:{songId}\n  peer:songs:{peerId}" as redis
-storage "File System\n~/music-server/chunks/\n(64 KB audio chunks)" as fs
+streaming --> repos
+streaming --> fs : read chunk files
 
-' Ingress
-jwtFilter --> authCtrl
-jwtFilter --> songCtrl
-jwtFilter --> streamCtrl
-jwtFilter --> playbackCtrl
-jwtFilter --> syncCtrl
-jwtFilter --> playlistCtrl
-jwtFilter --> statsCtrl
+userState --> repos
+userState --> signaling : playback + sync events
 
-' Controllers → Services
-authCtrl --> authSvc
-songCtrl --> songSvc
-songCtrl --> recSvc
-albumCtrl --> albumSvc
-artistCtrl --> artistSvc
-playlistCtrl --> playlistSvc
-streamCtrl --> streamSvc
-playbackCtrl --> playbackSvc
-syncCtrl --> syncSvc
-statsCtrl --> statsSvc
+signaling --> peerTracking : REGISTER_CACHE / DISCOVER_PEERS
+signaling <--> redis : signaling:webrtc\nsignaling:sync\nsignaling:playback
+peerTracking --> redis : peer:chunks:*\npeer:songs:*
 
-' Services → Repos
-authSvc --> userRepo
-authSvc --> verifyRepo
-authSvc --> jwtSvc
-songSvc --> songRepo
-songSvc --> chunkRepo
-songSvc --> songChunkRepo
-songSvc --> artistRepo
-songSvc --> albumRepo
-streamSvc --> songRepo
-albumSvc --> albumRepo
-artistSvc --> artistRepo
-playlistSvc --> playlistRepo
-playbackSvc --> playbackRepo
-syncSvc --> userLibRepo
-syncSvc --> songRepo
-recSvc --> userLibRepo
-recSvc --> songRepo
-statsSvc --> chunkStatRepo
-
-' Services → WS/Redis
-playbackSvc --> sigHandler : sendPlaybackStateChanged()
-syncSvc --> sigHandler : sendSyncTrigger()
-sigHandler --> peerSvc : registerPeerChunks()\ngetPeerBufferMaps()
-peerSvc --> redis
-sigHandler --> redis : PUBLISH\nsignaling:webrtc/sync/playback
-redisSigListener --> redis : SUBSCRIBE
-redisSigListener --> sigHandler : deliver locally
-
-' Repos → DB
-userRepo --> postgres
-songRepo --> postgres
-chunkRepo --> postgres
-albumRepo --> postgres
-artistRepo --> postgres
-playlistRepo --> postgres
-userLibRepo --> postgres
-playbackRepo --> postgres
-chunkStatRepo --> postgres
-verifyRepo --> postgres
-songChunkRepo --> postgres
-
-' FS
-songSvc --> fs : write chunks on upload
-streamSvc --> fs : read chunks on request
+repos --> postgres
 
 @enduml

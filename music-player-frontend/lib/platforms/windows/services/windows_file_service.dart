@@ -3,10 +3,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
 class WindowsFileService extends AbstractFileService {
+  static final _logger = Logger('WindowsFileService');
+
   @override
   Future<List<File>> getAudioFiles(List<String>? songPlaces) async {
     if (songPlaces == null || songPlaces.isEmpty) {
@@ -39,7 +41,7 @@ class WindowsFileService extends AbstractFileService {
           ? metadataVar.pictures[0].bytes
           : null;
     } catch (e) {
-      debugPrint("Error reading image metadata for $path: $e");
+      _logger.warning('Error reading image metadata for $path', e);
     }
     return null;
   }
@@ -56,7 +58,7 @@ class WindowsFileService extends AbstractFileService {
     try {
       metadataVar = readMetadata(File(path), getImage: withImage);
     } catch (e) {
-      debugPrint("Error reading metadata for $path: $e");
+      _logger.warning('Error reading metadata for $path', e);
       metadataVariable['title'] = path.replaceAll("\\", "/").split("/").last;
       return metadataVariable;
     }

@@ -2,11 +2,14 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_fullscreen/flutter_fullscreen.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 
 class AppStateProvider extends AbstractAppStateProvider
     with TrayListener, FullScreenListener {
+  static final _logger = Logger('MacosAppStateProvider');
+
   AppStateProvider(super.audioProvider, super.settingsService) {
     trayManager.addListener(this);
     FullScreen.addListener(this);
@@ -18,7 +21,7 @@ class AppStateProvider extends AbstractAppStateProvider
       try {
         await trayManager.destroy();
       } catch (e) {
-        debugPrint('Error destroying tray: $e');
+        _logger.warning('Error destroying tray', e);
       }
       return;
     }
@@ -27,7 +30,7 @@ class AppStateProvider extends AbstractAppStateProvider
       label: audioProvider.playingNotifier.value ? 'Pause' : 'Play',
       onClick: (menuItem) {
         if (kDebugMode) {
-          print('click item play');
+          _logger.fine('click item play');
         }
         if (audioProvider.playingNotifier.value) {
           audioProvider.pause();
@@ -51,7 +54,7 @@ class AppStateProvider extends AbstractAppStateProvider
           label: 'Previous',
           onClick: (menuItem) async {
             if (kDebugMode) {
-              print('click item previous');
+              _logger.fine('click item previous');
             }
             await audioProvider.skipToPrevious();
           },
@@ -62,7 +65,7 @@ class AppStateProvider extends AbstractAppStateProvider
           label: 'Next',
           onClick: (menuItem) async {
             if (kDebugMode) {
-              print('click item next');
+              _logger.fine('click item next');
             }
             await audioProvider.skipToNext();
           },
@@ -74,7 +77,7 @@ class AppStateProvider extends AbstractAppStateProvider
           checked: false,
           onClick: (menuItem) {
             if (kDebugMode) {
-              print('click item 1');
+              _logger.fine('click item repeat');
             }
             menuItem.checked = !(menuItem.checked == true);
             audioProvider.setRepeat(menuItem.checked == true);
@@ -86,7 +89,7 @@ class AppStateProvider extends AbstractAppStateProvider
           checked: false,
           onClick: (menuItem) {
             if (kDebugMode) {
-              print('click item 2');
+              _logger.fine('click item shuffle');
             }
             menuItem.checked = !(menuItem.checked == true);
             audioProvider.setShuffle(menuItem.checked == true);
@@ -98,7 +101,7 @@ class AppStateProvider extends AbstractAppStateProvider
           label: 'Show',
           onClick: (menuItem) {
             if (kDebugMode) {
-              print('click item show');
+              _logger.fine('click item show');
             }
             appWindow.show();
           },
@@ -108,7 +111,7 @@ class AppStateProvider extends AbstractAppStateProvider
           label: 'Quit',
           onClick: (menuItem) {
             if (kDebugMode) {
-              print('click item quit');
+              _logger.fine('click item quit');
             }
             appWindow.close();
           },

@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_page_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class AlbumRestClient extends AbstractRestClient {
+  static final _logger = Logger('AlbumRestClient');
+
   AlbumRestClient({required String baseUrl, required AuthService authService}) {
     super.baseUrl = baseUrl;
     super.authService = authService;
@@ -37,10 +39,10 @@ class AlbumRestClient extends AbstractRestClient {
           return AlbumPageDto.fromJson(decoded);
         }
       } else {
-        debugPrint('Failed to fetch albums: ${response.statusCode}');
+        _logger.warning('Failed to fetch albums: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error fetching albums: $e');
+      _logger.warning('Error fetching albums', e);
     }
 
     return AlbumPageDto(
@@ -56,13 +58,13 @@ class AlbumRestClient extends AbstractRestClient {
     try {
       final response = await get('/albums/$albumHash');
       if (response.statusCode == 200) {
-        debugPrint('Album detail response: ${response.body}');
+        _logger.fine('Album detail response: ${response.body}');
         return AlbumDetailDto.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       }
     } catch (e) {
-      debugPrint('Error fetching album by hash: $e');
+      _logger.warning('Error fetching album by hash', e);
     }
     return null;
   }
@@ -74,7 +76,7 @@ class AlbumRestClient extends AbstractRestClient {
         return response.bodyBytes;
       }
     } catch (e) {
-      debugPrint('Error fetching album cover: $e');
+      _logger.warning('Error fetching album cover', e);
     }
     return null;
   }

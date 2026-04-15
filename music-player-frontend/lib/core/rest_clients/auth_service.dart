@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 
 class AuthService {
+  static final _logger = Logger('AuthService');
+
   final String baseUrl;
   final _storage = const FlutterSecureStorage();
   String? _cachedAccessToken;
@@ -104,7 +106,7 @@ class AuthService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint("Send Login Code Error: $e");
+      _logger.warning('Send Login Code Error', e);
       return false;
     }
   }
@@ -140,7 +142,7 @@ class AuthService {
         body: jsonEncode({'refreshToken': refresh}),
       );
 
-      debugPrint(
+      _logger.fine(
         "Refresh token response: ${response.statusCode} - ${response.body}",
       );
 

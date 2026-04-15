@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class CoverRestClient extends AbstractRestClient {
+  static final _logger = Logger('CoverRestClient');
+
   CoverRestClient({required String baseUrl, required AuthService authService}) {
     super.baseUrl = baseUrl;
     super.authService = authService;
@@ -17,7 +19,7 @@ class CoverRestClient extends AbstractRestClient {
         return response.bodyBytes;
       }
     } catch (e) {
-      debugPrint('CoverRestService: failed to fetch $relativeUrl: $e');
+      _logger.warning('CoverRestService: failed to fetch $relativeUrl', e);
     }
     return null;
   }

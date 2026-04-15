@@ -1,24 +1,27 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/dominant_color/dominant_color.dart';
 
 class WorkerService {
+  static final _logger = Logger('WorkerService');
+
   static Future<List<Color>> getColorIsolate(Uint8List image) async {
     return compute(extractColors, image);
   }
 
   static Future<List<Color>> extractColors(Uint8List? image) async {
     if (image == null) {
-      debugPrint("Image is null, returning default colors");
+      _logger.fine('Image is null, returning default colors');
       return MusicPlayerTheme.primaryGradient.colors;
     }
     if (image.isEmpty) {
-      debugPrint("Image is empty, returning default colors");
+      _logger.fine('Image is empty, returning default colors');
       return MusicPlayerTheme.primaryGradient.colors;
     }
 
-    debugPrint("Extracting colors from image of size: ${image.length} bytes");
+    _logger.fine('Extracting colors from image of size: ${image.length} bytes');
     DominantColors extractor = DominantColors(
       bytes: image,
       dominantColorsCount: 4,

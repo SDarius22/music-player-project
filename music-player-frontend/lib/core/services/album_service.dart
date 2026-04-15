@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_expanded_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -12,6 +12,8 @@ import 'package:music_player_frontend/core/repository/interfaces/song_repository
 import 'package:music_player_frontend/core/rest_clients/album_rest_client.dart';
 
 class AlbumService {
+  static final _logger = Logger('AlbumService');
+
   final AlbumRepository _albumRepository;
   final ArtistRepository _artistRepository;
   final SongRepository _songRepository;
@@ -43,7 +45,7 @@ class AlbumService {
       final serverAlbum = await _albumRestService.getAlbumByHash(albumHash);
       return cacheServerAlbumDetail(serverAlbum!);
     } catch (e) {
-      debugPrint('AlbumService: server fetch failed, using local: $e');
+      _logger.warning('AlbumService: server fetch failed, using local', e);
     }
     return _albumRepository.getAlbumByHash(albumHash);
   }
@@ -70,7 +72,7 @@ class AlbumService {
         cacheServerAlbum(serverAlbum);
       }
     } catch (e) {
-      debugPrint('AlbumService: server fetch failed, using local: $e');
+      _logger.warning('AlbumService: server fetch failed, using local', e);
     }
 
     final localContent = _albumRepository.getAlbumsPaged(

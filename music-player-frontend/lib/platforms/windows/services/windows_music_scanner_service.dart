@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
@@ -14,6 +13,8 @@ import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class WindowsMusicScannerService implements AbstractMusicScannerService {
+  static final _logger = Logger('WindowsMusicScannerService');
+
   final SongService _songService;
   final ArtistService _artistService;
   final AlbumService _albumService;
@@ -70,7 +71,7 @@ class WindowsMusicScannerService implements AbstractMusicScannerService {
         final bytes = await File(file.path).readAsBytes();
         fileHash = sha256.convert(bytes).toString();
       } catch (_) {
-        debugPrint("Failed to read file for hashing: ${file.path}");
+        _logger.warning('Failed to read file for hashing: ${file.path}');
         continue;
       }
 
@@ -113,7 +114,7 @@ class WindowsMusicScannerService implements AbstractMusicScannerService {
           artist.addSong(existing);
           _artistService.updateArtist(artist);
         } catch (e) {
-          debugPrint(e.toString());
+          _logger.warning('Failed to read song metadata for ${file.path}', e);
 
           var artist = _artistService.getOrCreateArtist('Unknown Artist');
           var album = _albumService.getOrCreateAlbum('Unknown Album', artist);

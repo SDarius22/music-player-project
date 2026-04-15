@@ -4,21 +4,22 @@ hide circle
 skinparam linetype ortho
 skinparam defaultFontName monospaced
 
-title Database Schema — music_library
+title Database Schema
 
 entity "users" as users {
   * id : BIGINT <<PK>>
   --
   * email : VARCHAR(255) <<UNIQUE>>
+  created_at : TIMESTAMPTZ
   * role : VARCHAR(50) [USER | ADMIN]
   * provider : VARCHAR(50) [LOCAL | GOOGLE]
-  created_at : TIMESTAMPTZ
 }
 
 entity "artists" as artists {
   * id : BIGINT <<PK>>
   --
-  * name : VARCHAR(255)
+  * name : VARCHAR(255) <<UNIQUE>>
+  * hash : VARCHAR(255) <<UNIQUE>>
   * artist_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
   owner_id : BIGINT
 }
@@ -26,26 +27,32 @@ entity "artists" as artists {
 entity "albums" as albums {
   * id : BIGINT <<PK>>
   --
-  * name : VARCHAR(255)
-  cover_image : TEXT
+  * name : VARCHAR(255) <<UNIQUE>>
+  * hash : VARCHAR(255) <<UNIQUE>>
   * album_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
   owner_id : BIGINT
-  artist_id : BIGINT <<FK>>
+  artist_id : BIGINT <<FK, nullable>>
+  cover_image : TEXT
+}
+
+entity "album_artists" as album_artists {
+  * album_id : BIGINT <<PK, FK>>
+  * artist_id : BIGINT <<PK, FK>>
 }
 
 entity "songs" as songs {
   * id : BIGINT <<PK>>
   --
   * name : VARCHAR(255)
-  * file_hash : VARCHAR(255) <<UNIQUE>>
-  * song_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
-  owner_id : BIGINT
-  artist_id : BIGINT <<FK>>
-  album_id : BIGINT <<FK>>
+  artist_id : BIGINT <<FK, nullable>>
+  album_id : BIGINT <<FK, nullable>>
   duration_in_seconds : INT
   track_number : INT
   disc_number : INT
   release_year : INT
+  * song_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
+  owner_id : BIGINT
+  * file_hash : VARCHAR(64) <<UNIQUE>>
 }
 
 entity "chunks" as chunks {
@@ -70,6 +77,7 @@ entity "user_library" as user_library {
   --
   liked : BOOLEAN
   play_count : BIGINT
+  total_play_duration_seconds : BIGINT
   last_played : TIMESTAMPTZ
   added_at : TIMESTAMPTZ
   is_downloaded_locally : BOOLEAN
@@ -81,7 +89,7 @@ entity "user_playback_state" as user_playback_state {
   * user_id : BIGINT <<PK, FK>>
   --
   queue_song_ids : TEXT [JSON array]
-  current_song_id : BIGINT <<FK, nullable>>
+  current_file_hash : VARCHAR(64)
   position_ms : BIGINT
   shuffle : BOOLEAN
   repeat : BOOLEAN
@@ -93,11 +101,18 @@ entity "playlists" as playlists {
   --
   * user_id : BIGINT <<FK>>
   * name : VARCHAR(255)
-  * playlist_type : VARCHAR(50)
+  * playlist_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
   cover_image : TEXT
   song_ids : TEXT [JSON array]
   created_at : TIMESTAMPTZ
   updated_at : TIMESTAMPTZ
+}
+
+entity "playlist_songs" as playlist_songs {
+  * playlist_id : BIGINT <<PK, FK>>
+  * position : INTEGER <<PK>>
+  --
+  * song_id : BIGINT <<FK>>
 }
 
 entity "verification_codes" as verification_codes {
@@ -113,24 +128,35 @@ entity "chunk_stats" as chunk_stats {
   --
   * timestamp : TIMESTAMPTZ
   user_id : BIGINT <<FK, nullable>>
-  song_id : BIGINT
+  song_file_hash : VARCHAR(64)
   song_name : VARCHAR(255)
+  local_chunks : INT
+  local_cached_chunks : INT
   p2p_chunks : INT
   server_chunks : INT
   total_chunks : INT
   p2p_percentage : DOUBLE PRECISION
 }
 
-artists ||--o{ albums : "has"
 artists ||--o{ songs : "has"
 albums ||--o{ songs : "contains"
+
+artists ||--o{ albums : "legacy artist_id"
+artists ||--o{ album_artists : "linked by"
+albums ||--o{ album_artists : "linked by"
+
 songs ||--o{ song_chunks : "split into"
 chunks ||--o{ song_chunks : "referenced by"
+
 users ||--o{ user_library : "owns"
 songs ||--o{ user_library : "in"
+
 users ||--|| user_playback_state : "has"
-songs |o--o{ user_playback_state : "current song"
+
 users ||--o{ playlists : "owns"
+playlists ||--o{ playlist_songs : "contains"
+songs ||--o{ playlist_songs : "appears in"
+
 users ||--o{ chunk_stats : "generates"
 
 @enduml

@@ -3,6 +3,7 @@ import 'dart:math' show max;
 
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/playback_state_dto.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
@@ -20,6 +21,8 @@ import 'package:music_player_frontend/local_libs/extensions.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 class AppAudioService {
+  static final _logger = Logger('AppAudioService');
+
   final AudioPlayer audioPlayer;
   final SongService songService;
   final SettingsService settingsService;
@@ -101,12 +104,12 @@ class AppAudioService {
     });
 
     this.audioPlayer.errorStream.listen((error) {
-      debugPrint("Audio Player Error: $error");
+      _logger.severe("Audio Player Error: $error");
     });
   }
 
   Future<void> play() {
-    debugPrint(
+    _logger.fine(
       '[AppAudioService] play() called: playing=${audioPlayer.playing}, state=${audioPlayer.processingState}',
     );
     _playStartTime ??= DateTime.now();
@@ -121,7 +124,7 @@ class AppAudioService {
     int stuckMs = 0;
     Duration? prevPosition;
 
-    debugPrint(
+    _logger.fine(
       '[AppAudioService] Starting _retryIfStuck: playing=${audioPlayer.playing}, isSwitching=$_isSwitchingSong, state=${audioPlayer.processingState}',
     );
 
@@ -129,7 +132,7 @@ class AppAudioService {
       await Future.delayed(checkInterval);
 
       if (!audioPlayer.playing || _isSwitchingSong) {
-        debugPrint(
+        _logger.fine(
           '[_retryIfStuck] Early exit: playing=${audioPlayer.playing}, isSwitching=$_isSwitchingSong, state=${audioPlayer.processingState}',
         );
         return;
@@ -138,7 +141,7 @@ class AppAudioService {
       final state = audioPlayer.processingState;
       if (state == ProcessingState.loading ||
           state == ProcessingState.buffering) {
-        debugPrint(
+        _logger.fine(
           '[AppAudioService] Detected loading/buffering state, resetting stuck timer',
         );
         prevPosition = null;
@@ -149,18 +152,18 @@ class AppAudioService {
       if (prevPosition != null && pos > prevPosition) return;
       if (prevPosition != null) stuckMs += checkInterval.inMilliseconds;
       prevPosition = pos;
-      debugPrint(
+      _logger.fine(
         '[AppAudioService] Checking for stuck playback: position=$pos, prevPosition=$prevPosition, stuckMs=$stuckMs',
       );
     }
 
     if (!audioPlayer.playing || _isSwitchingSong || _normalQueue.isEmpty) {
-      debugPrint(
+      _logger.fine(
         '[AppAudioService] Playback stuck but player is not playing or queue is empty, not retrying',
       );
       return;
     }
-    debugPrint(
+    _logger.fine(
       '[AppAudioService] Playback stuck for ${maxStuckMs}ms, retrying',
     );
     await _loadIndex(_currentIndex);
@@ -313,7 +316,7 @@ class AppAudioService {
     if (songs.isEmpty) return;
 
     if (!songs.equals(_normalQueue)) {
-      debugPrint("updating queue with new songs");
+      _logger.fine("updating queue with new songs");
       _normalQueue.clear();
       _normalQueue.addAll(songs);
       _queuePlaylist.clearSongs();
@@ -332,7 +335,7 @@ class AppAudioService {
       await _loadIndex(_currentIndex);
       await play();
     } catch (e) {
-      debugPrint("Error setting current song and playing: $e");
+      _logger.severe("Error setting current song and playing: $e");
     }
   }
 
@@ -360,7 +363,7 @@ class AppAudioService {
   }
 
   Future<void> _onSongCompleted() async {
-    debugPrint(
+    _logger.fine(
       '[_onSongCompleted] called: queue=${_activeQueue.length}, isSwitching=$_isSwitchingSong, index=$_currentIndex',
     );
     if (_activeQueue.isEmpty || _isSwitchingSong) return;
@@ -371,7 +374,7 @@ class AppAudioService {
   }
 
   Future<void> _loadIndex(int idx, {int? position}) async {
-    debugPrint('[AppAudioService] _loadAndPlayIndex($idx) called');
+    _logger.fine('[AppAudioService] _loadAndPlayIndex($idx) called');
     if (_activeQueue.isEmpty) return;
     _isSwitchingSong = true;
     await _initDone.future;
@@ -380,7 +383,7 @@ class AppAudioService {
     try {
       final outgoing = currentSong;
       if (outgoing == null) {
-        debugPrint(
+        _logger.fine(
           '[AppAudioService] No outgoing song to finalize before switching',
         );
         return;
@@ -440,7 +443,7 @@ class AppAudioService {
       );
     } else {
       if (song.path == null || song.path!.isEmpty) {
-        debugPrint(
+        _logger.warning(
           "Warning: Song ${song.getName()} is marked as local but has no path",
         );
       }
@@ -561,7 +564,7 @@ class AppAudioService {
         await manager.prefetchChunk(i);
       }
     } catch (e) {
-      debugPrint('[prefetch] ${song.getName()}: $e');
+      _logger.warning('[prefetch] ${song.getName()}: $e');
     }
   }
 

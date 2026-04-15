@@ -1,10 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:path_provider/path_provider.dart';
 
 class IOChunkCacheRepository implements ChunkCacheRepository {
+  static final _logger = Logger('IOChunkCacheRepository');
+
   Directory? _baseDir;
 
   IOChunkCacheRepository() {
@@ -74,7 +77,7 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
           .whereType<int>()
           .toList();
     } catch (e) {
-      debugPrint("Cache List Error: $e");
+      _logger.warning('Cache List Error', e);
       return [];
     }
   }

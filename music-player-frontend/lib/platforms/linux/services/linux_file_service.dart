@@ -3,10 +3,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
 class LinuxFileService extends AbstractFileService {
+  static final _logger = Logger('LinuxFileService');
+
   @override
   Future<List<File>> getAudioFiles(List<String>? songPlaces) async {
     if (songPlaces == null || songPlaces.isEmpty) {
@@ -26,14 +28,6 @@ class LinuxFileService extends AbstractFileService {
       await for (FileSystemEntity entity in dir.list(followLinks: false)) {
         if (entity is File && super.isSupportedAudioFile(entity.path)) {
           files.add(File(entity.path));
-          // if (!paths.contains(entity.path)) {
-          //   paths.add(entity.path);
-          //   // debugPrint("Adding $path");
-          //   // var song = await retrieveSong(entity.path);
-          //   // debugPrint("Added song: ${song.title}");
-          //   // songBox.put(song);
-          //   // await makeAlbumArtist(song);
-          // }
         } else if (entity is Directory) {
           dirs.add(Directory(entity.path));
         }
@@ -50,7 +44,7 @@ class LinuxFileService extends AbstractFileService {
           ? metadataVar.pictures[0].bytes
           : null;
     } catch (e) {
-      debugPrint("Error reading image metadata for $path: $e");
+      _logger.warning('Error reading image metadata for $path', e);
     }
     return null;
   }
@@ -67,7 +61,7 @@ class LinuxFileService extends AbstractFileService {
     try {
       metadataVar = readMetadata(File(path), getImage: withImage);
     } catch (e) {
-      debugPrint("Error reading metadata for $path: $e");
+      _logger.warning('Error reading metadata for $path', e);
       metadataVariable['title'] = path.replaceAll("\\", "/").split("/").last;
       return metadataVariable;
     }

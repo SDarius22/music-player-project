@@ -1,12 +1,14 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
 import 'package:music_player_frontend/core/models/chunk_stat_record.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class StatisticsRestClient extends AbstractRestClient {
+  static final _logger = Logger('StatisticsRestClient');
+
   StatisticsRestClient({
     required String baseUrl,
     required AuthService authService,
@@ -28,7 +30,7 @@ class StatisticsRestClient extends AbstractRestClient {
         return records;
       }
     } catch (e) {
-      debugPrint('[StatisticsRestService] Error fetching statistics: $e');
+      _logger.warning('[StatisticsRestService] Error fetching statistics', e);
     }
     return [];
   }
@@ -45,12 +47,12 @@ class StatisticsRestClient extends AbstractRestClient {
       });
 
       if (response.statusCode != 201) {
-        debugPrint(
+        _logger.warning(
           '[StatisticsRestService] Failed to submit stat: ${response.statusCode}',
         );
       }
     } catch (e) {
-      debugPrint('[StatisticsRestService] Error submitting stat: $e');
+      _logger.warning('[StatisticsRestService] Error submitting stat', e);
     }
   }
 }
