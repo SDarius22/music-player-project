@@ -434,7 +434,7 @@ class AppAudioService {
           final manager = createChunkManager(hash);
           manager.configureSongInfo(
             song.getName(),
-            ChunkStatsService.instance.report,
+            ChunkStatsService.instance.reportSilently,
           );
           return manager;
         },
@@ -576,6 +576,10 @@ class AppAudioService {
     if (fraction <= 0) return;
     try {
       final manager = createChunkManager(song.getHash());
+      manager.configureSongInfo(
+        song.getName(),
+        ChunkStatsService.instance.reportSilently,
+      );
       if (!manager.isReady) await manager.loadManifest();
       final targetCount = max(1, (manager.totalChunks * fraction).round());
       for (int i = 0; i < targetCount; i++) {

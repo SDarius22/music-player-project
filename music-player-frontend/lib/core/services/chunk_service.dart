@@ -34,7 +34,9 @@ class ChunkService {
   final Map<int, _ChunkSource> _deliveredBy = {};
   String? _songName;
   void Function(ChunkDeliveryStats)? _onFullyReceived;
-  bool _statsFlushed = false;
+  static const Duration _statsEmitInterval = Duration(seconds: 15);
+  Timer? _statsEmitTimer;
+  int _lastReportedDeliveredCount = 0;
 
   bool get isReady => manifest != null;
 
@@ -60,6 +62,14 @@ class ChunkService {
   ) {
     _songName = songName;
     _onFullyReceived = onFullyReceived;
+    _startPeriodicStatsEmission();
+  }
+
+  void _startPeriodicStatsEmission() {
+    if (_statsEmitTimer != null || _onFullyReceived == null) return;
+    _statsEmitTimer = Timer.periodic(_statsEmitInterval, (_) {
+      _emitStats();
+    });
   }
 
   Future<void> loadManifest() async {
@@ -202,15 +212,22 @@ class ChunkService {
 
     final total = manifest?.totalChunks ?? 0;
     if (total > 0 && _deliveredBy.length == total) {
-      _emitStats();
+      _emitStats(force: true);
     }
   }
 
-  void _emitStats() {
-    if (_statsFlushed || _onFullyReceived == null || _deliveredBy.isEmpty) {
+  void _emitStats({bool force = false}) {
+    if (_onFullyReceived == null || _deliveredBy.isEmpty) {
       return;
     }
-    _statsFlushed = true;
+
+    final deliveredCount = _deliveredBy.length;
+    if (!force && deliveredCount == _lastReportedDeliveredCount) {
+      return;
+    }
+
+    _lastReportedDeliveredCount = deliveredCount;
+
     _onFullyReceived!(
       ChunkDeliveryStats(
         fileHash: fileHash,
@@ -227,7 +244,7 @@ class ChunkService {
     );
   }
 
-  void flushStats() => _emitStats();
+  void flushStats() => _emitStats(force: true);
 
   Future<Uint8List> _requestFromPeers(int index, List<String> peers) {
     final completer = Completer<Uint8List>();
@@ -270,6 +287,7 @@ class ChunkService {
     }
 
     Uint8List data;
+    _ChunkSource source = _ChunkSource.server;
     final peers = _webrtcManager.getSortedPeersForSong(fileHash);
     if (peers.isNotEmpty) {
       _logger.fine(
@@ -280,6 +298,7 @@ class ChunkService {
           index,
           peers,
         ).timeout(_prefetchPeerTimeout);
+        source = _ChunkSource.p2p;
       } catch (e) {
         _logger.fine(
           '[P2P] Prefetch peer fetch failed/timed out for file=$fileHash idx=$index; '
@@ -302,7 +321,13 @@ class ChunkService {
 
     if (_verifyIntegrity(index, data)) {
       _saveToCache(index, data);
+      _recordDelivery(index, source);
     }
+  }
+
+  void dispose() {
+    _statsEmitTimer?.cancel();
+    _statsEmitTimer = null;
   }
 
   bool? wasServedByP2P(int chunkIndex) {

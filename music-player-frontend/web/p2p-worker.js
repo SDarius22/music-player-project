@@ -10,6 +10,13 @@ const pendingRequests = new Map();
 const songPendingReqIds = new Map();
 const reqIdToSongId = new Map();
 const songStats = new Map();
+const STATS_REPORT_INTERVAL_MS = 15000;
+
+setInterval(() => {
+    for (const [fileHash, stats] of songStats.entries()) {
+        _reportStats(fileHash, stats);
+    }
+}, STATS_REPORT_INTERVAL_MS);
 
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
@@ -28,6 +35,11 @@ self.addEventListener('fetch', (event) => {
 
             for (const [otherSongId, reqIds] of songPendingReqIds.entries()) {
                 if (otherSongId !== fileHash) {
+                    const staleStats = songStats.get(otherSongId);
+                    if (staleStats) {
+                        _reportStats(otherSongId, staleStats, true);
+                        songStats.delete(otherSongId);
+                    }
                     for (const staleReqId of reqIds) {
                         const stale = pendingRequests.get(staleReqId);
                         if (stale) {
@@ -99,6 +111,7 @@ function _recordRangeDelivery(fileHash, data, clientId) {
             totalBytes: data.total,
             songName: data.songName || '',
             clientId: clientId,
+            lastReportedTotalRanges: 0,
         });
     }
 
@@ -118,12 +131,19 @@ function _recordRangeDelivery(fileHash, data, clientId) {
 
     const totalServed = stats.bytesServed.size;
     if (totalServed >= stats.totalBytes && stats.totalBytes > 0) {
-        _reportStats(fileHash, stats);
+        _reportStats(fileHash, stats, true);
         songStats.delete(fileHash);
     }
 }
 
-async function _reportStats(fileHash, stats) {
+async function _reportStats(fileHash, stats, force = false) {
+    const totalRanges = stats.p2pRanges + stats.serverRanges;
+    if (!force && totalRanges === stats.lastReportedTotalRanges) {
+        return;
+    }
+
+    stats.lastReportedTotalRanges = totalRanges;
+
     const client = await self.clients.get(stats.clientId);
     if (!client) return;
 
@@ -133,6 +153,6 @@ async function _reportStats(fileHash, stats) {
         songName: stats.songName,
         p2pRanges: stats.p2pRanges,
         serverRanges: stats.serverRanges,
-        totalRanges: stats.p2pRanges + stats.serverRanges,
+        totalRanges: totalRanges,
     });
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/models/chunk_stat_record.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
@@ -176,7 +176,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     padding: EdgeInsets.symmetric(horizontal: width * 0.02),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((context, i) {
-                        final r = records[records.length - 1 - i];
+                        final r = records[i];
                         return Padding(
                           padding: EdgeInsets.only(bottom: width * 0.01),
                           child: _StatRow(

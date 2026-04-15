@@ -21,7 +21,10 @@ class WebP2PBridge {
 
   void notifySong(String fileHash, String songName) {
     _songNames[fileHash] = songName;
-    _managers[fileHash]?.configureSongInfo(songName, ChunkStatsService.instance.report);
+    _managers[fileHash]?.configureSongInfo(
+      songName,
+      ChunkStatsService.instance.reportSilently,
+    );
   }
 
   void _listenToServiceWorker() {
@@ -60,7 +63,7 @@ class WebP2PBridge {
       if (_songNames.containsKey(fileHash)) {
         _managers[fileHash]!.configureSongInfo(
           _songNames[fileHash]!,
-          ChunkStatsService.instance.report,
+          ChunkStatsService.instance.reportSilently,
         );
       }
     }
@@ -126,7 +129,7 @@ class WebP2PBridge {
     final int serverRanges = (data['serverRanges'] as num).toInt();
     final String songName = data['songName'] as String? ?? _songNames[fileHash] ?? 'Unknown';
 
-    ChunkStatsService.instance.report(
+    ChunkStatsService.instance.reportSilently(
       ChunkDeliveryStats(
         fileHash: fileHash,
         songName: songName,

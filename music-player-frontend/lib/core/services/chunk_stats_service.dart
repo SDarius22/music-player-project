@@ -17,6 +17,14 @@ class ChunkStatsService {
   }
 
   Future<void> report(ChunkDeliveryStats stats) async {
+    await _report(stats, showToast: true);
+  }
+
+  Future<void> reportSilently(ChunkDeliveryStats stats) async {
+    await _report(stats, showToast: false);
+  }
+
+  Future<void> _report(ChunkDeliveryStats stats, {required bool showToast}) async {
     final String msg;
     if (stats.localChunks > 0 &&
         stats.p2pChunks == 0 &&
@@ -29,7 +37,9 @@ class ChunkStatsService {
     }
     _logger.info('[ChunkStats] $msg');
 
-    BotToast.showText(text: msg, duration: const Duration(seconds: 5));
+    if (showToast) {
+      BotToast.showText(text: msg, duration: const Duration(seconds: 5));
+    }
 
     await _restService?.submitStat(stats);
   }

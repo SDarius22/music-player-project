@@ -270,7 +270,10 @@ abstract class AbstractApp extends StatelessWidget {
               );
 
               if (chunkServiceCache.length >= 5) {
-                chunkServiceCache.remove(chunkServiceCache.keys.first);
+                final evicted = chunkServiceCache.remove(
+                  chunkServiceCache.keys.first,
+                );
+                evicted?.dispose();
               }
               chunkServiceCache[fileHash] = manager;
               context.read<ActiveChunkRouter>().registerManager(manager);
