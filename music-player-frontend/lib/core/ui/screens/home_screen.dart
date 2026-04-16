@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
@@ -65,6 +65,65 @@ class _HomeScreenState extends State<HomeScreen> {
       _recommendationsFuture,
       _rediscoverFuture,
     ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final theme = MusicPlayerTheme.getTheme();
+
+    return GlassScaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: Container(
+          height: kToolbarHeight,
+          padding: EdgeInsets.symmetric(horizontal: hPadFor(context)),
+          margin: EdgeInsets.symmetric(vertical: width * 0.005),
+          alignment: Alignment.centerLeft,
+          child: Selector<UserProvider, String>(
+            selector: (_, p) => p.currentUser?.email ?? '',
+            builder: (context, email, _) {
+              final name = email.isNotEmpty ? email.split('@').first : '';
+              return Text(
+                name.isNotEmpty ? '${_greeting()}, $name!' : _greeting(),
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshHomeSections,
+        color: Colors.white,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            _buildSectionFutureSliver(
+              future: _quickDialFuture,
+              title: 'Jump back in',
+              subtitle: 'Your recent tracks',
+              cardStyle: _CardStyle.wide,
+            ),
+            _buildSectionFutureSliver(
+              future: _recommendationsFuture,
+              title: 'Recommended for you',
+              subtitle: 'Based on your listening',
+              cardStyle: _CardStyle.square,
+            ),
+            _buildSectionFutureSliver(
+              future: _rediscoverFuture,
+              title: 'Rediscover',
+              subtitle: "Songs you haven't heard in a while",
+              cardStyle: _CardStyle.square,
+            ),
+            _buildEmptyStateFutureSliver(),
+          ],
+        ),
+      ),
+    );
   }
 
   String _greeting() {
@@ -335,64 +394,6 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(color: Colors.white38, fontSize: 16),
               textAlign: TextAlign.center,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final theme = MusicPlayerTheme.getTheme();
-
-    return GlassScaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight),
-        child: Container(
-          height: kToolbarHeight,
-          padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-          margin: EdgeInsets.symmetric(vertical: width * 0.005),
-          child: Selector<UserProvider, String>(
-            selector: (_, p) => p.currentUser?.email ?? '',
-            builder: (context, email, _) {
-              final name = email.isNotEmpty ? email.split('@').first : '';
-              return Text(
-                name.isNotEmpty ? '${_greeting()}, $name!' : _greeting(),
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshHomeSections,
-        color: Colors.white,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            _buildSectionFutureSliver(
-              future: _quickDialFuture,
-              title: 'Jump back in',
-              subtitle: 'Your recent tracks',
-              cardStyle: _CardStyle.wide,
-            ),
-            _buildSectionFutureSliver(
-              future: _recommendationsFuture,
-              title: 'Recommended for you',
-              subtitle: 'Based on your listening',
-              cardStyle: _CardStyle.square,
-            ),
-            _buildSectionFutureSliver(
-              future: _rediscoverFuture,
-              title: 'Rediscover',
-              subtitle: "Songs you haven't heard in a while",
-              cardStyle: _CardStyle.square,
-            ),
-            _buildEmptyStateFutureSliver(),
           ],
         ),
       ),
