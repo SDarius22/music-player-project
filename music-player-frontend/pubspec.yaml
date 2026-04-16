@@ -90,7 +90,7 @@ flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
   image_path: "assets/logo.png"
-  adaptive_icon_monochrome: "assets/logo.png"
+  adaptive_icon_monochrome: "assets/logo_monochrome.png"
   web:
     generate: true
     image_path: "assets/logo.png"
