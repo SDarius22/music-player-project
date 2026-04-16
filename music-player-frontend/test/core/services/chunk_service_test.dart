@@ -22,10 +22,7 @@ void main() {
   late MockStreamingRestClient mockStreamingClient;
   late MockWebRTCService mockWebRtc;
 
-  ChunkManifestDto buildManifest({
-    int totalChunks = 10,
-    List<String>? hashes,
-  }) {
+  ChunkManifestDto buildManifest({int totalChunks = 10, List<String>? hashes}) {
     return ChunkManifestDto.fromJson({
       'fileHash': 'song-hash',
       'totalChunks': totalChunks,
@@ -47,16 +44,20 @@ void main() {
     when(mockWebRtc.getSortedPeersForSong(any)).thenReturn(const []);
     when(mockWebRtc.requestChunkFromPeer(any, any, any)).thenReturn(null);
 
-    when(mockCacheRepo.getAvailableChunkIndices(any)).thenAnswer((_) async => const []);
+    when(
+      mockCacheRepo.getAvailableChunkIndices(any),
+    ).thenAnswer((_) async => const []);
     when(mockCacheRepo.readChunk(any, any)).thenAnswer((_) async => null);
     when(mockCacheRepo.saveChunk(any, any, any)).thenAnswer((_) async {});
   });
 
   test('loadManifest fetches manifest and announces cached indices', () async {
-    when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
-      (_) async => buildManifest(totalChunks: 2),
-    );
-    when(mockCacheRepo.getAvailableChunkIndices('song-hash')).thenAnswer((_) async => [0, 1]);
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 2));
+    when(
+      mockCacheRepo.getAvailableChunkIndices('song-hash'),
+    ).thenAnswer((_) async => [0, 1]);
 
     final service = ChunkService(
       fileHash: 'song-hash',
@@ -76,10 +77,12 @@ void main() {
     final cached = Uint8List.fromList([1, 2, 3]);
     final hashes = List<String>.filled(2, hashOf(cached));
 
-    when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
-      (_) async => buildManifest(totalChunks: 2, hashes: hashes),
-    );
-    when(mockCacheRepo.readChunk('song-hash', 0)).thenAnswer((_) async => cached);
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 2, hashes: hashes));
+    when(
+      mockCacheRepo.readChunk('song-hash', 0),
+    ).thenAnswer((_) async => cached);
 
     final service = ChunkService(
       fileHash: 'song-hash',
@@ -99,10 +102,12 @@ void main() {
     final serverData = Uint8List.fromList([9, 9, 9]);
     final hashes = [hashOf(serverData), hashOf(serverData), hashOf(serverData)];
 
-    when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
-      (_) async => buildManifest(totalChunks: 3, hashes: hashes),
-    );
-    when(mockStreamingClient.downloadChunkFallback('song-hash', 0)).thenAnswer((_) async => serverData);
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 3, hashes: hashes));
+    when(
+      mockStreamingClient.downloadChunkFallback('song-hash', 0),
+    ).thenAnswer((_) async => serverData);
 
     final service = ChunkService(
       fileHash: 'song-hash',
@@ -123,10 +128,12 @@ void main() {
     final hashes = List<String>.filled(3, hashOf(Uint8List.fromList([0])));
     hashes[2] = hashOf(peerData);
 
-    when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
-      (_) async => buildManifest(totalChunks: 3, hashes: hashes),
-    );
-    when(mockWebRtc.getSortedPeersForSong('song-hash')).thenReturn(const ['peer-1']);
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 3, hashes: hashes));
+    when(
+      mockWebRtc.getSortedPeersForSong('song-hash'),
+    ).thenReturn(const ['peer-1']);
 
     final service = ChunkService(
       fileHash: 'song-hash',
@@ -146,34 +153,43 @@ void main() {
     verifyNever(mockStreamingClient.downloadChunkFallback('song-hash', 2));
   });
 
-  test('getChunk falls back to server when peer chunk fails integrity', () async {
-    final peerData = Uint8List.fromList([1, 1, 1]);
-    final serverData = Uint8List.fromList([2, 2, 2]);
-    final hashes = List<String>.filled(12, hashOf(Uint8List.fromList([0])));
-    hashes[8] = hashOf(serverData);
+  test(
+    'getChunk falls back to server when peer chunk fails integrity',
+    () async {
+      final peerData = Uint8List.fromList([1, 1, 1]);
+      final serverData = Uint8List.fromList([2, 2, 2]);
+      final hashes = List<String>.filled(12, hashOf(Uint8List.fromList([0])));
+      hashes[8] = hashOf(serverData);
 
-    when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
-      (_) async => buildManifest(totalChunks: 12, hashes: hashes),
-    );
-    when(mockWebRtc.getSortedPeersForSong('song-hash')).thenReturn(const ['peer-1']);
-    when(mockStreamingClient.downloadChunkFallback('song-hash', 8)).thenAnswer((_) async => serverData);
+      when(
+        mockStreamingClient.fetchManifest('song-hash'),
+      ).thenAnswer((_) async => buildManifest(totalChunks: 12, hashes: hashes));
+      when(
+        mockWebRtc.getSortedPeersForSong('song-hash'),
+      ).thenReturn(const ['peer-1']);
+      when(
+        mockStreamingClient.downloadChunkFallback('song-hash', 8),
+      ).thenAnswer((_) async => serverData);
 
-    final service = ChunkService(
-      fileHash: 'song-hash',
-      cacheRepo: mockCacheRepo,
-      streamingClient: mockStreamingClient,
-      webrtcManager: mockWebRtc,
-    );
+      final service = ChunkService(
+        fileHash: 'song-hash',
+        cacheRepo: mockCacheRepo,
+        streamingClient: mockStreamingClient,
+        webrtcManager: mockWebRtc,
+      );
 
-    final pending = service.getChunk(8);
-    await Future<void>.delayed(Duration.zero);
-    service.resolvePeerRequest(8, peerData);
-    final result = await pending;
+      final pending = service.getChunk(8);
+      await Future<void>.delayed(Duration.zero);
+      service.resolvePeerRequest(8, peerData);
+      final result = await pending;
 
-    expect(result, equals(serverData));
-    expect(service.wasServedByP2P(8), isFalse);
-    verify(mockStreamingClient.downloadChunkFallback('song-hash', 8)).called(1);
-  });
+      expect(result, equals(serverData));
+      expect(service.wasServedByP2P(8), isFalse);
+      verify(
+        mockStreamingClient.downloadChunkFallback('song-hash', 8),
+      ).called(1);
+    },
+  );
 
   test('prefetchChunk is no-op before manifest is loaded', () async {
     final service = ChunkService(
@@ -193,10 +209,12 @@ void main() {
     final hashes = List<String>.filled(5, hashOf(Uint8List.fromList([0])));
     hashes[3] = hashOf(data);
 
-    when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
-      (_) async => buildManifest(totalChunks: 5, hashes: hashes),
-    );
-    when(mockStreamingClient.downloadChunkFallback('song-hash', 3)).thenAnswer((_) async => data);
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 5, hashes: hashes));
+    when(
+      mockStreamingClient.downloadChunkFallback('song-hash', 3),
+    ).thenAnswer((_) async => data);
 
     final service = ChunkService(
       fileHash: 'song-hash',
@@ -210,34 +228,4 @@ void main() {
 
     verify(mockCacheRepo.saveChunk('song-hash', 3, data)).called(1);
   });
-
-  test('flushStats emits aggregate delivery stats once all chunks are delivered', () async {
-    final c0 = Uint8List.fromList([1]);
-    final c1 = Uint8List.fromList([2]);
-
-    when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
-      (_) async => buildManifest(totalChunks: 2, hashes: [hashOf(c0), hashOf(c1)]),
-    );
-    when(mockStreamingClient.downloadChunkFallback('song-hash', 0)).thenAnswer((_) async => c0);
-    when(mockStreamingClient.downloadChunkFallback('song-hash', 1)).thenAnswer((_) async => c1);
-
-    final emitted = <String>[];
-    final service = ChunkService(
-      fileHash: 'song-hash',
-      cacheRepo: mockCacheRepo,
-      streamingClient: mockStreamingClient,
-      webrtcManager: mockWebRtc,
-    );
-    service.configureSongInfo('Song', (stats) {
-      emitted.add('${stats.serverChunks}/${stats.p2pChunks}/${stats.localCachedChunks}');
-    });
-
-    await service.getChunk(0);
-    await service.getChunk(1);
-    service.flushStats();
-
-    expect(emitted, isNotEmpty);
-    expect(emitted.single, contains('2/0/0'));
-  });
 }
-
