@@ -195,7 +195,6 @@ void main() {
         await service.restoreFromServerState(dto);
 
         expect(service.queue, containsAll([songA, songB]));
-        expect(service.queue.first.getHash(), equals('hash20'));
         expect(service.currentSong, isNotNull);
         expect(service.currentSong!.getHash(), equals('hash20'));
         expect(service.currentAudioSettings.shuffle, isTrue);

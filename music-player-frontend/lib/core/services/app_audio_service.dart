@@ -64,7 +64,7 @@ class AppAudioService {
   List<Song> get _activeQueue =>
       _currentAudioSettings.shuffle ? _shuffledQueue : _normalQueue;
 
-  List<Song> get queue => _activeQueue;
+  List<Song> get queue => _normalQueue;
 
   int get currentIndex => _currentIndex;
 
@@ -224,23 +224,19 @@ class AppAudioService {
 
   Future<void> setShuffle(bool shuffle) async {
     if (shuffle == _currentAudioSettings.shuffle) return;
-    _currentAudioSettings.shuffle = shuffle;
-    settingsService.updateAudioSettings(_currentAudioSettings);
     final current = currentSong;
+    _currentAudioSettings.shuffle = shuffle;
+    if (shuffle) {
+      _rebuildShuffledQueue();
+    }
+    settingsService.updateAudioSettings(_currentAudioSettings);
     final idx = _activeQueue.indexWhere((s) => s == current);
     _currentIndex = idx < 0 ? 0 : idx;
     pushStateToServer();
   }
 
-  void _rebuildShuffledQueue({Song? prioritySong}) {
+  void _rebuildShuffledQueue() {
     _shuffledQueue = List.from(_normalQueue)..shuffle();
-    if (prioritySong != null) {
-      final idx = _shuffledQueue.indexWhere((s) => s == prioritySong);
-      if (idx > 0) {
-        _shuffledQueue.removeAt(idx);
-        _shuffledQueue.insert(0, prioritySong);
-      }
-    }
   }
 
   Future<Duration> getDuration() async {
@@ -326,7 +322,7 @@ class AppAudioService {
         _queuePlaylist,
         _normalQueue,
       );
-      _rebuildShuffledQueue(prioritySong: loadedSong);
+      _rebuildShuffledQueue();
     }
 
     await setCurrentSongAndPlay(loadedSong);
@@ -357,7 +353,7 @@ class AppAudioService {
     if (!_initDone.isCompleted) _initDone.complete();
 
     if (_normalQueue.isNotEmpty) {
-      _rebuildShuffledQueue(prioritySong: currentSong);
+      _rebuildShuffledQueue();
       final idx = _activeQueue.indexWhere((s) => s == currentSong);
       _currentIndex = idx < 0 ? 0 : idx;
       await _loadIndex(
@@ -520,7 +516,7 @@ class AppAudioService {
       );
       if (matches.isNotEmpty) current = matches.first;
     }
-    _rebuildShuffledQueue(prioritySong: current);
+    _rebuildShuffledQueue();
     final idx = _activeQueue.indexWhere((s) => s == current);
     _currentIndex = idx < 0 ? 0 : idx;
     currentSong = current;
