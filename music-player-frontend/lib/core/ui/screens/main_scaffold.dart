@@ -135,7 +135,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 scaffoldKey: provider.scaffoldKey,
                 controller: provider.gradientController,
                 extendBody: true,
-                extendBodyBehindAppBar: !UniversalPlatform.isDesktop,
+                extendBodyBehindAppBar: !UniversalPlatform.isDesktopOrWeb,
                 appBar: AppBarWidget(),
                 drawer: Drawer(
                   backgroundColor: Colors.transparent,
@@ -185,12 +185,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   EdgeInsetsGeometry buildPadding(BuildContext context) {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-    final addedTopPadding = UniversalPlatform.isDesktop ? kToolbarHeight : 0.0;
     final width = MediaQuery.of(context).size.width;
     if (isMobile) {
       return EdgeInsets.only(
-        top:
-            width * 0.02 + MediaQuery.of(context).padding.top + addedTopPadding,
+        top: width * 0.02 + MediaQuery.of(context).padding.top,
         left: width * 0.02,
         right: width * 0.02,
         bottom: width * 0.02 + MediaQuery.of(context).padding.bottom,
