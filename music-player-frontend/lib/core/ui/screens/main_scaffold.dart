@@ -107,6 +107,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
 
     try {
+      final isMobile = ResponsiveBreakpoints.of(context).isMobile;
       return CallbackShortcuts(
         bindings: {
           const SingleActivator(LogicalKeyboardKey.f5): _requestRefresh,
@@ -135,12 +136,12 @@ class _MainScaffoldState extends State<MainScaffold> {
                 scaffoldKey: provider.scaffoldKey,
                 controller: provider.gradientController,
                 extendBody: true,
-                extendBodyBehindAppBar: !UniversalPlatform.isDesktopOrWeb,
+                extendBodyBehindAppBar: isMobile,
                 appBar: AppBarWidget(),
                 drawer: Drawer(
                   backgroundColor: Colors.transparent,
                   child:
-                      ResponsiveBreakpoints.of(context).isMobile
+                      isMobile
                           ? DrawerWidget(mobileDrawer: true)
                           : SizedBox.shrink(),
                 ),
@@ -216,8 +217,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     try {
       final provider = context.read<AbstractAppStateProvider>();
       final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-      final addedTopPadding =
-          !UniversalPlatform.isDesktop ? kToolbarHeight : 0.0;
+      final addedTopPadding = isMobile ? kToolbarHeight : 0.0;
       final width = MediaQuery.of(context).size.width;
       final height = MediaQuery.of(context).size.height;
 

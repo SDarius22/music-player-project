@@ -91,6 +91,9 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                   ? PanelState.min
                   : PanelState.max;
           controller.animateToHeight(state: animateTo);
+          if (animateTo == PanelState.max) {
+            _lyricsPlayerController.animateToHeight(state: PanelState.min);
+          }
         });
 
         return LayoutBuilder(
@@ -909,29 +912,32 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             ),
             child: Column(
               children: [
-                IconButton(
-                  onPressed: () async {
-                    if (percentage < 0.35) {
-                      _lyricsPlayerController.animateToHeight(
-                        state: PanelState.max,
-                      );
-                    } else {
-                      _lyricsPlayerController.animateToHeight(
-                        state: PanelState.min,
-                      );
-                    }
-                  },
-                  icon: Icon(
-                    percentage < 0.35 ? FluentIcons.up : FluentIcons.down,
-                    color: Colors.white,
-                    size: 24,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        offset: const Offset(1, 2),
-                        blurRadius: 7,
-                      ),
-                    ],
+                SizedBox(
+                  height: height * 0.04,
+                  child: IconButton(
+                    onPressed: () async {
+                      if (percentage < 0.35) {
+                        _lyricsPlayerController.animateToHeight(
+                          state: PanelState.max,
+                        );
+                      } else {
+                        _lyricsPlayerController.animateToHeight(
+                          state: PanelState.min,
+                        );
+                      }
+                    },
+                    icon: Icon(
+                      percentage < 0.35 ? FluentIcons.up : FluentIcons.down,
+                      color: Colors.white,
+                      size: 18,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          offset: const Offset(1, 2),
+                          blurRadius: 7,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(

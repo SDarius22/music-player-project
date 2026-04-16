@@ -13,12 +13,13 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   Widget buildAppBar(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
+    final isMobile = ResponsiveBreakpoints.of(context).isMobile;
     return ValueListenableBuilder(
       valueListenable: context.read<AbstractAppStateProvider>().opacityNotifier,
       builder: (context, appBarOpacity, child) {
         return AnimatedOpacity(
           duration: const Duration(milliseconds: 100),
-          opacity: UniversalPlatform.isDesktop ? 1.0 : appBarOpacity,
+          opacity: !isMobile ? 1.0 : appBarOpacity,
           child: GlassContainer(
             height: MediaQuery.of(context).padding.top + kToolbarHeight,
             width: width,
@@ -37,12 +38,13 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   Widget buildContent(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
+    final isMobile = ResponsiveBreakpoints.of(context).isMobile;
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(width: width * 0.025),
-        if (ResponsiveBreakpoints.of(context).isMobile)
+        if (isMobile)
           IconButton(
             onPressed: () {
               final provider = context.read<AbstractAppStateProvider>();
@@ -58,7 +60,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             },
             icon: Icon(FluentIcons.menu, size: 24, color: Colors.white),
           ),
-        if (UniversalPlatform.isDesktop) ...[
+        if (UniversalPlatform.isDesktop && !isMobile) ...[
           Expanded(
             child: MoveWindow(
               child: Row(
