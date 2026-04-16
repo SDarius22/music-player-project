@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
@@ -33,9 +34,13 @@ class Album implements BaseEntity {
   Album(this.hash, this.name);
 
   void addSong(Song song) {
-    if (songs.contains(song)) {
-      songs.remove(song);
+    var existingSong = songs.firstWhereOrNull((s) => s == song);
+
+    if (existingSong != null) {
+      songs.remove(existingSong);
+      duration -= existingSong.durationInSeconds;
     }
+
     songs.add(song);
     duration += song.durationInSeconds;
   }

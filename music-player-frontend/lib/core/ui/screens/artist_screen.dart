@@ -43,53 +43,70 @@ class ArtistScreen extends EntityScreen {
   PreferredSizeWidget buildAppBar(BuildContext context, BaseEntity entity) {
     final artist = entity as Artist;
     var height = MediaQuery.of(context).size.height;
-    return AppBar(
-      leading: IconButton(
-        onPressed: () {
-          debugPrint("Back");
-          Navigator.pop(context);
-        },
-        icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
+    final width = MediaQuery.of(context).size.width;
+    return PreferredSize(
+      preferredSize: Size.fromHeight(kToolbarHeight),
+      child: Container(
+        height: kToolbarHeight,
+        padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+        margin: EdgeInsets.symmetric(vertical: width * 0.005),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            IconButton(
+              onPressed: () {
+                debugPrint("Back");
+                Navigator.pop(context);
+              },
+              icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
+            ),
+            Text(
+              entity.getName(),
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+
+            const Spacer(),
+            IconButton(
+              tooltip: "Add",
+              padding: EdgeInsets.all(height * 0.005),
+              onPressed: () {
+                debugPrint("Add ${artist.name}");
+                var abstractAppStateProvider =
+                    Provider.of<AbstractAppStateProvider>(
+                      context,
+                      listen: false,
+                    );
+                abstractAppStateProvider.innerNavigatorKey.currentState?.push(
+                  AddOrExportScreen.route(songs: artist.getSongs()),
+                );
+              },
+              icon: Icon(FluentIcons.add, color: Colors.white, size: 24),
+            ),
+            IconButton(
+              tooltip: "Play",
+              padding: EdgeInsets.all(height * 0.005),
+              onPressed: () async {
+                debugPrint("Play ${artist.name}");
+                var audioProvider = Provider.of<AudioProvider>(
+                  context,
+                  listen: false,
+                );
+                await audioProvider.setQueueAndPlay(
+                  artist.getSongs(),
+                  artist.getSongs().first,
+                );
+              },
+              icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
+            ),
+            IconButton(
+              tooltip: "Shuffle",
+              onPressed: () async {},
+              padding: EdgeInsets.all(height * 0.005),
+              icon: Icon(FluentIcons.shuffleOn, color: Colors.white, size: 24),
+            ),
+          ],
+        ),
       ),
-      title: Text(entity.getName()),
-      actionsPadding: EdgeInsets.symmetric(horizontal: height * 0.005),
-      actions: [
-        IconButton(
-          tooltip: "Add",
-          padding: EdgeInsets.all(height * 0.005),
-          onPressed: () {
-            debugPrint("Add ${artist.name}");
-            var abstractAppStateProvider =
-                Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.innerNavigatorKey.currentState?.push(
-              AddOrExportScreen.route(songs: artist.getSongs()),
-            );
-          },
-          icon: Icon(FluentIcons.add, color: Colors.white, size: 24),
-        ),
-        IconButton(
-          tooltip: "Play",
-          padding: EdgeInsets.all(height * 0.005),
-          onPressed: () async {
-            debugPrint("Play ${artist.name}");
-            var audioProvider = Provider.of<AudioProvider>(
-              context,
-              listen: false,
-            );
-            await audioProvider.setQueueAndPlay(
-              artist.getSongs(),
-              artist.getSongs().first,
-            );
-          },
-          icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
-        ),
-        IconButton(
-          tooltip: "Shuffle",
-          onPressed: () async {},
-          padding: EdgeInsets.all(height * 0.005),
-          icon: Icon(FluentIcons.shuffleOn, color: Colors.white, size: 24),
-        ),
-      ],
     );
   }
 
