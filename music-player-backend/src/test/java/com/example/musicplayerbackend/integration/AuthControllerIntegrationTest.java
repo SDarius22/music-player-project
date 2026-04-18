@@ -2,7 +2,10 @@ package com.example.musicplayerbackend.integration;
 
 import com.example.musicplayerbackend.data.UserRepository;
 import com.example.musicplayerbackend.data.VerificationCodeRepository;
-import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.domain.EmailRequest;
+import com.example.musicplayerbackend.domain.RefreshAccessTokenRequest;
+import com.example.musicplayerbackend.domain.VerificationCode;
+import com.example.musicplayerbackend.domain.VerificationRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -17,15 +20,20 @@ import java.time.temporal.ChronoUnit;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
-    @MockitoBean JavaMailSender javaMailSender;
+    @MockitoBean
+    JavaMailSender javaMailSender;
 
-    @Autowired UserRepository userRepository;
-    @Autowired VerificationCodeRepository verificationCodeRepository;
-    @Autowired ObjectMapper objectMapper;
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    VerificationCodeRepository verificationCodeRepository;
+    @Autowired
+    ObjectMapper objectMapper;
 
     @AfterEach
     void tearDown() {
@@ -185,21 +193,6 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/verify")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(verifyReq)))
-                .andExpect(status().is5xxServerError());
-    }
-
-    // ── google-oauth ──────────────────────────────────────────────────────────
-
-    @Test
-    void shouldReturn500WhenGoogleOAuthTokenIsInvalid() throws Exception {
-        // The Google token verifier makes a real network call; an invalid token string
-        // causes it to throw, which the controller propagates as a 500.
-        GoogleOAuthLoginRequest req = new GoogleOAuthLoginRequest();
-        req.setIdToken("not-a-real-google-id-token");
-
-        mockMvc.perform(post("/api/v1/auth/google")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().is5xxServerError());
     }
 }

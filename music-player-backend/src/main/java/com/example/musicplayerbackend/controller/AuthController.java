@@ -1,6 +1,9 @@
 package com.example.musicplayerbackend.controller;
 
-import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.domain.AuthResponse;
+import com.example.musicplayerbackend.domain.EmailRequest;
+import com.example.musicplayerbackend.domain.RefreshAccessTokenRequest;
+import com.example.musicplayerbackend.domain.VerificationRequest;
 import com.example.musicplayerbackend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,12 +30,6 @@ public class AuthController implements AuthApi {
     public ResponseEntity<AuthResponse> verifyAuthenticationCode(VerificationRequest verificationRequest) {
         log.info("[AUTH] Code verification attempt for email={}", verificationRequest.getEmail());
         return ResponseEntity.ok(authService.verifyCodeAndGenerateResponse(verificationRequest.getEmail(), verificationRequest.getCode()));
-    }
-
-    @Override
-    public ResponseEntity<AuthResponse> googleOAuthLogin(GoogleOAuthLoginRequest googleOAuthLoginRequest) {
-        log.info("[AUTH] Google OAuth login attempt");
-        return ResponseEntity.ok(authService.loginWithGoogle(googleOAuthLoginRequest.getIdToken()));
     }
 
     @Override

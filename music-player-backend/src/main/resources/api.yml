@@ -860,6 +860,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+
   /auth/refresh:
     post:
       summary: Refresh access token
@@ -887,33 +888,18 @@ paths:
         '401':
           description: Invalid or expired refresh token
 
-  /auth/google:
-    post:
-      summary: Google OAuth login
-      operationId: googleOAuthLogin
+  /health:
+    get:
+      summary: Health check
+      description: Simple endpoint to verify the service is running.
+      operationId: healthCheck
+      security:
+        - bearerAuth: [ ]
       tags:
-        - Authentication
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - idToken
-              properties:
-                idToken:
-                  type: string
-                  description: The ID token obtained from Google's OAuth flow on the client side.
+        - Health
       responses:
         '200':
-          description: Token returned
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Invalid Google ID token
+          description: Service is healthy
 
 components:
   schemas:
