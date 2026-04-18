@@ -11,18 +11,19 @@ abstract class PlaylistRepository {
 
   Playlist getOrCreatePlaylist(int serverId, String name);
 
+  int getPlaylistCount(String query, bool containLocalOnly);
+
   List<Playlist> getIndestructiblePlaylists();
 
   List<Playlist> getNormalPlaylists();
 
   List<Playlist> getAllPlaylists();
 
-  List<Playlist> getPlaylists(String query, String sortField, bool ascending);
-
   List<Playlist> getPlaylistsPaged(
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   );

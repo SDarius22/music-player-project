@@ -20,6 +20,7 @@ import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/active_router_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
+import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/web_p2p_bridge.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
@@ -67,6 +68,7 @@ class WebApp extends AbstractApp {
   AbstractAppStateProvider buildAppStateProvider(BuildContext context) {
     return AppStateProvider(
       context.read<AudioProvider>(),
+      context.read<HealthService>(),
       context.read<SettingsService>(),
     );
   }

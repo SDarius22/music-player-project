@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 
 abstract class BaseEntity {
+  bool get isLocal;
+
   String getName();
 
   String getSecondaryText();
@@ -8,8 +10,6 @@ abstract class BaseEntity {
   String getHash();
 
   Uint8List? getCoverArt();
-
-  bool isLocal();
 
   String getImageUrl();
 }

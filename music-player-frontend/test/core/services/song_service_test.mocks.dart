@@ -134,9 +134,9 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
           as List<_i2.Song>);
 
   @override
-  int getSongCount() =>
+  int getSongCount(String? query, bool? localOnly) =>
       (super.noSuchMethod(
-            Invocation.method(#getSongCount, []),
+            Invocation.method(#getSongCount, [query, localOnly]),
             returnValue: 0,
             returnValueForMissingStub: 0,
           )
@@ -193,19 +193,11 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
           as List<_i2.Song>);
 
   @override
-  List<_i2.Song> getSongs(String? query, String? sortField, bool? ascending) =>
-      (super.noSuchMethod(
-            Invocation.method(#getSongs, [query, sortField, ascending]),
-            returnValue: <_i2.Song>[],
-            returnValueForMissingStub: <_i2.Song>[],
-          )
-          as List<_i2.Song>);
-
-  @override
   List<_i2.Song> getSongsPaged(
     String? query,
     String? sortField,
     bool? ascending,
+    bool? localOnly,
     int? offset,
     int? limit,
   ) =>
@@ -214,6 +206,7 @@ class MockSongRepository extends _i1.Mock implements _i9.SongRepository {
               query,
               sortField,
               ascending,
+              localOnly,
               offset,
               limit,
             ]),
@@ -311,23 +304,20 @@ class MockArtistRepository extends _i1.Mock implements _i11.ArtistRepository {
           as _i3.Artist);
 
   @override
-  List<_i3.Artist> getArtists(
-    String? query,
-    String? sortField,
-    bool? ascending,
-  ) =>
+  int getArtistCount(String? query, bool? containLocalOnly) =>
       (super.noSuchMethod(
-            Invocation.method(#getArtists, [query, sortField, ascending]),
-            returnValue: <_i3.Artist>[],
-            returnValueForMissingStub: <_i3.Artist>[],
+            Invocation.method(#getArtistCount, [query, containLocalOnly]),
+            returnValue: 0,
+            returnValueForMissingStub: 0,
           )
-          as List<_i3.Artist>);
+          as int);
 
   @override
   List<_i3.Artist> getArtistsPaged(
     String? query,
     String? sortField,
     bool? ascending,
+    bool? containLocalOnly,
     int? offset,
     int? limit,
   ) =>
@@ -336,6 +326,7 @@ class MockArtistRepository extends _i1.Mock implements _i11.ArtistRepository {
               query,
               sortField,
               ascending,
+              containLocalOnly,
               offset,
               limit,
             ]),
@@ -419,23 +410,20 @@ class MockAlbumRepository extends _i1.Mock implements _i12.AlbumRepository {
           as _i4.Album);
 
   @override
-  List<_i4.Album> getAlbums(
-    String? query,
-    String? sortField,
-    bool? ascending,
-  ) =>
+  int getAlbumCount(String? query, bool? containLocalOnly) =>
       (super.noSuchMethod(
-            Invocation.method(#getAlbums, [query, sortField, ascending]),
-            returnValue: <_i4.Album>[],
-            returnValueForMissingStub: <_i4.Album>[],
+            Invocation.method(#getAlbumCount, [query, containLocalOnly]),
+            returnValue: 0,
+            returnValueForMissingStub: 0,
           )
-          as List<_i4.Album>);
+          as int);
 
   @override
   List<_i4.Album> getAlbumsPaged(
     String? query,
     String? sortField,
     bool? ascending,
+    bool? containLocalOnly,
     int? offset,
     int? limit,
   ) =>
@@ -444,6 +432,7 @@ class MockAlbumRepository extends _i1.Mock implements _i12.AlbumRepository {
               query,
               sortField,
               ascending,
+              containLocalOnly,
               offset,
               limit,
             ]),

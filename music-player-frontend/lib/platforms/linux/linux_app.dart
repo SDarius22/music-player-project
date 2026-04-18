@@ -18,6 +18,7 @@ import 'package:music_player_frontend/core/services/abstract/abstract_music_scan
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
+import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/ui/abstract_app.dart';
@@ -65,6 +66,7 @@ class LinuxApp extends AbstractApp {
   AbstractAppStateProvider buildAppStateProvider(BuildContext context) {
     return AppStateProvider(
       context.read<AudioProvider>(),
+      context.read<HealthService>(),
       context.read<SettingsService>(),
     );
   }

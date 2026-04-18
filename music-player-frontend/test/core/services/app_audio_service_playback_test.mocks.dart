@@ -125,15 +125,6 @@ class MockSongService extends _i1.Mock implements _i9.SongService {
           as _i10.Stream<dynamic>);
 
   @override
-  int getSongCount() =>
-      (super.noSuchMethod(
-            Invocation.method(#getSongCount, []),
-            returnValue: 0,
-            returnValueForMissingStub: 0,
-          )
-          as int);
-
-  @override
   _i2.Song? getLocalSong(String? songHash) =>
       (super.noSuchMethod(
             Invocation.method(#getLocalSong, [songHash]),
@@ -198,6 +189,7 @@ class MockSongService extends _i1.Mock implements _i9.SongService {
     String? query,
     String? sortField,
     bool? ascending,
+    bool? localOnly,
     int? page,
     int? pageSize,
   ) =>
@@ -206,6 +198,7 @@ class MockSongService extends _i1.Mock implements _i9.SongService {
               query,
               sortField,
               ascending,
+              localOnly,
               page,
               pageSize,
             ]),
@@ -481,6 +474,7 @@ class MockPlaylistService extends _i1.Mock implements _i12.PlaylistService {
     String? query,
     String? sortField,
     bool? ascending,
+    bool? containLocalOnly,
     int? page,
     int? size,
   ) =>
@@ -489,6 +483,7 @@ class MockPlaylistService extends _i1.Mock implements _i12.PlaylistService {
               query,
               sortField,
               ascending,
+              containLocalOnly,
               page,
               size,
             ]),

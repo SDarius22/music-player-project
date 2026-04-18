@@ -41,6 +41,15 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   }
 
   @override
+  int getPlaylistCount(String query, bool containLocalOnly) {
+    var conditions = Playlist_.name.contains(query, caseSensitive: false);
+    if (containLocalOnly) {
+      conditions = conditions.and(Playlist_.isLocal.equals(true));
+    }
+    return _playlistBox.query(conditions).build().count();
+  }
+
+  @override
   Playlist getOrCreatePlaylist(int serverId, String name) {
     final existing = getPlaylistByServerIdAndName(serverId, name);
     if (existing != null) return existing;
@@ -78,46 +87,21 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   }
 
   @override
-  List<Playlist> getPlaylists(String query, String sortField, bool ascending) {
-    Query<Playlist> builderQuery;
-    if (ascending) {
-      builderQuery =
-          _playlistBox
-              .query(Playlist_.name.contains(query, caseSensitive: false))
-              .order(Playlist_.indestructible, flags: Order.descending)
-              .order(
-                sortFields.containsKey(sortField)
-                    ? sortFields[sortField]
-                    : Playlist_.name,
-              )
-              .build();
-    } else {
-      builderQuery =
-          _playlistBox
-              .query(Playlist_.name.contains(query, caseSensitive: false))
-              .order(Playlist_.indestructible, flags: Order.descending)
-              .order(
-                sortFields.containsKey(sortField)
-                    ? sortFields[sortField]
-                    : Playlist_.name,
-                flags: Order.descending,
-              )
-              .build();
-    }
-    return builderQuery.find();
-  }
-
-  @override
   List<Playlist> getPlaylistsPaged(
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   ) {
+    var conditions = Playlist_.name.contains(query, caseSensitive: false);
+    if (containLocalOnly) {
+      conditions = conditions.and(Playlist_.isLocal.equals(true));
+    }
     final q =
         _playlistBox
-            .query(Playlist_.name.contains(query, caseSensitive: false))
+            .query(conditions)
             .order(Playlist_.indestructible, flags: Order.descending)
             .order(
               sortFields.containsKey(sortField)

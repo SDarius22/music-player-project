@@ -23,6 +23,7 @@ import 'package:music_player_frontend/core/rest_clients/artist_rest_client.dart'
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/cover_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/data_sync_rest_client.dart';
+import 'package:music_player_frontend/core/rest_clients/health_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/lyrics_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
@@ -38,6 +39,7 @@ import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
+import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
@@ -74,9 +76,7 @@ abstract class AbstractApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [..._commonProviders(context), ...extraProviders(context)],
-      child: Builder(
-        builder: (innerContext) => getAppWidget(innerContext),
-      ),
+      child: Builder(builder: (innerContext) => getAppWidget(innerContext)),
     );
   }
 
@@ -182,6 +182,13 @@ abstract class AbstractApp extends StatelessWidget {
               authService: context.read<AuthService>(),
             ),
       ),
+      Provider<HealthRestClient>(
+        create:
+            (context) => HealthRestClient(
+              baseUrl: apiBaseUrl,
+              authService: context.read<AuthService>(),
+            ),
+      ),
       Provider<AlbumService>(
         create:
             (context) => AlbumService(
@@ -246,6 +253,12 @@ abstract class AbstractApp extends StatelessWidget {
         create: (context) => createWebRTCService(context),
         lazy: false,
       ),
+
+      Provider<HealthService>(
+        create: (context) => HealthService(context.read<HealthRestClient>()),
+        lazy: false,
+      ),
+
       Provider<AbstractMusicScannerService>(
         create: (context) => buildMusicScannerService(context),
       ),

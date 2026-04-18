@@ -227,6 +227,7 @@ class PlaylistService {
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int page,
     int size,
   ) async {
@@ -249,6 +250,7 @@ class PlaylistService {
       query,
       sortField,
       ascending,
+      containLocalOnly,
       page * size,
       size,
     );
@@ -260,9 +262,7 @@ class PlaylistService {
     final totalPages =
         (serverTotalPages != null && serverTotalPages > 0)
             ? serverTotalPages
-            : ((_playlistRepository
-                            .getPlaylists(query, sortField, ascending)
-                            .length +
+            : ((_playlistRepository.getPlaylistCount(query, containLocalOnly) +
                         size -
                         1) ~/
                     size)

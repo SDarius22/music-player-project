@@ -31,31 +31,12 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
   }
 
   @override
-  List<Album> getAlbums(String query, String sortField, bool ascending) {
-    Query<Album> builderQuery;
-    if (ascending) {
-      builderQuery =
-          _albumBox
-              .query(Album_.name.contains(query, caseSensitive: false))
-              .order(
-                sortFields.containsKey(sortField)
-                    ? sortFields[sortField]
-                    : Album_.name,
-              )
-              .build();
-    } else {
-      builderQuery =
-          _albumBox
-              .query(Album_.name.contains(query, caseSensitive: false))
-              .order(
-                sortFields.containsKey(sortField)
-                    ? sortFields[sortField]
-                    : Album_.name,
-                flags: Order.descending,
-              )
-              .build();
+  int getAlbumCount(String query, bool containLocalOnly) {
+    var conditions = Album_.name.contains(query, caseSensitive: false);
+    if (containLocalOnly) {
+      conditions = conditions.and(Album_.isLocal.equals(true));
     }
-    return builderQuery.find();
+    return _albumBox.query(conditions).build().count();
   }
 
   @override
@@ -63,12 +44,17 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   ) {
+    var conditions = Album_.name.contains(query, caseSensitive: false);
+    if (containLocalOnly) {
+      conditions = conditions.and(Album_.isLocal.equals(true));
+    }
     final q =
         _albumBox
-            .query(Album_.name.contains(query, caseSensitive: false))
+            .query(conditions)
             .order(
               sortFields.containsKey(sortField)
                   ? sortFields[sortField]

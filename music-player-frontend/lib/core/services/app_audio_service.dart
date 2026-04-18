@@ -387,7 +387,7 @@ class AppAudioService {
     try {
       final outgoing = currentSong;
       if (outgoing != null &&
-          !outgoing.isLocal() &&
+          !outgoing.isLocal &&
           outgoing.getHash().isNotEmpty) {
         createChunkManager(outgoing.getHash()).flushStats();
       }
@@ -409,7 +409,7 @@ class AppAudioService {
   }
 
   AudioSource _buildAudioSource(Song song) {
-    final bool isServerTrack = !song.isLocal();
+    final bool isServerTrack = !song.isLocal;
 
     if (isServerTrack) {
       if (UniversalPlatform.isWeb) {
@@ -461,12 +461,12 @@ class AppAudioService {
     if (playbackRestService == null) return;
     final queueFileHashes =
         _normalQueue
-            .where((s) => !s.isLocal() && s.getHash().isNotEmpty)
+            .where((s) => !s.isLocal && s.getHash().isNotEmpty)
             .map((s) => s.getHash())
             .toList();
     final currentFileHash =
         currentSong != null &&
-                !currentSong!.isLocal() &&
+                !currentSong!.isLocal &&
                 currentSong!.getHash().isNotEmpty
             ? currentSong!.getHash()
             : null;
@@ -555,7 +555,7 @@ class AppAudioService {
       final songIdx = (_currentIndex + i + 1) % q.length;
       if (songIdx == _currentIndex) continue;
       final song = q[songIdx];
-      if (song.isLocal() || song.getHash().isEmpty) continue;
+      if (song.isLocal || song.getHash().isEmpty) continue;
       unawaited(_prefetchSongFraction(song, _nextSongTargets[i] * progress));
     }
 
@@ -563,7 +563,7 @@ class AppAudioService {
       final songIdx = (_currentIndex - i - 1 + q.length) % q.length;
       if (songIdx == _currentIndex) continue;
       final song = q[songIdx];
-      if (song.isLocal() || song.getHash().isEmpty) continue;
+      if (song.isLocal || song.getHash().isEmpty) continue;
       unawaited(_prefetchSongFraction(song, _prevSongTargets[i] * progress));
     }
   }
@@ -605,7 +605,7 @@ class AppAudioService {
     playlistService.updateRecentlyPlayedPlaylist();
     _proactivelyCachePrefixes();
 
-    if (song.isLocal()) {
+    if (song.isLocal) {
       ChunkStatsService.instance.report(
         ChunkDeliveryStats(
           fileHash: song.getHash(),

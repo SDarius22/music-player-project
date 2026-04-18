@@ -4,7 +4,11 @@ import 'package:music_player_frontend/core/ui/components/widgets/end_drawer_widg
 import 'package:responsive_framework/responsive_framework.dart';
 
 class AppStateProvider extends AbstractAppStateProvider {
-  AppStateProvider(super.audioProvider, super.settingsService);
+  AppStateProvider(
+    super.audioProvider,
+    super.healthService,
+    super.settingsService,
+  );
 
   @override
   Widget? getEndDrawer(BuildContext context) {

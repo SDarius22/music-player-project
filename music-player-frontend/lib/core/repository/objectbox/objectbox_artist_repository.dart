@@ -32,31 +32,12 @@ class ObjectBoxArtistRepository implements ArtistRepository {
   }
 
   @override
-  List<Artist> getArtists(String query, String sortField, bool ascending) {
-    Query<Artist> builderQuery;
-    if (ascending) {
-      builderQuery =
-          _artistBox
-              .query(Artist_.name.contains(query, caseSensitive: false))
-              .order(
-                sortFields.containsKey(sortField)
-                    ? sortFields[sortField]
-                    : Artist_.name,
-              )
-              .build();
-    } else {
-      builderQuery =
-          _artistBox
-              .query(Artist_.name.contains(query, caseSensitive: false))
-              .order(
-                sortFields.containsKey(sortField)
-                    ? sortFields[sortField]
-                    : Artist_.name,
-                flags: Order.descending,
-              )
-              .build();
+  int getArtistCount(String query, bool containLocalOnly) {
+    var conditions = Artist_.name.contains(query, caseSensitive: false);
+    if (containLocalOnly) {
+      conditions = conditions.and(Artist_.isLocal.equals(true));
     }
-    return builderQuery.find();
+    return _artistBox.query(conditions).build().count();
   }
 
   @override
@@ -64,12 +45,17 @@ class ObjectBoxArtistRepository implements ArtistRepository {
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   ) {
+    var conditions = Artist_.name.contains(query, caseSensitive: false);
+    if (containLocalOnly) {
+      conditions = conditions.and(Artist_.isLocal.equals(true));
+    }
     final q =
         _artistBox
-            .query(Artist_.name.contains(query, caseSensitive: false))
+            .query(conditions)
             .order(
               sortFields.containsKey(sortField)
                   ? sortFields[sortField]

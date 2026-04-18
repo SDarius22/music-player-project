@@ -4,6 +4,7 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/login_register_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +26,11 @@ class UserSettingsScreen extends StatefulWidget {
 }
 
 class _UserSettingsScreenState extends State<UserSettingsScreen> {
-  static const _networkModeLabels = ['WiFi only', 'Cellular only', 'WiFi + Cellular'];
+  static const _networkModeLabels = [
+    'WiFi only',
+    'Cellular only',
+    'WiFi + Cellular',
+  ];
 
   void _saveSettings(BuildContext context) {
     context.read<AbstractAppStateProvider>().updateAppSettings();
@@ -57,6 +62,13 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
               return FilledButton(
                 onPressed: () async {
                   await context.read<UserProvider>().logout();
+                  if (context.mounted) {
+                    await context
+                        .read<AbstractAppStateProvider>()
+                        .outerNavigatorKey
+                        .currentState
+                        ?.pushReplacement(LoadingScreen.route());
+                  }
                 },
                 child: const Text("Logout"),
               );
@@ -153,9 +165,9 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
             return DropdownButton<int>(
               value: appState.appSettings.peerNetworkMode,
               dropdownColor: Colors.black87,
-              style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                color: Colors.white,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall!.copyWith(color: Colors.white),
               underline: const SizedBox.shrink(),
               items: List.generate(
                 _networkModeLabels.length,
@@ -192,10 +204,9 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                 final limit = appState.appSettings.peerWifiDataLimitGB;
                 return Text(
                   limit == -1 ? "Unlimited" : "$limit GB",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall!
-                      .copyWith(color: Colors.grey.shade300),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall!.copyWith(color: Colors.grey.shade300),
                 );
               },
             ),
@@ -217,10 +228,9 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                       activeTrackColor: MusicPlayerTheme.gradientViolet,
                       inactiveTrackColor: Colors.white,
                       valueIndicatorColor: Colors.white,
-                      valueIndicatorTextStyle: Theme.of(context)
-                          .textTheme
-                          .bodySmall!
-                          .copyWith(color: Colors.black),
+                      valueIndicatorTextStyle: Theme.of(
+                        context,
+                      ).textTheme.bodySmall!.copyWith(color: Colors.black),
                       valueIndicatorShape:
                           const PaddleSliderValueIndicatorShape(),
                     ),
@@ -229,7 +239,10 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                       max: 20,
                       divisions: 20,
                       value: sliderVal,
-                      label: sliderVal == 0 ? "Unlimited" : "${sliderVal.toInt()} GB",
+                      label:
+                          sliderVal == 0
+                              ? "Unlimited"
+                              : "${sliderVal.toInt()} GB",
                       onChanged: (v) {
                         appState.appSettings.peerWifiDataLimitGB =
                             v == 0 ? -1 : v.toInt();
@@ -262,10 +275,9 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                 final limit = appState.appSettings.peerCellularDataLimitGB;
                 return Text(
                   limit == -1 ? "Unlimited" : "$limit GB",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall!
-                      .copyWith(color: Colors.grey.shade300),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall!.copyWith(color: Colors.grey.shade300),
                 );
               },
             ),
@@ -288,10 +300,9 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                       activeTrackColor: MusicPlayerTheme.gradientViolet,
                       inactiveTrackColor: Colors.white,
                       valueIndicatorColor: Colors.white,
-                      valueIndicatorTextStyle: Theme.of(context)
-                          .textTheme
-                          .bodySmall!
-                          .copyWith(color: Colors.black),
+                      valueIndicatorTextStyle: Theme.of(
+                        context,
+                      ).textTheme.bodySmall!.copyWith(color: Colors.black),
                       valueIndicatorShape:
                           const PaddleSliderValueIndicatorShape(),
                     ),
@@ -300,7 +311,10 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                       max: 20,
                       divisions: 20,
                       value: sliderVal,
-                      label: sliderVal == 0 ? "Unlimited" : "${sliderVal.toInt()} GB",
+                      label:
+                          sliderVal == 0
+                              ? "Unlimited"
+                              : "${sliderVal.toInt()} GB",
                       onChanged: (v) {
                         appState.appSettings.peerCellularDataLimitGB =
                             v == 0 ? -1 : v.toInt();

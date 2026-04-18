@@ -18,14 +18,15 @@ import 'package:music_player_frontend/core/services/abstract/abstract_music_scan
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
+import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/ui/abstract_app.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
-import 'package:music_player_frontend/platforms/linux/providers/app_state_provider.dart';
-import 'package:music_player_frontend/platforms/linux/services/linux_file_service.dart';
-import 'package:music_player_frontend/platforms/linux/services/linux_music_scanner_service.dart';
+import 'package:music_player_frontend/platforms/windows/providers/app_state_provider.dart';
+import 'package:music_player_frontend/platforms/windows/services/windows_file_service.dart';
+import 'package:music_player_frontend/platforms/windows/services/windows_music_scanner_service.dart';
 import 'package:provider/provider.dart';
 
 class WindowsApp extends AbstractApp {
@@ -65,13 +66,14 @@ class WindowsApp extends AbstractApp {
   AbstractAppStateProvider buildAppStateProvider(BuildContext context) {
     return AppStateProvider(
       context.read<AudioProvider>(),
+      context.read<HealthService>(),
       context.read<SettingsService>(),
     );
   }
 
   @override
   AbstractMusicScannerService buildMusicScannerService(BuildContext context) {
-    return LinuxMusicScannerService(
+    return WindowsMusicScannerService(
       context.read<SongService>(),
       context.read<ArtistService>(),
       context.read<AlbumService>(),
@@ -82,6 +84,6 @@ class WindowsApp extends AbstractApp {
 
   @override
   AbstractFileService createFileService(BuildContext context) {
-    return LinuxFileService();
+    return WindowsFileService();
   }
 }

@@ -10,12 +10,13 @@ abstract class AlbumRepository {
 
   Album getOrCreateAlbum(String albumHash, String albumName, Artist artist);
 
-  List<Album> getAlbums(String query, String sortField, bool ascending);
+  int getAlbumCount(String query, bool containLocalOnly);
 
   List<Album> getAlbumsPaged(
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   );

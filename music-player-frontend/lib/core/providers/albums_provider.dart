@@ -22,6 +22,7 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
     String query,
     String sortField,
     bool ascending,
+    bool localOnly,
     int page,
     int size,
   ) async {
@@ -29,6 +30,7 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
       query,
       sortField,
       ascending,
+      localOnly,
       page,
       size,
     );

@@ -65,7 +65,7 @@ class _LoadingScreenState extends State<LoadingScreen>
 
     final isDesktop = UniversalPlatform.isDesktop;
 
-    if (!userProvider.isAuthenticated ||
+    if ((!userProvider.isAuthenticated && UniversalPlatform.isWeb) ||
         (isDesktop &&
             (abstractAppStateProvider.appSettings.firstTime ||
                 abstractAppStateProvider.appSettings.mainSongPlace.isEmpty))) {

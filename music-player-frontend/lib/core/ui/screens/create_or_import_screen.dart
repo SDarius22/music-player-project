@@ -15,6 +15,7 @@ import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
 import 'package:provider/provider.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 import 'abstract/route_builder.dart';
 
@@ -106,6 +107,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
         search,
         'Title',
         true,
+        false,
         page,
         30,
       );
@@ -205,7 +207,8 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
       listen: false,
     );
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      initialDirectory: kIsWeb ? null : appStates.appSettings.mainSongPlace,
+      initialDirectory:
+          UniversalPlatform.isWeb ? null : appStates.appSettings.mainSongPlace,
       type: FileType.image,
       allowMultiple: false,
       withData: true,

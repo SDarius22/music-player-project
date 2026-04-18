@@ -17,6 +17,7 @@ abstract class QueryableProvider {
     String query,
     String sortField,
     bool ascending,
+    bool localOnly,
     int page,
     int size,
   );

@@ -73,17 +73,21 @@ class Album implements BaseEntity {
   }
 
   @override
-  bool isLocal() {
+  bool get isLocal {
     if (songs.isEmpty) {
       return false;
     }
 
     for (var song in songs) {
-      if (!song.isLocal()) {
-        return false;
+      if (song.isLocal) {
+        return true;
       }
     }
-    return true;
+    return false;
+  }
+
+  set isLocal(bool value) {
+    // No-op: isLocal is derived from the songs, so we don't set it directly.
   }
 
   @override

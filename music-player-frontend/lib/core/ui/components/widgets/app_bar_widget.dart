@@ -74,6 +74,16 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   const Spacer(),
+                  ValueListenableBuilder(
+                    valueListenable:
+                        context
+                            .read<AbstractAppStateProvider>()
+                            .connectivityStatusNotifier,
+                    builder: (context, connectivityStatus, child) {
+                      return connectivityStatus;
+                    },
+                  ),
+                  SizedBox(width: width * 0.025),
                   if (!(UniversalPlatform.isMacOS &&
                       FullScreen.isFullScreen)) ...[
                     MinimizeWindowButton(
@@ -131,7 +141,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           const Spacer(),
-          if (UniversalPlatform.isWeb)
+          if (UniversalPlatform.isWeb) ...[
             TextButton.icon(
               onPressed: () {
                 context
@@ -148,6 +158,17 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 ).textTheme.bodyMedium!.copyWith(color: Colors.white),
               ),
             ),
+          ] else ...[
+            ValueListenableBuilder(
+              valueListenable:
+                  context
+                      .read<AbstractAppStateProvider>()
+                      .connectivityStatusNotifier,
+              builder: (context, connectivityStatus, child) {
+                return connectivityStatus;
+              },
+            ),
+          ],
         ],
       ],
     );

@@ -25,14 +25,11 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   String get defaultSortField => 'Title';
 
-  int get totalSongsCount => _songService.getSongCount();
-
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
 
     _logger.fine('Performing initial quick scan...');
-    //TODO: change this later on
-    // await _scannerService.performQuickScan();
+    await _scannerService.performQuickScan();
     // runSync();
 
     _isInitialized = true;
@@ -51,6 +48,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     String query,
     String sortField,
     bool ascending,
+    bool localOnly,
     int page,
     int size,
   ) async {
@@ -58,6 +56,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
       query,
       sortField,
       ascending,
+      localOnly,
       page,
       size,
     );

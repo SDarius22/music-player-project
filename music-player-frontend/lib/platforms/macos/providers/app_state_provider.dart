@@ -10,7 +10,11 @@ class AppStateProvider extends AbstractAppStateProvider
     with TrayListener, FullScreenListener {
   static final _logger = Logger('MacosAppStateProvider');
 
-  AppStateProvider(super.audioProvider, super.settingsService) {
+  AppStateProvider(
+    super.audioProvider,
+    super.healthService,
+    super.settingsService,
+  ) {
     trayManager.addListener(this);
     FullScreen.addListener(this);
     initTray();

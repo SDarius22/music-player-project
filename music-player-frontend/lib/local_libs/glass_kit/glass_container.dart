@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 import 'border_painter.dart';
 import 'circle_clipper.dart';
@@ -286,7 +287,7 @@ class GlassContainer extends StatelessWidget {
   /// [isFrosted] flag and the [frostedOpacity] property.
   /// If the app is running on web then also a container is returned
   Widget get _frostedContainer {
-    if (!isFrostedGlass || frostedOpacity == 0.0 || kIsWeb) {
+    if (!isFrostedGlass || frostedOpacity == 0.0 || UniversalPlatform.isWeb) {
       return const SizedBox.shrink();
     } else {
       return Positioned.fill(
@@ -326,7 +327,7 @@ class GlassContainer extends StatelessWidget {
   /// If its color-only-border, then return [Border] to be used
   /// in the decoration of the container.
   Border? get _border {
-    if (_colorOnlyBorder || kIsWeb) {
+    if (_colorOnlyBorder || UniversalPlatform.isWeb) {
       assert(borderColor != null);
       return Border.all(color: borderColor!, width: borderWidth);
     } else {

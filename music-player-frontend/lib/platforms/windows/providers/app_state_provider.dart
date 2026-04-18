@@ -7,7 +7,11 @@ import 'package:tray_manager/tray_manager.dart';
 class AppStateProvider extends AbstractAppStateProvider with TrayListener {
   static final _logger = Logger('WindowsAppStateProvider');
 
-  AppStateProvider(super.audioProvider, super.settingsService) {
+  AppStateProvider(
+    super.audioProvider,
+    super.healthService,
+    super.settingsService,
+  ) {
     trayManager.addListener(this);
     initTray();
   }

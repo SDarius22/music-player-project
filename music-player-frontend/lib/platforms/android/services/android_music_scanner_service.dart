@@ -65,7 +65,7 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
 
       var existing = _songService.getLocalSong(fileHash);
 
-      if (existing == null) {
+      if (existing == null || existing.fullyLoaded == false) {
         existing = Song(fileHash)..path = songModel.data;
         var artistName =
             songModel.artist.trim().isEmpty
@@ -96,6 +96,12 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
 
         artist.addSong(existing);
         _artistService.updateArtist(artist);
+      } else {
+        _logger.fine('Song already exists in library: ${songModel.data}');
+        if (existing.path != songModel.data) {
+          existing.path = songModel.data;
+          songsToUpdate.add(existing);
+        }
       }
 
       processedCount++;

@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 class _MemoryCache {
   _MemoryCache._();
@@ -36,7 +37,7 @@ class _MemoryCache {
 String _cacheKey(String url) => sha256.convert(utf8.encode(url)).toString();
 
 Future<File?> _cacheFile(String url) async {
-  if (kIsWeb) return null;
+  if (UniversalPlatform.isWeb) return null;
   try {
     final dir = await getApplicationCacheDirectory();
     final coverDir = Directory('${dir.path}/cover_cache');

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
@@ -14,6 +13,7 @@ import 'package:music_player_frontend/core/repository/interfaces/artist_reposito
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/data_sync_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 class SongService {
   static final _logger = Logger('SongService');
@@ -40,10 +40,6 @@ class SongService {
   Map<String, dynamic> get sortFields => _songRepository.sortFields;
 
   Stream<dynamic> get watchSongs => _songRepository.watchSongs();
-
-  int getSongCount() {
-    return _songRepository.getSongCount();
-  }
 
   Song? getLocalSong(String songHash) {
     if (songHash.isEmpty) {
@@ -113,11 +109,15 @@ class SongService {
     String query,
     String sortField,
     bool ascending,
+    bool localOnly,
     int page,
     int pageSize,
   ) async {
     int? serverTotalPages;
     try {
+      if (localOnly) {
+        throw Exception('Skipping server fetch due to localOnly=true');
+      }
       final serverPage = await _songRestService.getSongsPage(
         query: query,
         page: page,
@@ -133,6 +133,7 @@ class SongService {
       query,
       sortField,
       ascending,
+      localOnly,
       page * pageSize,
       pageSize,
     );
@@ -140,7 +141,7 @@ class SongService {
     final totalPages =
         (serverTotalPages != null && serverTotalPages > 0)
             ? serverTotalPages
-            : ((_songRepository.getSongs(query, sortField, ascending).length +
+            : ((_songRepository.getSongCount(query, localOnly) +
                         pageSize -
                         1) ~/
                     pageSize)
@@ -167,7 +168,7 @@ class SongService {
   void runSync() async {
     if (_isSyncing) return;
 
-    if (kIsWeb) {
+    if (UniversalPlatform.isWeb) {
       _logger.fine('Song sync is not supported on web; skipping.');
       return;
     }

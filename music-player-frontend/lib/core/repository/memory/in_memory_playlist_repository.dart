@@ -62,6 +62,14 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   }
 
   @override
+  int getPlaylistCount(String query, bool containLocalOnly) {
+    final q = query.toLowerCase();
+    return _byId.values
+        .where((p) => p.getName().toLowerCase().contains(q))
+        .length;
+  }
+
+  @override
   List<Playlist> getIndestructiblePlaylists() =>
       _byId.values.where((p) => p.indestructible == true).toList()
         ..sort((a, b) => a.getName().compareTo(b.getName()));
@@ -82,7 +90,6 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
     return list;
   }
 
-  @override
   List<Playlist> getPlaylists(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final list =
@@ -99,6 +106,7 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   ) {

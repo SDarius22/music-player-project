@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:5434110965985548662",
-      "lastPropertyId": "17:5708510744567757844",
+      "lastPropertyId": "18:2554918908251903618",
       "name": "Album",
       "properties": [
         {
@@ -48,6 +48,11 @@
           "type": 11,
           "flags": 520,
           "relationTarget": "Artist"
+        },
+        {
+          "id": "18:2554918908251903618",
+          "name": "isLocal",
+          "type": 1
         }
       ],
       "relations": []
@@ -133,7 +138,7 @@
     },
     {
       "id": "3:286855446892723846",
-      "lastPropertyId": "9:3171877401028253014",
+      "lastPropertyId": "10:4192716564617056374",
       "name": "Artist",
       "properties": [
         {
@@ -165,6 +170,11 @@
           "indexId": "26:6878535872278823706",
           "type": 9,
           "flags": 2080
+        },
+        {
+          "id": "10:4192716564617056374",
+          "name": "isLocal",
+          "type": 1
         }
       ],
       "relations": []
@@ -215,7 +225,7 @@
     },
     {
       "id": "5:8253375800311252238",
-      "lastPropertyId": "19:1745458666783890846",
+      "lastPropertyId": "20:3838607115099689827",
       "name": "Playlist",
       "properties": [
         {
@@ -267,6 +277,11 @@
           "id": "19:1745458666783890846",
           "name": "songFileHashes",
           "type": 30
+        },
+        {
+          "id": "20:3838607115099689827",
+          "name": "isLocal",
+          "type": 1
         }
       ],
       "relations": [
@@ -279,7 +294,7 @@
     },
     {
       "id": "6:5328859898643810358",
-      "lastPropertyId": "30:1355607232119569113",
+      "lastPropertyId": "31:2531404889274986009",
       "name": "Song",
       "properties": [
         {
@@ -375,6 +390,11 @@
           "id": "30:1355607232119569113",
           "name": "name",
           "type": 9
+        },
+        {
+          "id": "31:2531404889274986009",
+          "name": "isLocal",
+          "type": 1
         }
       ],
       "relations": []

@@ -50,6 +50,7 @@ class ArtistService {
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int page,
     int size,
   ) async {
@@ -76,13 +77,14 @@ class ArtistService {
       query,
       sortField,
       ascending,
+      containLocalOnly,
       page * size,
       size,
     );
 
     final totalPages =
         serverTotalPages ??
-        ((_artistRepository.getArtists(query, sortField, ascending).length +
+        ((_artistRepository.getArtistCount(query, containLocalOnly) +
                     size -
                     1) ~/
                 size)

@@ -36,6 +36,13 @@ class InMemoryAlbumRepository implements AlbumRepository {
   }
 
   @override
+  int getAlbumCount(String query, bool containLocalOnly) {
+    final q = query.toLowerCase();
+    return _byId.values
+        .where((a) => a.getName().toLowerCase().contains(q))
+        .length;
+  }
+
   List<Album> getAlbums(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final list =
@@ -52,6 +59,7 @@ class InMemoryAlbumRepository implements AlbumRepository {
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   ) {

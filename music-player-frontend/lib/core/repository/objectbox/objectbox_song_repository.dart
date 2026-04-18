@@ -35,8 +35,12 @@ class ObjectBoxSongRepository implements SongRepository {
   }
 
   @override
-  int getSongCount() {
-    return _songBox.count();
+  int getSongCount(String query, bool localOnly) {
+    var conditions = Song_.name.contains(query, caseSensitive: false);
+    if (localOnly) {
+      conditions = conditions.and(Song_.path.notNull());
+    }
+    return _songBox.query(conditions).build().count();
   }
 
   @override
@@ -94,44 +98,23 @@ class ObjectBoxSongRepository implements SongRepository {
   }
 
   @override
-  List<Song> getSongs(String query, String sortField, bool ascending) {
-    Query<Song> builderQuery;
-    if (ascending) {
-      builderQuery =
-          _songBox
-              .query(Song_.name.contains(query, caseSensitive: false))
-              .order(
-                sortFields.containsKey(sortField)
-                    ? sortFields[sortField]
-                    : Song_.name,
-              )
-              .build();
-    } else {
-      builderQuery =
-          _songBox
-              .query(Song_.name.contains(query, caseSensitive: false))
-              .order(
-                sortFields.containsKey(sortField)
-                    ? sortFields[sortField]
-                    : Song_.name,
-                flags: Order.descending,
-              )
-              .build();
-    }
-    return builderQuery.find();
-  }
-
-  @override
   List<Song> getSongsPaged(
     String query,
     String sortField,
     bool ascending,
+    bool localOnly,
     int offset,
     int limit,
   ) {
+    var conditions = Song_.name.contains(query, caseSensitive: false);
+    if (localOnly) {
+      conditions = conditions
+          .and(Song_.path.notNull())
+          .and(Song_.path.notEquals(''));
+    }
     final q =
         _songBox
-            .query(Song_.name.contains(query, caseSensitive: false))
+            .query(conditions)
             .order(
               sortFields.containsKey(sortField)
                   ? sortFields[sortField]

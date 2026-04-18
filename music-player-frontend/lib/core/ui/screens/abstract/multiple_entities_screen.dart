@@ -44,6 +44,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
   static const int _pageSize = 30;
 
   late String _sortField;
+  late bool _localOnly;
   late bool _ascending;
   String _query = '';
   late ScrollController _scrollController;
@@ -55,6 +56,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
   @override
   void initState() {
     super.initState();
+    _localOnly = false;
     _sortField = widget.provider.sortFields.keys.firstOrNull ?? 'Name';
     _ascending = true;
     _viewState = ValueNotifier<_PagedViewState>(const _PagedViewState());
@@ -64,6 +66,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     _scrollController.addListener(_onScroll);
     (widget.provider as ChangeNotifier).addListener(_onProviderChanged);
     _appStateProvider.refreshRequestNotifier.addListener(_onGlobalRefresh);
+    _appStateProvider.shouldDisplayLocalOnly.addListener(_onLocalOnlyChanged);
     _runLoad(() => _fetchPage(0, reset: true));
   }
 
@@ -80,6 +83,11 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
 
   void _onGlobalRefresh() {
     if (!mounted) return;
+    _runLoad(() => _fetchPage(0, reset: true));
+  }
+
+  void _onLocalOnlyChanged() {
+    _localOnly = _appStateProvider.shouldDisplayLocalOnly.value;
     _runLoad(() => _fetchPage(0, reset: true));
   }
 
@@ -112,6 +120,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
         _query,
         _sortField,
         _ascending,
+        _localOnly,
         page,
         _pageSize,
       );
@@ -138,6 +147,11 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
 
   void _runLoad(Future<void> Function() action) {
     _loadFuture.value = action();
+  }
+
+  void _onToggleLocalOnly(bool value) {
+    _localOnly = value;
+    _runLoad(() => _fetchPage(0, reset: true));
   }
 
   void _onQuery(String q) {
@@ -172,6 +186,8 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
             sortFields: widget.provider.sortFields,
             initialSortField: _sortField,
             initialAscending: _ascending,
+            initialLocalOnly: _localOnly,
+            onLocalOnly: _onToggleLocalOnly,
             onQuery: _onQuery,
             onSortField: _onSortField,
             onAscending: _onAscending,

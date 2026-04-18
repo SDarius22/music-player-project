@@ -54,11 +54,15 @@ class AlbumService {
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int page,
     int size,
   ) async {
     int? serverTotalPages;
     try {
+      if (containLocalOnly) {
+        throw Exception('Forced local only');
+      }
       final sort =
           '${_toServerSortField(sortField)},${ascending ? 'asc' : 'desc'}';
       final serverPage = await _albumRestService.getAlbumsPage(
@@ -79,6 +83,7 @@ class AlbumService {
       query,
       sortField,
       ascending,
+      containLocalOnly,
       page * size,
       size,
     );
@@ -86,7 +91,7 @@ class AlbumService {
     final totalPages =
         (serverTotalPages != null && serverTotalPages > 0)
             ? serverTotalPages
-            : ((_albumRepository.getAlbums(query, sortField, ascending).length +
+            : ((_albumRepository.getAlbumCount(query, containLocalOnly) +
                         size -
                         1) ~/
                     size)

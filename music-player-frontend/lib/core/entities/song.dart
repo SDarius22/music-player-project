@@ -53,8 +53,12 @@ class Song implements BaseEntity {
   }
 
   @override
-  bool isLocal() {
+  bool get isLocal {
     return path != null && path!.isNotEmpty;
+  }
+
+  set isLocal(bool value) {
+    // This setter is intentionally left blank. The isLocal property is derived from the presence of a valid path.
   }
 
   @override

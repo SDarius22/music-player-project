@@ -34,6 +34,13 @@ class InMemoryArtistRepository implements ArtistRepository {
   }
 
   @override
+  int getArtistCount(String query, bool containLocalOnly) {
+    final q = query.toLowerCase();
+    return _byId.values
+        .where((a) => a.getName().toLowerCase().contains(q))
+        .length;
+  }
+
   List<Artist> getArtists(String query, String sortField, bool ascending) {
     final q = query.toLowerCase();
     final list =
@@ -50,6 +57,7 @@ class InMemoryArtistRepository implements ArtistRepository {
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   ) {

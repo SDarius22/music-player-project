@@ -9,12 +9,13 @@ abstract class ArtistRepository {
 
   Artist getOrCreateArtist(String artistHash, String artistName);
 
-  List<Artist> getArtists(String query, String sortField, bool ascending);
+  int getArtistCount(String query, bool containLocalOnly);
 
   List<Artist> getArtistsPaged(
     String query,
     String sortField,
     bool ascending,
+    bool containLocalOnly,
     int offset,
     int limit,
   );

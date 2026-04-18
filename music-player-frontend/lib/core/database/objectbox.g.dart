@@ -27,7 +27,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 5434110965985548662),
     name: 'Album',
-    lastPropertyId: const obx_int.IdUid(17, 5708510744567757844),
+    lastPropertyId: const obx_int.IdUid(18, 2554918908251903618),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -75,6 +75,12 @@ final _entities = <obx_int.ModelEntity>[
         indexId: const obx_int.IdUid(29, 9108164602987110845),
         relationField: 'artist',
         relationTarget: 'Artist',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(18, 2554918908251903618),
+        name: 'isLocal',
+        type: 1,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -183,7 +189,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(3, 286855446892723846),
     name: 'Artist',
-    lastPropertyId: const obx_int.IdUid(9, 3171877401028253014),
+    lastPropertyId: const obx_int.IdUid(10, 4192716564617056374),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -217,6 +223,12 @@ final _entities = <obx_int.ModelEntity>[
         type: 9,
         flags: 2080,
         indexId: const obx_int.IdUid(26, 6878535872278823706),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 4192716564617056374),
+        name: 'isLocal',
+        type: 1,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -283,7 +295,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(5, 8253375800311252238),
     name: 'Playlist',
-    lastPropertyId: const obx_int.IdUid(19, 1745458666783890846),
+    lastPropertyId: const obx_int.IdUid(20, 3838607115099689827),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -342,6 +354,12 @@ final _entities = <obx_int.ModelEntity>[
         type: 30,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(20, 3838607115099689827),
+        name: 'isLocal',
+        type: 1,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[
       obx_int.ModelRelation(
@@ -355,7 +373,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(6, 5328859898643810358),
     name: 'Song',
-    lastPropertyId: const obx_int.IdUid(30, 1355607232119569113),
+    lastPropertyId: const obx_int.IdUid(31, 2531404889274986009),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -465,6 +483,12 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(30, 1355607232119569113),
         name: 'name',
         type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(31, 2531404889274986009),
+        name: 'isLocal',
+        type: 1,
         flags: 0,
       ),
     ],
@@ -654,7 +678,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
             : fbb.writeListInt8(object.imageBytes!);
         final hashOffset = fbb.writeString(object.hash);
         final nameOffset = fbb.writeString(object.name);
-        fbb.startTable(18);
+        fbb.startTable(19);
         fbb.addInt64(0, object.id);
         fbb.addOffset(8, imageBytesOffset);
         fbb.addBool(11, object.requiresSync);
@@ -662,6 +686,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(14, nameOffset);
         fbb.addInt64(15, object.duration);
         fbb.addInt64(16, object.artist.targetId);
+        fbb.addBool(17, object.isLocal);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -692,6 +717,12 @@ obx_int.ModelDefinition getObjectBoxModel() {
             rootOffset,
             34,
             0,
+          )
+          ..isLocal = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            38,
+            false,
           );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
@@ -843,12 +874,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
             : fbb.writeListInt8(object.imageBytes!);
         final hashOffset = fbb.writeString(object.hash);
         final nameOffset = fbb.writeString(object.name);
-        fbb.startTable(10);
+        fbb.startTable(11);
         fbb.addInt64(0, object.id);
         fbb.addBool(4, object.requiresSync);
         fbb.addOffset(6, imageBytesOffset);
         fbb.addOffset(7, hashOffset);
         fbb.addOffset(8, nameOffset);
+        fbb.addBool(9, object.isLocal);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -873,7 +905,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
               const fb.Uint8ListReader(
                     lazy: false,
                   ).vTableGetNullable(buffer, rootOffset, 16)
-                  as Uint8List?;
+                  as Uint8List?
+          ..isLocal = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            22,
+            false,
+          );
         obx_int.InternalToManyAccess.setRelInfo<Artist>(
           object.songs,
           store,
@@ -970,7 +1008,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final songFileHashesOffset = fbb.writeList(
           object.songFileHashes.map(fbb.writeString).toList(growable: false),
         );
-        fbb.startTable(20);
+        fbb.startTable(21);
         fbb.addInt64(0, object.id);
         fbb.addBool(1, object.indestructible);
         fbb.addInt64(7, object.createdAt.millisecondsSinceEpoch);
@@ -980,6 +1018,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(16, nameOffset);
         fbb.addInt64(17, object.duration);
         fbb.addOffset(18, songFileHashesOffset);
+        fbb.addBool(19, object.isLocal);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -1026,7 +1065,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
           ..songFileHashes = const fb.ListReader<String>(
             fb.StringReader(asciiOptimization: true),
             lazy: false,
-          ).vTableGet(buffer, rootOffset, 40, []);
+          ).vTableGet(buffer, rootOffset, 40, [])
+          ..isLocal = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            42,
+            false,
+          );
         obx_int.InternalToManyAccess.setRelInfo<Playlist>(
           object.songs,
           store,
@@ -1049,7 +1094,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
             : fbb.writeString(object.path!);
         final fileHashOffset = fbb.writeString(object.fileHash);
         final nameOffset = fbb.writeString(object.name);
-        fbb.startTable(31);
+        fbb.startTable(32);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, pathOffset);
         fbb.addInt64(8, object.trackNumber);
@@ -1072,6 +1117,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(27, object.pendingPlayDurationSeconds);
         fbb.addOffset(28, fileHashOffset);
         fbb.addOffset(29, nameOffset);
+        fbb.addBool(30, object.isLocal);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -1153,7 +1199,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
           )
           ..name = const fb.StringReader(
             asciiOptimization: true,
-          ).vTableGet(buffer, rootOffset, 62, '');
+          ).vTableGet(buffer, rootOffset, 62, '')
+          ..isLocal = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            64,
+            false,
+          );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1209,6 +1261,11 @@ class Album_ {
   /// See [Album.artist].
   static final artist = obx.QueryRelationToOne<Album, Artist>(
     _entities[0].properties[6],
+  );
+
+  /// See [Album.isLocal].
+  static final isLocal = obx.QueryBooleanProperty<Album>(
+    _entities[0].properties[7],
   );
 
   /// see [Album.songs]
@@ -1312,6 +1369,11 @@ class Artist_ {
     _entities[2].properties[4],
   );
 
+  /// See [Artist.isLocal].
+  static final isLocal = obx.QueryBooleanProperty<Artist>(
+    _entities[2].properties[5],
+  );
+
   /// see [Artist.songs]
   static final songs = obx.QueryBacklinkToMany<Song, Artist>(Song_.artist);
 }
@@ -1401,6 +1463,11 @@ class Playlist_ {
     _entities[4].properties[8],
   );
 
+  /// See [Playlist.isLocal].
+  static final isLocal = obx.QueryBooleanProperty<Playlist>(
+    _entities[4].properties[9],
+  );
+
   /// see [Playlist.songs]
   static final songs = obx.QueryRelationToMany<Playlist, Song>(
     _entities[4].relations[0],
@@ -1488,5 +1555,10 @@ class Song_ {
   /// See [Song.name].
   static final name = obx.QueryStringProperty<Song>(
     _entities[5].properties[16],
+  );
+
+  /// See [Song.isLocal].
+  static final isLocal = obx.QueryBooleanProperty<Song>(
+    _entities[5].properties[17],
   );
 }

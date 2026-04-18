@@ -9,7 +9,7 @@ abstract class SongRepository {
 
   List<Song> saveSongs(List<Song> songs);
 
-  int getSongCount();
+  int getSongCount(String query, bool localOnly);
 
   Song? getSongByFileHash(String fileHash);
 
@@ -23,12 +23,11 @@ abstract class SongRepository {
 
   List<Song> getFavoriteSongs();
 
-  List<Song> getSongs(String query, String sortField, bool ascending);
-
   List<Song> getSongsPaged(
     String query,
     String sortField,
     bool ascending,
+    bool localOnly,
     int offset,
     int limit,
   );

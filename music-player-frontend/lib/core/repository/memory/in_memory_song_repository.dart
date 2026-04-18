@@ -54,7 +54,12 @@ class InMemorySongRepository implements SongRepository {
   }
 
   @override
-  int getSongCount() => _byId.length;
+  int getSongCount(String query, bool localOnly) {
+    final q = query.toLowerCase();
+    return _byId.values
+        .where((s) => s.getName().toLowerCase().contains(q))
+        .length;
+  }
 
   @override
   Song? getSongByFileHash(String fileHash) {
@@ -102,8 +107,13 @@ class InMemorySongRepository implements SongRepository {
     return _byId.values.where((s) => s.likedByUser == true).toList();
   }
 
-  @override
-  List<Song> getSongs(String query, String sortField, bool ascending) {
+  List<Song> getSongs(
+    String query,
+    String sortField,
+    bool ascending,
+    bool localOnly,
+  ) {
+    // localOnly is ignored in this in-memory implementation, as this repo only works on web, where all songs are remote
     final q = query.toLowerCase();
     final filtered =
         _byId.values
@@ -135,10 +145,11 @@ class InMemorySongRepository implements SongRepository {
     String query,
     String sortField,
     bool ascending,
+    bool localOnly,
     int offset,
     int limit,
   ) {
-    final all = getSongs(query, sortField, ascending);
+    final all = getSongs(query, sortField, ascending, localOnly);
     if (offset >= all.length) return [];
     return all.sublist(offset, (offset + limit).clamp(0, all.length));
   }
