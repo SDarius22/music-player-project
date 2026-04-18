@@ -21,7 +21,7 @@ void main() {
       repo.getOrCreateArtist('hash-b', 'Beta');
       repo.getOrCreateArtist('hash-c', 'Gamma');
 
-      final page = repo.getArtistsPaged('', 'Name', true, 1, 1);
+      final page = repo.getArtistsPaged('', 'Name', true, false, 1, 1);
 
       expect(page, hasLength(1));
       expect(page.first.getName(), 'Beta');

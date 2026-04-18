@@ -181,7 +181,14 @@ void main() {
           totalElements: 1,
         );
 
-        final result = await service.getPlaylistsPage('', 'Name', true, 0, 20);
+        final result = await service.getPlaylistsPage(
+          '',
+          'Name',
+          true,
+          false,
+          0,
+          20,
+        );
 
         expect(result.totalPages, 3);
         expect(
@@ -280,7 +287,14 @@ void main() {
         playlistRepo.savePlaylist(Playlist('Local1'));
         playlistRepo.savePlaylist(Playlist('Local2'));
 
-        final result = await service.getPlaylistsPage('', 'Name', true, 0, 20);
+        final result = await service.getPlaylistsPage(
+          '',
+          'Name',
+          true,
+          false,
+          0,
+          20,
+        );
 
         expect(result.totalPages, 1);
         expect(result.content, isNotEmpty);

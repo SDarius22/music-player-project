@@ -12,7 +12,7 @@ void main() {
 
       expect(first.id, isPositive);
       expect(second.id, first.id);
-      expect(repo.getSongCount(), 1);
+      expect(repo.getSongCount('', false), 1);
     });
 
     test('watchSongs emits after save', () async {

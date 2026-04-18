@@ -59,9 +59,8 @@ void main() {
 
     when(mockSongRestClient.authService).thenReturn(mockAuthService);
     when(mockSongRepo.watchSongs()).thenAnswer((_) => const Stream.empty());
-    when(mockSongRepo.getSongs(any, any, any)).thenReturn(const []);
     when(
-      mockSongRepo.getSongsPaged(any, any, any, any, any),
+      mockSongRepo.getSongsPaged(any, any, any, any, any, any),
     ).thenReturn(const []);
 
     service = SongService(
@@ -160,10 +159,17 @@ void main() {
       ).thenReturn(album);
       when(mockSongRepo.saveSong(cachedSong)).thenReturn(cachedSong);
       when(
-        mockSongRepo.getSongsPaged(any, any, any, any, any),
+        mockSongRepo.getSongsPaged(any, any, any, any, any, any),
       ).thenReturn([cachedSong]);
 
-      final result = await service.getSongsPage('', 'duration', true, 0, 20);
+      final result = await service.getSongsPage(
+        '',
+        'duration',
+        true,
+        false,
+        0,
+        20,
+      );
 
       expect(result.totalPages, 2);
       expect(result.content.single.getHash(), 'song-hash');
@@ -188,11 +194,11 @@ void main() {
         ),
       ).thenThrow(Exception('offline'));
       when(
-        mockSongRepo.getSongsPaged(any, any, any, any, any),
+        mockSongRepo.getSongsPaged(any, any, any, any, any, any),
       ).thenReturn(local);
-      when(mockSongRepo.getSongs(any, any, any)).thenReturn(local);
+      when(mockSongRepo.getSongCount(any, any)).thenReturn(local.length);
 
-      final result = await service.getSongsPage('', 'name', true, 0, 20);
+      final result = await service.getSongsPage('', 'name', true, false, 0, 20);
 
       expect(result.content, equals(local));
       expect(result.totalPages, 1);

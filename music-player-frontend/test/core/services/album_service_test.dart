@@ -141,10 +141,10 @@ void main() {
         mockAlbumRepo.saveAlbum(any),
       ).thenAnswer((inv) => inv.positionalArguments.first as Album);
       when(
-        mockAlbumRepo.getAlbumsPaged(any, any, any, any, any),
+        mockAlbumRepo.getAlbumsPaged(any, any, any, any, any, any),
       ).thenReturn(local);
 
-      final result = await service.getAlbumsPage('', 'name', true, 0, 20);
+      final result = await service.getAlbumsPage('', 'name', true, false, 0, 20);
 
       expect(result.content, equals(local));
       expect(result.totalPages, 3);
@@ -162,11 +162,11 @@ void main() {
         ),
       ).thenThrow(Exception('timeout'));
       when(
-        mockAlbumRepo.getAlbumsPaged(any, any, any, any, any),
+        mockAlbumRepo.getAlbumsPaged(any, any, any, any, any, any),
       ).thenReturn(local);
-      when(mockAlbumRepo.getAlbums(any, any, any)).thenReturn(local);
+      when(mockAlbumRepo.getAlbumCount(any, any)).thenReturn(local.length);
 
-      final result = await service.getAlbumsPage('', 'name', true, 0, 20);
+      final result = await service.getAlbumsPage('', 'name', true, false, 0, 20);
 
       expect(result.content, equals(local));
       expect(result.totalPages, 1);

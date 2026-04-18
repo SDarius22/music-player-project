@@ -19,8 +19,8 @@ void main() {
       final local = Song('local-hash')..path = '/music/song.mp3';
       final remote = Song('remote-hash');
 
-      expect(local.isLocal(), isTrue);
-      expect(remote.isLocal(), isFalse);
+      expect(local.isLocal, isTrue);
+      expect(remote.isLocal, isFalse);
     });
 
     test('getCoverArt falls back from album to artist', () {
@@ -40,28 +40,28 @@ void main() {
   });
 
   group('Album', () {
-    test('isLocal is false when no songs or any song is remote', () {
+    test('isLocal is true when at least one song is local', () {
       final album = Album('album-hash', 'Album');
-      expect(album.isLocal(), isFalse);
+      expect(album.isLocal, isFalse);
 
       final local = Song('local')..path = '/tmp/local.mp3';
       final remote = Song('remote');
       album.addSong(local);
       album.addSong(remote);
-      expect(album.isLocal(), isFalse);
+      expect(album.isLocal, isTrue);
     });
   });
 
   group('Artist', () {
-    test('isLocal requires at least one local song and no remote songs', () {
+    test('isLocal is true when at least one song is local', () {
       final artist = Artist('artist-hash', 'Artist');
-      expect(artist.isLocal(), isFalse);
+      expect(artist.isLocal, isFalse);
 
       artist.addSong(Song('local')..path = '/tmp/local.mp3');
-      expect(artist.isLocal(), isTrue);
+      expect(artist.isLocal, isTrue);
 
       artist.addSong(Song('remote'));
-      expect(artist.isLocal(), isFalse);
+      expect(artist.isLocal, isTrue);
     });
 
     test(
@@ -103,15 +103,15 @@ void main() {
       expect(playlist.getDurationInSeconds(), 0);
     });
 
-    test('isLocal is false when empty and true only for all-local songs', () {
+    test('isLocal is true when at least one song is local', () {
       final playlist = Playlist('Queue');
-      expect(playlist.isLocal(), isFalse);
+      expect(playlist.isLocal, isFalse);
 
       playlist.addSong(Song('local')..path = '/tmp/local.mp3');
-      expect(playlist.isLocal(), isTrue);
+      expect(playlist.isLocal, isTrue);
 
       playlist.addSong(Song('remote'));
-      expect(playlist.isLocal(), isFalse);
+      expect(playlist.isLocal, isTrue);
     });
   });
 

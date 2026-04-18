@@ -24,7 +24,7 @@ void main() {
       repo.getOrCreateAlbum('hash-b', 'Beta', artist);
       repo.getOrCreateAlbum('hash-c', 'Gamma', artist);
 
-      final page = repo.getAlbumsPaged('', 'Name', true, 1, 1);
+      final page = repo.getAlbumsPaged('', 'Name', true, false, 1, 1);
 
       expect(page, hasLength(1));
       expect(page.first.getName(), 'Beta');
