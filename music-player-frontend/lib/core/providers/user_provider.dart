@@ -66,15 +66,6 @@ class UserProvider with ChangeNotifier {
     return ok;
   }
 
-  Future<bool> loginWithGoogle() async {
-    _status = AuthStatus.authenticating;
-    notifyListeners();
-
-    _status = AuthStatus.unauthenticated;
-    notifyListeners();
-    return false;
-  }
-
   Future<bool> tryAutoLogin() async {
     _status = AuthStatus.authenticating;
     notifyListeners();

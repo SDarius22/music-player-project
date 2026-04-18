@@ -93,12 +93,8 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
   }
 
   Widget buildHeader(BuildContext context) {
-    final title =
-        widget.mode == AuthMode.login ? 'Welcome back' : 'Create account';
-    final subtitle =
-        widget.mode == AuthMode.login
-            ? 'Sign in with Google or verify your email'
-            : 'Sign up with Google or verify your email';
+    final title = 'Welcome to Music Player!';
+    final subtitle = 'Please continue using your email';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,24 +185,6 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
     }
   }
 
-  Future<void> handleGoogle() async {
-    if (isBusy.value) return;
-
-    isBusy.value = true;
-    try {
-      final ok = await context.read<UserProvider>().loginWithGoogle();
-      if (!ok) {
-        showToast('Google sign-in not available');
-        return;
-      }
-      if (!mounted) return;
-      showToast('$primaryActionLabel successful');
-      onAuthenticated(context);
-    } finally {
-      isBusy.value = false;
-    }
-  }
-
   Widget buildBody(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: isCodeStep,
@@ -248,14 +226,6 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
                   onPressed:
                       busy ? null : (codeStep ? handleVerify : handleContinue),
                   child: Text(codeStep ? 'Verify' : 'Continue'),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: busy ? null : handleGoogle,
-                  child: Text(
-                    '$primaryActionLabel with Google',
-                    style: const TextStyle(color: Colors.white),
-                  ),
                 ),
                 TextButton(
                   onPressed:
