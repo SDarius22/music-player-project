@@ -4,6 +4,8 @@ import com.example.musicplayerbackend.data.UserRepository;
 import com.example.musicplayerbackend.data.VerificationCodeRepository;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.mapper.CodeMapper;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,8 +13,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Properties;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -39,13 +43,17 @@ class AuthServiceTest {
     @Captor
     ArgumentCaptor<VerificationCode> vcCaptor;
     @Captor
-    ArgumentCaptor<SimpleMailMessage> mailCaptor;
+    ArgumentCaptor<MimeMessage> mailCaptor;
 
     AuthService service;
 
     @BeforeEach
     void setUp() {
         service = new AuthService(userRepository, codeRepository, jwtService, codeMapper, mailSender);
+        ReflectionTestUtils.setField(service, "emailUsername", "no-reply@example.com");
+
+        MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
+        lenient().when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
     }
 
     @Test
@@ -62,7 +70,9 @@ class AuthServiceTest {
         assertTrue(saved.getExpiryDate().isAfter(Instant.now()));
 
         verify(mailSender).send(mailCaptor.capture());
-        assertEquals("a@b.com", mailCaptor.getValue().getTo()[0]);
+        MimeMessage sentMessage = mailCaptor.getValue();
+        assertDoesNotThrow(() -> assertEquals("a@b.com", sentMessage.getAllRecipients()[0].toString()));
+        assertDoesNotThrow(() -> assertTrue(sentMessage.getSubject().contains("Login Code")));
     }
 
     @Test

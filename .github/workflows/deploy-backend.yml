@@ -53,7 +53,9 @@ jobs:
 
       - run: docker push ghcr.io/sdarius22/music-player-project/music-player-backend:latest
 
-      - uses: appleboy/scp-action@v0.1.7
+      - id: scp_primary
+        uses: appleboy/scp-action@v0.1.7
+        continue-on-error: true
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -62,7 +64,9 @@ jobs:
           target: "/home/deployer/music-player/"
           strip_components: 1
 
-      - uses: appleboy/ssh-action@v1.0.0
+      - id: ssh_primary
+        uses: appleboy/ssh-action@v1.0.0
+        continue-on-error: true
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -83,3 +87,49 @@ jobs:
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
 
             docker stack deploy -c docker-compose.yml --with-registry-auth music-player
+
+      - id: scp_cluj
+        uses: appleboy/scp-action@v0.1.7
+        continue-on-error: true
+        with:
+          host: ${{ secrets.VPS_HOST_CLUJ }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "music-player-backend/docker-compose.yml"
+          target: "/home/deployer/music-player/"
+          strip_components: 1
+
+      - id: ssh_cluj
+        uses: appleboy/ssh-action@v1.0.0
+        continue-on-error: true
+        with:
+          host: ${{ secrets.VPS_HOST_CLUJ }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/deployer/music-player
+
+            mkdir -p goaccess-report
+
+            docker info --format '{{.Swarm.LocalNodeState}}' | grep -q active || docker swarm init
+
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+            docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            export MAIL_HOST="${{ secrets.MAIL_HOST_CLUJ }}"
+            export MAIL_USER="${{ secrets.MAIL_USER_CLUJ }}"
+            export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD_CLUJ }}"
+
+            docker stack deploy -c docker-compose.yml --with-registry-auth music-player
+
+      - name: Validate at least one backend deployment succeeded
+        if: always()
+        run: |
+          if [ "${{ steps.ssh_primary.outcome }}" = "success" ] || [ "${{ steps.ssh_cluj.outcome }}" = "success" ]; then
+            echo "At least one backend VPS deployment succeeded."
+          else
+            echo "Both backend VPS deployments failed."
+            exit 1
+          fi
+

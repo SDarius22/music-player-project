@@ -101,7 +101,9 @@ jobs:
         with:
           path: ./downloads
 
-      - uses: appleboy/scp-action@v0.1.7
+      - id: scp_primary
+        uses: appleboy/scp-action@v0.1.7
+        continue-on-error: true
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -109,3 +111,25 @@ jobs:
           source: "./downloads/*"
           target: "/var/www/music-player-downloads/"
           strip_components: 1
+
+      - id: scp_cluj
+        uses: appleboy/scp-action@v0.1.7
+        continue-on-error: true
+        with:
+          host: ${{ secrets.VPS_HOST_CLUJ }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "./downloads/*"
+          target: "/var/www/music-player-downloads/"
+          strip_components: 1
+
+      - name: Validate at least one binary publish succeeded
+        if: always()
+        run: |
+          if [ "${{ steps.scp_primary.outcome }}" = "success" ] || [ "${{ steps.scp_cluj.outcome }}" = "success" ]; then
+            echo "At least one binary publish upload succeeded."
+          else
+            echo "Both binary publish uploads failed."
+            exit 1
+          fi
+
