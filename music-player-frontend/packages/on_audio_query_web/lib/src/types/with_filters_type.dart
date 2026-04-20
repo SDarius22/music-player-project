@@ -12,12 +12,6 @@ List<SongModel> checkSongsArgs(
             (val) => val.title.containsLower(argsVal),
           )
           .toList();
-    case AudiosArgs.DISPLAY_NAME:
-      return tmpList
-          .where(
-            (val) => val.displayName.containsLower(argsVal),
-          )
-          .toList();
     case AudiosArgs.ALBUM:
       return tmpList
           .where(

@@ -44,7 +44,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "index": 0,
       "onTap": (BuildContext context) {
         setState(() => _appStateProvider.currentDrawerIndex = 0);
-        _appStateProvider.innerNavigatorKey.currentState!.push(
+        _appStateProvider.innerNavigatorKey.currentState!.pushReplacement(
           HomeScreen.route(),
         );
       },
@@ -56,7 +56,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "index": 1,
       "onTap": (BuildContext context) {
         setState(() => _appStateProvider.currentDrawerIndex = 1);
-        _appStateProvider.innerNavigatorKey.currentState!.push(Albums.route());
+        _appStateProvider.innerNavigatorKey.currentState!.pushReplacement(
+          Albums.route(),
+        );
       },
     },
     {
@@ -66,7 +68,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "index": 2,
       "onTap": (BuildContext context) {
         setState(() => _appStateProvider.currentDrawerIndex = 2);
-        _appStateProvider.innerNavigatorKey.currentState!.push(Artists.route());
+        _appStateProvider.innerNavigatorKey.currentState!.pushReplacement(
+          Artists.route(),
+        );
       },
     },
     {
@@ -76,7 +80,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "index": 3,
       "onTap": (BuildContext context) {
         setState(() => _appStateProvider.currentDrawerIndex = 3);
-        _appStateProvider.innerNavigatorKey.currentState!.push(Tracks.route());
+        _appStateProvider.innerNavigatorKey.currentState!.pushReplacement(
+          Tracks.route(),
+        );
       },
     },
     {
@@ -86,7 +92,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       "index": 4,
       "onTap": (BuildContext context) {
         setState(() => _appStateProvider.currentDrawerIndex = 4);
-        _appStateProvider.innerNavigatorKey.currentState!.push(
+        _appStateProvider.innerNavigatorKey.currentState!.pushReplacement(
           Playlists.route(),
         );
       },
@@ -105,7 +111,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             .read<AbstractAppStateProvider>()
             .innerNavigatorKey
             .currentState!
-            .push(UploadSongsScreen.route());
+            .pushReplacement(UploadSongsScreen.route());
       },
     },
     {
@@ -119,7 +125,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             .read<AbstractAppStateProvider>()
             .innerNavigatorKey
             .currentState!
-            .push(StatisticsScreen.route());
+            .pushReplacement(StatisticsScreen.route());
       },
     },
   ];
