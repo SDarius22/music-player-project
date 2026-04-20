@@ -93,7 +93,7 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
 
-  deploy-to-server:
+  deploy-to-server-primary:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -112,6 +112,24 @@ jobs:
           target: "/var/www/music-player-downloads/"
           strip_components: 1
 
+      - name: Validate primary binary publish
+        if: always()
+        run: |
+          if [ "${{ steps.scp_primary.outcome }}" = "success" ]; then
+            echo "Primary binary publish upload succeeded."
+          else
+            echo "Primary binary publish upload failed."
+            exit 1
+          fi
+
+  deploy-to-server-cluj:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./downloads
+
       - id: scp_cluj
         uses: appleboy/scp-action@v0.1.7
         continue-on-error: true
@@ -123,13 +141,13 @@ jobs:
           target: "/var/www/music-player-downloads/"
           strip_components: 1
 
-      - name: Validate at least one binary publish succeeded
+      - name: Validate Cluj binary publish
         if: always()
         run: |
-          if [ "${{ steps.scp_primary.outcome }}" = "success" ] || [ "${{ steps.scp_cluj.outcome }}" = "success" ]; then
-            echo "At least one binary publish upload succeeded."
+          if [ "${{ steps.scp_cluj.outcome }}" = "success" ]; then
+            echo "Cluj binary publish upload succeeded."
           else
-            echo "Both binary publish uploads failed."
+            echo "Cluj binary publish upload failed."
             exit 1
           fi
 

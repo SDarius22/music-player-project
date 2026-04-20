@@ -46,7 +46,7 @@ jobs:
       - working-directory: ./music-player-frontend
         run: flutter test
 
-  build-and-deploy:
+  build-and-deploy-primary:
     needs: [check-changes, test]
     if: always() && needs.check-changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: ubuntu-latest
@@ -85,6 +85,34 @@ jobs:
           target: "/var/www/music-frontend"
           strip_components: 3
 
+      - name: Validate primary deployment
+        if: always()
+        run: |
+          if [ "${{ steps.scp_primary.outcome }}" = "success" ]; then
+            echo "Primary VPS deployment succeeded."
+          else
+            echo "Primary VPS deployment failed."
+            exit 1
+          fi
+
+  build-and-deploy-cluj:
+    needs: [check-changes, test]
+    if: always() && needs.check-changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - working-directory: ./music-player-frontend
+        run: flutter pub get
+
+      - working-directory: ./music-player-frontend
+        run: flutter build web -t lib/main_web.dart --base-href / --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
+
       - id: ssh_cluj
         uses: appleboy/ssh-action@v1.0.0
         continue-on-error: true
@@ -106,13 +134,13 @@ jobs:
           target: "/var/www/music-frontend"
           strip_components: 3
 
-      - name: Validate at least one frontend deployment succeeded
+      - name: Validate Cluj deployment
         if: always()
         run: |
-          if [ "${{ steps.scp_primary.outcome }}" = "success" ] || [ "${{ steps.scp_cluj.outcome }}" = "success" ]; then
-            echo "At least one frontend VPS deployment succeeded."
+          if [ "${{ steps.scp_cluj.outcome }}" = "success" ]; then
+            echo "Cluj VPS deployment succeeded."
           else
-            echo "Both frontend VPS deployments failed."
+            echo "Cluj VPS deployment failed."
             exit 1
           fi
 

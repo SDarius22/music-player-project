@@ -24,7 +24,7 @@ jobs:
       - working-directory: ./music-player-backend
         run: mvn test
 
-  build-and-deploy:
+  build:
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -52,6 +52,13 @@ jobs:
         run: docker build -t ghcr.io/sdarius22/music-player-project/music-player-backend:latest .
 
       - run: docker push ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+
+  deploy-primary:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
 
       - id: scp_primary
         uses: appleboy/scp-action@v0.1.7
@@ -88,6 +95,23 @@ jobs:
 
             docker stack deploy -c docker-compose.yml --with-registry-auth music-player
 
+      - name: Validate primary deployment
+        if: always()
+        run: |
+          if [ "${{ steps.ssh_primary.outcome }}" = "success" ]; then
+            echo "Primary VPS deployment succeeded."
+          else
+            echo "Primary VPS deployment failed."
+            exit 1
+          fi
+
+  deploy-cluj:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
       - id: scp_cluj
         uses: appleboy/scp-action@v0.1.7
         continue-on-error: true
@@ -123,13 +147,13 @@ jobs:
 
             docker stack deploy -c docker-compose.yml --with-registry-auth music-player
 
-      - name: Validate at least one backend deployment succeeded
+      - name: Validate Cluj deployment
         if: always()
         run: |
-          if [ "${{ steps.ssh_primary.outcome }}" = "success" ] || [ "${{ steps.ssh_cluj.outcome }}" = "success" ]; then
-            echo "At least one backend VPS deployment succeeded."
+          if [ "${{ steps.ssh_cluj.outcome }}" = "success" ]; then
+            echo "Cluj VPS deployment succeeded."
           else
-            echo "Both backend VPS deployments failed."
+            echo "Cluj VPS deployment failed."
             exit 1
           fi
 
