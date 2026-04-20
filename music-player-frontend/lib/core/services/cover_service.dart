@@ -55,6 +55,7 @@ class CoverService {
       imageUrl: '${_coverRestService.baseUrl}$relativeUrl',
       headers: {'Authorization': 'Bearer ${_authService.accessToken ?? ""}'},
       onBytesLoaded: _persistCallback(entity),
+      path: (entity is Song && entity.isLocal) ? entity.path : null,
     );
   }
 

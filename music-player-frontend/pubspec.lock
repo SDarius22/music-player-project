@@ -277,10 +277,10 @@ packages:
     dependency: "direct main"
     description:
       name: connectivity_plus
-      sha256: "62ffa266d9a23b79fb3fcbc206afc00bb979417ba57b1324c546b5aab95ba057"
+      sha256: b5e72753cf63becce2c61fd04dfe0f1c430cc5278b53a1342dc5ad839eab29ec
       url: "https://pub.dev"
     source: hosted
-    version: "7.1.1"
+    version: "6.1.5"
   connectivity_plus_platform_interface:
     dependency: transitive
     description:
@@ -896,45 +896,40 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.0"
-  on_audio_query_android_v1_8:
-    dependency: transitive
-    description:
-      name: on_audio_query_android_v1_8
-      sha256: b50d4863cecd674b15146523181b39b0abb33fc1b61d13a42ec235a99fe219b0
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.1"
-  on_audio_query_forked:
+  on_audio_query:
     dependency: "direct main"
     description:
-      name: on_audio_query_forked
-      sha256: d3326e33ba8938b513954f9045f7430790418a81844a32db044803e70a4cc986
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/on_audio_query"
+      relative: true
+    source: path
     version: "2.9.1"
+  on_audio_query_android:
+    dependency: transitive
+    description:
+      path: "packages/on_audio_query_android"
+      relative: true
+    source: path
+    version: "1.1.1"
   on_audio_query_ios:
     dependency: transitive
     description:
-      name: on_audio_query_ios
-      sha256: "9b3efa39a656fa3720980e3c6a1f55b7257d0032a45ffeb3f70eaa2c7f10f929"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/on_audio_query_ios"
+      relative: true
+    source: path
     version: "1.1.0"
   on_audio_query_platform_interface:
     dependency: transitive
     description:
-      name: on_audio_query_platform_interface
-      sha256: c23e019a31bd0774828476e428fd33b0dd1d82c9d4791dba80429358fc65dcd3
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/on_audio_query_platform_interface"
+      relative: true
+    source: path
     version: "1.7.0"
   on_audio_query_web:
     dependency: transitive
     description:
-      name: on_audio_query_web
-      sha256: "990efa52d879e6caffa97f24b34acd9caa1ce2c4c4cb873fe5a899a9b1af02c7"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/on_audio_query_web"
+      relative: true
+    source: path
     version: "1.6.0"
   package_config:
     dependency: transitive

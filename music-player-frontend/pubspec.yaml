@@ -31,7 +31,9 @@ dependencies:
   audio_service: ^0.18.18 # default audio service
   audio_service_mpris: ^0.2.0 # for linux
   audio_service_win: ^0.0.2 # for windows
-  on_audio_query_forked: ^2.9.1 # query audio files and their metadata on mobile
+  on_audio_query:
+    path: ./packages/on_audio_query
+
   audio_metadata_reader: ^1.4.2 # read audio metadata on desktop
 
   # File Management

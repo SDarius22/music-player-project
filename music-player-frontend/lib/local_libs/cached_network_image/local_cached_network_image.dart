@@ -6,8 +6,10 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -53,6 +55,7 @@ class LocalCachedNetworkImage extends StatefulWidget {
   final Map<String, String> headers;
   final BoxFit fit;
   final void Function(Uint8List bytes)? onBytesLoaded;
+  final String? path;
 
   const LocalCachedNetworkImage({
     super.key,
@@ -60,6 +63,7 @@ class LocalCachedNetworkImage extends StatefulWidget {
     this.headers = const {},
     this.fit = BoxFit.cover,
     this.onBytesLoaded,
+    this.path,
   });
 
   @override
@@ -98,6 +102,23 @@ class _LocalCachedNetworkImageState extends State<LocalCachedNetworkImage> {
         _MemoryCache.put(widget.imageUrl, bytes);
         return bytes;
       }
+    }
+
+    try {
+      var fileService = context.read<AbstractFileService>();
+      if (widget.path != null) {
+        final bytes = await fileService.getImage(widget.path!);
+        if (bytes == null) {
+          throw Exception('File service returned null for ${widget.path!}');
+        }
+        if (bytes.isNotEmpty) {
+          return bytes;
+        }
+      }
+    } catch (e) {
+      debugPrint(
+        'LocalCachedNetworkImage: error loading from file service ${widget.path}: $e',
+      );
     }
 
     try {

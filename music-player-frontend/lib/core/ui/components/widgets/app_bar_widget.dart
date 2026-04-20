@@ -168,6 +168,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 return connectivityStatus;
               },
             ),
+            SizedBox(width: width * 0.025),
           ],
         ],
       ],

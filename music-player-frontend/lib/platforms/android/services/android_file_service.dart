@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
-import 'package:on_audio_query_forked/on_audio_query.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 class AndroidFileService extends AbstractFileService {
   static final _logger = Logger('AndroidFileService');
@@ -13,12 +13,10 @@ class AndroidFileService extends AbstractFileService {
 
   @override
   Future<List<SongModel>> getAudioFiles(List<String>? songPlaces) async {
-    var songs = await audioQuery.querySongs(
+    return await audioQuery.querySongs(
       sortType: SongSortType.TITLE,
       orderType: OrderType.ASC_OR_SMALLER,
-      uriType: UriType.EXTERNAL,
     );
-    return songs;
   }
 
   @override

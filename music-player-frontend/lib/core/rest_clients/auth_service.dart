@@ -165,7 +165,21 @@ class AuthService {
     }
 
     final newToken = await refreshAccessToken();
-    return newToken != null;
+    if (newToken != null) {
+      return true;
+    }
+
+    final storedAccess = await _storage.read(key: 'access_token');
+    if (storedAccess != null) {
+      _logger.info(
+        'Refresh failed – restoring cached access token for offline use.',
+      );
+      _cachedAccessToken = storedAccess;
+      startTokenRefresh();
+      return true;
+    }
+
+    return false;
   }
 
   Future<void> logout() async {

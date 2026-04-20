@@ -28,8 +28,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   Future<void> initialize(List<String> musicDirectories) async {
     if (_isInitialized) return;
 
-    _logger.fine('Performing initial quick scan...');
-    await _scannerService.performQuickScan();
+    // _scannerService.performQuickScan();
     // runSync();
 
     _isInitialized = true;

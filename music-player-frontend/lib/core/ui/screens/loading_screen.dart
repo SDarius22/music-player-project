@@ -53,19 +53,19 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   void routeUser(BuildContext context) async {
-    final userProvider = context.read<UserProvider>();
-    await userProvider.tryAutoLogin();
-
-    if (!context.mounted) return;
-
     final abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
       context,
       listen: false,
     );
 
+    final userProvider = context.read<UserProvider>();
+    await userProvider.tryAutoLogin();
+
+    if (!context.mounted) return;
+
     final isDesktop = UniversalPlatform.isDesktop;
 
-    if ((!userProvider.isAuthenticated && UniversalPlatform.isWeb) ||
+    if ((!userProvider.isAuthenticated) ||
         (isDesktop &&
             (abstractAppStateProvider.appSettings.firstTime ||
                 abstractAppStateProvider.appSettings.mainSongPlace.isEmpty))) {

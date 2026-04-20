@@ -66,6 +66,7 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
       var existing = _songService.getLocalSong(fileHash);
 
       if (existing == null || existing.fullyLoaded == false) {
+        var existingId = existing?.id ?? 0;
         existing = Song(fileHash)..path = songModel.data;
         var artistName =
             songModel.artist.trim().isEmpty
@@ -81,11 +82,12 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
         var album = _albumService.getOrCreateAlbum(albumName, artist);
 
         existing
+          ..id = existingId
           ..name = songModel.title
           ..durationInSeconds = (songModel.duration ?? 0) ~/ 1000
           ..trackNumber = songModel.track ?? 0
-          ..discNumber = songModel
-          ..year = -1
+          ..discNumber = int.tryParse(songModel.disc ?? '0') ?? 0
+          ..year = songModel.year
           ..artist.target = artist
           ..album.target = album
           ..fullyLoaded = false;
@@ -112,6 +114,9 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
 
         double progress = processedCount / songs.length;
         _progressController.add(progress);
+
+        // Yield to the event loop so the UI can paint between batches
+        await Future.delayed(Duration.zero);
       }
     }
 
