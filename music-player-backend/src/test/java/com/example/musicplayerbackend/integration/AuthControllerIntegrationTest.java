@@ -7,7 +7,10 @@ import com.example.musicplayerbackend.domain.RefreshAccessTokenRequest;
 import com.example.musicplayerbackend.domain.VerificationCode;
 import com.example.musicplayerbackend.domain.VerificationRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -19,6 +22,7 @@ import java.time.temporal.ChronoUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,6 +39,13 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     ObjectMapper objectMapper;
 
+    @BeforeEach
+    void setUpMail() {
+        when(javaMailSender.createMimeMessage())
+                .thenReturn(new MimeMessage((Session) null));
+        doNothing().when(javaMailSender).send(any(MimeMessage.class));
+    }
+
     @AfterEach
     void tearDown() {
         verificationCodeRepository.deleteAll();
@@ -45,8 +56,6 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn200WhenSendingCode() throws Exception {
-        doNothing().when(javaMailSender).send(any(org.springframework.mail.SimpleMailMessage.class));
-
         EmailRequest req = new EmailRequest();
         req.setEmail("newuser@example.com");
 
@@ -58,8 +67,6 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldUpdateCodeWhenSentTwice() throws Exception {
-        doNothing().when(javaMailSender).send(any(org.springframework.mail.SimpleMailMessage.class));
-
         EmailRequest req = new EmailRequest();
         req.setEmail("repeat@example.com");
 
@@ -78,8 +85,6 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn200WithTokensWhenCodeIsValid() throws Exception {
-        doNothing().when(javaMailSender).send(any(org.springframework.mail.SimpleMailMessage.class));
-
         // First send the code so it gets persisted
         EmailRequest emailReq = new EmailRequest();
         emailReq.setEmail("verify@example.com");
@@ -106,8 +111,6 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn500WhenCodeIsWrong() throws Exception {
-        doNothing().when(javaMailSender).send(any(org.springframework.mail.SimpleMailMessage.class));
-
         EmailRequest emailReq = new EmailRequest();
         emailReq.setEmail("wrongcode@example.com");
         mockMvc.perform(post("/api/v1/auth/send-code")
@@ -129,8 +132,6 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturn200WithNewTokenWhenRefreshTokenIsValid() throws Exception {
-        doNothing().when(javaMailSender).send(any(org.springframework.mail.SimpleMailMessage.class));
-
         // Get a valid refresh token by going through the full auth flow
         EmailRequest emailReq = new EmailRequest();
         emailReq.setEmail("refresh@example.com");
