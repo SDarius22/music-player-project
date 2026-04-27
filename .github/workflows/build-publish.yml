@@ -34,25 +34,25 @@ jobs:
         include:
           - os: ubuntu-latest
             target: apk
-            build_cmd: flutter build apk --release --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling
+            build_cmd: flutter build apk --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
             artifact_name: music-player-android
             artifact_path: music-player-frontend/build/app/outputs/flutter-apk/app-release.apk
 
           - os: ubuntu-latest
             target: linux
-            build_cmd: flutter build linux --release --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling
+            build_cmd: flutter build linux --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
             artifact_name: music-player-linux
             artifact_path: music-player-frontend/music-player-linux.tar.gz
 
           - os: windows-latest
             target: windows
-            build_cmd: flutter build windows --release --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling
+            build_cmd: flutter build windows --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
             artifact_name: music-player-windows
             artifact_path: music-player-frontend/music-player-windows.zip
 
           - os: macos-latest
             target: macos
-            build_cmd: flutter build macos --release --config-only --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling && xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Release -derivedDataPath build/macos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM=""
+            build_cmd: flutter build macos --release --config-only --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling && xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Release -derivedDataPath build/macos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM=""
             artifact_name: music-player-macos
             artifact_path: music-player-frontend/music-player-macos.zip
 
