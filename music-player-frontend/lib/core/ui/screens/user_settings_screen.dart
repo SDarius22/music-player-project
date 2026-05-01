@@ -5,7 +5,7 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/login_register_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/login_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
@@ -78,7 +78,7 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
               onPressed: () {
                 final appState = context.read<AbstractAppStateProvider>();
                 appState.innerNavigatorKey.currentState?.push(
-                  LoginRegisterScreen.route(mode: AuthMode.login),
+                  LoginScreen.route(),
                 );
               },
               child: Text(

@@ -387,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.headphones, color: Colors.white24, size: 64),
+            Icon(FluentIcons.headset, color: Colors.white24, size: 64),
             SizedBox(height: 16),
             Text(
               'Start listening to get recommendations',

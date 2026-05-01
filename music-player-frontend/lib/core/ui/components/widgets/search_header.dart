@@ -92,7 +92,7 @@ class _SearchHeaderState extends State<SearchHeader> {
                   _controller.text.isNotEmpty
                       ? IconButton(
                         icon: const Icon(
-                          Icons.clear,
+                          FluentIcons.clear,
                           color: Colors.white,
                           size: 24,
                         ),
@@ -143,7 +143,7 @@ class _SearchHeaderState extends State<SearchHeader> {
             return PopupMenuButton<String>(
               tooltip: "Filter",
               icon: const Icon(
-                Icons.filter_alt_outlined,
+                FluentIcons.filter,
                 color: Colors.white,
                 size: 24,
               ),

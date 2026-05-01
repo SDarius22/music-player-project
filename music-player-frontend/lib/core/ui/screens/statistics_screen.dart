@@ -4,6 +4,7 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 import 'abstract/route_builder.dart';
@@ -86,7 +87,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(
-                            Icons.error_outline,
+                            FluentIcons.error,
                             color: Colors.white38,
                             size: 48,
                           ),
@@ -156,7 +157,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(
-                            Icons.bar_chart,
+                            FluentIcons.barChart,
                             color: Colors.white24,
                             size: 64,
                           ),

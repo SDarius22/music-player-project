@@ -182,7 +182,7 @@ class CustomGridTile extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 3.0, right: 3.0),
                 alignment: Alignment.topRight,
                 child: Icon(
-                  Icons.file_download_done_outlined,
+                  FluentIcons.availableOffline,
                   color: Colors.white,
                   size: 16,
                 ),

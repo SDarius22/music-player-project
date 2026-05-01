@@ -25,12 +25,23 @@ class FluentIcons {
     fontFamily: 'FluentIcons-Resizable',
   );
 
+  static const IconData barChart = IconData(
+    0xE5B4,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
   static const IconData back = IconData(
     0xE0FE,
     fontFamily: 'FluentIcons-Resizable',
   );
+
   static const IconData forward = IconData(
     0xE126,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData camera = IconData(
+    0xE378,
     fontFamily: 'FluentIcons-Resizable',
   );
 
@@ -45,6 +56,11 @@ class FluentIcons {
 
   static const IconData create = IconData(
     0xEFE4,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData clear = IconData(
+    0xE63F,
     fontFamily: 'FluentIcons-Resizable',
   );
 
@@ -64,7 +80,12 @@ class FluentIcons {
   );
 
   static const IconData download = IconData(
-    0xE0C8,
+    0xE0C9,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData availableOffline = IconData(
+    0xE4CC,
     fontFamily: 'FluentIcons-Resizable',
   );
 
@@ -87,6 +108,16 @@ class FluentIcons {
     fontFamily: 'FluentIcons-Resizable',
   );
 
+  static const IconData headset = IconData(
+    0xE930,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData home = IconData(
+    0xE95D,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
   static const IconData editOn = IconData(
     0xE796,
     fontFamily: 'FluentIcons-Resizable',
@@ -105,16 +136,24 @@ class FluentIcons {
     0xE841,
     fontFamily: 'FluentIcons-Resizable',
   );
+
   static const IconData folderFilled = IconData(
     0xE840,
     fontFamily: 'FluentIcons-Resizable',
   );
+
   static const IconData folderAdd = IconData(
     0xE843,
     fontFamily: 'FluentIcons-Resizable',
   );
+
   static const IconData folderAddFilled = IconData(
     0xE842,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData filter = IconData(
+    0xE801,
     fontFamily: 'FluentIcons-Resizable',
   );
 
@@ -163,12 +202,24 @@ class FluentIcons {
     0xE405,
     fontFamily: 'FluentIcons-Resizable',
   );
+
   static const IconData checkCircleOn = IconData(
     0xE407,
     fontFamily: 'FluentIcons-Resizable',
   );
+
   static const IconData checkCircleOff = IconData(
     0xE408,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData cloudUpload = IconData(
+    0xE4C6,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData cloudDownload = IconData(
+    0xE4C2,
     fontFamily: 'FluentIcons-Resizable',
   );
 
@@ -253,6 +304,16 @@ class FluentIcons {
     fontFamily: 'FluentIcons-Resizable',
   );
 
+  static const IconData signalCellularOn = IconData(
+    0xE3A4,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData signalCellularOff = IconData(
+    0xE3AE,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
   static const IconData shuffleOn = IconData(
     0xE130,
     fontFamily: 'FluentIcons-Resizable',
@@ -290,6 +351,11 @@ class FluentIcons {
   );
   static const IconData left = IconData(
     0xE42D,
+    fontFamily: 'FluentIcons-Resizable',
+  );
+
+  static const IconData wifi = IconData(
+    0xF3C9,
     fontFamily: 'FluentIcons-Resizable',
   );
 }

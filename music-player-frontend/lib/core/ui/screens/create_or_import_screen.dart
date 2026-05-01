@@ -337,7 +337,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                       IconButton(
                                         onPressed: _pickCoverArt,
                                         icon: Icon(
-                                          Icons.camera_alt_outlined,
+                                          FluentIcons.camera,
                                           color: Colors.white,
                                           size: 48,
                                         ),
@@ -372,7 +372,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                 hoveredChild: IconButton(
                                   onPressed: _pickCoverArt,
                                   icon: Icon(
-                                    Icons.camera_alt_outlined,
+                                    FluentIcons.camera,
                                     color: Colors.white,
                                     size: 48,
                                   ),

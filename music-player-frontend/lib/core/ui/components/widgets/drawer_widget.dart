@@ -40,7 +40,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     {
       "text": "Home",
       "tooltip": "Home",
-      "icon": Icons.home_rounded,
+      "icon": FluentIcons.home,
       "index": 0,
       "onTap": (BuildContext context) {
         setState(() => _appStateProvider.currentDrawerIndex = 0);
@@ -117,7 +117,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     {
       "text": "Statistics",
       "tooltip": "Chunk delivery statistics",
-      "icon": Icons.bar_chart_rounded,
+      "icon": FluentIcons.barChart,
       "index": 7,
       "onTap": (BuildContext context) {
         setState(() => _appStateProvider.currentDrawerIndex = 7);

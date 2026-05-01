@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 import 'abstract/route_builder.dart';
@@ -43,7 +44,7 @@ class _UploadSongsScreenState extends State<UploadSongsScreen> {
 
           return FloatingActionButton.extended(
             onPressed: busy ? null : uploadAll,
-            icon: const Icon(Icons.cloud_upload),
+            icon: const Icon(FluentIcons.cloudUpload),
             label: const Text('Upload'),
           );
         },
@@ -265,7 +266,7 @@ class _UploadSongsScreenState extends State<UploadSongsScreen> {
           trailing: IconButton(
             onPressed:
                 uploading ? null : () => setState(() => items.removeAt(index)),
-            icon: const Icon(Icons.close),
+            icon: const Icon(FluentIcons.clear),
             tooltip: 'Remove',
           ),
         );

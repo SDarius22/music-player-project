@@ -4,7 +4,7 @@ import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/library_settings_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
-import 'package:music_player_frontend/core/ui/screens/login_register_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/login_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
@@ -90,10 +90,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 SizedBox(
                   width: width * 0.75,
                   height: height * 0.5,
-                  child: LoginRegisterScreen(
-                    mode: AuthMode.login,
-                    onAuthenticatedCallback: _onLoginSuccess,
-                  ),
+                  child: LoginScreen(onAuthenticatedCallback: _onLoginSuccess),
                 ),
               ] else ...[
                 SizedBox(

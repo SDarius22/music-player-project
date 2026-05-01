@@ -8,6 +8,7 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -77,7 +78,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
         if (result.contains(ConnectivityResult.none)) {
           connectivityStatusNotifier.value = const Tooltip(
             message: "No Internet Connection",
-            child: Icon(Icons.signal_cellular_off, color: Colors.red),
+            child: Icon(FluentIcons.signalCellularOff, color: Colors.red),
           );
           shouldDisplayLocalOnly.value = true;
           return;
@@ -86,7 +87,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
         if (!healthService.isHealthy.value) {
           connectivityStatusNotifier.value = const Tooltip(
             message: "Server is unreachable",
-            child: Icon(Icons.error_outline, color: Colors.red),
+            child: Icon(FluentIcons.error, color: Colors.red),
           );
           shouldDisplayLocalOnly.value = true;
           return;
@@ -95,7 +96,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
         if (result.contains(ConnectivityResult.wifi)) {
           connectivityStatusNotifier.value = const Tooltip(
             message: "Connected to Wi-Fi",
-            child: Icon(Icons.wifi, color: Colors.green),
+            child: Icon(FluentIcons.wifi, color: Colors.green),
           );
           shouldDisplayLocalOnly.value = false;
           return;
@@ -104,7 +105,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
         if (result.contains(ConnectivityResult.mobile)) {
           connectivityStatusNotifier.value = const Tooltip(
             message: "Connected to Mobile Data",
-            child: Icon(Icons.signal_cellular_4_bar, color: Colors.orange),
+            child: Icon(FluentIcons.signalCellularOn, color: Colors.orange),
           );
           shouldDisplayLocalOnly.value = false;
           return;
@@ -112,7 +113,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
 
         connectivityStatusNotifier.value = const Tooltip(
           message: "No Internet Connection",
-          child: Icon(Icons.signal_cellular_off, color: Colors.red),
+          child: Icon(FluentIcons.signalCellularOff, color: Colors.red),
         );
         shouldDisplayLocalOnly.value = true;
       });
@@ -129,13 +130,6 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
         gradientController.stop();
       }
     });
-  }
-
-  Future<void> addAppAction(String action) async {
-    if (!appActions.contains(action)) {
-      appActions.add(action);
-      notifyListeners();
-    }
   }
 
   void updateAppSettings() {
