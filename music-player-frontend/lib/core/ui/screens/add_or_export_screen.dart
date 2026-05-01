@@ -118,76 +118,83 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
   }
 
   PreferredSizeWidget buildAppBar(BuildContext context) {
-    return const PreferredSize(
-      preferredSize: Size.fromHeight(0),
-      child: SizedBox.shrink(),
-    );
-  }
-
-  Widget buildHeader(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        IconButton(
-          onPressed: () {
-            debugPrint("Back");
-            Navigator.pop(context);
-          },
-          icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
+    final width = MediaQuery.of(context).size.width;
+    return PreferredSize(
+      preferredSize: Size.fromHeight(kToolbarHeight),
+      child: Container(
+        height: kToolbarHeight,
+        padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+        margin: EdgeInsets.symmetric(vertical: width * 0.005),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            IconButton(
+              onPressed: () {
+                debugPrint("Back");
+                Navigator.pop(context);
+              },
+              icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
+            ),
+            SizedBox(width: width * 0.01),
+            Text(
+              "Choose one or more playlists to ${widget.export ? 'export' : 'add to'}",
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const Spacer(),
+            ElevatedButton(
+              onPressed: () {
+                if (selected.value.isEmpty) {
+                  BotToast.showText(
+                    text: "Please select at least one playlist",
+                  );
+                  return;
+                }
+                if (widget.export) {
+                  var abstractAppStateProvider =
+                      Provider.of<AbstractAppStateProvider>(
+                        context,
+                        listen: false,
+                      );
+                  for (int i = 0; i < selected.value.length; i++) {
+                    Playlist playlist = selected.value[i];
+                    var songHashes =
+                        playlist.getSongs().map((e) => e.getHash()).toList();
+                    var fileName =
+                        "${abstractAppStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
+                    final fileService = Provider.of<AbstractFileService>(
+                      context,
+                      listen: false,
+                    );
+                    fileService.exportPlaylist(fileName, songHashes);
+                  }
+                }
+                for (int i = 0; i < selected.value.length; i++) {
+                  Playlist playlist = selected.value[i];
+                  if (playlist.indestructible &&
+                      playlist.name == 'Current Queue') {
+                    var audioProvider = Provider.of<AudioProvider>(
+                      context,
+                      listen: false,
+                    );
+                    audioProvider.addLastToQueue(widget.songs);
+                  } else {
+                    var playlistProvider = Provider.of<PlaylistProvider>(
+                      context,
+                      listen: false,
+                    );
+                    playlistProvider.addSongsToPlaylist(playlist, widget.songs);
+                  }
+                }
+                Navigator.pop(context);
+              },
+              child: Text(
+                "Done",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            ),
+          ],
         ),
-        SizedBox(width: width * 0.01),
-        Text(
-          "Choose one or more playlists to ${widget.export ? 'export' : 'add to'}",
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        const Spacer(),
-        ElevatedButton(
-          onPressed: () {
-            if (selected.value.isEmpty) {
-              BotToast.showText(text: "Please select at least one playlist");
-              return;
-            }
-            if (widget.export) {
-              var abstractAppStateProvider =
-                  Provider.of<AbstractAppStateProvider>(context, listen: false);
-              for (int i = 0; i < selected.value.length; i++) {
-                Playlist playlist = selected.value[i];
-                var songHashes =
-                    playlist.getSongs().map((e) => e.getHash()).toList();
-                var fileName =
-                    "${abstractAppStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
-                final fileService = Provider.of<AbstractFileService>(
-                  context,
-                  listen: false,
-                );
-                fileService.exportPlaylist(fileName, songHashes);
-              }
-            }
-            for (int i = 0; i < selected.value.length; i++) {
-              Playlist playlist = selected.value[i];
-              if (playlist.indestructible && playlist.name == 'Current Queue') {
-                var audioProvider = Provider.of<AudioProvider>(
-                  context,
-                  listen: false,
-                );
-                audioProvider.addLastToQueue(widget.songs);
-              } else {
-                var playlistProvider = Provider.of<PlaylistProvider>(
-                  context,
-                  listen: false,
-                );
-                playlistProvider.addSongsToPlaylist(playlist, widget.songs);
-              }
-            }
-            Navigator.pop(context);
-          },
-          child: Text(
-            "Done",
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -201,82 +208,63 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
       context,
       listen: false,
     );
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        buildHeader(context),
-        Expanded(
-          child: FutureBuilder(
-            future: Future(
-              () =>
-                  widget.export
-                      ? playlistProvider.getAllPlaylists()
-                      : playlistProvider.getNormalPlaylists(),
+    return FutureBuilder(
+      future: Future(() => playlistProvider.getNormalPlaylists()),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          debugPrint(snapshot.error.toString());
+          debugPrintStack();
+          return Center(
+            child: Text(
+              "Error loading playlists",
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                debugPrint(snapshot.error.toString());
-                debugPrintStack();
-                return Center(
-                  child: Text(
-                    "Error loading playlists",
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                );
-              }
-              List<Playlist> items = snapshot.data ?? [];
-              if (items.isEmpty) {
-                return Center(
-                  child: Text(
-                    "No playlists found",
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                );
-              }
-              return CustomScrollView(
-                slivers: [
-                  SliverPadding(
-                    padding: EdgeInsets.only(
-                      left: width * 0.01,
-                      right: width * 0.01,
-                    ),
-                    sliver: ValueListenableBuilder(
-                      valueListenable: selected,
-                      builder: (context, value, child) {
-                        return CustomGridComponent(
-                          items: items,
-                          isSelected: (entity) {
-                            return selected.value.contains(entity as Playlist);
-                          },
-                          onTap: (entity) {
-                            debugPrint("Tapped on ${entity.getName()}");
-                            if (selected.value.contains(entity as Playlist)) {
-                              selected.value = List<Playlist>.from(
-                                selected.value,
-                              )..remove(entity);
-                            } else {
-                              selected.value = List<Playlist>.from(
-                                selected.value,
-                              )..add(entity);
-                            }
-                          },
-                          onLongPress: (entity) {
-                            debugPrint("Long pressed on ${entity.getName()}");
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
+          );
+        }
+        List<Playlist> items = snapshot.data ?? [];
+        if (items.isEmpty) {
+          return Center(
+            child: Text(
+              "No playlists found",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          );
+        }
+        return CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
+              sliver: ValueListenableBuilder(
+                valueListenable: selected,
+                builder: (context, value, child) {
+                  return CustomGridComponent(
+                    items: items,
+                    isSelected: (entity) {
+                      return selected.value.contains(entity as Playlist);
+                    },
+                    onTap: (entity) {
+                      debugPrint("Tapped on ${entity.getName()}");
+                      if (selected.value.contains(entity as Playlist)) {
+                        selected.value = List<Playlist>.from(selected.value)
+                          ..remove(entity);
+                      } else {
+                        selected.value = List<Playlist>.from(selected.value)
+                          ..add(entity);
+                      }
+                    },
+                    onLongPress: (entity) {
+                      debugPrint("Long pressed on ${entity.getName()}");
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

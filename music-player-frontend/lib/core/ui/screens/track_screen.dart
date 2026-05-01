@@ -234,12 +234,6 @@ class TrackScreen extends EntityScreen {
                         context,
                       ).textTheme.bodyMedium!.copyWith(color: Colors.white),
                     ),
-                    Text(
-                      "Path: ${song.path}",
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                    ),
                   ]),
                 ),
               ),

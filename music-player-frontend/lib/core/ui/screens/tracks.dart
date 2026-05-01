@@ -113,10 +113,7 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
       },
       itemBuilder: (context) {
         return [
-          const PopupMenuItem<String>(
-            value: 'add',
-            child: Text("Add to Playlist"),
-          ),
+          const PopupMenuItem<String>(value: 'add', child: Text("Add to...")),
           const PopupMenuItem<String>(
             value: 'playNext',
             child: Text("Play Next"),

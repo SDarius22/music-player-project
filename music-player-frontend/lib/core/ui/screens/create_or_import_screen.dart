@@ -13,6 +13,7 @@ import 'package:music_player_frontend/core/ui/components/tiling/list_component.d
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_platform/universal_platform.dart';
@@ -134,9 +135,79 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
   }
 
   PreferredSizeWidget buildAppBar(BuildContext context) {
-    return const PreferredSize(
-      preferredSize: Size.fromHeight(0),
-      child: SizedBox.shrink(),
+    final width = MediaQuery.of(context).size.width;
+    return PreferredSize(
+      preferredSize: Size.fromHeight(kToolbarHeight),
+      child: Container(
+        height: kToolbarHeight,
+        padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+        margin: EdgeInsets.symmetric(vertical: width * 0.005),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            IconButton(
+              onPressed: () {
+                debugPrint("Back");
+                Navigator.pop(context);
+              },
+              icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
+            ),
+            Text(
+              widget.import ? "Import a playlist" : "Create a new playlist",
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const Spacer(),
+            SizedBox(
+              width: width * 0.06,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+                ),
+                onPressed: () {
+                  if (playlistName.isEmpty) {
+                    BotToast.showText(
+                      text: "Playlist name cannot be empty",
+                      duration: const Duration(seconds: 3),
+                    );
+                    return;
+                  }
+                  if (selected.value.isEmpty) {
+                    BotToast.showText(
+                      text: "You must select at least one song",
+                      duration: const Duration(seconds: 3),
+                    );
+                    return;
+                  }
+                  debugPrint("Create new playlist");
+                  var playlistProvider = Provider.of<PlaylistProvider>(
+                    context,
+                    listen: false,
+                  );
+                  playlistProvider.addPlaylist(
+                    playlistName,
+                    selected.value,
+                    coverArt.value,
+                  );
+                  BotToast.showText(
+                    text:
+                        widget.import
+                            ? "Playlist imported successfully"
+                            : "Playlist created successfully",
+                    duration: const Duration(seconds: 3),
+                  );
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  "Done",
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium!.copyWith(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -222,154 +293,44 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
   }
 
   EdgeInsetsGeometry buildPadding(BuildContext context) {
-    var height = MediaQuery.of(context).size.height;
-    return EdgeInsets.only(bottom: height * 0.01);
+    return EdgeInsets.zero;
   }
 
   Widget buildBody(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            IconButton(
-              onPressed: () {
-                debugPrint("Back");
-                Navigator.pop(context);
-              },
-              icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
-            ),
-            Text(
-              widget.import ? "Import a playlist" : "Create a new playlist",
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const Spacer(),
-            SizedBox(
-              width: width * 0.06,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-                ),
-                onPressed: () {
-                  if (playlistName.isEmpty) {
-                    BotToast.showText(
-                      text: "Playlist name cannot be empty",
-                      duration: const Duration(seconds: 3),
-                    );
-                    return;
-                  }
-                  if (selected.value.isEmpty) {
-                    BotToast.showText(
-                      text: "You must select at least one song",
-                      duration: const Duration(seconds: 3),
-                    );
-                    return;
-                  }
-                  debugPrint("Create new playlist");
-                  var playlistProvider = Provider.of<PlaylistProvider>(
-                    context,
-                    listen: false,
-                  );
-                  playlistProvider.addPlaylist(
-                    playlistName,
-                    selected.value,
-                    coverArt.value,
-                  );
-                  BotToast.showText(
-                    text:
-                        widget.import
-                            ? "Playlist imported successfully"
-                            : "Playlist created successfully",
-                    duration: const Duration(seconds: 3),
-                  );
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  "Done",
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
         Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          MediaQuery.of(context).size.height * 0.015,
-                        ),
-                        child: Container(
-                          width: width * 0.3,
-                          height: width * 0.3,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(
-                              MediaQuery.of(context).size.height * 0.015,
-                            ),
-                            color: Colors.black,
-                          ),
-                          child: MultiValueListenableBuilder(
-                            valueListenables: [coverArt, selected],
-                            builder: (context, values, child) {
-                              var cover = values[0] as Uint8List?;
-                              if (cover != null) {
-                                var playlist = Playlist('');
-                                playlist.imageBytes = cover;
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  height: height * 0.5,
+                  width: height * 0.5,
+                  padding: EdgeInsets.only(bottom: height * 0.01),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(
+                      MediaQuery.of(context).size.height * 0.015,
+                    ),
+                    child: MultiValueListenableBuilder(
+                      valueListenables: [coverArt, selected],
+                      builder: (context, values, child) {
+                        var cover = values[0] as Uint8List?;
+                        if (cover != null) {
+                          var playlist = Playlist('');
+                          playlist.imageBytes = cover;
 
-                                return ImageWidget(
-                                  entity: playlist,
-                                  hoveredChild: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      IconButton(
-                                        onPressed: _pickCoverArt,
-                                        icon: Icon(
-                                          FluentIcons.camera,
-                                          color: Colors.white,
-                                          size: 48,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {
-                                          coverArt.value = null;
-                                        },
-                                        icon: Icon(
-                                          FluentIcons.trash,
-                                          color: Colors.white,
-                                          size: 48,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-                              var selectedSongs = values[1] as List<Song>;
-                              if (selectedSongs.isEmpty) {
-                                return Container(
-                                  color: Colors.black,
-                                  child: Icon(
-                                    FluentIcons.music,
-                                    color: Colors.white.withValues(alpha: 0.25),
-                                    size: 64,
-                                  ),
-                                );
-                              }
-                              return ImageWidget(
-                                entity: selectedSongs.first,
-                                hoveredChild: IconButton(
+                          return ImageWidget(
+                            entity: playlist,
+                            hoveredChild: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                IconButton(
                                   onPressed: _pickCoverArt,
                                   icon: Icon(
                                     FluentIcons.camera,
@@ -377,150 +338,177 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                                     size: 48,
                                   ),
                                 ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: height * 0.02),
-                      TextFormField(
-                        maxLength: 50,
-                        initialValue: playlistName,
-                        decoration: InputDecoration(
-                          border: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white),
-                          ),
-                          hintText: 'Playlist name',
-                          counterText: "",
-                          hintStyle: Theme.of(
-                            context,
-                          ).textTheme.bodySmall!.copyWith(color: Colors.grey),
-                        ),
-                        cursorColor: Colors.white,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                        onChanged: (value) {
-                          playlistName = value;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.all(width * 0.01),
-                  margin: EdgeInsets.only(top: height * 0.02),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(
-                      MediaQuery.of(context).size.height * 0.015,
-                    ),
-                    color: const Color(0xFF242424),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextFormField(
-                        focusNode: searchNode,
-                        onChanged: (value) {
-                          search = value;
-                          _fetchPage(0, reset: true);
-                        },
-                        cursorColor: Colors.white,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              MediaQuery.of(context).size.height * 0.015,
-                            ),
-                            borderSide: const BorderSide(color: Colors.white),
-                          ),
-                          labelStyle: Theme.of(
-                            context,
-                          ).textTheme.bodySmall!.copyWith(color: Colors.white),
-                          labelText: 'Search',
-                          suffixIcon: Icon(
-                            FluentIcons.search,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: height * 0.02),
-                      Expanded(
-                        child:
-                            _songs.isEmpty && !_isLoading
-                                ? Center(
-                                  child: Text(
-                                    "No songs found",
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall!
-                                        .copyWith(color: Colors.white),
+                                IconButton(
+                                  onPressed: () {
+                                    coverArt.value = null;
+                                  },
+                                  icon: Icon(
+                                    FluentIcons.trash,
+                                    color: Colors.white,
+                                    size: 48,
                                   ),
-                                )
-                                : CustomScrollView(
-                                  controller: _scrollController,
-                                  slivers: [
-                                    SliverPadding(
-                                      padding: EdgeInsets.zero,
-                                      sliver:
-                                          ValueListenableBuilder<List<Song>>(
-                                            valueListenable: selected,
-                                            builder: (
-                                              context,
-                                              selectedSongs,
-                                              child,
-                                            ) {
-                                              return ListComponent(
-                                                items: _songs,
-                                                itemExtent: height * 0.125,
-                                                isSelected:
-                                                    (entity) =>
-                                                        selectedSongs.contains(
-                                                          entity as Song,
-                                                        ),
-                                                onTap: (entity) {
-                                                  final song = entity as Song;
-                                                  if (selected.value.contains(
-                                                    song,
-                                                  )) {
-                                                    selected.value = List.from(
-                                                      selected.value,
-                                                    )..remove(song);
-                                                  } else {
-                                                    selected.value = List.from(
-                                                      selected.value,
-                                                    )..add(song);
-                                                  }
-                                                },
-                                                onLongPress: (entity) {},
-                                              );
-                                            },
-                                          ),
-                                    ),
-                                    if (_isLoading)
-                                      const SliverToBoxAdapter(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(16),
-                                          child: Center(
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
                                 ),
-                      ),
-                    ],
+                              ],
+                            ),
+                          );
+                        }
+                        var selectedSongs = values[1] as List<Song>;
+                        return ImageWidget(
+                          entity:
+                              selectedSongs.isNotEmpty
+                                  ? selectedSongs.first
+                                  : Song(''),
+                          hoveredChild: IconButton(
+                            onPressed: _pickCoverArt,
+                            icon: Icon(
+                              FluentIcons.camera,
+                              color: Colors.white,
+                              size: 48,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: width * 0.025),
-            ],
+                TextFormField(
+                  maxLength: 50,
+                  initialValue: playlistName,
+                  decoration: InputDecoration(
+                    border: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    hintText: 'Playlist name',
+                    counterText: "",
+                    hintStyle: Theme.of(
+                      context,
+                    ).textTheme.bodySmall!.copyWith(color: Colors.grey),
+                  ),
+                  cursorColor: Colors.white,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium!.copyWith(color: Colors.white),
+                  onChanged: (value) {
+                    playlistName = value;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: GlassContainer(
+            margin: EdgeInsets.only(
+              top: height * 0.025,
+              bottom: height * 0.025,
+              right: width * 0.05,
+            ),
+            color: Colors.black.withValues(alpha: 0.4),
+            borderColor: Colors.transparent,
+            borderRadius: BorderRadius.circular(
+              MediaQuery.of(context).size.height * 0.015,
+            ),
+            blur: 45.0,
+            borderWidth: 0.0,
+            elevation: 3.0,
+            shadowColor: Colors.black.withValues(alpha: 0.20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: EdgeInsets.only(
+                    top: height * 0.02,
+                    left: width * 0.01,
+                    right: width * 0.01,
+                  ),
+                  child: TextFormField(
+                    focusNode: searchNode,
+                    onChanged: (value) {
+                      search = value;
+                      _fetchPage(0, reset: true);
+                    },
+                    cursorColor: Colors.white,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium!.copyWith(color: Colors.white),
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          MediaQuery.of(context).size.height * 0.015,
+                        ),
+                        borderSide: const BorderSide(color: Colors.white),
+                      ),
+                      labelStyle: Theme.of(
+                        context,
+                      ).textTheme.bodySmall!.copyWith(color: Colors.white),
+                      labelText: 'Search',
+                      suffixIcon: Icon(
+                        FluentIcons.search,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child:
+                      _songs.isEmpty && !_isLoading
+                          ? Center(
+                            child: Text(
+                              "No songs found",
+                              style: Theme.of(context).textTheme.bodySmall!
+                                  .copyWith(color: Colors.white),
+                            ),
+                          )
+                          : CustomScrollView(
+                            controller: _scrollController,
+                            slivers: [
+                              SliverPadding(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: height * 0.01,
+                                  horizontal: width * 0.01,
+                                ),
+                                sliver: ValueListenableBuilder<List<Song>>(
+                                  valueListenable: selected,
+                                  builder: (context, selectedSongs, child) {
+                                    return ListComponent(
+                                      items: _songs,
+                                      itemExtent: height * 0.1,
+                                      isSelected:
+                                          (entity) => selectedSongs.contains(
+                                            entity as Song,
+                                          ),
+                                      onTap: (entity) {
+                                        final song = entity as Song;
+                                        if (selected.value.contains(song)) {
+                                          selected.value = List.from(
+                                            selected.value,
+                                          )..remove(song);
+                                        } else {
+                                          selected.value = List.from(
+                                            selected.value,
+                                          )..add(song);
+                                        }
+                                      },
+                                      onLongPress: (entity) {},
+                                    );
+                                  },
+                                ),
+                              ),
+                              if (_isLoading)
+                                const SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

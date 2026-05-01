@@ -70,7 +70,10 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   @override
   List<Playlist> getNormalPlaylists() {
     return _playlistBox
-        .query(Playlist_.indestructible.equals(false))
+        .query(
+          Playlist_.indestructible.equals(false) |
+              Playlist_.name.equals('Queue'),
+        )
         .order(Playlist_.name)
         .build()
         .find();

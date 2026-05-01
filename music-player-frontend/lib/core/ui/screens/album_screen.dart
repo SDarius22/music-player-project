@@ -52,7 +52,7 @@ class AlbumScreen extends EntityScreen {
   @override
   PreferredSizeWidget buildAppBar(BuildContext context, BaseEntity entity) {
     final album = entity as Album;
-    var height = MediaQuery.of(context).size.height;
+    final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     return PreferredSize(
       preferredSize: Size.fromHeight(kToolbarHeight),

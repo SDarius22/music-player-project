@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/ui/components/triangle_clipper.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/text_scroll/custom_text_scroll.dart';
 import 'package:provider/provider.dart';
-import 'package:universal_platform/universal_platform.dart';
 
 class CustomGridTile extends StatelessWidget {
   final Widget leftAction;
@@ -159,54 +157,20 @@ class CustomGridTile extends StatelessWidget {
         ],
       ),
       otherStackChildren: [
-        if (!UniversalPlatform.isWeb && entity.isLocal)
-          Align(
-            alignment: Alignment.topRight,
-            child: ClipPath(
-              clipper: TriangleClipper(),
+        if (isSelected)
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
               child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.center,
-                    end: Alignment.topRight,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.0),
-                      Colors.black.withValues(alpha: 0.75),
-                      Colors.black.withValues(alpha: 1.0),
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                ),
-                padding: const EdgeInsets.only(top: 3.0, right: 3.0),
-                alignment: Alignment.topRight,
-                child: Icon(
-                  FluentIcons.availableOffline,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                color: Colors.black.withValues(alpha: 0.2),
+                alignment: Alignment.center,
+                child: Icon(FluentIcons.check, color: Colors.white, size: 48),
               ),
             ),
           ),
       ],
       child:
-          isSelected
-              ? ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      FluentIcons.check,
-                      color: Colors.white,
-                      size: 48,
-                    ),
-                  ),
-                ),
-              )
-              : wide
+          wide
               ? null
               : Container(
                 alignment: Alignment.bottomCenter,

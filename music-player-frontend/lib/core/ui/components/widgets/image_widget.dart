@@ -3,8 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
+import 'package:music_player_frontend/core/ui/components/triangle_clipper.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 class ImageWidget extends StatefulWidget {
   final Widget? hoveredChild;
@@ -130,8 +132,38 @@ class _ImageWidgetState extends State<ImageWidget> {
           fit: StackFit.expand,
           children: [
             _buildImageLayer(),
-            _buildForeground(),
             ...widget.otherStackChildren,
+            _buildForeground(),
+            if (!UniversalPlatform.isWeb && widget.entity.isLocal)
+              Align(
+                alignment: Alignment.topRight,
+                child: ClipPath(
+                  clipper: TriangleClipper(),
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.center,
+                        end: Alignment.topRight,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.0),
+                          Colors.black.withValues(alpha: 0.75),
+                          Colors.black.withValues(alpha: 1.0),
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                    padding: const EdgeInsets.only(top: 3.0, right: 3.0),
+                    alignment: Alignment.topRight,
+                    child: Icon(
+                      FluentIcons.availableOffline,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
