@@ -6,6 +6,7 @@
 name: on_audio_query_web
 description: The web implementation of [on_audio_query].
 version: 1.6.0
+publish_to: none # Remove this line if you wish to publish to pub.dev
 homepage: https://github.com/LucJosin/on_audio_query/tree/main/packages/on_audio_query_web
 # pub.dev: https://pub.dev/packages/on_audio_query
 # pub.dev (Web): https://pub.dev/packages/on_audio_query_web

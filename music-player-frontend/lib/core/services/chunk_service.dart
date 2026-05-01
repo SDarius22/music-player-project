@@ -106,9 +106,16 @@ class ChunkService {
 
     final cachedData = await cacheRepo.readChunk(fileHash, index);
     if (cachedData != null) {
-      _addToHotCache(index, cachedData);
-      _recordDelivery(index, _ChunkSource.localCached);
-      return cachedData;
+      if (_verifyIntegrity(index, cachedData)) {
+        _addToHotCache(index, cachedData);
+        _recordDelivery(index, _ChunkSource.localCached);
+        return cachedData;
+      }
+      _logger.warning(
+        '[P2P] Corrupt cache hit for file=$fileHash idx=$index '
+        '(bytes=${cachedData.length}); evicting and refetching',
+      );
+      await cacheRepo.deleteChunk(fileHash, index);
     }
 
     for (
@@ -187,23 +194,28 @@ class ChunkService {
       _saveToCache(index, data);
       _recordDelivery(index, source);
       return data;
-    } else {
-      if (index >= 8) {
-        final serverData = await _streamingClient.downloadChunkFallback(
-          fileHash,
-          index,
-        );
-        if (_verifyIntegrity(index, serverData)) {
-          _logger.fine(
-            '[P2P] Integrity recovery succeeded from server for file=$fileHash idx=$index',
-          );
-          _saveToCache(index, serverData);
-          _recordDelivery(index, _ChunkSource.server);
-          return serverData;
-        }
-      }
-      throw Exception("Integrity failed for chunk $index");
     }
+
+    if (source != _ChunkSource.server) {
+      _logger.warning(
+        '[P2P] Integrity failed for file=$fileHash idx=$index from $source; '
+        'attempting server recovery',
+      );
+      final serverData = await _streamingClient.downloadChunkFallback(
+        fileHash,
+        index,
+      );
+      if (_verifyIntegrity(index, serverData)) {
+        _logger.fine(
+          '[P2P] Integrity recovery succeeded from server for file=$fileHash idx=$index',
+        );
+        _saveToCache(index, serverData);
+        _recordDelivery(index, _ChunkSource.server);
+        return serverData;
+      }
+    }
+
+    throw Exception("Integrity failed for chunk $index");
   }
 
   void _recordDelivery(int index, _ChunkSource source) {

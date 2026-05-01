@@ -18,6 +18,11 @@ class InMemoryChunkCacheRepository implements ChunkCacheRepository {
   }
 
   @override
+  Future<void> deleteChunk(String fileHash, int chunkIndex) async {
+    _cache.remove(_key(fileHash, chunkIndex));
+  }
+
+  @override
   Future<List<int>> getAvailableChunkIndices(String fileHash) async {
     final prefix = '$fileHash:';
     final indices = <int>[];

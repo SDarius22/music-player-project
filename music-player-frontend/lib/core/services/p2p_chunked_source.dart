@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:just_audio/just_audio.dart';
+import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 
 class P2PChunkedAudioSource extends StreamAudioSource {
+  static final _logger = Logger('P2PChunkedAudioSource');
+
   final String fileHash;
   final ChunkService Function(String) chunkManagerFactory;
   ChunkService? _chunkManager;
@@ -79,15 +82,16 @@ class P2PChunkedAudioSource extends StreamAudioSource {
 
     Future<Uint8List>? nextChunkFuture;
     if (startChunk < endChunk) {
-      nextChunkFuture = manager.getChunk(startChunk + 1);
+      nextChunkFuture = _getChunkWithRetry(manager, startChunk + 1);
     }
 
     for (int i = startChunk; i <= endChunk && remaining > 0; i++) {
-      final Uint8List chunkBytes =
-          await (i == startChunk ? manager.getChunk(i) : nextChunkFuture!);
+      final Uint8List chunkBytes = await (i == startChunk
+          ? _getChunkWithRetry(manager, i)
+          : nextChunkFuture!);
 
       if (i + 1 <= endChunk) {
-        nextChunkFuture = manager.getChunk(i + 1);
+        nextChunkFuture = _getChunkWithRetry(manager, i + 1);
       }
 
       final int chunkStartByte = i * chunkSize;
@@ -109,6 +113,17 @@ class P2PChunkedAudioSource extends StreamAudioSource {
 
       currentOffset += take;
       remaining -= take;
+    }
+  }
+
+  Future<Uint8List> _getChunkWithRetry(ChunkService manager, int index) async {
+    try {
+      return await manager.getChunk(index);
+    } catch (e) {
+      _logger.warning(
+        'getChunk failed for file=$fileHash idx=$index: $e; retrying once',
+      );
+      return await manager.getChunk(index);
     }
   }
 }

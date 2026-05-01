@@ -5,5 +5,7 @@ abstract class ChunkCacheRepository {
 
   Future<void> saveChunk(String fileHash, int chunkIndex, Uint8List data);
 
+  Future<void> deleteChunk(String fileHash, int chunkIndex);
+
   Future<List<int>> getAvailableChunkIndices(String fileHash);
 }

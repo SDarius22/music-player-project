@@ -6,6 +6,7 @@
 name: on_audio_query_android
 description: Android implementation of the on_audio_query plugin.
 version: 1.1.1
+publish_to: none # Remove this line if you wish to publish to pub.dev
 homepage: https://github.com/Sanjarbek17/on_audio_query/tree/main/packages/on_audio_query_android
 # pub.dev: https://pub.dev/packages/on_audio_query
 # pub.dev (Android): https://pub.dev/packages/on_audio_query_android

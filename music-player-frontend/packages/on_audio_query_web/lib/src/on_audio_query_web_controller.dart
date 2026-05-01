@@ -11,7 +11,7 @@ class _OnAudioQueryWebController {
     List audioFiles = decoded.keys
         .where(
           (element) => element.endsWith(".mp3"),
-    )
+        )
         .toList();
     return audioFiles;
   }
@@ -94,8 +94,7 @@ class _OnAudioQueryWebController {
 
       case SongSortType.ARTIST:
         tmpList.sort(
-              (val1, val2) =>
-              val1.artist.orEmpty.isCase(ignoreCase).compareTo(
+          (val1, val2) => val1.artist.orEmpty.isCase(ignoreCase).compareTo(
                 val2.artist.orEmpty.isCase(ignoreCase),
               ),
         );
@@ -105,8 +104,7 @@ class _OnAudioQueryWebController {
 
       case SongSortType.ALBUM:
         tmpList.sort(
-              (val1, val2) =>
-              val1.album.orEmpty.isCase(ignoreCase).compareTo(
+          (val1, val2) => val1.album.orEmpty.isCase(ignoreCase).compareTo(
                 val2.album.orEmpty.isCase(ignoreCase),
               ),
         );
@@ -176,16 +174,14 @@ class _OnAudioQueryWebController {
     // ```
     switch (sortType) {
       case AlbumSortType.ALBUM:
-        tmpList.sort((val1, val2) =>
-            val1.album.isCase(ignoreCase).compareTo(
+        tmpList.sort((val1, val2) => val1.album.isCase(ignoreCase).compareTo(
               val2.album.isCase(ignoreCase),
             ));
         break;
 
       case AlbumSortType.ARTIST:
         tmpList.sort(
-              (val1, val2) =>
-              val1.artist.orEmpty.isCase(ignoreCase).compareTo(
+          (val1, val2) => val1.artist.orEmpty.isCase(ignoreCase).compareTo(
                 val2.artist.orEmpty.isCase(ignoreCase),
               ),
         );
@@ -193,7 +189,7 @@ class _OnAudioQueryWebController {
 
       case AlbumSortType.NUM_OF_SONGS:
         tmpList.sort(
-              (val1, val2) => val1.numOfSongs.compareTo(val2.numOfSongs),
+          (val1, val2) => val1.numOfSongs.compareTo(val2.numOfSongs),
         );
         break;
 
@@ -259,8 +255,7 @@ class _OnAudioQueryWebController {
     // ```
     switch (sortType) {
       case ArtistSortType.ARTIST:
-        tmpList.sort((val1, val2) =>
-            val1.artist.isCase(ignoreCase).compareTo(
+        tmpList.sort((val1, val2) => val1.artist.isCase(ignoreCase).compareTo(
               val2.artist.isCase(ignoreCase),
             ));
         break;
@@ -346,8 +341,7 @@ class _OnAudioQueryWebController {
     // Now we sort the list based on [sortType].
     switch (sortType) {
       case GenreSortType.GENRE:
-        tmpList.sort((val1, val2) =>
-            val1.genre.isCase(ignoreCase).compareTo(
+        tmpList.sort((val1, val2) => val1.genre.isCase(ignoreCase).compareTo(
               val2.genre.isCase(ignoreCase),
             ));
         break;
@@ -366,12 +360,13 @@ class _OnAudioQueryWebController {
 
   /// Method used to "query" all the songs and their informations from a specific
   /// "place".
-  Future<List<SongModel>> queryAudiosFrom(AudiosFromType type,
-      Object where, [
-        SongSortType? sortType,
-        OrderType? orderType,
-        bool ignoreCase = true,
-      ]) async {
+  Future<List<SongModel>> queryAudiosFrom(
+    AudiosFromType type,
+    Object where, [
+    SongSortType? sortType,
+    OrderType? orderType,
+    bool ignoreCase = true,
+  ]) async {
     List<SongModel> tmpList = [];
     // Get all audios.
     List audios = await _getInternalFiles();
@@ -471,8 +466,7 @@ class _OnAudioQueryWebController {
 
       case SongSortType.ARTIST:
         tmpList.sort(
-              (val1, val2) =>
-              val1.artist.orEmpty.isCase(ignoreCase).compareTo(
+          (val1, val2) => val1.artist.orEmpty.isCase(ignoreCase).compareTo(
                 val2.artist.orEmpty.isCase(ignoreCase),
               ),
         );
@@ -482,8 +476,7 @@ class _OnAudioQueryWebController {
 
       case SongSortType.ALBUM:
         tmpList.sort(
-              (val1, val2) =>
-              val1.album.orEmpty.isCase(ignoreCase).compareTo(
+          (val1, val2) => val1.album.orEmpty.isCase(ignoreCase).compareTo(
                 val2.album.orEmpty.isCase(ignoreCase),
               ),
         );
@@ -506,9 +499,11 @@ class _OnAudioQueryWebController {
 
   /// Method used to "query" all the songs/albums/artist/genres and their
   /// informations using a "argument" as parameter. Working like a "search".
-  Future<List<dynamic>> queryWithFilters(String argsVal,
-      WithFiltersType withType,
-      dynamic args,) async {
+  Future<List<dynamic>> queryWithFilters(
+    String argsVal,
+    WithFiltersType withType,
+    dynamic args,
+  ) async {
     List<dynamic> tmpList = [];
     // Get all audios.
     List audios = await _getInternalFiles();
@@ -522,11 +517,11 @@ class _OnAudioQueryWebController {
         if (data != null) {
           // Now we split between Audios/Albums/Artist or Genres.
           switch (withType) {
-          // AudiosArgs:
-          //   * TITLE
-          //   * DISPLAY_NAME
-          //   * ALBUM
-          //   * ARTIST
+            // AudiosArgs:
+            //   * TITLE
+            //   * DISPLAY_NAME
+            //   * ALBUM
+            //   * ARTIST
             case WithFiltersType.AUDIOS:
               tmpList = checkSongsArgs(
                 argsVal,
@@ -535,9 +530,9 @@ class _OnAudioQueryWebController {
               );
               break;
 
-          // AlbumsArgs:
-          //   * ALBUM
-          //   * ARTIST
+            // AlbumsArgs:
+            //   * ALBUM
+            //   * ARTIST
             case WithFiltersType.ALBUMS:
               tmpList = checkAlbumsArgs(
                 argsVal,
@@ -546,8 +541,8 @@ class _OnAudioQueryWebController {
               );
               break;
 
-          // ArtistsArgs:
-          //   * ARTIST
+            // ArtistsArgs:
+            //   * ARTIST
             case WithFiltersType.ARTISTS:
               tmpList = checkArtistsArgs(
                 argsVal,
@@ -556,8 +551,8 @@ class _OnAudioQueryWebController {
               );
               break;
 
-          // GenresArgs:
-          //   * GENRE
+            // GenresArgs:
+            //   * GENRE
             case WithFiltersType.GENRES:
               tmpList = checkGenresArgs(
                 argsVal,
@@ -575,12 +570,13 @@ class _OnAudioQueryWebController {
     return tmpList;
   }
 
-  Future<Uint8List?> queryArtwork(int id,
-      ArtworkType type, [
-        ArtworkFormat? format,
-        int? size,
-        int? quality,
-      ]) async {
+  Future<Uint8List?> queryArtwork(
+    int id,
+    ArtworkType type, [
+    ArtworkFormat? format,
+    int? size,
+    int? quality,
+  ]) async {
     // TODO: Add a better way to handle this method.
     List<SongModel> allSongs = await querySongs();
 
@@ -598,6 +594,9 @@ class _OnAudioQueryWebController {
           break;
         case ArtworkType.PLAYLIST:
           return null;
+        case ArtworkType.GENRE:
+          // TODO: Handle this case.
+          break;
       }
 
       if (id == tmpId) {

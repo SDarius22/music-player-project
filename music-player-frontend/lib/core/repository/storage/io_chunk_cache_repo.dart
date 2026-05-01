@@ -58,6 +58,19 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
   }
 
   @override
+  Future<void> deleteChunk(String fileHash, int chunkIndex) async {
+    final songDir = await _getSongDir(fileHash);
+    final file = File('${songDir.path}/$chunkIndex.bin');
+    try {
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      _logger.warning('Failed to delete cached chunk $fileHash/$chunkIndex', e);
+    }
+  }
+
+  @override
   Future<List<int>> getAvailableChunkIndices(String fileHash) async {
     final songDir = await _getSongDir(fileHash);
 

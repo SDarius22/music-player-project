@@ -103,7 +103,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     {
       "text": "Upload songs",
       "tooltip": "Upload songs",
-      "icon": FluentIcons.download,
+      "icon": FluentIcons.cloudUpload,
       "index": 6,
       "onTap": (BuildContext context) {
         setState(() => _appStateProvider.currentDrawerIndex = 6);
