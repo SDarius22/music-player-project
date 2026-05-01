@@ -57,7 +57,7 @@ class InMemorySongRepository implements SongRepository {
   int getSongCount(String query, bool localOnly) {
     final q = query.toLowerCase();
     return _byId.values
-        .where((s) => s.getName().toLowerCase().contains(q))
+        .where((s) => s.getName().toLowerCase().contains(q) && s.fullyLoaded)
         .length;
   }
 
@@ -117,7 +117,9 @@ class InMemorySongRepository implements SongRepository {
     final q = query.toLowerCase();
     final filtered =
         _byId.values
-            .where((s) => s.getName().toLowerCase().contains(q))
+            .where(
+              (s) => s.getName().toLowerCase().contains(q) && s.fullyLoaded,
+            )
             .toList();
 
     int compare(Song a, Song b) {

@@ -36,7 +36,9 @@ class ObjectBoxSongRepository implements SongRepository {
 
   @override
   int getSongCount(String query, bool localOnly) {
-    var conditions = Song_.name.contains(query, caseSensitive: false);
+    var conditions = Song_.name
+        .contains(query, caseSensitive: false)
+        .and(Song_.fullyLoaded.equals(true));
     if (localOnly) {
       conditions = conditions.and(Song_.path.notNull());
     }
@@ -106,7 +108,9 @@ class ObjectBoxSongRepository implements SongRepository {
     int offset,
     int limit,
   ) {
-    var conditions = Song_.name.contains(query, caseSensitive: false);
+    var conditions = Song_.name
+        .contains(query, caseSensitive: false)
+        .and(Song_.fullyLoaded.equals(true));
     if (localOnly) {
       conditions = conditions
           .and(Song_.path.notNull())
