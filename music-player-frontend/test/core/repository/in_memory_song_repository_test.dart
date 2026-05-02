@@ -8,6 +8,8 @@ void main() {
       final repo = InMemorySongRepository();
 
       final first = repo.getOrCreateSong('song-hash');
+      first.fullyLoaded = true;
+      repo.saveSong(first);
       final second = repo.getOrCreateSong('song-hash');
 
       expect(first.id, isPositive);
