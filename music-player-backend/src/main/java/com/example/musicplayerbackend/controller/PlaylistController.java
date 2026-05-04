@@ -23,11 +23,17 @@ public class PlaylistController implements PlaylistsApi {
     private final PlaylistService playlistService;
 
     @Override
-    public ResponseEntity<PlaylistPageDto> getPlaylists(Integer page, Integer size) {
+    public ResponseEntity<PlaylistPageDto> getPlaylists(String q, String sort, Boolean filterIndestructible, Integer page, Integer size) {
         User user = currentUser();
         int safePage = page == null ? 0 : Math.max(page, 0);
         int safeSize = size == null ? 50 : Math.min(Math.max(size, 1), 200);
-        return ResponseEntity.ok(playlistService.getPlaylists(user.getId(), safePage, safeSize));
+        return ResponseEntity.ok(playlistService.getPlaylists(user.getId(), q, sort, filterIndestructible, safePage, safeSize));
+    }
+
+    @Override
+    public ResponseEntity<PlaylistDetailDto> getPlaylistByName(String name) {
+        User user = currentUser();
+        return ResponseEntity.ok(playlistService.getPlaylistByName(user.getId(), name));
     }
 
     @Override

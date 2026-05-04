@@ -6,7 +6,6 @@ import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.mapper.PlaylistMapper;
-import com.example.musicplayerbackend.mapper.SongMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +38,7 @@ class PlaylistServiceTest {
     @Mock
     PlaylistMapper playlistMapper;
     @Mock
-    SongMapper songMapper;
+    SongEnrichmentService songEnrichmentService;
 
     @Captor
     ArgumentCaptor<List<PlaylistSong>> playlistSongsCaptor;
@@ -49,20 +48,30 @@ class PlaylistServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PlaylistService(playlistRepository, playlistSongRepository, songRepository, playlistMapper, songMapper);
+        service = new PlaylistService(playlistRepository, playlistSongRepository, songRepository, playlistMapper, songEnrichmentService);
         owner = User.builder().id(1L).email("u@test.com").role(Role.USER)
                 .provider(AuthProvider.LOCAL).build();
 
         lenient().when(playlistMapper.toDetailDto(any(Playlist.class), anyList()))
                 .thenAnswer(invocation -> {
                     Playlist playlist = invocation.getArgument(0);
-                    List<SongDto> songs = invocation.getArgument(1);
+                    List<PlaylistSongDto> entries = invocation.getArgument(1);
                     PlaylistDetailDto dto = new PlaylistDetailDto();
                     dto.setId(playlist.getId());
                     dto.setName(playlist.getName());
-                    dto.setSongs(songs);
+                    dto.setPlaylistSongs(entries);
                     return dto;
                 });
+
+        lenient().when(songEnrichmentService.enrich(anyList(), any())).thenAnswer(inv -> {
+            List<Song> songs = inv.getArgument(0);
+            return songs.stream().map(s -> {
+                SongDto dto = new SongDto();
+                dto.setFileHash(s.getFileHash());
+                dto.setName(s.getName());
+                return dto;
+            }).toList();
+        });
     }
 
     // ── getPlaylists ─────────────────────────────────────────────────────────
@@ -72,10 +81,10 @@ class PlaylistServiceTest {
         PlaylistListProjection proj = mock(PlaylistListProjection.class);
         PlaylistDto dto = new PlaylistDto();
         dto.setName("My Mix");
-        when(playlistRepository.findAllWithHashes(eq(1L), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(playlistRepository.findAllWithHashes(eq(1L), any(), any(), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(playlistMapper.toDto(proj)).thenReturn(dto);
 
-        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
+        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, 0, 20);
 
         assertEquals(1, result.getContent().size());
         assertEquals("My Mix", result.getContent().getFirst().getName());
@@ -86,10 +95,10 @@ class PlaylistServiceTest {
         PlaylistListProjection proj = mock(PlaylistListProjection.class);
         PlaylistDto dto = new PlaylistDto();
         dto.setSongFileHashes(List.of());
-        when(playlistRepository.findAllWithHashes(eq(1L), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(playlistRepository.findAllWithHashes(eq(1L), any(), any(), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(playlistMapper.toDto(proj)).thenReturn(dto);
 
-        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
+        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, 0, 20);
 
         assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
@@ -99,10 +108,10 @@ class PlaylistServiceTest {
         PlaylistListProjection proj = mock(PlaylistListProjection.class);
         PlaylistDto dto = new PlaylistDto();
         dto.setSongFileHashes(List.of("h1", "h2", "h3"));
-        when(playlistRepository.findAllWithHashes(eq(1L), any())).thenReturn(new PageImpl<>(List.of(proj)));
+        when(playlistRepository.findAllWithHashes(eq(1L), any(), any(), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(playlistMapper.toDto(proj)).thenReturn(dto);
 
-        PlaylistPageDto result = service.getPlaylists(1L, 0, 20);
+        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, 0, 20);
 
         assertEquals(List.of("h1", "h2", "h3"), result.getContent().getFirst().getSongFileHashes());
     }
@@ -124,17 +133,10 @@ class PlaylistServiceTest {
         PlaylistSong ps0 = PlaylistSong.builder().id(new PlaylistSongId(99L, 0)).playlist(saved).song(song2).build();
         PlaylistSong ps1 = PlaylistSong.builder().id(new PlaylistSongId(99L, 1)).playlist(saved).song(song1).build();
 
-        SongDto dto1 = new SongDto();
-        dto1.setFileHash("h1");
-        SongDto dto2 = new SongDto();
-        dto2.setFileHash("h2");
-
         when(playlistRepository.save(any())).thenReturn(saved);
         when(songRepository.findAllByFileHashIn(List.of("h2", "h1"))).thenReturn(List.of(song1, song2));
         when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(99L)).thenReturn(List.of(ps0, ps1));
         when(songRepository.findAllById(List.of(20L, 10L))).thenReturn(List.of(song1, song2));
-        when(songMapper.toDto(song2)).thenReturn(dto2);
-        when(songMapper.toDto(song1)).thenReturn(dto1);
 
         PlaylistDetailDto result = service.createPlaylist(owner, req);
 
@@ -146,7 +148,8 @@ class PlaylistServiceTest {
         assertEquals(2, persisted.get(1).getId().getPosition());
         assertEquals(10L, persisted.get(1).getSong().getId());
 
-        assertEquals(List.of("h2", "h1"), result.getSongs().stream().map(SongDto::getFileHash).toList());
+        assertEquals(List.of("h2", "h1"), result.getPlaylistSongs().stream().map(e -> e.getSong().getFileHash()).toList());
+        assertEquals(List.of(0, 1), result.getPlaylistSongs().stream().map(PlaylistSongDto::getPosition).toList());
     }
 
     @Test
@@ -189,20 +192,13 @@ class PlaylistServiceTest {
         PlaylistSong ps0 = PlaylistSong.builder().id(new PlaylistSongId(5L, 0)).playlist(playlist).song(song2).build();
         PlaylistSong ps1 = PlaylistSong.builder().id(new PlaylistSongId(5L, 1)).playlist(playlist).song(song1).build();
 
-        SongDto dto1 = new SongDto();
-        dto1.setFileHash("h1");
-        SongDto dto2 = new SongDto();
-        dto2.setFileHash("h2");
-
         when(playlistRepository.findById(5L)).thenReturn(Optional.of(playlist));
         when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(5L)).thenReturn(List.of(ps0, ps1));
         when(songRepository.findAllById(List.of(22L, 11L))).thenReturn(List.of(song1, song2));
-        when(songMapper.toDto(song2)).thenReturn(dto2);
-        when(songMapper.toDto(song1)).thenReturn(dto1);
 
         PlaylistDetailDto result = service.getPlaylistById(5L, 1L);
 
-        assertEquals(List.of("h2", "h1"), result.getSongs().stream().map(SongDto::getFileHash).toList());
+        assertEquals(List.of("h2", "h1"), result.getPlaylistSongs().stream().map(e -> e.getSong().getFileHash()).toList());
     }
 
     @Test
@@ -232,15 +228,11 @@ class PlaylistServiceTest {
                 .playlist(playlist)
                 .song(song)
                 .build();
-        SongDto dto = new SongDto();
-        dto.setFileHash("h");
-
         when(playlistRepository.findById(1L)).thenReturn(Optional.of(playlist));
         when(playlistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(songRepository.findAllByFileHashIn(List.of("h"))).thenReturn(List.of(song));
         when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(1L)).thenReturn(List.of(relation));
         when(songRepository.findAllById(List.of(5L))).thenReturn(List.of(song));
-        when(songMapper.toDto(song)).thenReturn(dto);
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
         req.setPlaylistSongs(List.of(songInput("h", 0)));
@@ -249,7 +241,7 @@ class PlaylistServiceTest {
 
         verify(playlistSongRepository).deleteByPlaylist_Id(1L);
         verify(playlistSongRepository).saveAll(anyList());
-        assertEquals(1, result.getSongs().size());
+        assertEquals(1, result.getPlaylistSongs().size());
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.example.musicplayerbackend.integration;
 
-import com.example.musicplayerbackend.components.SignalingHandler;
 import com.example.musicplayerbackend.data.UserPlaybackStateRepository;
 import com.example.musicplayerbackend.data.UserRepository;
 import com.example.musicplayerbackend.domain.AuthProvider;
@@ -18,7 +17,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -26,9 +24,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
-import java.util.List;
 
-import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -59,13 +55,6 @@ class PlaybackStateIntegrationTest {
     UserRepository userRepository;
     @Autowired
     UserPlaybackStateRepository playbackStateRepository;
-    /**
-     * Mock out the SignalingHandler so the saveState flow never actually publishes
-     * to Redis pub/sub during these tests (avoids flaky failures from network-level
-     * pub/sub timing and keeps assertions focused on REST behaviour).
-     */
-    @MockitoBean
-    SignalingHandler signalingHandler;
     private User testUser;
 
     @DynamicPropertySource
@@ -105,28 +94,23 @@ class PlaybackStateIntegrationTest {
     @Test
     void shouldPersistAllFieldsInPutThenGetRoundTrip() throws Exception {
         PlaybackStateDto dto = new PlaybackStateDto();
-        dto.setQueueFileHashes(List.of("hash-10", "hash-20", "hash-30"));
-        // currentSongId left null to avoid FK constraint against songs table
-        dto.setPositionMs(45_000L);
+        dto.setPositionSeconds(45L);
         dto.setShuffle(true);
         dto.setRepeat(false);
 
-        // PUT — should return the persisted state
         mockMvc.perform(put("/api/v1/playback")
                         .with(user(testUser))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.positionMs").value(45_000))
+                .andExpect(jsonPath("$.positionSeconds").value(45))
                 .andExpect(jsonPath("$.shuffle").value(true))
                 .andExpect(jsonPath("$.repeat").value(false))
                 .andExpect(jsonPath("$.updatedAt").isNotEmpty());
 
-        // GET — same values come back
         mockMvc.perform(get("/api/v1/playback").with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.queueFileHashes", hasSize(3)))
-                .andExpect(jsonPath("$.positionMs").value(45_000))
+                .andExpect(jsonPath("$.positionSeconds").value(45))
                 .andExpect(jsonPath("$.shuffle").value(true))
                 .andExpect(jsonPath("$.repeat").value(false));
     }
@@ -134,10 +118,9 @@ class PlaybackStateIntegrationTest {
     @Test
     void shouldOverwritePreviousPlaybackStateOnSecondPut() throws Exception {
         PlaybackStateDto first = new PlaybackStateDto();
-        first.setQueueFileHashes(List.of("hash-1", "hash-2"));
         first.setShuffle(false);
         first.setRepeat(false);
-        first.setPositionMs(1_000L);
+        first.setPositionSeconds(1L);
 
         mockMvc.perform(put("/api/v1/playback")
                         .with(user(testUser))
@@ -146,10 +129,9 @@ class PlaybackStateIntegrationTest {
                 .andExpect(status().isOk());
 
         PlaybackStateDto second = new PlaybackStateDto();
-        second.setQueueFileHashes(List.of("hash-5"));
         second.setShuffle(true);
         second.setRepeat(true);
-        second.setPositionMs(9_999L);
+        second.setPositionSeconds(99L);
 
         mockMvc.perform(put("/api/v1/playback")
                         .with(user(testUser))
@@ -159,8 +141,7 @@ class PlaybackStateIntegrationTest {
 
         mockMvc.perform(get("/api/v1/playback").with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.queueFileHashes", hasSize(1)))
-                .andExpect(jsonPath("$.positionMs").value(9_999))
+                .andExpect(jsonPath("$.positionSeconds").value(99))
                 .andExpect(jsonPath("$.shuffle").value(true))
                 .andExpect(jsonPath("$.repeat").value(true));
     }

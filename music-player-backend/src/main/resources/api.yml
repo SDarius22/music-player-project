@@ -100,18 +100,33 @@ paths:
     get:
       summary: Get personalised song recommendations
       description: |
-        Returns 10 songs chosen by a heuristic that blends the user's liked
-        songs (weighted by play count) with their overall most-played tracks.
-        Songs the user already played very recently are excluded so the list
+        Paginated recommendations ordered by play count descending. Songs the
+        user already played in the last 48 hours are excluded so the list
         stays fresh.
       operationId: getRecommendations
       tags:
         - Songs
       security:
         - bearerAuth: [ ]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
       responses:
         '200':
-          description: Up to 10 recommended songs
+          description: A page of recommended songs
           content:
             application/json:
               schema:
@@ -123,17 +138,33 @@ paths:
     get:
       summary: Get forgotten favourites
       description: |
-        Returns up to 10 songs the user played at least once but has not
-        listened to in the last 30 days, ordered by play count descending
-        so the most-loved-but-forgotten tracks surface first.
+        Paginated list of songs the user played at least once but has not
+        listened to in the last 30 days, ordered by last-played ascending so
+        the most-forgotten tracks surface first.
       operationId: getForgottenFavourites
       tags:
         - Songs
       security:
         - bearerAuth: [ ]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
       responses:
         '200':
-          description: Up to 10 forgotten favourite songs
+          description: A page of forgotten favourite songs
           content:
             application/json:
               schema:
@@ -145,17 +176,137 @@ paths:
     get:
       summary: Get quick-dial songs
       description: |
-        Returns up to 10 songs for quick access: the user's most recently
-        played tracks, falling back to most recently added when the played
-        list is short.
+        Paginated list ordered by recency, with songs that have never been
+        played falling back to their added-at timestamp.
       operationId: getQuickDial
       tags:
         - Songs
       security:
         - bearerAuth: [ ]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
       responses:
         '200':
-          description: Up to 10 quick-dial songs
+          description: A page of quick-dial songs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SongPageDto'
+        '401':
+          description: Unauthorized
+
+  /songs/favourites:
+    get:
+      summary: Get the user's favourite songs
+      description: Paginated list of songs the user has liked, ordered by play count descending.
+      operationId: getFavourites
+      tags:
+        - Songs
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: A page of liked songs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SongPageDto'
+        '401':
+          description: Unauthorized
+
+  /songs/most-played:
+    get:
+      summary: Get the user's most-played songs
+      description: Paginated list of songs the user has played at least once, ordered by play count descending.
+      operationId: getMostPlayed
+      tags:
+        - Songs
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: A page of most-played songs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SongPageDto'
+        '401':
+          description: Unauthorized
+
+  /songs/recently-played:
+    get:
+      summary: Get the user's recently-played songs
+      description: Paginated list of songs the user has played, ordered by last-played descending.
+      operationId: getRecentlyPlayed
+      tags:
+        - Songs
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: A page of recently-played songs
           content:
             application/json:
               schema:
@@ -183,6 +334,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SongDto'
+        '404':
+          description: Song not found
+    patch:
+      summary: Update the requesting user's library entry for a song
+      description: |
+        Updates per-user fields (`likedByUser`, `lastPlayed`, `playCount`) for the
+        song in the current user's library. Only fields present in the request
+        body are changed; missing fields stay as they were.
+      operationId: updateUserSongLibrary
+      tags:
+        - Songs
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: fileHash
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserSongDto'
+      responses:
+        '200':
+          description: Updated song metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SongDto'
+        '401':
+          description: Unauthorized
         '404':
           description: Song not found
 
@@ -439,6 +624,25 @@ paths:
       security:
         - bearerAuth: [ ]
       parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive substring match on playlist name.
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            default: name,asc
+          description: Sort as `field,direction`. Supported fields are `name` and `createdAt`.
+        - name: filter[indestructible]
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: When set, restricts the result to indestructible (`true`) or destructible (`false`) playlists.
         - name: page
           in: query
           required: false
@@ -486,6 +690,37 @@ paths:
                 $ref: '#/components/schemas/PlaylistDetailDto'
         '401':
           description: Unauthorized
+
+  /playlists/details-by-name/{name}:
+    get:
+      summary: Look up a single playlist by name
+      description: |
+        Returns the detail of the requesting user's playlist whose name
+        matches `name` exactly. Useful for fetching the indestructible default
+        playlists (e.g. `Queue`, `Favourites`) without paginating the list.
+      operationId: getPlaylistByName
+      tags:
+        - Playlists
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Exact case-sensitive playlist name.
+      responses:
+        '200':
+          description: Playlist with tracks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistDetailDto'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Playlist not found
 
   /playlists/{playlistId}:
     get:
@@ -651,63 +886,6 @@ paths:
         '401':
           description: Unauthorized
 
-  /stream/{fileHash}/prefix:
-    get:
-      summary: Get song prefix
-      operationId: getSongPrefix
-      tags:
-        - Streaming
-      parameters:
-        - name: fileHash
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: prefixBytes
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 512000
-      responses:
-        '200':
-          description: Audio byte stream
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '404':
-          description: Song or file not found
-
-  /stream/{fileHash}/full:
-    get:
-      summary: Master fallback full stream
-      operationId: getFullStream
-      tags:
-        - Streaming
-      parameters:
-        - name: fileHash
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Audio stream
-          content:
-            audio/mpeg:
-              schema:
-                type: string
-                format: binary
-        '206':
-          description: Partial content
-          content:
-            audio/mpeg:
-              schema:
-                type: string
-                format: binary
-
   /stream/{fileHash}/manifest:
     get:
       summary: Get chunk manifest
@@ -753,37 +931,6 @@ paths:
               schema:
                 type: string
                 format: binary
-
-  /sync:
-    post:
-      summary: Delta sync for user library
-      description: |
-        Performs a bi-directional delta sync.
-        1. Client sends its 'lastSyncTimestamp' and a list of local changes (adds/updates/soft-deletes).
-        2. Server applies valid local changes.
-        3. Server returns a 'newSyncTimestamp' and a list of changes from OTHER devices that happened since the client's last sync.
-      operationId: syncUserLibrary
-      tags:
-        - Sync
-      security:
-        - bearerAuth: [ ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SyncRequestDto'
-      responses:
-        '200':
-          description: Sync successful. Returns server updates and new anchor timestamp.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SyncResponseDto'
-        '400':
-          description: Invalid timestamp format or malformed DTOs.
-        '401':
-          description: Unauthorized.
 
   /statistics:
     get:
@@ -1037,6 +1184,10 @@ components:
           format: int64
         name:
           type: string
+        indestructible:
+          type: boolean
+          default: false
+          description: When true, the playlist cannot be deleted by the user.
         songFileHashes:
           type: array
           items:
@@ -1051,11 +1202,15 @@ components:
           format: int64
         name:
           type: string
-        songs:
+        indestructible:
+          type: boolean
+          default: false
+          description: When true, the playlist cannot be deleted by the user.
+        playlistSongs:
           type: array
           items:
-            $ref: '#/components/schemas/SongDto'
-          description: Songs in playlist order (position ascending).
+            $ref: '#/components/schemas/PlaylistSongDto'
+          description: Songs in playlist order with their persisted positions.
 
     PlaylistPageDto:
       type: object
@@ -1123,14 +1278,7 @@ components:
     PlaybackStateDto:
       type: object
       properties:
-        queueFileHashes:
-          type: array
-          items:
-            type: string
-        currentFileHash:
-          type: string
-          nullable: true
-        positionMs:
+        positionSeconds:
           type: integer
           format: int64
           default: 0
@@ -1157,6 +1305,18 @@ components:
           type: integer
           minimum: 0
 
+    PlaylistSongDto:
+      type: object
+      required:
+        - song
+        - position
+      properties:
+        song:
+          $ref: '#/components/schemas/SongDto'
+        position:
+          type: integer
+          minimum: 0
+
     SongDto:
       type: object
       properties:
@@ -1176,50 +1336,37 @@ components:
           type: integer
         year:
           type: integer
-
-    SongSyncDto:
-      type: object
-      description: Represents a change to a specific song in the user's library.
-      required:
-        - fileHash
-      properties:
-        fileHash:
-          type: string
-
-        playCountDelta:
-          type: integer
-          default: 0
-
-        likedByUser:
-          type: boolean
-          nullable: true
-
         lastPlayed:
           type: string
           format: date-time
           nullable: true
-
-        addedAt:
-          type: string
-          format: date-time
-          nullable: true
-
-        modifiedAt:
-          type: string
-          format: date-time
-          nullable: true
-
-        isDeleted:
+          description: When the requesting user last played this song; null if never.
+        playCount:
+          type: integer
+          format: int64
+          default: 0
+          description: How many times the requesting user has played this song.
+        likedByUser:
           type: boolean
           default: false
+          description: Whether the requesting user has liked this song.
 
-        totalPlayDurationSeconds:
+    UpdateUserSongDto:
+      type: object
+      description: Patch payload for the requesting user's library entry for a song.
+      properties:
+        likedByUser:
+          type: boolean
+          nullable: true
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
+        playCount:
           type: integer
           format: int64
           nullable: true
-
-        songMetadata:
-          $ref: '#/components/schemas/SongDto'
+          minimum: 0
 
     SongUploadDto:
       type: object
@@ -1341,43 +1488,6 @@ components:
           description: The indices (0-based) of the chunks the server DOES NOT have.
           items:
             type: integer
-
-    SyncRequestDto:
-      type: object
-      required:
-        - localChanges
-      properties:
-        lastSyncTime:
-          type: string
-          format: date-time
-          nullable: true
-        page:
-          type: integer
-          default: 0
-        limit:
-          type: integer
-          default: 500
-        localChanges:
-          type: array
-          items:
-            $ref: '#/components/schemas/SongSyncDto'
-
-    SyncResponseDto:
-      type: object
-      required:
-        - serverChanges
-        - newSyncTime
-        - hasMore
-      properties:
-        serverChanges:
-          type: array
-          items:
-            $ref: '#/components/schemas/SongSyncDto'
-        newSyncTime:
-          type: string
-          format: date-time
-        hasMore:
-          type: boolean
 
     SongPageDto:
       type: object

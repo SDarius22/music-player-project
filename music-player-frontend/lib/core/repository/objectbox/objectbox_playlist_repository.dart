@@ -31,13 +31,8 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   }
 
   @override
-  Playlist? getPlaylistByServerIdAndName(int serverId, String name) {
-    return _playlistBox
-        .query(
-          Playlist_.serverId.equals(serverId) & Playlist_.name.equals(name),
-        )
-        .build()
-        .findFirst();
+  Playlist? getPlaylistByName(String name) {
+    return _playlistBox.query(Playlist_.name.equals(name)).build().findFirst();
   }
 
   @override
@@ -50,33 +45,58 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   }
 
   @override
-  Playlist getOrCreatePlaylist(int serverId, String name) {
-    final existing = getPlaylistByServerIdAndName(serverId, name);
+  Playlist getOrCreatePlaylist(String name) {
+    final existing = getPlaylistByName(name);
     if (existing != null) return existing;
     Playlist playlist = Playlist(name);
-    playlist.serverId = serverId;
     return savePlaylist(playlist);
   }
 
   @override
-  List<Playlist> getIndestructiblePlaylists() {
-    return _playlistBox
-        .query(Playlist_.indestructible.equals(true))
-        .order(Playlist_.name)
-        .build()
-        .find();
+  List<Playlist> getIndestructiblePlaylists(int offset, int limit) {
+    final q =
+        _playlistBox
+            .query(Playlist_.indestructible.equals(true))
+            .order(Playlist_.name)
+            .build();
+    q.offset = offset;
+    q.limit = limit;
+    return q.find();
   }
 
   @override
-  List<Playlist> getNormalPlaylists() {
+  int getIndestructiblePlaylistCount() {
+    return _playlistBox
+        .query(Playlist_.indestructible.equals(true))
+        .build()
+        .count();
+  }
+
+  @override
+  List<Playlist> getNormalPlaylists(int offset, int limit) {
+    final q =
+        _playlistBox
+            .query(
+              Playlist_.indestructible.equals(false) |
+                  Playlist_.name.equals('Queue'),
+            )
+            .order(Playlist_.name)
+            .build();
+
+    q.offset = offset;
+    q.limit = limit;
+    return q.find();
+  }
+
+  @override
+  int getNormalPlaylistCount() {
     return _playlistBox
         .query(
           Playlist_.indestructible.equals(false) |
               Playlist_.name.equals('Queue'),
         )
-        .order(Playlist_.name)
         .build()
-        .find();
+        .count();
   }
 
   @override

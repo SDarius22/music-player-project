@@ -4,6 +4,7 @@ import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.Playlist;
 import com.example.musicplayerbackend.domain.PlaylistDetailDto;
 import com.example.musicplayerbackend.domain.PlaylistDto;
+import com.example.musicplayerbackend.domain.PlaylistSongDto;
 import com.example.musicplayerbackend.domain.SongDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +48,11 @@ class PlaylistMapperTest {
             }
 
             @Override
+            public Boolean getIndestructible() {
+                return false;
+            }
+
+            @Override
             public String getSongFileHashesCsv() {
                 return "a,b,c";
             }
@@ -68,12 +74,17 @@ class PlaylistMapperTest {
                 .build();
         SongDto songDto = new SongDto();
         songDto.setName("Track 1");
+        PlaylistSongDto entry = new PlaylistSongDto();
+        entry.setSong(songDto);
+        entry.setPosition(0);
 
-        PlaylistDetailDto dto = playlistMapper.toDetailDto(playlist, List.of(songDto));
+        PlaylistDetailDto dto = playlistMapper.toDetailDto(playlist, List.of(entry));
 
         assertEquals(11L, dto.getId());
         assertEquals("Focus", dto.getName());
-        assertEquals(1, dto.getSongs().size());
+        assertEquals(1, dto.getPlaylistSongs().size());
+        assertEquals(0, dto.getPlaylistSongs().getFirst().getPosition());
+        assertEquals("Track 1", dto.getPlaylistSongs().getFirst().getSong().getName());
     }
 
     @Test

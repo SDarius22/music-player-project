@@ -2,23 +2,23 @@ class SongUploadDto {
   final String name;
   final String artistName;
   final String albumName;
-  final String fileHash;
-  final int durationSeconds;
-  final int trackNumber;
-  final int discNumber;
-  final int releaseYear;
-  final String coverImageBase64;
+  final String? fileHash;
+  final int? durationInSeconds;
+  final int? trackNumber;
+  final int? discNumber;
+  final int? releaseYear;
+  final String? photo;
 
   SongUploadDto({
     required this.name,
     required this.artistName,
     required this.albumName,
-    required this.fileHash,
-    required this.durationSeconds,
-    required this.trackNumber,
-    required this.discNumber,
-    required this.releaseYear,
-    required this.coverImageBase64,
+    this.fileHash,
+    this.durationInSeconds,
+    this.trackNumber,
+    this.discNumber,
+    this.releaseYear,
+    this.photo,
   });
 
   Map<String, dynamic> toJson() {
@@ -27,11 +27,11 @@ class SongUploadDto {
       'artistName': artistName,
       'albumName': albumName,
       'fileHash': fileHash,
-      'durationSeconds': durationSeconds,
+      'durationInSeconds': durationInSeconds,
       'trackNumber': trackNumber,
       'discNumber': discNumber,
       'releaseYear': releaseYear,
-      'coverImage': coverImageBase64,
+      'photo': photo,
     };
   }
 }

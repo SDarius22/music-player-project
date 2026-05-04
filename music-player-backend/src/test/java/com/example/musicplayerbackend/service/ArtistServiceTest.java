@@ -35,12 +35,24 @@ class ArtistServiceTest {
     @Mock
     ArtistMapper artistMapper;
 
+    @Mock
+    SongEnrichmentService songEnrichmentService;
+
     ArtistService service;
 
     @BeforeEach
     void setUp() {
-        service = new ArtistService(artistRepository, artistMapper, sortMapper);
+        service = new ArtistService(artistRepository, artistMapper, sortMapper, songEnrichmentService);
         org.mockito.Mockito.lenient().when(sortMapper.toSort(any())).thenReturn(org.springframework.data.domain.Sort.by("name"));
+        org.mockito.Mockito.lenient().when(songEnrichmentService.enrich(anyList(), any())).thenAnswer(inv -> {
+            List<Song> songs = inv.getArgument(0);
+            return songs.stream().map(s -> {
+                SongDto dto = new SongDto();
+                dto.setFileHash(s.getFileHash());
+                dto.setName(s.getName());
+                return dto;
+            }).toList();
+        });
 
         // Keep service tests independent from generated mapper impl classes.
         org.mockito.Mockito.lenient().when(artistMapper.toExpandedDto(any())).thenAnswer(invocation -> {
@@ -160,7 +172,7 @@ class ArtistServiceTest {
         Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of()).build();
         when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
 
-        ArtistDetailDto result = service.getArtistByHash("beatles-hash");
+        ArtistDetailDto result = service.getArtistByHash("beatles-hash", 1L);
 
         assertEquals("beatles-hash", result.getHash());
         assertEquals("Beatles", result.getName());
@@ -171,7 +183,7 @@ class ArtistServiceTest {
     void shouldThrow404WhenArtistByHashNotFound() {
         when(artistRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getArtistByHash("missing-hash"));
+                () -> service.getArtistByHash("missing-hash", 1L));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
@@ -182,7 +194,7 @@ class ArtistServiceTest {
         Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of(song)).build();
         when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
 
-        ArtistDetailDto result = service.getArtistByHash("beatles-hash");
+        ArtistDetailDto result = service.getArtistByHash("beatles-hash", 1L);
 
         assertEquals(1, result.getSongs().size());
         assertEquals("hash1", result.getSongs().getFirst().getFileHash());
@@ -193,7 +205,7 @@ class ArtistServiceTest {
         Artist artist = Artist.builder().id(1L).hash("solo-hash").name("Solo").songs(null).build();
         when(artistRepository.findByHash("solo-hash")).thenReturn(Optional.of(artist));
 
-        ArtistDetailDto result = service.getArtistByHash("solo-hash");
+        ArtistDetailDto result = service.getArtistByHash("solo-hash", 1L);
 
         assertTrue(result.getSongs().isEmpty());
     }

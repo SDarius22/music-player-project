@@ -183,9 +183,16 @@ class SongRestClient extends AbstractRestClient {
     );
   }
 
-  Future<SongPageDto> getRecommendations() async {
+  Future<SongPageDto> getRecommendations({int page = 0, int size = 10}) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
     try {
-      final response = await get('/songs/recommendations');
+      final response = await get(
+        '/songs/recommendations?${Uri(queryParameters: qp).query}',
+      );
       if (response.statusCode == 200) {
         return SongPageDto.fromJson(jsonDecode(response.body));
       }
@@ -193,17 +200,27 @@ class SongRestClient extends AbstractRestClient {
       _logger.warning('Error fetching recommendations', e);
     }
     return SongPageDto(
-      content: [],
-      page: 0,
-      size: 0,
+      content: const [],
+      page: page,
+      size: size,
       totalPages: 0,
       totalElements: 0,
     );
   }
 
-  Future<SongPageDto> getForgottenFavourites() async {
+  Future<SongPageDto> getForgottenFavourites({
+    int page = 0,
+    int size = 10,
+  }) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
     try {
-      final response = await get('/songs/forgotten');
+      final response = await get(
+        '/songs/forgotten?${Uri(queryParameters: qp).query}',
+      );
       if (response.statusCode == 200) {
         return SongPageDto.fromJson(jsonDecode(response.body));
       }
@@ -211,17 +228,24 @@ class SongRestClient extends AbstractRestClient {
       _logger.warning('Error fetching forgotten favourites', e);
     }
     return SongPageDto(
-      content: [],
-      page: 0,
-      size: 0,
+      content: const [],
+      page: page,
+      size: size,
       totalPages: 0,
       totalElements: 0,
     );
   }
 
-  Future<SongPageDto> getQuickDial() async {
+  Future<SongPageDto> getQuickDial({int page = 0, int size = 10}) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
     try {
-      final response = await get('/songs/quick-dial');
+      final response = await get(
+        '/songs/quick-dial?${Uri(queryParameters: qp).query}',
+      );
       if (response.statusCode == 200) {
         return SongPageDto.fromJson(jsonDecode(response.body));
       }
@@ -229,11 +253,111 @@ class SongRestClient extends AbstractRestClient {
       _logger.warning('Error fetching quick dial', e);
     }
     return SongPageDto(
-      content: [],
-      page: 0,
-      size: 0,
+      content: const [],
+      page: page,
+      size: size,
       totalPages: 0,
       totalElements: 0,
     );
+  }
+
+  Future<SongPageDto> getFavourites({int page = 0, int size = 250}) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
+    try {
+      final response = await get(
+        '/songs/favourites?${Uri(queryParameters: qp).query}',
+      );
+      if (response.statusCode == 200) {
+        return SongPageDto.fromJson(jsonDecode(response.body));
+      }
+    } catch (e) {
+      _logger.warning('Error fetching favourites', e);
+    }
+    return SongPageDto(
+      content: const [],
+      page: page,
+      size: size,
+      totalPages: 0,
+      totalElements: 0,
+    );
+  }
+
+  Future<SongPageDto> getMostPlayed({int page = 0, int size = 50}) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
+    try {
+      final response = await get(
+        '/songs/most-played?${Uri(queryParameters: qp).query}',
+      );
+      if (response.statusCode == 200) {
+        return SongPageDto.fromJson(jsonDecode(response.body));
+      }
+    } catch (e) {
+      _logger.warning('Error fetching most played songs', e);
+    }
+    return SongPageDto(
+      content: const [],
+      page: page,
+      size: size,
+      totalPages: 0,
+      totalElements: 0,
+    );
+  }
+
+  Future<SongPageDto> getRecentlyPlayed({int page = 0, int size = 50}) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
+    try {
+      final response = await get(
+        '/songs/recently-played?${Uri(queryParameters: qp).query}',
+      );
+      if (response.statusCode == 200) {
+        return SongPageDto.fromJson(jsonDecode(response.body));
+      }
+    } catch (e) {
+      _logger.warning('Error fetching recently played songs', e);
+    }
+    return SongPageDto(
+      content: const [],
+      page: page,
+      size: size,
+      totalPages: 0,
+      totalElements: 0,
+    );
+  }
+
+  Future<SongDto?> updateSongLibraryEntry(
+    String songFileHash,
+    bool likedByUser,
+    DateTime? lastPlayed,
+    int playCount,
+  ) async {
+    try {
+      final response = await patch('/songs/$songFileHash', {
+        'likedByUser': likedByUser,
+        'lastPlayed': lastPlayed?.toIso8601String(),
+        'playCount': playCount,
+      });
+      if (response.statusCode == 200) {
+        return SongDto.fromJson(jsonDecode(response.body));
+      } else {
+        _logger.warning(
+          'Failed to update song: ${response.statusCode} ${response.body}',
+        );
+      }
+    } catch (e) {
+      _logger.warning('Error updating song', e);
+    }
+    return null;
   }
 }

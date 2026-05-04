@@ -2,19 +2,19 @@ import 'package:music_player_frontend/core/dtos/playlists/playlist_song_position
 
 class CreatePlaylistDto {
   final String name;
-  final List<PlaylistSongPositionDto> songFileHashes;
-  final String coverImageBase64;
+  final List<PlaylistSongPositionDto> playlistSongs;
+  final String? coverImageBase64;
 
   CreatePlaylistDto({
     required this.name,
-    required this.songFileHashes,
-    required this.coverImageBase64,
+    required this.playlistSongs,
+    this.coverImageBase64,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'songFileHashes': songFileHashes.map((e) => e.toJson()).toList(),
+      'playlistSongs': playlistSongs.map((e) => e.toJson()).toList(),
       'coverImage': coverImageBase64,
     };
   }

@@ -1,6 +1,5 @@
 package com.example.musicplayerbackend.components;
 
-import com.example.musicplayerbackend.domain.PlaybackStateDto;
 import com.example.musicplayerbackend.service.PeerTrackingService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -98,7 +97,7 @@ class SignalingHandlerTest {
     void shouldRouteOfferMessageToTargetSession() throws Exception {
         // Register session2 as peer-B first
         String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
+                "type", "PING",
                 "senderId", "peer-B",
                 "userId", 2));
         handler.handleTextMessage(session2, new TextMessage(registerPayload));
@@ -122,7 +121,7 @@ class SignalingHandlerTest {
         when(session2.isOpen()).thenReturn(true);
         // Register session2 as peer-B
         String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
+                "type", "PING",
                 "senderId", "peer-B",
                 "userId", 2));
         handler.handleTextMessage(session2, new TextMessage(registerPayload));
@@ -143,7 +142,7 @@ class SignalingHandlerTest {
     void shouldRouteIceCandidateMessageToTargetSession() throws Exception {
         when(session2.isOpen()).thenReturn(true);
         String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
+                "type", "PING",
                 "senderId", "peer-B",
                 "userId", 2));
         handler.handleTextMessage(session2, new TextMessage(registerPayload));
@@ -158,32 +157,6 @@ class SignalingHandlerTest {
         handler.handleTextMessage(session, new TextMessage(icePayload));
 
         verify(session2).sendMessage(any(TextMessage.class));
-    }
-
-    @Test
-    void shouldDoNothingForSyncTriggerMessage() throws Exception {
-        String payload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "server",
-                "userId", 1));
-
-        handler.handleTextMessage(session, new TextMessage(payload));
-
-        // No interaction with peerTrackingService for sync trigger echoes
-        verify(peerTrackingService, never()).registerPeerChunks(anyString(), any(), any());
-        verify(session, never()).close(any());
-    }
-
-    @Test
-    void shouldDoNothingForPlaybackStateChangedMessage() throws Exception {
-        String payload = objectMapper.writeValueAsString(Map.of(
-                "type", "PLAYBACK_STATE_CHANGED",
-                "senderId", "server",
-                "userId", 1));
-
-        handler.handleTextMessage(session, new TextMessage(payload));
-
-        verify(session, never()).close(any());
     }
 
     @Test
@@ -210,7 +183,7 @@ class SignalingHandlerTest {
     void shouldUnregisterPeerWhenRegisteredSessionWithPeerIdCloses() throws Exception {
         // Register session first
         String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
+                "type", "PING",
                 "senderId", "peer-to-remove",
                 "userId", 5));
         handler.handleTextMessage(session, new TextMessage(registerPayload));
@@ -224,117 +197,13 @@ class SignalingHandlerTest {
     void shouldNotUnregisterPeerWhenRegisteredSessionHasNoPeerId() throws Exception {
         // Register session without senderId (peerId stays null)
         String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
+                "type", "PING",
                 "userId", 5));
         handler.handleTextMessage(session, new TextMessage(registerPayload));
 
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
 
         verify(peerTrackingService, never()).unregisterPeer(any());
-    }
-
-    @Test
-    void shouldSendNothingWhenDeliveringSyncTriggerWithNoSessionsForUser() throws Exception {
-        // user 999 has no sessions registered
-        handler.deliverSyncTriggerLocally(999L);
-
-        verify(session, never()).sendMessage(any());
-    }
-
-    @Test
-    void shouldSendSyncTriggerToOpenSession() throws Exception {
-        // Register session for user 10
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-deliver",
-                "userId", 10));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(true);
-
-        handler.deliverSyncTriggerLocally(10L);
-
-        verify(session).sendMessage(any(TextMessage.class));
-    }
-
-    @Test
-    void shouldNotSendSyncTriggerToClosedSession() throws Exception {
-        // Register session for user 11
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-closed",
-                "userId", 11));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(false);
-
-        handler.deliverSyncTriggerLocally(11L);
-
-        verify(session, never()).sendMessage(any());
-    }
-
-    @Test
-    void shouldSendNothingWhenDeliveringPlaybackStateWithNoSessionsForUser() throws Exception {
-        handler.deliverPlaybackStateChangedLocally(888L, new PlaybackStateDto());
-
-        verify(session, never()).sendMessage(any());
-    }
-
-    @Test
-    void shouldSendPlaybackStateChangedPayloadToOpenSession() throws Exception {
-        // Register session for user 20
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-pb",
-                "userId", 20));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(true);
-
-        handler.deliverPlaybackStateChangedLocally(20L, new PlaybackStateDto());
-
-        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
-        verify(session).sendMessage(captor.capture());
-        assertTrue(captor.getValue().getPayload().contains("PLAYBACK_STATE_CHANGED"));
-    }
-
-    @Test
-    void shouldPublishSyncTriggerToRedis() {
-        handler.sendSyncTrigger(42L);
-
-        verify(redisTemplate).convertAndSend("signaling:sync", "42");
-    }
-
-    @Test
-    void shouldPublishPlaybackStateChangedToRedis() {
-        handler.sendPlaybackStateChanged(7L, new PlaybackStateDto());
-
-        verify(redisTemplate).convertAndSend(eq("signaling:playback"), anyString());
-    }
-
-    @Test
-    void shouldLogAndNotThrowWhenPlaybackStateSerializationFails() throws Exception {
-        // Use a handler with a mock ObjectMapper that throws on serialization
-        ObjectMapper brokenMapper = mock(ObjectMapper.class);
-        when(brokenMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("mock fail") {
-        });
-        SignalingHandler brokenHandler = new SignalingHandler(brokenMapper, peerTrackingService, redisTemplate);
-
-        // Should not throw even when ObjectMapper fails
-        assertDoesNotThrow(() -> brokenHandler.sendPlaybackStateChanged(1L, new PlaybackStateDto()));
-
-        verify(redisTemplate, never()).convertAndSend(any(), any(Object.class));
-    }
-
-    @Test
-    void shouldRegisterSessionButNotUpdateUserIndexWhenUserIdIsAbsent() throws Exception {
-        // senderId present, userId absent → session registered but userIndex not updated
-        String payload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-no-user-id"));
-
-        handler.handleTextMessage(session, new TextMessage(payload));
-
-        // No sessions mapped for any userId, so delivering to any user should not reach session
-        handler.deliverSyncTriggerLocally(999L);
-        verify(session, never()).sendMessage(any());
     }
 
     @Test
@@ -370,7 +239,7 @@ class SignalingHandlerTest {
     void shouldPublishToRedisWhenOfferTargetSessionIsClosed() throws Exception {
         // Register session2 as peer-C but mark it closed — falls back to Redis pub/sub
         String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
+                "type", "PING",
                 "senderId", "peer-C",
                 "userId", 2));
         handler.handleTextMessage(session2, new TextMessage(registerPayload));
@@ -390,33 +259,10 @@ class SignalingHandlerTest {
     }
 
     @Test
-    void shouldRetainUserIndexEntryWhenUserHasOtherSessionsAfterClose() throws Exception {
-        // Register two sessions for user 50
-        String payload1 = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-s1",
-                "userId", 50));
-        handler.handleTextMessage(session, new TextMessage(payload1));
-
-        String payload2 = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-s2",
-                "userId", 50));
-        handler.handleTextMessage(session2, new TextMessage(payload2));
-
-        // Close session1 — userSessions still has session2, so userIndex entry is retained
-        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
-
-        when(session2.isOpen()).thenReturn(true);
-        handler.deliverSyncTriggerLocally(50L);
-        verify(session2).sendMessage(any(TextMessage.class));
-    }
-
-    @Test
     void shouldSkipUserIndexCleanupWhenClientHasNullUserId() throws Exception {
         // Register session with senderId but no userId → ClientConnection.userId() == null
         String payload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
+                "type", "PING",
                 "senderId", "peer-no-user"));
         handler.handleTextMessage(session, new TextMessage(payload));
 
@@ -424,58 +270,6 @@ class SignalingHandlerTest {
 
         // peerId cleanup still happens, but userId block is skipped without NPE
         verify(peerTrackingService).unregisterPeer("peer-no-user");
-    }
-
-    @Test
-    void shouldNotSendPlaybackStateChangedToClosedSession() throws Exception {
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-pb-closed",
-                "userId", 21));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(false);
-
-        handler.deliverPlaybackStateChangedLocally(21L, new PlaybackStateDto());
-
-        verify(session, never()).sendMessage(any());
-    }
-
-    @Test
-    void shouldReturnEarlyWhenDeliverPlaybackStateChangedSerializationFails() throws Exception {
-        ObjectMapper brokenMapper = mock(ObjectMapper.class);
-        when(brokenMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("fail") {
-        });
-        SignalingHandler brokenHandler = new SignalingHandler(brokenMapper, peerTrackingService, redisTemplate);
-
-        assertDoesNotThrow(() -> brokenHandler.deliverPlaybackStateChangedLocally(1L, new PlaybackStateDto()));
-
-        verify(session, never()).sendMessage(any());
-    }
-
-    @Test
-    void shouldHandleIOExceptionWhenSendingPlaybackStateChangedToSession() throws Exception {
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-pb-io",
-                "userId", 40));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(true);
-        doThrow(new IOException("send failed")).when(session).sendMessage(any(TextMessage.class));
-
-        assertDoesNotThrow(() -> handler.deliverPlaybackStateChangedLocally(40L, new PlaybackStateDto()));
-    }
-
-    @Test
-    void shouldHandleIOExceptionWhenSendingSyncTriggerToSession() throws Exception {
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-io",
-                "userId", 30));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(true);
-        doThrow(new IOException("send failed")).when(session).sendMessage(any(TextMessage.class));
-
-        assertDoesNotThrow(() -> handler.deliverSyncTriggerLocally(30L));
     }
 
     @Test

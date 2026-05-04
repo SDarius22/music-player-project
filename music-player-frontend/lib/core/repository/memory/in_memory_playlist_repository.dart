@@ -43,21 +43,20 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   }
 
   @override
-  Playlist? getPlaylistByServerIdAndName(int serverId, String name) {
+  Playlist? getPlaylistByName(String name) {
     for (final p in _byId.values) {
-      if (p.serverId == serverId && p.getName() == name) return p;
+      if (p.getName() == name) return p;
     }
     return null;
   }
 
   @override
-  Playlist getOrCreatePlaylist(int serverId, String name) {
-    Playlist? existingPlaylist = getPlaylistByServerIdAndName(serverId, name);
+  Playlist getOrCreatePlaylist(String name) {
+    Playlist? existingPlaylist = getPlaylistByName(name);
     if (existingPlaylist != null) {
       return existingPlaylist;
     }
     Playlist newPlaylist = Playlist(name);
-    newPlaylist.serverId = serverId;
     return savePlaylist(newPlaylist);
   }
 
@@ -70,14 +69,32 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   }
 
   @override
-  List<Playlist> getIndestructiblePlaylists() =>
-      _byId.values.where((p) => p.indestructible == true).toList()
-        ..sort((a, b) => a.getName().compareTo(b.getName()));
+  List<Playlist> getIndestructiblePlaylists(int offset, int limit) {
+    final all =
+        _byId.values.where((p) => p.indestructible == true).toList()
+          ..sort((a, b) => a.getName().compareTo(b.getName()));
+    if (offset >= all.length) return [];
+    return all.sublist(offset, (offset + limit).clamp(0, all.length));
+  }
 
   @override
-  List<Playlist> getNormalPlaylists() =>
-      _byId.values.where((p) => p.indestructible != true).toList()
-        ..sort((a, b) => a.getName().compareTo(b.getName()));
+  int getIndestructiblePlaylistCount() {
+    return _byId.values.where((p) => p.indestructible == true).length;
+  }
+
+  @override
+  List<Playlist> getNormalPlaylists(int offset, int limit) {
+    final all =
+        _byId.values.where((p) => p.indestructible != true).toList()
+          ..sort((a, b) => a.getName().compareTo(b.getName()));
+    if (offset >= all.length) return [];
+    return all.sublist(offset, (offset + limit).clamp(0, all.length));
+  }
+
+  @override
+  int getNormalPlaylistCount() {
+    return _byId.values.where((p) => p.indestructible != true).length;
+  }
 
   @override
   List<Playlist> getAllPlaylists() {

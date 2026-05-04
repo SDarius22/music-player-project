@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
+import 'package:music_player_frontend/core/dtos/playlists/create_playlist_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
@@ -29,12 +31,44 @@ class PlaylistRestClient extends AbstractRestClient {
     return null;
   }
 
+  Future<PlaylistDetailDto?> getPlaylistDetailsByName(
+    String playlistName,
+  ) async {
+    try {
+      final response = await get('/playlists/details-by-name/$playlistName');
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return PlaylistDetailDto.fromJson(decoded);
+        }
+      }
+    } catch (e) {
+      _logger.warning('Error fetching playlist details by name', e);
+    }
+    return null;
+  }
+
   Future<PlaylistPageDto> getPlaylistsPage({
+    String? query,
+    bool? filterIndestructible,
     int page = 0,
     int size = 50,
   }) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
+    if (query != null && query.trim().isNotEmpty) {
+      qp['q'] = query.trim();
+    }
+
+    if (filterIndestructible != null) {
+      qp['filter[indestructible]'] = filterIndestructible.toString();
+    }
+
     try {
-      final endpoint = '/playlists?page=$page&size=$size';
+      final endpoint = '/playlists?${Uri(queryParameters: qp).query}';
       final response = await get(endpoint);
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -55,17 +89,10 @@ class PlaylistRestClient extends AbstractRestClient {
   }
 
   Future<PlaylistDetailDto?> createPlaylist(
-    String name,
-    List<String> songFileHashes,
-    String? coverBase64,
+    CreatePlaylistDto createPlaylistDto,
   ) async {
     try {
-      final body = <String, dynamic>{
-        'name': name,
-        'songFileHashes': songFileHashes,
-        if (coverBase64 != null) 'coverImage': coverBase64,
-      };
-      final response = await post('/playlists', body);
+      final response = await post('/playlists', createPlaylistDto.toJson());
       if (response.statusCode == 201) {
         return PlaylistDetailDto.fromJson(jsonDecode(response.body));
       }
@@ -77,18 +104,14 @@ class PlaylistRestClient extends AbstractRestClient {
   }
 
   Future<bool> updatePlaylist(
-    int playlistId,
-    String name,
-    List<String> songFileHashes,
-    String? coverBase64,
+    int playlistServerId,
+    UpdatePlaylistDto updatePlaylistDto,
   ) async {
     try {
-      final body = <String, dynamic>{
-        'name': name,
-        'songFileHashes': songFileHashes,
-        if (coverBase64 != null) 'coverImage': coverBase64,
-      };
-      final response = await put('/playlists/$playlistId', body);
+      final response = await patch(
+        '/playlists/$playlistServerId',
+        updatePlaylistDto.toJson(),
+      );
       return response.statusCode == 200;
     } catch (e) {
       _logger.warning('Error updating playlist', e);

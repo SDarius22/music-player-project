@@ -86,6 +86,15 @@ class MockChunkCacheRepository extends _i1.Mock
           as _i7.Future<void>);
 
   @override
+  _i7.Future<void> deleteChunk(String? fileHash, int? chunkIndex) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteChunk, [fileHash, chunkIndex]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
   _i7.Future<List<int>> getAvailableChunkIndices(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#getAvailableChunkIndices, [fileHash]),
@@ -176,17 +185,6 @@ class MockStreamingRestClient extends _i1.Mock
           as _i7.Future<_i8.Uint8List>);
 
   @override
-  _i7.Future<_i8.Uint8List> fetchPrefix(String? fileHash) =>
-      (super.noSuchMethod(
-            Invocation.method(#fetchPrefix, [fileHash]),
-            returnValue: _i7.Future<_i8.Uint8List>.value(_i8.Uint8List(0)),
-            returnValueForMissingStub: _i7.Future<_i8.Uint8List>.value(
-              _i8.Uint8List(0),
-            ),
-          )
-          as _i7.Future<_i8.Uint8List>);
-
-  @override
   _i7.Future<_i4.Response> post(String? endpoint, Map<String, dynamic>? body) =>
       (super.noSuchMethod(
             Invocation.method(#post, [endpoint, body]),
@@ -216,6 +214,28 @@ class MockStreamingRestClient extends _i1.Mock
               _FakeResponse_2(
                 this,
                 Invocation.method(#get, [endpoint], {#headers: headers}),
+              ),
+            ),
+          )
+          as _i7.Future<_i4.Response>);
+
+  @override
+  _i7.Future<_i4.Response> patch(
+    String? endpoint,
+    Map<String, dynamic>? body,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#patch, [endpoint, body]),
+            returnValue: _i7.Future<_i4.Response>.value(
+              _FakeResponse_2(
+                this,
+                Invocation.method(#patch, [endpoint, body]),
+              ),
+            ),
+            returnValueForMissingStub: _i7.Future<_i4.Response>.value(
+              _FakeResponse_2(
+                this,
+                Invocation.method(#patch, [endpoint, body]),
               ),
             ),
           )

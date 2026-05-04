@@ -34,8 +34,6 @@ abstract class SongRepository {
 
   List<Song> getAllSongs();
 
-  List<Song> getUnsyncedSongs();
-
   void deleteSong(Song song);
 
   void updateSong(Song song);

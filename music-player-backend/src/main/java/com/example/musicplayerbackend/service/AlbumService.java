@@ -23,6 +23,7 @@ public class AlbumService {
     private final AlbumRepository albumRepository;
     private final AlbumMapper albumMapper;
     private final SortMapper sortMapper;
+    private final SongEnrichmentService songEnrichmentService;
 
     @Transactional(readOnly = true)
     public AlbumPageDto getAlbums(String query, Integer page, Integer size, String sort) {
@@ -47,11 +48,13 @@ public class AlbumService {
     }
 
     @Transactional(readOnly = true)
-    public AlbumDetailDto getAlbumByHash(String albumHash) {
+    public AlbumDetailDto getAlbumByHash(String albumHash, Long userId) {
         Album album = albumRepository.findByHash(albumHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
 
-        return albumMapper.toDetailDto(album, getMainArtist(album));
+        AlbumDetailDto dto = albumMapper.toDetailDto(album, getMainArtist(album));
+        dto.setSongs(songEnrichmentService.enrich(album.getSongs(), userId));
+        return dto;
     }
 
     @Transactional(readOnly = true)

@@ -4,7 +4,7 @@ import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.Playlist;
 import com.example.musicplayerbackend.domain.PlaylistDetailDto;
 import com.example.musicplayerbackend.domain.PlaylistDto;
-import com.example.musicplayerbackend.domain.SongDto;
+import com.example.musicplayerbackend.domain.PlaylistSongDto;
 import org.mapstruct.*;
 
 import java.util.Arrays;
@@ -21,8 +21,8 @@ public interface PlaylistMapper {
 
     @Mapping(target = "id", source = "playlist.id")
     @Mapping(target = "name", source = "playlist.name")
-    @Mapping(target = "songs", source = "songs")
-    PlaylistDetailDto toDetailDto(Playlist playlist, List<SongDto> songs);
+    @Mapping(target = "playlistSongs", source = "playlistSongs")
+    PlaylistDetailDto toDetailDto(Playlist playlist, List<PlaylistSongDto> playlistSongs);
 
     @Named("csvToHashes")
     default List<String> csvToHashes(String csv) {

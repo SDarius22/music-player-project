@@ -6,7 +6,10 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "playlists")
+@Table(name = "playlists",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_playlists_user_id_name",
+                columnNames = {"user_id", "name"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,6 +35,10 @@ public class Playlist {
 
     @Column(columnDefinition = "TEXT")
     private String coverImage;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean indestructible = false;
 
     @Column(nullable = false)
     @Builder.Default

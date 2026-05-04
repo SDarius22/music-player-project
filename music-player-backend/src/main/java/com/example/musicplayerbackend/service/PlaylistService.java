@@ -7,10 +7,10 @@ import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.PlaylistMapper;
-import com.example.musicplayerbackend.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,10 +29,13 @@ public class PlaylistService {
     private final PlaylistSongRepository playlistSongRepository;
     private final SongRepository songRepository;
     private final PlaylistMapper playlistMapper;
-    private final SongMapper songMapper;
+    private final SongEnrichmentService songEnrichmentService;
 
-    public PlaylistPageDto getPlaylists(Long userId, int page, int size) {
-        Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(userId, PageRequest.of(page, size));
+    public PlaylistPageDto getPlaylists(Long userId, String q, String sort, Boolean indestructibleFilter, int page, int size) {
+        String search = (q == null || q.isBlank()) ? "" : q.trim();
+        Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(
+                userId, search, indestructibleFilter,
+                PageRequest.of(page, size, parsePlaylistSort(sort)));
 
         List<PlaylistDto> content = result.getContent().stream()
                 .map(playlistMapper::toDto)
@@ -47,6 +50,33 @@ public class PlaylistService {
         );
     }
 
+    public PlaylistDetailDto getPlaylistByName(Long userId, String name) {
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name is required");
+        }
+        Playlist playlist = playlistRepository.findByUser_IdAndName(userId, name)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist not found"));
+        return toDetailDto(playlist);
+    }
+
+    private Sort parsePlaylistSort(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return Sort.by(Sort.Order.asc("name"));
+        }
+        String[] parts = sort.split(",", 2);
+        String property = parts[0].trim();
+        String dir = parts.length > 1 ? parts[1].trim().toLowerCase() : "asc";
+
+        // Native query — map to SQL column names.
+        String column = switch (property) {
+            case "createdAt", "created_at" -> "created_at";
+            default -> "name";
+        };
+        return "desc".equals(dir)
+                ? Sort.by(Sort.Order.desc(column))
+                : Sort.by(Sort.Order.asc(column));
+    }
+
     @Transactional
     public PlaylistDetailDto createPlaylist(User user, CreatePlaylistDto req) {
         if (req.getPlaylistSongs() == null || req.getPlaylistSongs().isEmpty()) {
@@ -55,6 +85,10 @@ public class PlaylistService {
 
         if (req.getName() == null || req.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Playlist name is required");
+        }
+
+        if (playlistRepository.existsByUser_IdAndName(user.getId(), req.getName())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Playlist with this name already exists");
         }
 
         Playlist playlist = Playlist.builder()
@@ -77,7 +111,10 @@ public class PlaylistService {
     @Transactional
     public PlaylistDetailDto updatePlaylist(Long playlistId, Long userId, UpdatePlaylistDto req) {
         Playlist playlist = findAndAuthorize(playlistId, userId);
-        if (req.getName() != null) {
+        if (req.getName() != null && !req.getName().equals(playlist.getName())) {
+            if (playlistRepository.existsByUser_IdAndName(userId, req.getName())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Playlist with this name already exists");
+            }
             playlist.setName(req.getName());
         }
         if (req.getPlaylistSongs() != null && !req.getPlaylistSongs().isEmpty()) {
@@ -95,6 +132,9 @@ public class PlaylistService {
     @Transactional
     public void deletePlaylist(Long playlistId, Long userId) {
         Playlist playlist = findAndAuthorize(playlistId, userId);
+        if (Boolean.TRUE.equals(playlist.getIndestructible())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Playlist cannot be deleted");
+        }
         playlistRepository.delete(playlist);
     }
 
@@ -142,13 +182,30 @@ public class PlaylistService {
         Map<Long, Song> songsById = songRepository.findAllById(uniqueSongIds).stream()
                 .collect(Collectors.toMap(Song::getId, Function.identity()));
 
-        List<SongDto> songs = playlistSongs.stream()
-                .map(entry -> songsById.get(entry.getSong().getId()))
+        Long ownerId = playlist.getUser() == null ? null : playlist.getUser().getId();
+        Map<String, SongDto> dtosByFileHash = songEnrichmentService
+                .enrich(new ArrayList<>(songsById.values()), ownerId).stream()
+                .collect(Collectors.toMap(SongDto::getFileHash, Function.identity()));
+
+        List<PlaylistSongDto> entries = playlistSongs.stream()
+                .map(entry -> {
+                    Song song = songsById.get(entry.getSong().getId());
+                    if (song == null) {
+                        return null;
+                    }
+                    SongDto songDto = dtosByFileHash.get(song.getFileHash());
+                    if (songDto == null) {
+                        return null;
+                    }
+                    PlaylistSongDto dto = new PlaylistSongDto();
+                    dto.setSong(songDto);
+                    dto.setPosition(entry.getId().getPosition());
+                    return dto;
+                })
                 .filter(Objects::nonNull)
-                .map(songMapper::toDto)
                 .toList();
 
-        return playlistMapper.toDetailDto(playlist, songs);
+        return playlistMapper.toDetailDto(playlist, entries);
     }
 
     private void replacePlaylistSongs(Playlist playlist, List<PlaylistSongPositionDto> items) {

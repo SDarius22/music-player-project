@@ -65,13 +65,4 @@ class StreamingRestClient extends AbstractRestClient {
       _release();
     }
   }
-
-  Future<Uint8List> fetchPrefix(String fileHash) async {
-    final response = await get('/stream/$fileHash/prefix', headers: {});
-
-    if (response.statusCode == 200) {
-      return response.bodyBytes;
-    }
-    throw Exception("Prefix fetch failed: ${response.statusCode}");
-  }
 }

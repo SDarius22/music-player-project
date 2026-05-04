@@ -23,6 +23,7 @@ public class ArtistService {
     private final ArtistRepository artistRepository;
     private final ArtistMapper artistMapper;
     private final SortMapper sortMapper;
+    private final SongEnrichmentService songEnrichmentService;
 
     @Transactional(readOnly = true)
     public ArtistPageDto getArtists(String query, Integer page, Integer size, String sort) {
@@ -47,10 +48,12 @@ public class ArtistService {
     }
 
     @Transactional(readOnly = true)
-    public ArtistDetailDto getArtistByHash(String artistHash) {
+    public ArtistDetailDto getArtistByHash(String artistHash, Long userId) {
         Artist artist = artistRepository.findByHash(artistHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
-        return artistMapper.toDetailDto(artist);
+        ArtistDetailDto dto = artistMapper.toDetailDto(artist);
+        dto.setSongs(songEnrichmentService.enrich(artist.getSongs(), userId));
+        return dto;
     }
 
     @Transactional(readOnly = true)

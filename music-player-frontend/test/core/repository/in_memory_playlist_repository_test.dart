@@ -4,15 +4,15 @@ import 'package:music_player_frontend/core/repository/memory/in_memory_playlist_
 
 void main() {
   group('InMemoryPlaylistRepository', () {
-    test('getOrCreatePlaylist reuses playlist for same serverId and name', () {
+    test('getOrCreatePlaylist reuses playlist for same name', () {
       final repo = InMemoryPlaylistRepository();
 
-      final first = repo.getOrCreatePlaylist(10, 'Favorites');
-      final second = repo.getOrCreatePlaylist(10, 'Favorites');
+      final first = repo.getOrCreatePlaylist('Favorites');
+      final second = repo.getOrCreatePlaylist('Favorites');
 
       expect(first.id, isPositive);
       expect(second.id, first.id);
-      expect(repo.getPlaylistByServerIdAndName(10, 'Favorites'), isNotNull);
+      expect(repo.getPlaylistByName('Favorites'), same(first));
     });
 
     test('watchPlaylists emits after save', () async {
@@ -33,8 +33,11 @@ void main() {
       repo.savePlaylist(special);
       repo.savePlaylist(regular);
 
-      expect(repo.getIndestructiblePlaylists().map((p) => p.getName()), ['Special']);
-      expect(repo.getNormalPlaylists().map((p) => p.getName()), ['Regular']);
+      expect(
+        repo.getIndestructiblePlaylists(0, 10).map((p) => p.getName()),
+        ['Special'],
+      );
+      expect(repo.getNormalPlaylists(0, 10).map((p) => p.getName()), ['Regular']);
     });
   });
 }
