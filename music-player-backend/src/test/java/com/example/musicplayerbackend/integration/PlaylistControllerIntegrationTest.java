@@ -87,7 +87,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
         CreatePlaylistDto req = new CreatePlaylistDto();
         req.setName("New Playlist");
-        req.setSongFileHashes(List.of(item));
+        req.setPlaylistSongs(List.of(item));
 
         mockMvc.perform(post("/api/v1/playlists")
                         .with(user(testUser))
@@ -138,9 +138,9 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
         req.setName("New Name");
-        req.setSongFileHashes(null);
+        req.setPlaylistSongs(null);
 
-        mockMvc.perform(put("/api/v1/playlists/{id}", playlist.getId())
+        mockMvc.perform(patch("/api/v1/playlists/{id}", playlist.getId())
                         .with(user(testUser))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -156,9 +156,9 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
         req.setName("Hijack");
-        req.setSongFileHashes(null);
+        req.setPlaylistSongs(null);
 
-        mockMvc.perform(put("/api/v1/playlists/{id}", other.getId())
+        mockMvc.perform(patch("/api/v1/playlists/{id}", other.getId())
                         .with(user(testUser))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))

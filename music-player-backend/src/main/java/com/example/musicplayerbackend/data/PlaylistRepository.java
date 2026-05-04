@@ -22,7 +22,7 @@ public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
                        FILTER (WHERE s.file_hash IS NOT NULL AND s.file_hash <> '')      AS songfilehashescsv
             FROM music_library.playlists p
             LEFT JOIN music_library.playlist_songs ps ON ps.playlist_id = p.id
-            LEFT JOIN music_library.songs s ON s.id = ps.song_id
+            LEFT JOIN music_library.songs s ON s.file_hash = ps.song_file_hash
             WHERE p.user_id = :userId
             GROUP BY p.id, p.name, p.playlist_type, p.user_id
             """,

@@ -113,7 +113,7 @@ class PlaylistServiceTest {
     void shouldPersistPlaylistSongsInRequestedOrderWhenCreatingPlaylist() {
         CreatePlaylistDto req = new CreatePlaylistDto();
         req.setName("New Playlist");
-        req.setSongFileHashes(List.of(songInput("h2", 1), songInput("h1", 2)));
+        req.setPlaylistSongs(List.of(songInput("h2", 1), songInput("h1", 2)));
 
         Song song1 = Song.builder().id(10L).name("S1").songType(ContentType.STREAMABLE).fileHash("h1").build();
         Song song2 = Song.builder().id(20L).name("S2").songType(ContentType.STREAMABLE).fileHash("h2").build();
@@ -153,7 +153,7 @@ class PlaylistServiceTest {
     void shouldThrow400WhenCreatingPlaylistWithNullSongs() {
         CreatePlaylistDto req = new CreatePlaylistDto();
         req.setName("Empty Playlist");
-        req.setSongFileHashes(null);
+        req.setPlaylistSongs(null);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> service.createPlaylist(owner, req));
@@ -168,7 +168,7 @@ class PlaylistServiceTest {
     void shouldThrow400WhenCreatingPlaylistWithEmptySongs() {
         CreatePlaylistDto req = new CreatePlaylistDto();
         req.setName("Empty Playlist");
-        req.setSongFileHashes(List.of());
+        req.setPlaylistSongs(List.of());
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> service.createPlaylist(owner, req));
@@ -214,7 +214,7 @@ class PlaylistServiceTest {
         when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(1L)).thenReturn(List.of());
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
-        req.setSongFileHashes(null);
+        req.setPlaylistSongs(null);
 
         service.updatePlaylist(1L, 1L, req);
 
@@ -243,7 +243,7 @@ class PlaylistServiceTest {
         when(songMapper.toDto(song)).thenReturn(dto);
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
-        req.setSongFileHashes(List.of(songInput("h", 0)));
+        req.setPlaylistSongs(List.of(songInput("h", 0)));
 
         PlaylistDetailDto result = service.updatePlaylist(1L, 1L, req);
 
@@ -259,7 +259,7 @@ class PlaylistServiceTest {
         when(playlistRepository.findById(1L)).thenReturn(Optional.of(playlist));
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
-        req.setSongFileHashes(List.of(songInput("h1", 0), songInput("h2", 0)));
+        req.setPlaylistSongs(List.of(songInput("h1", 0), songInput("h2", 0)));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> service.updatePlaylist(1L, 1L, req));
