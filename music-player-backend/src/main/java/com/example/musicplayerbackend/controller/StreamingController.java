@@ -24,28 +24,6 @@ public class StreamingController implements StreamApi {
     private final StreamingService streamingService;
 
     @Override
-    public ResponseEntity<Resource> getSongPrefix(String fileHash, Integer prefixBytes) {
-        long userId = currentUserId();
-        log.info("[STREAM] Prefix request: fileHash={}, prefixBytes={}, userId={}", fileHash, prefixBytes, userId);
-        Resource resource = streamingService.getSongPrefix(fileHash, prefixBytes, userId);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"song_prefix\"")
-                .body(resource);
-    }
-
-    @Override
-    public ResponseEntity<Resource> getFullStream(String fileHash) {
-        long userId = currentUserId();
-        log.info("[STREAM] Full stream request (master fallback): fileHash={}, userId={}", fileHash, userId);
-        Resource resource = streamingService.getFullStream(fileHash, userId);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"song\"")
-                .body(resource);
-    }
-
-    @Override
     public ResponseEntity<ChunkManifestDto> getSongManifest(String fileHash) {
         long userId = currentUserId();
         log.info("[STREAM] Manifest request: fileHash={}, userId={}", fileHash, userId);

@@ -4,25 +4,28 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
+import 'package:music_player_frontend/core/dtos/playlists/create_playlist_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_song_position_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
-import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
+import 'package:music_player_frontend/core/services/song_service.dart';
 
 class PlaylistService {
   static final _logger = Logger('PlaylistService');
 
   final PlaylistRepository _playlistRepository;
-  final SongRepository _songRepository;
+  final SongService _songService;
   final PlaylistRestClient _playlistRestService;
 
   PlaylistService(
     this._playlistRepository,
-    this._songRepository,
     this._playlistRestService,
+    this._songService,
   ) {
     if (getIndestructiblePlaylists().isEmpty) {
       initializeIndestructible();
@@ -40,55 +43,54 @@ class PlaylistService {
   ) async {
     Playlist newPlaylist = Playlist(name, songs: songs);
     newPlaylist.imageBytes = coverArt;
-    _playlistRepository.savePlaylist(newPlaylist);
 
     try {
-      final songFileHashes =
-          songs.map((s) => s.getHash()).where((h) => h.isNotEmpty).toList();
       final coverBase64 = coverArt != null ? base64Encode(coverArt) : null;
-      final result = await _playlistRestService.createPlaylist(
-        name,
-        songFileHashes,
-        coverBase64,
+      final request = CreatePlaylistDto(
+        name: name,
+        playlistSongs:
+            songs
+                .asMap()
+                .entries
+                .map(
+                  (e) => PlaylistSongPositionDto(
+                    songFileHash: e.value.getHash(),
+                    position: e.key,
+                  ),
+                )
+                .toList(),
+        coverImageBase64: coverBase64,
       );
+      final result = await _playlistRestService.createPlaylist(request);
       if (result != null) {
         newPlaylist.serverId = result.id;
-        _playlistRepository.savePlaylist(newPlaylist);
       }
     } catch (e) {
       _logger.fine('failed to create playlist on server: $e');
     }
 
-    return newPlaylist;
+    return _playlistRepository.savePlaylist(newPlaylist);
   }
 
   Future<Playlist> updatePlaylist(Playlist playlist) async {
-    if (playlist.indestructible) {
-      final list = playlist.getSongs();
-      _logger.fine('Updating cover art for indestructible playlist $playlist');
-      if (list.isNotEmpty) {
-        playlist.imageBytes = list.first.getCoverArt();
-      }
-    }
-
     if (playlist.serverId > 0) {
       try {
-        final songFileHashes =
-            playlist
-                .getSongs()
-                .map((s) => s.getHash())
-                .where((h) => h.isNotEmpty)
-                .toList();
-        final coverBase64 =
-            playlist.imageBytes != null
-                ? base64Encode(playlist.imageBytes!)
-                : null;
-        await _playlistRestService.updatePlaylist(
-          playlist.serverId,
-          playlist.getName(),
-          songFileHashes,
-          coverBase64,
+        final request = UpdatePlaylistDto(
+          name: playlist.getName(),
+          playlistSongs:
+              playlist
+                  .getSongs()
+                  .asMap()
+                  .entries
+                  .map(
+                    (e) => PlaylistSongPositionDto(
+                      songFileHash: e.value.getHash(),
+                      position: e.key,
+                    ),
+                  )
+                  .toList(),
         );
+        await _playlistRestService.updatePlaylist(playlist.serverId, request);
       } catch (e) {
         _logger.fine('failed to update playlist on server: $e');
       }
@@ -97,8 +99,12 @@ class PlaylistService {
     return _playlistRepository.savePlaylist(playlist);
   }
 
-  Song? getMostRecentPlayedSong() {
-    return _songRepository.getMostRecentPlayedSong();
+  Future<Song?> getMostRecentPlayedSong() async {
+    var mostRecentSong = await _songService.getRecentlyPlayedSongs(1);
+    if (mostRecentSong.isNotEmpty) {
+      return mostRecentSong.first;
+    }
+    return null;
   }
 
   void initializeIndestructible() {
@@ -175,7 +181,7 @@ class PlaylistService {
     _playlistRepository.savePlaylist(recentlyPlayed);
   }
 
-  void updateMostPlayedPlaylist() {
+  Future<void> updateMostPlayedPlaylist() async {
     Playlist? mostPlayed = _playlistRepository
         .getIndestructiblePlaylists()
         .firstWhereOrNull((pl) => pl.getName() == "Most Played");
@@ -183,13 +189,13 @@ class PlaylistService {
       _logger.fine("Most Played playlist not found");
       return;
     }
-    List<Song> topSongs = _songRepository.getMostPlayedSongs(50);
+    List<Song> topSongs = await _songService.getMostPlayedSongs(50);
     _logger.fine("Updating Most Played with ${topSongs.length} songs");
     mostPlayed.clearSongs();
     addToPlaylist(mostPlayed, topSongs);
   }
 
-  void updateRecentlyPlayedPlaylist() {
+  Future<void> updateRecentlyPlayedPlaylist() async {
     Playlist? recentlyPlayed = _playlistRepository
         .getIndestructiblePlaylists()
         .firstWhereOrNull((pl) => pl.getName() == "Recently Played");
@@ -197,7 +203,7 @@ class PlaylistService {
       _logger.fine("Recently Played playlist not found");
       return;
     }
-    List<Song> recentSongs = _songRepository.getRecentlyPlayedSongs(50);
+    List<Song> recentSongs = await _songService.getRecentlyPlayedSongs(50);
     recentlyPlayed.clearSongs();
     addToPlaylist(recentlyPlayed, recentSongs);
   }
@@ -210,7 +216,7 @@ class PlaylistService {
       _logger.fine("Favorites playlist not found");
       return;
     }
-    List<Song> favoriteSongs = _songRepository.getFavoriteSongs();
+    List<Song> favoriteSongs = _songService.getFavoriteSongs();
     favorites.clearSongs();
     addToPlaylist(favorites, favoriteSongs);
   }
@@ -313,7 +319,7 @@ class PlaylistService {
     );
 
     for (final hash in serverPlaylist.songFileHashes) {
-      final song = _songRepository.getOrCreateSong(hash);
+      final song = _songService.getOrCreateSong(hash);
       if (!cachedPlaylist.getSongs().contains(song)) {
         cachedPlaylist.addSong(song);
       }
@@ -334,8 +340,22 @@ class PlaylistService {
 
     cachedPlaylist.clearSongs();
 
-    for (final song in serverPlaylist.songs) {
-      final cachedSong = _songRepository.getOrCreateSong(song.fileHash);
+    for (final playlistSong in serverPlaylist.playlistSongs) {
+      final cachedSong = _songService.getOrCreateSong(
+        playlistSong.song.fileHash,
+      );
+      final song = playlistSong.song;
+
+      if (!cachedSong.fullyLoaded) {
+        cachedSong.name = song.name;
+        cachedSong.discNumber = song.discNumber;
+        cachedSong.trackNumber = song.trackNumber;
+        cachedSong.durationInSeconds = song.durationInSeconds;
+        cachedSong.year = song.releaseYear;
+        cachedSong.fullyLoaded = true;
+        _songService.updateSong(cachedSong);
+      }
+
       cachedPlaylist.addSong(cachedSong);
     }
 

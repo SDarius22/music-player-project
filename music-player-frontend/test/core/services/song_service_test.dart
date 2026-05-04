@@ -43,7 +43,7 @@ void main() {
       durationInSeconds: 123,
       trackNumber: 1,
       discNumber: 1,
-      releaseYear: 2024,
+      year: 2024,
       artist: ArtistDto(hash: 'artist-h', name: 'Artist'),
       album: AlbumDto(hash: 'album-h', name: 'Album'),
     );

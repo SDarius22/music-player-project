@@ -2,6 +2,7 @@ package com.example.musicplayerbackend.controller;
 
 import com.example.musicplayerbackend.domain.ArtistDetailDto;
 import com.example.musicplayerbackend.domain.ArtistPageDto;
+import com.example.musicplayerbackend.domain.User;
 import com.example.musicplayerbackend.service.ArtistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
@@ -9,8 +10,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -26,7 +30,14 @@ public class ArtistController implements ArtistsApi {
 
     @Override
     public ResponseEntity<ArtistDetailDto> getArtistByHash(String artistHash) {
-        return ResponseEntity.ok(artistService.getArtistByHash(artistHash));
+        return ResponseEntity.ok(artistService.getArtistByHash(artistHash, currentUserId()));
+    }
+
+    private Long currentUserId() {
+        User user = (User) Objects.requireNonNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        ).getPrincipal();
+        return user.getId();
     }
 
     @Override

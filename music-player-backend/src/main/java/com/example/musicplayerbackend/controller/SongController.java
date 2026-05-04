@@ -59,29 +59,68 @@ public class SongController implements SongsApi {
     }
 
     @Override
-    public ResponseEntity<SongPageDto> getRecommendations() {
-        User user = getCurrentUser();
-        List<SongDto> songs = recommendationService.getRecommendations(user.getId());
-        return ResponseEntity.ok(new SongPageDto(songs, 0, songs.size(), (long) songs.size(), 1));
+    public ResponseEntity<SongPageDto> getRecommendations(Integer page, Integer size) {
+        return ResponseEntity.ok(toPageDto(
+                recommendationService.getRecommendations(getCurrentUser().getId(), libraryPageable(page, size))));
     }
 
     @Override
-    public ResponseEntity<SongPageDto> getForgottenFavourites() {
-        User user = getCurrentUser();
-        List<SongDto> songs = recommendationService.getForgottenFavourites(user.getId());
-        return ResponseEntity.ok(new SongPageDto(songs, 0, songs.size(), (long) songs.size(), 1));
+    public ResponseEntity<SongPageDto> getForgottenFavourites(Integer page, Integer size) {
+        return ResponseEntity.ok(toPageDto(
+                recommendationService.getForgottenFavourites(getCurrentUser().getId(), libraryPageable(page, size))));
     }
 
     @Override
-    public ResponseEntity<SongPageDto> getQuickDial() {
-        User user = getCurrentUser();
-        List<SongDto> songs = recommendationService.getQuickDial(user.getId());
-        return ResponseEntity.ok(new SongPageDto(songs, 0, songs.size(), (long) songs.size(), 1));
+    public ResponseEntity<SongPageDto> getQuickDial(Integer page, Integer size) {
+        return ResponseEntity.ok(toPageDto(
+                recommendationService.getQuickDial(getCurrentUser().getId(), libraryPageable(page, size))));
+    }
+
+    @Override
+    public ResponseEntity<SongPageDto> getFavourites(Integer page, Integer size) {
+        return ResponseEntity.ok(toPageDto(
+                recommendationService.getFavourites(getCurrentUser().getId(), libraryPageable(page, size))));
+    }
+
+    @Override
+    public ResponseEntity<SongPageDto> getMostPlayed(Integer page, Integer size) {
+        return ResponseEntity.ok(toPageDto(
+                recommendationService.getMostPlayed(getCurrentUser().getId(), libraryPageable(page, size))));
+    }
+
+    @Override
+    public ResponseEntity<SongPageDto> getRecentlyPlayed(Integer page, Integer size) {
+        return ResponseEntity.ok(toPageDto(
+                recommendationService.getRecentlyPlayed(getCurrentUser().getId(), libraryPageable(page, size))));
+    }
+
+    private Pageable libraryPageable(Integer page, Integer size) {
+        int safePage = page == null ? 0 : Math.max(page, 0);
+        int safeSize = size == null ? 50 : Math.max(size, 1);
+        if (safeSize > 200) {
+            safeSize = 200;
+        }
+        return PageRequest.of(safePage, safeSize);
+    }
+
+    private SongPageDto toPageDto(Page<SongDto> page) {
+        return new SongPageDto(
+                page.getContent(),
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages()
+        );
     }
 
     @Override
     public ResponseEntity<SongDto> getSongById(String fileHash) {
-        return ResponseEntity.ok(songService.getSongByFileHash(fileHash));
+        return ResponseEntity.ok(songService.getSongByFileHash(fileHash, getCurrentUser().getId()));
+    }
+
+    @Override
+    public ResponseEntity<SongDto> updateUserSongLibrary(String fileHash, UpdateUserSongDto body) {
+        return ResponseEntity.ok(songService.updateUserSongLibrary(fileHash, getCurrentUser().getId(), body));
     }
 
     @Override

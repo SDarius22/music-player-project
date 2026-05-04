@@ -3,20 +3,19 @@ import 'package:music_player_frontend/core/dtos/playback_state_dto.dart';
 
 void main() {
   group('PlaybackStateDto', () {
-    test('fromJson parses all fields correctly', () {
+    test('fromJson parses OpenAPI fields correctly', () {
       final dto = PlaybackStateDto.fromJson({
-        'queueFileHashes': ['hash1', 'hash2', 'hash3'],
-        'currentFileHash': 'hash2',
-        'positionMs': 45000,
+        'positionSeconds': 45,
         'shuffle': true,
         'repeat': false,
+        'updatedAt': '2026-05-04T10:30:00Z',
       });
 
-      expect(dto.queueFileHashes, equals(['hash1', 'hash2', 'hash3']));
-      expect(dto.currentFileHash, equals('hash2'));
+      expect(dto.positionSeconds, equals(45));
       expect(dto.positionMs, equals(45000));
       expect(dto.shuffle, isTrue);
       expect(dto.repeat, isFalse);
+      expect(dto.updatedAt, DateTime.parse('2026-05-04T10:30:00Z'));
     });
 
     test('fromJson uses safe defaults when fields are absent', () {
@@ -24,77 +23,74 @@ void main() {
 
       expect(dto.queueFileHashes, isEmpty);
       expect(dto.currentFileHash, isNull);
-      expect(dto.positionMs, equals(0));
+      expect(dto.positionSeconds, equals(0));
       expect(dto.shuffle, isFalse);
       expect(dto.repeat, isFalse);
+      expect(dto.updatedAt, isNull);
     });
 
-    test('fromJson handles explicit null for currentFileHash', () {
+    test('fromJson keeps legacy queue/current fields when present', () {
       final dto = PlaybackStateDto.fromJson({
         'queueFileHashes': ['hash1'],
-        'currentFileHash': null,
-        'positionMs': 0,
+        'currentFileHash': 'hash1',
+        'positionSeconds': 0,
         'shuffle': false,
         'repeat': false,
       });
 
-      expect(dto.currentFileHash, isNull);
+      expect(dto.currentFileHash, equals('hash1'));
+      expect(dto.queueFileHashes, equals(['hash1']));
     });
 
-    test('fromJson coerces entries to strings', () {
+    test('fromJson falls back to legacy positionMs when needed', () {
       final dto = PlaybackStateDto.fromJson({
-        'queueFileHashes': ['abc', 'def'],
-        'positionMs': 1000,
+        'positionMs': 3200,
         'shuffle': false,
         'repeat': false,
       });
 
-      expect(dto.queueFileHashes, equals(['abc', 'def']));
-      expect(dto.positionMs, equals(1000));
+      expect(dto.positionSeconds, equals(3));
     });
 
-    test('toJson serialises all fields', () {
+    test('toJson serialises only OpenAPI request fields', () {
       const dto = PlaybackStateDto(
         queueFileHashes: ['hashA', 'hashB'],
         currentFileHash: 'hashA',
-        positionMs: 5000,
+        positionSeconds: 5,
         shuffle: true,
         repeat: true,
       );
 
       final json = dto.toJson();
 
-      expect(json['queueFileHashes'], equals(['hashA', 'hashB']));
-      expect(json['currentFileHash'], equals('hashA'));
-      expect(json['positionMs'], equals(5000));
+      expect(json['positionSeconds'], equals(5));
       expect(json['shuffle'], isTrue);
       expect(json['repeat'], isTrue);
+      expect(json.containsKey('queueFileHashes'), isFalse);
+      expect(json.containsKey('currentFileHash'), isFalse);
+      expect(json.containsKey('updatedAt'), isFalse);
     });
 
-    test('toJson includes null currentFileHash key', () {
-      const dto = PlaybackStateDto(queueFileHashes: [], positionMs: 0);
-      final json = dto.toJson();
-
-      expect(json.containsKey('currentFileHash'), isTrue);
-      expect(json['currentFileHash'], isNull);
-    });
-
-    test('toJson then fromJson is a lossless round-trip', () {
+    test('toJson then fromJson is a lossless round-trip for API fields', () {
       const original = PlaybackStateDto(
-        queueFileHashes: ['hash100', 'hash200', 'hash300'],
-        currentFileHash: 'hash200',
-        positionMs: 72000,
+        positionSeconds: 72,
         shuffle: true,
         repeat: false,
       );
 
       final restored = PlaybackStateDto.fromJson(original.toJson());
 
-      expect(restored.queueFileHashes, equals(original.queueFileHashes));
-      expect(restored.currentFileHash, equals(original.currentFileHash));
-      expect(restored.positionMs, equals(original.positionMs));
+      expect(restored.positionSeconds, equals(original.positionSeconds));
       expect(restored.shuffle, equals(original.shuffle));
       expect(restored.repeat, equals(original.repeat));
+    });
+
+    test('positionMs getter mirrors positionSeconds', () {
+      const dto = PlaybackStateDto(positionSeconds: 9);
+      final json = dto.toJson();
+
+      expect(dto.positionMs, equals(9000));
+      expect(json['positionSeconds'], equals(9));
     });
   });
 }

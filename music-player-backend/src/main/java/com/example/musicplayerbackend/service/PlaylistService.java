@@ -7,7 +7,6 @@ import com.example.musicplayerbackend.data.projection.PlaylistListProjection;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.PlaylistMapper;
-import com.example.musicplayerbackend.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,7 +28,7 @@ public class PlaylistService {
     private final PlaylistSongRepository playlistSongRepository;
     private final SongRepository songRepository;
     private final PlaylistMapper playlistMapper;
-    private final SongMapper songMapper;
+    private final SongEnrichmentService songEnrichmentService;
 
     public PlaylistPageDto getPlaylists(Long userId, int page, int size) {
         Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(userId, PageRequest.of(page, size));
@@ -142,13 +141,30 @@ public class PlaylistService {
         Map<Long, Song> songsById = songRepository.findAllById(uniqueSongIds).stream()
                 .collect(Collectors.toMap(Song::getId, Function.identity()));
 
-        List<SongDto> songs = playlistSongs.stream()
-                .map(entry -> songsById.get(entry.getSong().getId()))
+        Long ownerId = playlist.getUser() == null ? null : playlist.getUser().getId();
+        Map<String, SongDto> dtosByFileHash = songEnrichmentService
+                .enrich(new ArrayList<>(songsById.values()), ownerId).stream()
+                .collect(Collectors.toMap(SongDto::getFileHash, Function.identity()));
+
+        List<PlaylistSongDto> entries = playlistSongs.stream()
+                .map(entry -> {
+                    Song song = songsById.get(entry.getSong().getId());
+                    if (song == null) {
+                        return null;
+                    }
+                    SongDto songDto = dtosByFileHash.get(song.getFileHash());
+                    if (songDto == null) {
+                        return null;
+                    }
+                    PlaylistSongDto dto = new PlaylistSongDto();
+                    dto.setSong(songDto);
+                    dto.setPosition(entry.getId().getPosition());
+                    return dto;
+                })
                 .filter(Objects::nonNull)
-                .map(songMapper::toDto)
                 .toList();
 
-        return playlistMapper.toDetailDto(playlist, songs);
+        return playlistMapper.toDetailDto(playlist, entries);
     }
 
     private void replacePlaylistSongs(Playlist playlist, List<PlaylistSongPositionDto> items) {

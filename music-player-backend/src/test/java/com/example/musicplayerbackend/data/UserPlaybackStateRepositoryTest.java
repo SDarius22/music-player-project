@@ -34,9 +34,7 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
     void shouldPersistPlaybackStateWithUserIdAsPk() {
         UserPlaybackState state = UserPlaybackState.builder()
                 .userId(user.getId())
-                .queueSongIds("[1,2,3]")
-                .currentFileHash(null)
-                .positionMs(5000L)
+                .positionSeconds(5L)
                 .shuffle(true)
                 .repeat(false)
                 .build();
@@ -44,8 +42,7 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
         UserPlaybackState saved = playbackStateRepository.save(state);
 
         assertThat(saved.getUserId()).isEqualTo(user.getId());
-        assertThat(saved.getQueueSongIds()).isEqualTo("[1,2,3]");
-        assertThat(saved.getPositionMs()).isEqualTo(5000L);
+        assertThat(saved.getPositionSeconds()).isEqualTo(5L);
         assertThat(saved.getShuffle()).isTrue();
         assertThat(saved.getRepeat()).isFalse();
     }
@@ -54,7 +51,7 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
     void shouldReturnPlaybackState() {
         playbackStateRepository.save(UserPlaybackState.builder()
                 .userId(user.getId())
-                .positionMs(12345L)
+                .positionSeconds(123L)
                 .shuffle(false)
                 .repeat(true)
                 .build());
@@ -62,7 +59,7 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
         var found = playbackStateRepository.findById(user.getId());
 
         assertThat(found).isPresent();
-        assertThat(found.get().getPositionMs()).isEqualTo(12345L);
+        assertThat(found.get().getPositionSeconds()).isEqualTo(123L);
         assertThat(found.get().getRepeat()).isTrue();
     }
 
@@ -78,15 +75,15 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
     @Test
     void shouldOverwritePlaybackStateWhenSavedTwiceWithSameUserId() {
         playbackStateRepository.save(UserPlaybackState.builder()
-                .userId(user.getId()).positionMs(1000L).shuffle(false).repeat(false).build());
+                .userId(user.getId()).positionSeconds(1L).shuffle(false).repeat(false).build());
 
         playbackStateRepository.save(UserPlaybackState.builder()
-                .userId(user.getId()).positionMs(9999L).shuffle(true).repeat(true).build());
+                .userId(user.getId()).positionSeconds(99L).shuffle(true).repeat(true).build());
 
         var found = playbackStateRepository.findById(user.getId());
 
         assertThat(found).isPresent();
-        assertThat(found.get().getPositionMs()).isEqualTo(9999L);
+        assertThat(found.get().getPositionSeconds()).isEqualTo(99L);
         assertThat(found.get().getShuffle()).isTrue();
     }
 
@@ -98,8 +95,7 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
 
         UserPlaybackState saved = playbackStateRepository.save(state);
 
-        assertThat(saved.getQueueSongIds()).isEqualTo("[]");
-        assertThat(saved.getPositionMs()).isEqualTo(0L);
+        assertThat(saved.getPositionSeconds()).isEqualTo(0L);
         assertThat(saved.getShuffle()).isFalse();
         assertThat(saved.getRepeat()).isFalse();
     }

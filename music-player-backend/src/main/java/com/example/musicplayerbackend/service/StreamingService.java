@@ -6,46 +6,22 @@ import com.example.musicplayerbackend.domain.ChunkManifestDto;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongChunk;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 @Service
 @RequiredArgsConstructor
 public class StreamingService {
 
     private final SongRepository songRepository;
-
-    private static byte[] getFullBuffer(Song song, int bytesNeeded) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        try {
-            for (SongChunk sc : song.getChunks()) {
-                File file = new File(sc.getChunk().getStoragePath());
-                try (FileInputStream fis = new FileInputStream(file)) {
-                    fis.transferTo(outputStream);
-                }
-
-                if (outputStream.size() >= bytesNeeded) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read prefix");
-        }
-
-        return outputStream.toByteArray();
-    }
 
     @Transactional(readOnly = true)
     public ChunkManifestDto getSongManifest(String fileHash, Long userId) {
@@ -88,49 +64,6 @@ public class StreamingService {
         Chunk physicalChunk = songChunk.getChunk();
 
         return readBytesFromDisk(physicalChunk.getStoragePath());
-    }
-
-    @Transactional(readOnly = true)
-    public Resource getSongPrefix(String fileHash, Integer prefixBytes, Long userId) {
-        Song song = getSongOrThrow(fileHash);
-        if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
-        }
-        if (song.getChunks().isEmpty()) return new ByteArrayResource(new byte[0]);
-
-        int bytesNeeded = (prefixBytes != null && prefixBytes > 0) ? prefixBytes : 512000;
-        byte[] fullBuffer = getFullBuffer(song, bytesNeeded);
-        if (fullBuffer.length > bytesNeeded) {
-            return new ByteArrayResource(fullBuffer) {
-                @Override
-                public String getFilename() {
-                    return "prefix.mp3";
-                }
-            };
-        }
-
-        return new ByteArrayResource(fullBuffer);
-    }
-
-    @Transactional(readOnly = true)
-    public Resource getFullStream(String fileHash, Long userId) {
-        Song song = getSongOrThrow(fileHash);
-
-        if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
-        }
-
-        Vector<InputStream> streams = new Vector<>();
-        try {
-            for (SongChunk sc : song.getChunks()) {
-                streams.add(new FileInputStream(sc.getChunk().getStoragePath()));
-            }
-        } catch (FileNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Chunk file missing");
-        }
-
-        SequenceInputStream sequenceInputStream = new SequenceInputStream(streams.elements());
-        return new InputStreamResource(sequenceInputStream);
     }
 
     private Song getSongOrThrow(String fileHash) {

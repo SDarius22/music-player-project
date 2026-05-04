@@ -1,6 +1,5 @@
 package com.example.musicplayerbackend.components;
 
-import com.example.musicplayerbackend.domain.PlaybackStateDto;
 import com.example.musicplayerbackend.domain.WebRTCMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,35 +45,6 @@ class RedisSignalingListenerTest {
         listener.onSyncTrigger("not-a-number");
 
         verify(signalingHandler, never()).deliverSyncTriggerLocally(any());
-    }
-
-    @Test
-    void shouldDelegateToSignalingHandlerWhenPlaybackStateJsonIsValid() throws Exception {
-        PlaybackStateDto state = new PlaybackStateDto();
-        String message = objectMapper.writeValueAsString(
-                java.util.Map.of("userId", 7, "state", state));
-
-        listener.onPlaybackStateChanged(message);
-
-        verify(signalingHandler).deliverPlaybackStateChangedLocally(eq(7L), any(PlaybackStateDto.class));
-    }
-
-    @Test
-    void shouldNotDelegateWhenPlaybackStateJsonIsInvalid() {
-        listener.onPlaybackStateChanged("{invalid json}");
-
-        verify(signalingHandler, never()).deliverPlaybackStateChangedLocally(any(), any());
-    }
-
-    @Test
-    void shouldNotDelegateWhenPlaybackStateUserIdIsMissing() throws Exception {
-        // userId is missing → payload.get("userId") is null → NullPointerException caught
-        String message = objectMapper.writeValueAsString(
-                java.util.Map.of("state", new PlaybackStateDto()));
-
-        listener.onPlaybackStateChanged(message);
-
-        verify(signalingHandler, never()).deliverPlaybackStateChangedLocally(any(), any());
     }
 
     @Test

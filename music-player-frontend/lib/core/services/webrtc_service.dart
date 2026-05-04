@@ -78,7 +78,6 @@ class WebRTCService {
   onChunkReceived;
   final Future<Uint8List?> Function(String fileHash, int chunkIndex)
   onChunkRequested;
-  final VoidCallback? onSyncTrigger;
 
   final Map<String, RTCPeerConnection> _peerConnections = {};
   final Map<String, RTCDataChannel> _dataChannels = {};
@@ -166,7 +165,6 @@ class WebRTCService {
     required this.onChunkReceived,
     required this.onChunkRequested,
     this.settingsService,
-    this.onSyncTrigger,
   }) {
     _listenToSignaling();
     _startKeepalive();
@@ -882,9 +880,6 @@ class WebRTCService {
       );
 
       switch (type) {
-        case 'SYNC_TRIGGER':
-          onSyncTrigger?.call();
-
         case 'PEER_BUFFER_MAP':
           final hash = nonEmptyString(signal['fileHash']);
           final map = normalizePayload(payload);

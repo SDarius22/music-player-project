@@ -28,7 +28,7 @@ class AppAudioService {
   final SettingsService settingsService;
   final PlaylistService playlistService;
   final AuthService authService;
-  final PlaybackRestClient? playbackRestService;
+  final PlaybackRestClient playbackRestService;
   final ChunkService Function(String fileHash) createChunkManager;
 
   ValueNotifier<Song?> currentSongNotifier = ValueNotifier<Song?>(null);
@@ -80,30 +80,32 @@ class AppAudioService {
     this.settingsService,
     this.playlistService,
     this.authService,
-    this.createChunkManager, {
-    this.playbackRestService,
+    this.createChunkManager,
+    this.playbackRestService, {
     AudioPlayer? audioPlayer,
-  }) : audioPlayer = audioPlayer ?? AudioPlayer() {
-    _currentAudioSettings = settingsService.getAudioSettings();
-    currentSong = playlistService.getMostRecentPlayedSong();
+  }) : audioPlayer = audioPlayer ?? AudioPlayer();
+
+  Future<void> initializeAppAudio() async {
+    _currentAudioSettings = await settingsService.getAudioSettings();
+    currentSong = await playlistService.getMostRecentPlayedSong();
     _queuePlaylist = playlistService.getQueuePlaylist();
     _normalQueue = List.from(_queuePlaylist.getSongs());
-    _initPlayer();
+    await _initPlayer();
 
-    this.audioPlayer.processingStateStream.listen((state) {
+    audioPlayer.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         _onSongCompleted();
       }
     });
 
     _positionSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (this.audioPlayer.playing) {
+      if (audioPlayer.playing) {
         pushStateToServer();
         unawaited(_proactivelyCachePrefixes());
       }
     });
 
-    this.audioPlayer.errorStream.listen((error) {
+    audioPlayer.errorStream.listen((error) {
       _logger.severe("Audio Player Error: $error");
     });
   }
@@ -371,7 +373,6 @@ class AppAudioService {
     _currentIndex = (_currentIndex + 1) % _activeQueue.length;
     await _loadIndex(_currentIndex);
     await play();
-    unawaited(songService.syncLibraryMetadata());
   }
 
   Future<void> _loadIndex(int idx, {int? position}) async {
@@ -457,44 +458,17 @@ class AppAudioService {
     }
   }
 
-  void pushStateToServer() {
-    if (playbackRestService == null) return;
-    final queueFileHashes =
-        _normalQueue
-            .where((s) => !s.isLocal && s.getHash().isNotEmpty)
-            .map((s) => s.getHash())
-            .toList();
-    final currentFileHash =
-        currentSong != null &&
-                !currentSong!.isLocal &&
-                currentSong!.getHash().isNotEmpty
-            ? currentSong!.getHash()
-            : null;
-    final dto = PlaybackStateDto(
-      queueFileHashes: queueFileHashes,
-      currentFileHash: currentFileHash,
-      positionMs: audioPlayer.position.inMilliseconds,
-      shuffle: _currentAudioSettings.shuffle,
-      repeat: _currentAudioSettings.repeat,
-    );
-    playbackRestService!.savePlaybackState(dto);
-  }
-
-  Future<void> restoreFromServerState(PlaybackStateDto dto) async {
-    if (dto.queueFileHashes.isEmpty) return;
-
-    final resolvedQueue =
-        (await Future.wait(
-          dto.queueFileHashes.map(
-            (hash) => songService.fetchSongByFileHash(hash),
-          ),
-        )).whereType<Song>().toList();
-
-    if (resolvedQueue.isEmpty) return;
+  Future<void> restoreServerState() async {
+    final dto = await playbackRestService.getPlaybackState();
+    if (dto == null) {
+      _logger.fine('No playback state found on server to restore');
+      return;
+    }
 
     _currentAudioSettings.shuffle = dto.shuffle;
     _currentAudioSettings.repeat = dto.repeat;
     settingsService.updateAudioSettings(_currentAudioSettings);
+
     await audioPlayer.setLoopMode(dto.repeat ? LoopMode.one : LoopMode.off);
 
     _normalQueue.clear();
@@ -597,8 +571,6 @@ class AppAudioService {
   void _onSongStarted(Song song) {
     song.lastPlayed = DateTime.now();
     song.playCount += 1;
-    song.pendingPlayCountDelta += 1;
-    song.requiresSync = true;
     _playStartTime = DateTime.now();
     songService.updateSong(song);
     playlistService.updateMostPlayedPlaylist();
@@ -623,7 +595,6 @@ class AppAudioService {
     if (elapsed <= 0) return;
     final song = currentSong;
     if (song!.getHash().isEmpty && song.path!.isEmpty) return;
-    song.pendingPlayDurationSeconds += elapsed;
     songService.updateSong(song);
   }
 

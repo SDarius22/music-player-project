@@ -20,16 +20,9 @@ public class UserPlaybackState {
     @Id
     private Long userId;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    @Builder.Default
-    private String queueSongIds = "[]";
-
-    @Column(length = 64)
-    private String currentFileHash;
-
     @Column(nullable = false)
     @Builder.Default
-    private Long positionMs = 0L;
+    private Long positionSeconds = 0L;
 
     @Column(nullable = false)
     @Builder.Default

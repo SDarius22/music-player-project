@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
+import 'package:music_player_frontend/core/dtos/playlists/create_playlist_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
@@ -55,17 +57,10 @@ class PlaylistRestClient extends AbstractRestClient {
   }
 
   Future<PlaylistDetailDto?> createPlaylist(
-    String name,
-    List<String> songFileHashes,
-    String? coverBase64,
+    CreatePlaylistDto createPlaylistDto,
   ) async {
     try {
-      final body = <String, dynamic>{
-        'name': name,
-        'songFileHashes': songFileHashes,
-        if (coverBase64 != null) 'coverImage': coverBase64,
-      };
-      final response = await post('/playlists', body);
+      final response = await post('/playlists', createPlaylistDto.toJson());
       if (response.statusCode == 201) {
         return PlaylistDetailDto.fromJson(jsonDecode(response.body));
       }
@@ -77,18 +72,14 @@ class PlaylistRestClient extends AbstractRestClient {
   }
 
   Future<bool> updatePlaylist(
-    int playlistId,
-    String name,
-    List<String> songFileHashes,
-    String? coverBase64,
+    int playlistServerId,
+    UpdatePlaylistDto updatePlaylistDto,
   ) async {
     try {
-      final body = <String, dynamic>{
-        'name': name,
-        'songFileHashes': songFileHashes,
-        if (coverBase64 != null) 'coverImage': coverBase64,
-      };
-      final response = await put('/playlists/$playlistId', body);
+      final response = await put(
+        '/playlists/$playlistServerId',
+        updatePlaylistDto.toJson(),
+      );
       return response.statusCode == 200;
     } catch (e) {
       _logger.warning('Error updating playlist', e);

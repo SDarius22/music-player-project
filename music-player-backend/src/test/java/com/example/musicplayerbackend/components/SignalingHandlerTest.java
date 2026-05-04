@@ -1,6 +1,5 @@
 package com.example.musicplayerbackend.components;
 
-import com.example.musicplayerbackend.domain.PlaybackStateDto;
 import com.example.musicplayerbackend.service.PeerTrackingService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -175,18 +174,6 @@ class SignalingHandlerTest {
     }
 
     @Test
-    void shouldDoNothingForPlaybackStateChangedMessage() throws Exception {
-        String payload = objectMapper.writeValueAsString(Map.of(
-                "type", "PLAYBACK_STATE_CHANGED",
-                "senderId", "server",
-                "userId", 1));
-
-        handler.handleTextMessage(session, new TextMessage(payload));
-
-        verify(session, never()).close(any());
-    }
-
-    @Test
     void shouldCloseSessionWhenMessageTypeIsUnknown() throws Exception {
         String payload = objectMapper.writeValueAsString(Map.of(
                 "type", "TOTALLY_UNKNOWN",
@@ -272,55 +259,10 @@ class SignalingHandlerTest {
     }
 
     @Test
-    void shouldSendNothingWhenDeliveringPlaybackStateWithNoSessionsForUser() throws Exception {
-        handler.deliverPlaybackStateChangedLocally(888L, new PlaybackStateDto());
-
-        verify(session, never()).sendMessage(any());
-    }
-
-    @Test
-    void shouldSendPlaybackStateChangedPayloadToOpenSession() throws Exception {
-        // Register session for user 20
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-pb",
-                "userId", 20));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(true);
-
-        handler.deliverPlaybackStateChangedLocally(20L, new PlaybackStateDto());
-
-        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
-        verify(session).sendMessage(captor.capture());
-        assertTrue(captor.getValue().getPayload().contains("PLAYBACK_STATE_CHANGED"));
-    }
-
-    @Test
     void shouldPublishSyncTriggerToRedis() {
         handler.sendSyncTrigger(42L);
 
         verify(redisTemplate).convertAndSend("signaling:sync", "42");
-    }
-
-    @Test
-    void shouldPublishPlaybackStateChangedToRedis() {
-        handler.sendPlaybackStateChanged(7L, new PlaybackStateDto());
-
-        verify(redisTemplate).convertAndSend(eq("signaling:playback"), anyString());
-    }
-
-    @Test
-    void shouldLogAndNotThrowWhenPlaybackStateSerializationFails() throws Exception {
-        // Use a handler with a mock ObjectMapper that throws on serialization
-        ObjectMapper brokenMapper = mock(ObjectMapper.class);
-        when(brokenMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("mock fail") {
-        });
-        SignalingHandler brokenHandler = new SignalingHandler(brokenMapper, peerTrackingService, redisTemplate);
-
-        // Should not throw even when ObjectMapper fails
-        assertDoesNotThrow(() -> brokenHandler.sendPlaybackStateChanged(1L, new PlaybackStateDto()));
-
-        verify(redisTemplate, never()).convertAndSend(any(), any(Object.class));
     }
 
     @Test
@@ -424,45 +366,6 @@ class SignalingHandlerTest {
 
         // peerId cleanup still happens, but userId block is skipped without NPE
         verify(peerTrackingService).unregisterPeer("peer-no-user");
-    }
-
-    @Test
-    void shouldNotSendPlaybackStateChangedToClosedSession() throws Exception {
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-pb-closed",
-                "userId", 21));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(false);
-
-        handler.deliverPlaybackStateChangedLocally(21L, new PlaybackStateDto());
-
-        verify(session, never()).sendMessage(any());
-    }
-
-    @Test
-    void shouldReturnEarlyWhenDeliverPlaybackStateChangedSerializationFails() throws Exception {
-        ObjectMapper brokenMapper = mock(ObjectMapper.class);
-        when(brokenMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("fail") {
-        });
-        SignalingHandler brokenHandler = new SignalingHandler(brokenMapper, peerTrackingService, redisTemplate);
-
-        assertDoesNotThrow(() -> brokenHandler.deliverPlaybackStateChangedLocally(1L, new PlaybackStateDto()));
-
-        verify(session, never()).sendMessage(any());
-    }
-
-    @Test
-    void shouldHandleIOExceptionWhenSendingPlaybackStateChangedToSession() throws Exception {
-        String registerPayload = objectMapper.writeValueAsString(Map.of(
-                "type", "SYNC_TRIGGER",
-                "senderId", "peer-pb-io",
-                "userId", 40));
-        handler.handleTextMessage(session, new TextMessage(registerPayload));
-        when(session.isOpen()).thenReturn(true);
-        doThrow(new IOException("send failed")).when(session).sendMessage(any(TextMessage.class));
-
-        assertDoesNotThrow(() -> handler.deliverPlaybackStateChangedLocally(40L, new PlaybackStateDto()));
     }
 
     @Test
