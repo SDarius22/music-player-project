@@ -59,35 +59,31 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     notifyListeners();
   }
 
-  void addPlaylist(String name, List<Song> songs, Uint8List? coverArt) {
-    _playlistService.addPlaylist(name, songs, coverArt);
+  Future<void> addPlaylist(String name, List<Song> songs, Uint8List? coverArt) async {
+    await _playlistService.addPlaylist(name, songs, coverArt);
     notifyListeners();
   }
 
-  void deletePlaylist(Playlist playlist) {
-    _playlistService.deletePlaylist(playlist);
+  Future<void> deletePlaylist(Playlist playlist) async {
+    await _playlistService.deletePlaylist(playlist);
     notifyListeners();
   }
 
-  List<Playlist> getIndestructiblePlaylists() {
-    return _playlistService.getIndestructiblePlaylists();
+  Future<({List<Playlist> content, int page, int totalPages})> getIndestructiblePlaylists(int page, int size) async {
+    return await _playlistService.getIndestructiblePlaylists(page, size);
   }
 
-  List<Playlist> getNormalPlaylists() {
-    return _playlistService.getNormalPlaylists();
+  Future<({List<Playlist> content, int page, int totalPages})> getNormalPlaylists(int page, int size) async {
+    return await _playlistService.getNormalPlaylists(page, size);
   }
 
-  void addSongsToPlaylist(Playlist playlist, List<Song> songs) {
-    _playlistService.addToPlaylist(playlist, songs);
+  Future<void> addSongsToPlaylist(Playlist playlist, List<Song> songs) async {
+    await _playlistService.addToPlaylist(playlist, songs);
     notifyListeners();
   }
 
-  void deleteSongFromPlaylist(Song song, Playlist playlist) {
-    _playlistService.deleteFromPlaylist(song, playlist);
+  Future<void> deleteSongFromPlaylist(Song song, Playlist playlist) async {
+    await _playlistService.deleteFromPlaylist(song, playlist);
     notifyListeners();
-  }
-
-  void updateFavoritesPlaylist() {
-    _playlistService.updateFavoritesPlaylist();
   }
 }

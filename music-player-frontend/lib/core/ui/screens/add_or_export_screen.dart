@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
@@ -35,18 +37,84 @@ class AddOrExportScreen extends StatefulWidget {
 }
 
 class _AddOrExportScreenState extends State<AddOrExportScreen> {
+  static const int _pageSize = 30;
+
   late ValueNotifier<List<Playlist>> selected;
+  final ScrollController _scrollController = ScrollController();
+  final List<Playlist> _playlists = [];
+
+  int _nextPage = 0;
+  int _totalPages = 1;
+  bool _isLoading = false;
+  String? _loadError;
+
+  bool get _hasMorePages => _nextPage < _totalPages;
 
   @override
   void initState() {
     super.initState();
     selected = ValueNotifier<List<Playlist>>([]);
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_loadPage(reset: true));
+    });
   }
 
   @override
   void dispose() {
     selected.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients || !_hasMorePages || _isLoading) {
+      return;
+    }
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      unawaited(_loadPage());
+    }
+  }
+
+  Future<void> _loadPage({bool reset = false}) async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+      if (reset) {
+        _nextPage = 0;
+        _totalPages = 1;
+        _playlists.clear();
+      }
+    });
+
+    try {
+      final playlistProvider = Provider.of<PlaylistProvider>(
+        context,
+        listen: false,
+      );
+      final result = await playlistProvider.getNormalPlaylists(
+        _nextPage,
+        _pageSize,
+      );
+      final existingNames = _playlists.map((p) => p.name).toSet();
+      final toAdd =
+          result.content.where((p) => !existingNames.contains(p.name)).toList();
+
+      setState(() {
+        _playlists.addAll(toAdd);
+        _totalPages = result.totalPages <= 0 ? 1 : result.totalPages;
+        _nextPage = result.page + 1;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadError = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   void handleDone() {
@@ -204,67 +272,80 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
 
   Widget buildBody(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final playlistProvider = Provider.of<PlaylistProvider>(
-      context,
-      listen: false,
-    );
-    return FutureBuilder(
-      future: Future(() => playlistProvider.getNormalPlaylists()),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          debugPrint(snapshot.error.toString());
-          debugPrintStack();
-          return Center(
-            child: Text(
+    if (_isLoading && _playlists.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_loadError != null && _playlists.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
               "Error loading playlists",
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-          );
-        }
-        List<Playlist> items = snapshot.data ?? [];
-        if (items.isEmpty) {
-          return Center(
-            child: Text(
-              "No playlists found",
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          );
-        }
-        return CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
-              sliver: ValueListenableBuilder(
-                valueListenable: selected,
-                builder: (context, value, child) {
-                  return CustomGridComponent(
-                    items: items,
-                    isSelected: (entity) {
-                      return selected.value.contains(entity as Playlist);
-                    },
-                    onTap: (entity) {
-                      debugPrint("Tapped on ${entity.getName()}");
-                      if (selected.value.contains(entity as Playlist)) {
-                        selected.value = List<Playlist>.from(selected.value)
-                          ..remove(entity);
-                      } else {
-                        selected.value = List<Playlist>.from(selected.value)
-                          ..add(entity);
-                      }
-                    },
-                    onLongPress: (entity) {
-                      debugPrint("Long pressed on ${entity.getName()}");
-                    },
-                  );
-                },
-              ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () => unawaited(_loadPage(reset: true)),
+              child: const Text('Retry'),
             ),
           ],
-        );
-      },
+        ),
+      );
+    }
+    if (_playlists.isEmpty) {
+      return Center(
+        child: Text(
+          "No playlists found",
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
+          sliver: ValueListenableBuilder(
+            valueListenable: selected,
+            builder: (context, value, child) {
+              return CustomGridComponent(
+                items: _playlists,
+                isSelected: (entity) {
+                  return selected.value.contains(entity as Playlist);
+                },
+                onTap: (entity) {
+                  debugPrint("Tapped on ${entity.getName()}");
+                  togglePlaylistSelection(entity as Playlist);
+                },
+                onLongPress: (entity) {
+                  debugPrint("Long pressed on ${entity.getName()}");
+                },
+              );
+            },
+          ),
+        ),
+        if (_isLoading)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+        if (_loadError != null && !_isLoading)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Center(
+                child: TextButton(
+                  onPressed: () => unawaited(_loadPage()),
+                  child: const Text('Failed to load more playlists. Tap to retry.'),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

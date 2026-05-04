@@ -122,7 +122,6 @@ class MacosMusicScannerService implements AbstractMusicScannerService {
           existing
             ..name = _getFileNameWithoutExtension(file.path)
             ..fullyLoaded = true
-            ..requiresSync = true
             ..artist.target = artist
             ..album.target = album;
 

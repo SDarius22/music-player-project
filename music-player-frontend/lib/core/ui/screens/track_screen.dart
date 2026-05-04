@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
-import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
@@ -74,20 +73,14 @@ class TrackScreen extends EntityScreen {
               valueListenable: likeNotifier,
               builder: (context, liked, child) {
                 return IconButton(
-                  onPressed: () {
+                  onPressed: () async {
                     likeNotifier.value = !likeNotifier.value;
                     song.likedByUser = likeNotifier.value;
                     var songProvider = Provider.of<SongProvider>(
                       context,
                       listen: false,
                     );
-                    songProvider.updateSong(song);
-
-                    var playlistProvider = Provider.of<PlaylistProvider>(
-                      context,
-                      listen: false,
-                    );
-                    playlistProvider.updateFavoritesPlaylist();
+                    await songProvider.updateSong(song);
                   },
                   icon: Icon(
                     liked ? FluentIcons.liked : FluentIcons.unliked,

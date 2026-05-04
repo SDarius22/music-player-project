@@ -41,7 +41,7 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
 
 class _MultipleEntitiesScreenState<T extends QueryableProvider>
     extends State<MultipleEntitiesScreen<T>> {
-  static const int _pageSize = 30;
+  static const int _pageSize = 50;
 
   late String _sortField;
   late bool _localOnly;

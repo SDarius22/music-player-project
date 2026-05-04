@@ -85,7 +85,6 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       ),
     );
     await _audioService.pause();
-    _audioService.pushStateToServer();
   }
 
   @override
