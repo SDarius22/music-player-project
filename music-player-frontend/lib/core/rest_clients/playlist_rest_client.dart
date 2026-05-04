@@ -31,12 +31,44 @@ class PlaylistRestClient extends AbstractRestClient {
     return null;
   }
 
+  Future<PlaylistDetailDto?> getPlaylistDetailsByName(
+    String playlistName,
+  ) async {
+    try {
+      final response = await get('/playlists/details-by-name/$playlistName');
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return PlaylistDetailDto.fromJson(decoded);
+        }
+      }
+    } catch (e) {
+      _logger.warning('Error fetching playlist details by name', e);
+    }
+    return null;
+  }
+
   Future<PlaylistPageDto> getPlaylistsPage({
+    String? query,
+    bool? filterIndestructible,
     int page = 0,
     int size = 50,
   }) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
+    if (query != null && query.trim().isNotEmpty) {
+      qp['q'] = query.trim();
+    }
+
+    if (filterIndestructible != null) {
+      qp['filter[indestructible]'] = filterIndestructible.toString();
+    }
+
     try {
-      final endpoint = '/playlists?page=$page&size=$size';
+      final endpoint = '/playlists?${Uri(queryParameters: qp).query}';
       final response = await get(endpoint);
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -76,7 +108,7 @@ class PlaylistRestClient extends AbstractRestClient {
     UpdatePlaylistDto updatePlaylistDto,
   ) async {
     try {
-      final response = await put(
+      final response = await patch(
         '/playlists/$playlistServerId',
         updatePlaylistDto.toJson(),
       );

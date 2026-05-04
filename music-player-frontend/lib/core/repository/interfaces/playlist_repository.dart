@@ -7,15 +7,19 @@ abstract class PlaylistRepository {
 
   Playlist savePlaylist(Playlist playlist);
 
-  Playlist? getPlaylistByServerIdAndName(int serverId, String name);
+  Playlist? getPlaylistByName(String name);
 
-  Playlist getOrCreatePlaylist(int serverId, String name);
+  Playlist getOrCreatePlaylist(String name);
 
   int getPlaylistCount(String query, bool containLocalOnly);
 
-  List<Playlist> getIndestructiblePlaylists();
+  List<Playlist> getIndestructiblePlaylists(int offset, int limit);
 
-  List<Playlist> getNormalPlaylists();
+  int getIndestructiblePlaylistCount();
+
+  List<Playlist> getNormalPlaylists(int offset, int limit);
+
+  int getNormalPlaylistCount();
 
   List<Playlist> getAllPlaylists();
 

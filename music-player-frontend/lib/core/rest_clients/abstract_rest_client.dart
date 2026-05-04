@@ -54,6 +54,33 @@ abstract class AbstractRestClient {
     return response;
   }
 
+  Future<http.Response> patch(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    Future<http.Response> perform(String t) {
+      return http.patch(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode(body),
+      );
+    }
+
+    String? token = authService.accessToken;
+    var response = await perform(token ?? "");
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      final newToken = await authService.refreshAccessToken();
+      if (newToken != null) {
+        response = await perform(newToken);
+      }
+    }
+    return response;
+  }
+
   Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
     Future<http.Response> perform(String t) {
       return http.put(

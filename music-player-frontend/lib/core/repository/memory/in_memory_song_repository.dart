@@ -164,12 +164,6 @@ class InMemorySongRepository implements SongRepository {
   }
 
   @override
-  List<Song> getUnsyncedSongs() =>
-      _byId.values
-          .where((s) => s.requiresSync == true && s.path != null)
-          .toList();
-
-  @override
   void deleteSong(Song song) {
     _byId.remove(song.id);
     _emit();

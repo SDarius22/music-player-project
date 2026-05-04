@@ -9,6 +9,7 @@ public interface PlaylistListProjection {
 
     Long getUserId();
 
+    Boolean getIndestructible();
 
     String getSongFileHashesCsv();
 }

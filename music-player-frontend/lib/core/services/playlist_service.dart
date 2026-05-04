@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/playlists/create_playlist_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
@@ -26,11 +25,7 @@ class PlaylistService {
     this._playlistRepository,
     this._playlistRestService,
     this._songService,
-  ) {
-    if (getIndestructiblePlaylists().isEmpty) {
-      initializeIndestructible();
-    }
-  }
+  );
 
   Stream watchPlaylists() => _playlistRepository.watchPlaylists();
 
@@ -107,126 +102,90 @@ class PlaylistService {
     return null;
   }
 
-  void initializeIndestructible() {
-    initializeQueue();
-    initializeFavorites();
-    initializeMostPlayed();
-    initializeRecentlyPlayed();
-  }
-
-  void initializeQueue() {
-    if (_playlistRepository.getPlaylistByServerIdAndName(-1, "Queue") != null) {
-      return;
+  Future<Playlist> getPlaylistByName(
+    String name, {
+    bool indestructible = false,
+  }) async {
+    try {
+      final serverPlaylist = await _playlistRestService
+          .getPlaylistDetailsByName(name);
+      return cacheServerPlaylistDetails(serverPlaylist!);
+    } catch (e) {
+      _logger.warning(
+        "Failed to fetch playlist from server, using local version if available: $e",
+      );
     }
-    Playlist queue = Playlist("Queue");
-    queue.indestructible = true;
-    _playlistRepository.savePlaylist(queue);
+    var queue = _playlistRepository.getOrCreatePlaylist(name);
+    queue.indestructible = indestructible;
+    return _playlistRepository.savePlaylist(queue);
   }
 
-  Playlist getQueuePlaylist() {
-    var queue = _playlistRepository.getPlaylistByServerIdAndName(-1, "Queue");
-    if (queue == null) {
-      _logger.fine("Queue playlist not found, initializing...");
-      initializeQueue();
-      return _playlistRepository.getPlaylistByServerIdAndName(-1, "Queue")!;
-    } else {
-      return queue;
+  Future<({List<Playlist> content, int totalPages, int page})>
+  getIndestructiblePlaylists(int page, int size) async {
+    int? serverTotalPages;
+    try {
+      final serverPlaylists = await _playlistRestService.getPlaylistsPage(
+        filterIndestructible: true,
+      );
+      serverTotalPages = serverPlaylists.totalPages;
+      for (final serverPlaylist in serverPlaylists.content) {
+        cacheServerPlaylist(serverPlaylist);
+      }
+    } catch (e) {
+      _logger.fine('Failed to fetch indestructible playlists from server: $e');
     }
-  }
-
-  void initializeFavorites() {
-    if (_playlistRepository.getPlaylistByServerIdAndName(-1, "Favorites") !=
-        null) {
-      return;
-    }
-    Playlist favorites = Playlist("Favorites");
-    favorites.indestructible = true;
-    _playlistRepository.savePlaylist(favorites);
-  }
-
-  Playlist getFavoritesPlaylist() {
-    var favorites = _playlistRepository.getPlaylistByServerIdAndName(
-      -1,
-      "Favorites",
+    final localContent = _playlistRepository.getIndestructiblePlaylists(
+      page * size,
+      size,
     );
-    if (favorites == null) {
-      _logger.fine("Favorites playlist not found, initializing...");
-      initializeFavorites();
-      return _playlistRepository.getPlaylistByServerIdAndName(-1, "Favorites")!;
-    } else {
-      return favorites;
+
+    for (final playlist in localContent) {
+      _logger.fine('Playlist $playlist}');
     }
+
+    final totalPages =
+        (serverTotalPages != null && serverTotalPages > 0)
+            ? serverTotalPages
+            : ((_playlistRepository.getIndestructiblePlaylistCount() +
+                        size -
+                        1) ~/
+                    size)
+                .clamp(1, double.maxFinite.toInt());
+
+    return (content: localContent, totalPages: totalPages, page: page);
   }
 
-  void initializeMostPlayed() {
-    if (_playlistRepository.getPlaylistByServerIdAndName(-1, "Most Played") !=
-        null) {
-      return;
+  Future<({List<Playlist> content, int totalPages, int page})>
+  getNormalPlaylists(int page, int size) async {
+    int? serverTotalPages;
+    try {
+      final serverPlaylists = await _playlistRestService.getPlaylistsPage(
+        filterIndestructible: false,
+      );
+      serverTotalPages = serverPlaylists.totalPages;
+      for (final serverPlaylist in serverPlaylists.content) {
+        cacheServerPlaylist(serverPlaylist);
+      }
+    } catch (e) {
+      _logger.fine('Failed to fetch normal playlists from server: $e');
     }
-    Playlist mostPlayed = Playlist("Most Played");
-    mostPlayed.indestructible = true;
-    _playlistRepository.savePlaylist(mostPlayed);
-  }
+    final localContent = _playlistRepository.getNormalPlaylists(
+      page * size,
+      size,
+    );
 
-  void initializeRecentlyPlayed() {
-    if (_playlistRepository.getPlaylistByServerIdAndName(
-          -1,
-          "Recently Played",
-        ) !=
-        null) {
-      return;
+    for (final playlist in localContent) {
+      _logger.fine('Playlist $playlist}');
     }
-    Playlist recentlyPlayed = Playlist("Recently Played");
-    recentlyPlayed.indestructible = true;
-    _playlistRepository.savePlaylist(recentlyPlayed);
-  }
 
-  Future<void> updateMostPlayedPlaylist() async {
-    Playlist? mostPlayed = _playlistRepository
-        .getIndestructiblePlaylists()
-        .firstWhereOrNull((pl) => pl.getName() == "Most Played");
-    if (mostPlayed == null) {
-      _logger.fine("Most Played playlist not found");
-      return;
-    }
-    List<Song> topSongs = await _songService.getMostPlayedSongs(50);
-    _logger.fine("Updating Most Played with ${topSongs.length} songs");
-    mostPlayed.clearSongs();
-    addToPlaylist(mostPlayed, topSongs);
-  }
+    final totalPages =
+        (serverTotalPages != null && serverTotalPages > 0)
+            ? serverTotalPages
+            : ((_playlistRepository.getPlaylistCount('', false) + size - 1) ~/
+                    size)
+                .clamp(1, double.maxFinite.toInt());
 
-  Future<void> updateRecentlyPlayedPlaylist() async {
-    Playlist? recentlyPlayed = _playlistRepository
-        .getIndestructiblePlaylists()
-        .firstWhereOrNull((pl) => pl.getName() == "Recently Played");
-    if (recentlyPlayed == null) {
-      _logger.fine("Recently Played playlist not found");
-      return;
-    }
-    List<Song> recentSongs = await _songService.getRecentlyPlayedSongs(50);
-    recentlyPlayed.clearSongs();
-    addToPlaylist(recentlyPlayed, recentSongs);
-  }
-
-  void updateFavoritesPlaylist() {
-    Playlist? favorites = _playlistRepository
-        .getIndestructiblePlaylists()
-        .firstWhereOrNull((pl) => pl.getName() == "Favorites");
-    if (favorites == null) {
-      _logger.fine("Favorites playlist not found");
-      return;
-    }
-    List<Song> favoriteSongs = _songService.getFavoriteSongs();
-    favorites.clearSongs();
-    addToPlaylist(favorites, favoriteSongs);
-  }
-
-  List<Playlist> getIndestructiblePlaylists() {
-    return _playlistRepository.getIndestructiblePlaylists();
-  }
-
-  List<Playlist> getNormalPlaylists() {
-    return _playlistRepository.getNormalPlaylists();
+    return (content: localContent, totalPages: totalPages, page: page);
   }
 
   Future<({List<Playlist> content, int totalPages, int page})> getPlaylistsPage(
@@ -240,6 +199,7 @@ class PlaylistService {
     int? serverTotalPages;
     try {
       final serverPage = await _playlistRestService.getPlaylistsPage(
+        query: query,
         page: page,
         size: size,
       );
@@ -290,10 +250,7 @@ class PlaylistService {
       _logger.fine('Failed to fetch playlist details from server: $e');
     }
 
-    var cached = _playlistRepository.getPlaylistByServerIdAndName(
-      playlist.serverId,
-      playlist.getName(),
-    );
+    var cached = _playlistRepository.getPlaylistByName(playlist.getName());
     if (cached == null) {
       _logger.fine(
         'Playlist not found in local cache after server fetch: ${playlist.getName()}',
@@ -304,68 +261,6 @@ class PlaylistService {
     return cached;
   }
 
-  Playlist cacheServerPlaylist(PlaylistDto serverPlaylist) {
-    if (serverPlaylist.id <= 0) {
-      throw Exception('Server playlist must have a valid ID');
-    }
-
-    _logger.fine(
-      'Caching server playlist: ${serverPlaylist.name} with ID ${serverPlaylist.id}',
-    );
-
-    var cachedPlaylist = _playlistRepository.getOrCreatePlaylist(
-      serverPlaylist.id,
-      serverPlaylist.name,
-    );
-
-    for (final hash in serverPlaylist.songFileHashes) {
-      final song = _songService.getOrCreateSong(hash);
-      if (!cachedPlaylist.getSongs().contains(song)) {
-        cachedPlaylist.addSong(song);
-      }
-    }
-
-    return _playlistRepository.savePlaylist(cachedPlaylist);
-  }
-
-  Playlist cacheServerPlaylistDetails(PlaylistDetailDto serverPlaylist) {
-    if (serverPlaylist.id <= 0) {
-      throw Exception('Server playlist must have a valid ID');
-    }
-
-    var cachedPlaylist = _playlistRepository.getOrCreatePlaylist(
-      serverPlaylist.id,
-      serverPlaylist.name,
-    );
-
-    cachedPlaylist.clearSongs();
-
-    for (final playlistSong in serverPlaylist.playlistSongs) {
-      final cachedSong = _songService.getOrCreateSong(
-        playlistSong.song.fileHash,
-      );
-      final song = playlistSong.song;
-
-      if (!cachedSong.fullyLoaded) {
-        cachedSong.name = song.name;
-        cachedSong.discNumber = song.discNumber;
-        cachedSong.trackNumber = song.trackNumber;
-        cachedSong.durationInSeconds = song.durationInSeconds;
-        cachedSong.year = song.releaseYear;
-        cachedSong.fullyLoaded = true;
-        _songService.updateSong(cachedSong);
-      }
-
-      cachedPlaylist.addSong(cachedSong);
-    }
-
-    return _playlistRepository.savePlaylist(cachedPlaylist);
-  }
-
-  List<Playlist> getAllPlaylists() {
-    return _playlistRepository.getAllPlaylists();
-  }
-
   Future<Playlist> addToPlaylist(Playlist playlist, List<Song> songs) async {
     for (var song in songs) {
       playlist.addSong(song);
@@ -374,18 +269,12 @@ class PlaylistService {
     return await updatePlaylist(playlist);
   }
 
-  void deleteFromPlaylist(Song song, Playlist playlist) {
-    try {
-      playlist.removeSong(song);
-      _playlistRepository.savePlaylist(playlist);
-    } catch (e) {
-      _logger.fine("Error removing song from playlist: $e");
-    }
-  }
-
-  void deleteAllSongsFromPlaylist(Playlist playlist) {
-    playlist.clearSongs();
-    _playlistRepository.savePlaylist(playlist);
+  Future<void> deleteFromPlaylist(Song song, Playlist playlist) async {
+    playlist.removeSong(song);
+    _logger.fine(
+      'Updating playlist "$playlist after removing song ${song.getName()}',
+    );
+    await updatePlaylist(playlist);
   }
 
   Future<void> deletePlaylist(Playlist playlist) async {
@@ -403,5 +292,53 @@ class PlaylistService {
       }
     }
     _playlistRepository.deletePlaylist(playlist);
+  }
+
+  Playlist cacheServerPlaylist(PlaylistDto serverPlaylist) {
+    if (serverPlaylist.id <= 0) {
+      throw Exception('Server playlist must have a valid ID');
+    }
+
+    _logger.fine(
+      'Caching server playlist: ${serverPlaylist.name} with ID ${serverPlaylist.id}',
+    );
+
+    var cachedPlaylist = _playlistRepository.getOrCreatePlaylist(
+      serverPlaylist.name,
+    );
+    cachedPlaylist.serverId = serverPlaylist.id;
+
+    for (final hash in serverPlaylist.songFileHashes) {
+      final song = _songService.getOrCreateSong(hash);
+      if (!cachedPlaylist.getSongs().contains(song)) {
+        cachedPlaylist.addSong(song);
+      }
+    }
+
+    return _playlistRepository.savePlaylist(cachedPlaylist);
+  }
+
+  Playlist cacheServerPlaylistDetails(PlaylistDetailDto serverPlaylist) {
+    if (serverPlaylist.id <= 0) {
+      throw Exception('Server playlist must have a valid ID');
+    }
+
+    var cachedPlaylist = _playlistRepository.getOrCreatePlaylist(
+      serverPlaylist.name,
+    );
+    cachedPlaylist.serverId = serverPlaylist.id;
+    cachedPlaylist.clearSongs();
+    final orderedPlaylistSongs = [...serverPlaylist.playlistSongs]
+      ..sort((a, b) => a.position.compareTo(b.position));
+
+    var songs = orderedPlaylistSongs.map((ps) => ps.song).toList();
+
+    _songService.cacheServerSongs(songs);
+
+    for (final ps in orderedPlaylistSongs) {
+      cachedPlaylist.addSong(_songService.getOrCreateSong(ps.song.fileHash));
+    }
+
+    return _playlistRepository.savePlaylist(cachedPlaylist);
   }
 }

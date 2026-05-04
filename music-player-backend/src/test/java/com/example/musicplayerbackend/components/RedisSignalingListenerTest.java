@@ -27,27 +27,6 @@ class RedisSignalingListenerTest {
     }
 
     @Test
-    void shouldDelegateToSignalingHandlerWhenUserIdIsValid() {
-        listener.onSyncTrigger("42");
-
-        verify(signalingHandler).deliverSyncTriggerLocally(42L);
-    }
-
-    @Test
-    void shouldTrimAndParseUserIdWithLeadingTrailingSpaces() {
-        listener.onSyncTrigger("  99  ");
-
-        verify(signalingHandler).deliverSyncTriggerLocally(99L);
-    }
-
-    @Test
-    void shouldNotDelegateWhenSyncTriggerUserIdIsInvalid() {
-        listener.onSyncTrigger("not-a-number");
-
-        verify(signalingHandler, never()).deliverSyncTriggerLocally(any());
-    }
-
-    @Test
     void shouldDelegateToSignalingHandlerWhenWebRTCSignalIsValid() throws Exception {
         WebRTCMessage signal = new WebRTCMessage("OFFER", "peer-A", "peer-B", "hash-1", "sdp-offer");
         String message = objectMapper.writeValueAsString(signal);

@@ -27,14 +27,6 @@ public class RedisConfig {
     }
 
     @Bean
-    public MessageListenerAdapter syncMessageListenerAdapter(RedisSignalingListener listener) {
-        MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onSyncTrigger");
-        adapter.setSerializer(new StringRedisSerializer());
-        adapter.afterPropertiesSet();
-        return adapter;
-    }
-
-    @Bean
     public MessageListenerAdapter webrtcMessageListenerAdapter(RedisSignalingListener listener) {
         MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onWebRTCSignal");
         adapter.setSerializer(new StringRedisSerializer());
@@ -45,12 +37,10 @@ public class RedisConfig {
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory factory,
-            MessageListenerAdapter syncMessageListenerAdapter,
             MessageListenerAdapter webrtcMessageListenerAdapter) {
 
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(factory);
-        container.addMessageListener(syncMessageListenerAdapter, new ChannelTopic("signaling:sync"));
         container.addMessageListener(webrtcMessageListenerAdapter, new ChannelTopic("signaling:webrtc"));
         return container;
     }

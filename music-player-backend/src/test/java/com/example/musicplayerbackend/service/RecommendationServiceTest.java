@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.service;
 
+import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.UserLibraryRepository;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.mapper.SongMapper;
@@ -32,15 +33,20 @@ class RecommendationServiceTest {
     @Mock
     UserLibraryRepository userLibraryRepository;
     @Mock
+    SongRepository songRepository;
+    @Mock
     SongMapper songMapper;
 
     RecommendationService service;
 
     @BeforeEach
     void setUp() {
-        service = new RecommendationService(userLibraryRepository, songMapper);
+        service = new RecommendationService(userLibraryRepository, songRepository, songMapper);
         lenient().when(songMapper.toDto(any(Song.class), any(UserLibrary.class))).thenAnswer(inv ->
                 songDto(((Song) inv.getArgument(0)).getId()));
+        lenient().when(songMapper.toDto(any(Song.class), org.mockito.ArgumentMatchers.isNull())).thenAnswer(inv ->
+                songDto(((Song) inv.getArgument(0)).getId()));
+        lenient().when(songRepository.findRandomStreamable(any())).thenReturn(List.of());
     }
 
     private Song song(long id) {

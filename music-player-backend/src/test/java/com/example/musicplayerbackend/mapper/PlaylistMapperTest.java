@@ -48,6 +48,11 @@ class PlaylistMapperTest {
             }
 
             @Override
+            public Boolean getIndestructible() {
+                return false;
+            }
+
+            @Override
             public String getSongFileHashesCsv() {
                 return "a,b,c";
             }

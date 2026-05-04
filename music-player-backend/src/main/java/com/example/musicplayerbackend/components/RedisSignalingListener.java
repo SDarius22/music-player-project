@@ -14,15 +14,6 @@ public class RedisSignalingListener {
     private final SignalingHandler signalingHandler;
     private final ObjectMapper objectMapper;
 
-    public void onSyncTrigger(String message) {
-        try {
-            Long userId = Long.parseLong(message.trim());
-            signalingHandler.deliverSyncTriggerLocally(userId);
-        } catch (NumberFormatException e) {
-            log.error("[REDIS_LISTENER] Invalid userId in sync trigger message: {}", message);
-        }
-    }
-
     public void onWebRTCSignal(String message) {
         try {
             WebRTCMessage signal = objectMapper.readValue(message, WebRTCMessage.class);

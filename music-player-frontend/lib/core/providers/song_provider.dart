@@ -83,8 +83,8 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     notifyListeners();
   }
 
-  void updateSong(Song song) {
-    _songService.updateSong(song);
+  Future<void> updateSong(Song song) async {
+    await _songService.updateSong(song);
     notifyListeners();
   }
 
@@ -94,11 +94,6 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   }
 
   void refreshSongs() {
-    notifyListeners();
-  }
-
-  void runSync() async {
-    _songService.runSync();
     notifyListeners();
   }
 }

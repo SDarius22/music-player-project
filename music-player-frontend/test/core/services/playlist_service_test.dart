@@ -101,7 +101,7 @@ void main() {
       final queue = playlistRepo.getPlaylistByServerIdAndName(-1, 'Queue');
       playlistRepo.deletePlaylist(queue!);
 
-      final recreated = service.getQueuePlaylist();
+      final recreated = service.getPlaylistByName();
 
       expect(recreated.getName(), 'Queue');
       expect(recreated.indestructible, isTrue);

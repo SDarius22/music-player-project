@@ -9,3 +9,7 @@ databaseChangeLog:
       file: db/changelog/changes/004-playlist-songs-file-hash.sql
   - include:
       file: db/changelog/changes/005-playback-state-simplify.sql
+  - include:
+      file: db/changelog/changes/006-playlist-indestructible.sql
+  - include:
+      file: db/changelog/changes/007-playlist-name-unique.sql

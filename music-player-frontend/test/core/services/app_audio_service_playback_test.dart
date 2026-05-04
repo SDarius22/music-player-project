@@ -56,7 +56,7 @@ void main() {
 
     when(mockSettingsService.getAudioSettings()).thenReturn(AudioSettings());
     when(mockPlaylistService.getMostRecentPlayedSong()).thenReturn(null);
-    when(mockPlaylistService.getQueuePlaylist()).thenReturn(Playlist('Queue'));
+    when(mockPlaylistService.getPlaylistByName()).thenReturn(Playlist('Queue'));
     when(
       mockAudioPlayer.processingStateStream,
     ).thenAnswer((_) => const Stream.empty());

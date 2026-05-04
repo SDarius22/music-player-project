@@ -4,7 +4,6 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
-import 'package:music_player_frontend/core/rest_clients/data_sync_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
 
 class SongService {
@@ -20,7 +19,6 @@ class SongService {
     this._artistRepository,
     this._albumRepository,
     this._songRestService,
-    this._dataSyncService,
   );
 
   Map<String, dynamic> get sortFields => _songRepository.sortFields;
@@ -37,6 +35,13 @@ class SongService {
     } catch (_) {
       return null;
     }
+  }
+
+  Song getOrCreateSong(String fileHash) {
+    if (fileHash.isEmpty) {
+      throw ArgumentError('File hash cannot be empty');
+    }
+    return _songRepository.getOrCreateSong(fileHash);
   }
 
   Future<Song?> fetchSongByFileHash(String fileHash) async {
@@ -79,7 +84,19 @@ class SongService {
     }
   }
 
-  void updateSong(Song song) {
+  Future<void> updateSong(Song song) async {
+    try {
+      await _songRestService.updateSongLibraryEntry(
+        song.fileHash,
+        song.likedByUser,
+        song.lastPlayed,
+        song.playCount,
+      );
+    } catch (e) {
+      _logger.fine(
+        'SongService: failed to update song lib entry ${song.getHash()} on server: $e',
+      );
+    }
     _songRepository.updateSong(song);
   }
 
@@ -142,7 +159,7 @@ class SongService {
   }
 
   Future<List<Song>> getForgottenFavourites() async {
-    final page = await _songRestService.getForgottenFavourites();
+    final page = await _songRestService.getFavourites();
     return cacheServerSongs(page.content);
   }
 
@@ -156,7 +173,7 @@ class SongService {
     if (local.isNotEmpty) return local;
 
     try {
-      final serverPage = await _songRestService.getFavoriteSongs();
+      final serverPage = await _songRestService.getFavourites();
       return cacheServerSongs(serverPage.content);
     } catch (e) {
       _logger.fine(
@@ -171,7 +188,7 @@ class SongService {
     if (local.isNotEmpty) return local;
 
     try {
-      final serverPage = await _songRestService.getMostPlayedSongs(limit);
+      final serverPage = await _songRestService.getMostPlayed(size: limit);
       return cacheServerSongs(serverPage.content);
     } catch (e) {
       _logger.fine('SongService: failed to fetch most played from server: $e');
@@ -184,7 +201,7 @@ class SongService {
     if (local.isNotEmpty) return local;
 
     try {
-      final serverPage = await _songRestService.getRecentlyPlayedSongs(limit);
+      final serverPage = await _songRestService.getRecentlyPlayed(size: limit);
       return cacheServerSongs(serverPage.content);
     } catch (e) {
       _logger.fine(

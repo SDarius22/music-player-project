@@ -26,6 +26,7 @@ public class AuthService {
     private final JWTService jwtService;
     private final CodeMapper codeMapper;
     private final JavaMailSender mailSender;
+    private final DefaultPlaylistService defaultPlaylistService;
     @Value("${spring.mail.username}")
     private String emailUsername;
 
@@ -96,6 +97,8 @@ public class AuthService {
                             .build();
                     return userRepository.save(newUser);
                 });
+
+        defaultPlaylistService.provisionDefaultPlaylists(user);
 
         return codeMapper.toAuthResponse(jwtService.generateAccessToken(user), jwtService.generateRefreshToken(user));
     }
