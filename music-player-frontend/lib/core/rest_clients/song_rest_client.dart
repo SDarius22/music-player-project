@@ -345,7 +345,7 @@ class SongRestClient extends AbstractRestClient {
     try {
       final response = await patch('/songs/$songFileHash', {
         'likedByUser': likedByUser,
-        'lastPlayed': lastPlayed?.toIso8601String(),
+        'lastPlayed': lastPlayed?.toUtc().toIso8601String(),
         'playCount': playCount,
       });
       if (response.statusCode == 200) {

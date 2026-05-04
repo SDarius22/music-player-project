@@ -44,7 +44,6 @@ class AppAudioService {
   bool _initialized = false;
   bool _isSwitchingSong = false;
   int _currentIndex = 0;
-  final Completer<void> _initDone = Completer<void>();
   Timer? _positionSaveTimer;
   DateTime? _playStartTime;
   StreamSubscription<ProcessingState>? _processingStateSubscription;
@@ -344,7 +343,6 @@ class AppAudioService {
       _currentAudioSettings.repeat ? LoopMode.one : LoopMode.off,
     );
 
-
     if (_normalQueue.isNotEmpty) {
       _rebuildShuffledQueue();
       final idx = _activeQueue.indexWhere((s) => s == currentSong);
@@ -370,7 +368,6 @@ class AppAudioService {
     _logger.fine('[AppAudioService] _loadAndPlayIndex($idx) called');
     if (_activeQueue.isEmpty) return;
     _isSwitchingSong = true;
-    await _initDone.future;
     _finalizePlayDuration();
     _logger.fine(
       '[AppAudioService] Loading song at index $idx: ${_activeQueue[idx].getName()}',
