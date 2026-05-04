@@ -407,15 +407,6 @@ class MockSongRepository extends _i1.Mock implements _i10.SongRepository {
           as List<_i4.Song>);
 
   @override
-  List<_i4.Song> getUnsyncedSongs() =>
-      (super.noSuchMethod(
-            Invocation.method(#getUnsyncedSongs, []),
-            returnValue: <_i4.Song>[],
-            returnValueForMissingStub: <_i4.Song>[],
-          )
-          as List<_i4.Song>);
-
-  @override
   void deleteSong(_i4.Song? song) => super.noSuchMethod(
     Invocation.method(#deleteSong, [song]),
     returnValueForMissingStub: null,
@@ -571,6 +562,28 @@ class MockAlbumRestClient extends _i1.Mock implements _i12.AlbumRestClient {
               _FakeResponse_5(
                 this,
                 Invocation.method(#get, [endpoint], {#headers: headers}),
+              ),
+            ),
+          )
+          as _i11.Future<_i7.Response>);
+
+  @override
+  _i11.Future<_i7.Response> patch(
+    String? endpoint,
+    Map<String, dynamic>? body,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#patch, [endpoint, body]),
+            returnValue: _i11.Future<_i7.Response>.value(
+              _FakeResponse_5(
+                this,
+                Invocation.method(#patch, [endpoint, body]),
+              ),
+            ),
+            returnValueForMissingStub: _i11.Future<_i7.Response>.value(
+              _FakeResponse_5(
+                this,
+                Invocation.method(#patch, [endpoint, body]),
               ),
             ),
           )

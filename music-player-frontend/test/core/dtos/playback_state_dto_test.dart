@@ -21,15 +21,13 @@ void main() {
     test('fromJson uses safe defaults when fields are absent', () {
       final dto = PlaybackStateDto.fromJson({});
 
-      expect(dto.queueFileHashes, isEmpty);
-      expect(dto.currentFileHash, isNull);
       expect(dto.positionSeconds, equals(0));
       expect(dto.shuffle, isFalse);
       expect(dto.repeat, isFalse);
       expect(dto.updatedAt, isNull);
     });
 
-    test('fromJson keeps legacy queue/current fields when present', () {
+    test('fromJson ignores unknown legacy fields when present', () {
       final dto = PlaybackStateDto.fromJson({
         'queueFileHashes': ['hash1'],
         'currentFileHash': 'hash1',
@@ -38,8 +36,9 @@ void main() {
         'repeat': false,
       });
 
-      expect(dto.currentFileHash, equals('hash1'));
-      expect(dto.queueFileHashes, equals(['hash1']));
+      expect(dto.positionSeconds, equals(0));
+      expect(dto.shuffle, isFalse);
+      expect(dto.repeat, isFalse);
     });
 
     test('fromJson falls back to legacy positionMs when needed', () {
@@ -54,8 +53,6 @@ void main() {
 
     test('toJson serialises only OpenAPI request fields', () {
       const dto = PlaybackStateDto(
-        queueFileHashes: ['hashA', 'hashB'],
-        currentFileHash: 'hashA',
         positionSeconds: 5,
         shuffle: true,
         repeat: true,
