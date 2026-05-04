@@ -49,8 +49,12 @@ public class PlaylistService {
 
     @Transactional
     public PlaylistDetailDto createPlaylist(User user, CreatePlaylistDto req) {
-        if (req.getSongFileHashes() == null || req.getSongFileHashes().isEmpty()) {
+        if (req.getPlaylistSongs() == null || req.getPlaylistSongs().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Playlist must contain at least one song");
+        }
+
+        if (req.getName() == null || req.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Playlist name is required");
         }
 
         Playlist playlist = Playlist.builder()
@@ -61,8 +65,7 @@ public class PlaylistService {
                 .build();
 
         Playlist saved = playlistRepository.save(playlist);
-        List<PlaylistSongInput> songsInOrder = resolveSongInputs(req.getSongFileHashes());
-        replacePlaylistSongs(saved, songsInOrder);
+        replacePlaylistSongs(saved, req.getPlaylistSongs());
         return toDetailDto(saved);
     }
 
@@ -77,8 +80,8 @@ public class PlaylistService {
         if (req.getName() != null) {
             playlist.setName(req.getName());
         }
-        if (req.getSongFileHashes() != null && !req.getSongFileHashes().isEmpty()) {
-            replacePlaylistSongs(playlist, resolveSongInputs(req.getSongFileHashes()));
+        if (req.getPlaylistSongs() != null && !req.getPlaylistSongs().isEmpty()) {
+            replacePlaylistSongs(playlist, req.getPlaylistSongs());
         }
         if (req.getCoverImage() != null) {
             playlist.setCoverImage(req.getCoverImage().isBlank() ? null : req.getCoverImage());
@@ -148,7 +151,7 @@ public class PlaylistService {
         return playlistMapper.toDetailDto(playlist, songs);
     }
 
-    private List<PlaylistSongInput> resolveSongInputs(List<PlaylistSongPositionDto> items) {
+    private void replacePlaylistSongs(Playlist playlist, List<PlaylistSongPositionDto> items) {
         if (items == null || items.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Playlist must contain at least one song");
         }
@@ -169,37 +172,24 @@ public class PlaylistService {
                 .toList();
 
         Map<String, Song> songsByHash = songRepository.findAllByFileHashIn(requestedHashes).stream()
-                .collect(Collectors.toMap(Song::getFileHash, Function.identity(), (left, right) -> left, LinkedHashMap::new));
+                .collect(Collectors.toMap(Song::getFileHash, Function.identity()));
 
-        return items.stream()
+        List<PlaylistSong> entries = items.stream()
+                .sorted(Comparator.comparingInt(PlaylistSongPositionDto::getPosition))
                 .map(item -> {
                     Song song = songsByHash.get(item.getSongFileHash());
                     if (song == null) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Song not found for hash: " + item.getSongFileHash());
                     }
-                    return new PlaylistSongInput(item.getPosition(), song);
+                    return PlaylistSong.builder()
+                            .id(new PlaylistSongId(playlist.getId(), item.getPosition()))
+                            .playlist(playlist)
+                            .song(song)
+                            .build();
                 })
-                .sorted(Comparator.comparingInt(PlaylistSongInput::position))
                 .toList();
-    }
 
-    private void replacePlaylistSongs(Playlist playlist, List<PlaylistSongInput> songsInOrder) {
         playlistSongRepository.deleteByPlaylist_Id(playlist.getId());
-        if (songsInOrder.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Playlist must contain at least one song");
-        }
-
-        List<PlaylistSong> entries = songsInOrder.stream()
-                .map(item -> PlaylistSong.builder()
-                        .id(new PlaylistSongId(playlist.getId(), item.position()))
-                        .playlist(playlist)
-                        .song(item.song())
-                        .build())
-                .toList();
-
         playlistSongRepository.saveAll(entries);
-    }
-
-    private record PlaylistSongInput(int position, Song song) {
     }
 }

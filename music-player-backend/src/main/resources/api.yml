@@ -465,7 +465,7 @@ paths:
           description: Unauthorized
     post:
       summary: Create a playlist
-      description: Creates a playlist using the exact order of `songFileHashes` as playlist positions.
+      description: Creates a playlist.
       operationId: createPlaylist
       tags:
         - Playlists
@@ -516,9 +516,9 @@ paths:
           description: Forbidden
         '404':
           description: Playlist not found
-    put:
+    patch:
       summary: Update a playlist
-      description: Updates playlist metadata and, when `songFileHashes` is present, replaces playlist songs in the provided order.
+      description: Updates playlist name, song order, and/or cover image. Only provided fields are updated; others remain unchanged.
       operationId: updatePlaylist
       tags:
         - Playlists
@@ -1088,11 +1088,11 @@ components:
       type: object
       required:
         - name
-        - songFileHashes
+        - playlistSongs
       properties:
         name:
           type: string
-        songFileHashes:
+        playlistSongs:
           type: array
           minItems: 1
           items:
@@ -1109,7 +1109,7 @@ components:
         name:
           type: string
           nullable: true
-        songFileHashes:
+        playlistSongs:
           type: array
           items:
             $ref: '#/components/schemas/PlaylistSongPositionDto'
@@ -1118,7 +1118,7 @@ components:
         coverImage:
           type: string
           nullable: true
-          description: Base64-encoded cover image; null to remove existing cover
+          description: Base64-encoded cover image; empty string to remove existing cover
 
     PlaybackStateDto:
       type: object

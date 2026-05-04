@@ -31,7 +31,7 @@ public class PlaylistSong {
     private Playlist playlist;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "song_id", nullable = false)
+    @JoinColumn(name = "song_file_hash", referencedColumnName = "file_hash", nullable = false)
     private Song song;
 }
 
