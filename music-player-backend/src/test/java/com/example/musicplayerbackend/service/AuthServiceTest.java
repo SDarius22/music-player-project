@@ -39,6 +39,8 @@ class AuthServiceTest {
     CodeMapper codeMapper;
     @Mock
     JavaMailSender mailSender;
+    @Mock
+    DefaultPlaylistService defaultPlaylistService;
 
     @Captor
     ArgumentCaptor<VerificationCode> vcCaptor;
@@ -49,7 +51,7 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AuthService(userRepository, codeRepository, jwtService, codeMapper, mailSender);
+        service = new AuthService(userRepository, codeRepository, jwtService, codeMapper, mailSender, defaultPlaylistService);
         ReflectionTestUtils.setField(service, "emailUsername", "no-reply@example.com");
 
         MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));

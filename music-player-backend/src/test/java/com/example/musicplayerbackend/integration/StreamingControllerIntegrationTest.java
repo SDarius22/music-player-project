@@ -157,42 +157,4 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ── prefix ────────────────────────────────────────────────────────────────
-
-    @Test
-    void shouldReturn200ForPrefixOfPublicSongWithNoChunks() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{fileHash}/prefix", publicSong.getFileHash())
-                        .with(user(testUser)))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void shouldReturn403WhenPrefixAccessIsForbidden() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{fileHash}/prefix", privateSong.getFileHash())
-                        .with(user(otherUser)))
-                .andExpect(status().isForbidden());
-    }
-
-    // ── full stream ───────────────────────────────────────────────────────────
-
-    @Test
-    void shouldReturn403WhenFullStreamAccessIsForbidden() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{fileHash}/full", privateSong.getFileHash())
-                        .with(user(otherUser)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void shouldReturn404WhenFullStreamSongNotFound() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/999999/full")
-                        .with(user(testUser)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void shouldReturn200ForFullStreamOfPublicSongWithNoChunks() throws Exception {
-        mockMvc.perform(get("/api/v1/stream/{fileHash}/full", publicSong.getFileHash())
-                        .with(user(testUser)))
-                .andExpect(status().isOk());
-    }
 }

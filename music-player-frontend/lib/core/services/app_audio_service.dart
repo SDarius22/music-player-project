@@ -4,7 +4,6 @@ import 'dart:math' show max;
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/dtos/playback_state_dto.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -28,7 +27,7 @@ class AppAudioService {
   final SettingsService settingsService;
   final PlaylistService playlistService;
   final AuthService authService;
-  final PlaybackRestClient? playbackRestService;
+  final PlaybackRestClient playbackRestService;
   final ChunkService Function(String fileHash) createChunkManager;
 
   ValueNotifier<Song?> currentSongNotifier = ValueNotifier<Song?>(null);
@@ -80,30 +79,34 @@ class AppAudioService {
     this.settingsService,
     this.playlistService,
     this.authService,
-    this.createChunkManager, {
-    this.playbackRestService,
+    this.createChunkManager,
+    this.playbackRestService, {
     AudioPlayer? audioPlayer,
-  }) : audioPlayer = audioPlayer ?? AudioPlayer() {
-    _currentAudioSettings = settingsService.getAudioSettings();
-    currentSong = playlistService.getMostRecentPlayedSong();
-    _queuePlaylist = playlistService.getQueuePlaylist();
-    _normalQueue = List.from(_queuePlaylist.getSongs());
-    _initPlayer();
+  }) : audioPlayer = audioPlayer ?? AudioPlayer();
 
-    this.audioPlayer.processingStateStream.listen((state) {
+  Future<void> initializeAppAudio() async {
+    if (_initialized) return;
+    _initialized = true;
+    _currentAudioSettings = await settingsService.getAudioSettings();
+    currentSong = await playlistService.getMostRecentPlayedSong();
+    _queuePlaylist = await playlistService.getPlaylistByName("Queue");
+    _normalQueue = List.from(_queuePlaylist.getSongs());
+    await _initPlayer();
+
+    audioPlayer.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         _onSongCompleted();
       }
     });
 
     _positionSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (this.audioPlayer.playing) {
-        pushStateToServer();
+      if (audioPlayer.playing) {
+        settingsService.updateAudioSettings(_currentAudioSettings);
         unawaited(_proactivelyCachePrefixes());
       }
     });
 
-    this.audioPlayer.errorStream.listen((error) {
+    audioPlayer.errorStream.listen((error) {
       _logger.severe("Audio Player Error: $error");
     });
   }
@@ -192,7 +195,6 @@ class AppAudioService {
 
   Future<void> seek(Duration position) async {
     await audioPlayer.seek(position);
-    pushStateToServer();
   }
 
   Future<void> stop() => audioPlayer.stop();
@@ -215,11 +217,10 @@ class AppAudioService {
     audioPlayer.setPitch(pitch);
   }
 
-  void setRepeat(bool repeat) {
+  Future<void> setRepeat(bool repeat) async {
     _currentAudioSettings.repeat = repeat;
-    settingsService.updateAudioSettings(_currentAudioSettings);
+    await settingsService.updateAudioSettings(_currentAudioSettings);
     audioPlayer.setLoopMode(repeat ? LoopMode.one : LoopMode.off);
-    pushStateToServer();
   }
 
   Future<void> setShuffle(bool shuffle) async {
@@ -229,10 +230,9 @@ class AppAudioService {
     if (shuffle) {
       _rebuildShuffledQueue();
     }
-    settingsService.updateAudioSettings(_currentAudioSettings);
     final idx = _activeQueue.indexWhere((s) => s == current);
     _currentIndex = idx < 0 ? 0 : idx;
-    pushStateToServer();
+    await settingsService.updateAudioSettings(_currentAudioSettings);
   }
 
   void _rebuildShuffledQueue() {
@@ -261,7 +261,6 @@ class AppAudioService {
     _normalQueue.addAll(toAdd);
     _shuffledQueue.addAll(toAdd);
     _queuePlaylist = await playlistService.addToPlaylist(_queuePlaylist, toAdd);
-    pushStateToServer();
   }
 
   Future<void> addNextToQueue(List<Song> songs) async {
@@ -283,8 +282,7 @@ class AppAudioService {
       _queuePlaylist.addSong(song);
     }
 
-    playlistService.updatePlaylist(_queuePlaylist);
-    pushStateToServer();
+    await playlistService.updatePlaylist(_queuePlaylist);
   }
 
   Future<void> removeFromQueue(Song song) async {
@@ -294,7 +292,7 @@ class AppAudioService {
     final wasCurrentSong = song == currentSong;
     _normalQueue.remove(song);
     _shuffledQueue.remove(song);
-    playlistService.deleteFromPlaylist(song, _queuePlaylist);
+    await playlistService.deleteFromPlaylist(song, _queuePlaylist);
 
     if (wasCurrentSong) {
       if (_activeQueue.isNotEmpty) {
@@ -305,7 +303,6 @@ class AppAudioService {
     } else if (activeIdx < _currentIndex) {
       _currentIndex--;
     }
-    pushStateToServer();
   }
 
   Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
@@ -341,16 +338,12 @@ class AppAudioService {
   }
 
   Future<void> _initPlayer() async {
-    if (_initialized) return;
-    _initialized = true;
-
     await audioPlayer.setVolume(_currentAudioSettings.volume);
     await audioPlayer.setSpeed(_currentAudioSettings.speed);
     await audioPlayer.setLoopMode(
       _currentAudioSettings.repeat ? LoopMode.one : LoopMode.off,
     );
 
-    if (!_initDone.isCompleted) _initDone.complete();
 
     if (_normalQueue.isNotEmpty) {
       _rebuildShuffledQueue();
@@ -371,7 +364,6 @@ class AppAudioService {
     _currentIndex = (_currentIndex + 1) % _activeQueue.length;
     await _loadIndex(_currentIndex);
     await play();
-    unawaited(songService.syncLibraryMetadata());
   }
 
   Future<void> _loadIndex(int idx, {int? position}) async {
@@ -402,7 +394,6 @@ class AppAudioService {
         initialPosition: Duration(seconds: position ?? 0),
       );
       _onSongStarted(song);
-      pushStateToServer();
     } finally {
       _isSwitchingSong = false;
     }
@@ -457,85 +448,6 @@ class AppAudioService {
     }
   }
 
-  void pushStateToServer() {
-    if (playbackRestService == null) return;
-    final queueFileHashes =
-        _normalQueue
-            .where((s) => !s.isLocal && s.getHash().isNotEmpty)
-            .map((s) => s.getHash())
-            .toList();
-    final currentFileHash =
-        currentSong != null &&
-                !currentSong!.isLocal &&
-                currentSong!.getHash().isNotEmpty
-            ? currentSong!.getHash()
-            : null;
-    final dto = PlaybackStateDto(
-      queueFileHashes: queueFileHashes,
-      currentFileHash: currentFileHash,
-      positionMs: audioPlayer.position.inMilliseconds,
-      shuffle: _currentAudioSettings.shuffle,
-      repeat: _currentAudioSettings.repeat,
-    );
-    playbackRestService!.savePlaybackState(dto);
-  }
-
-  Future<void> restoreFromServerState(PlaybackStateDto dto) async {
-    if (dto.queueFileHashes.isEmpty) return;
-
-    final resolvedQueue =
-        (await Future.wait(
-          dto.queueFileHashes.map(
-            (hash) => songService.fetchSongByFileHash(hash),
-          ),
-        )).whereType<Song>().toList();
-
-    if (resolvedQueue.isEmpty) return;
-
-    _currentAudioSettings.shuffle = dto.shuffle;
-    _currentAudioSettings.repeat = dto.repeat;
-    settingsService.updateAudioSettings(_currentAudioSettings);
-    await audioPlayer.setLoopMode(dto.repeat ? LoopMode.one : LoopMode.off);
-
-    _normalQueue.clear();
-    _normalQueue.addAll(resolvedQueue);
-    _queuePlaylist.clearSongs();
-    _queuePlaylist = await playlistService.addToPlaylist(
-      _queuePlaylist,
-      _normalQueue,
-    );
-
-    _logger.fine(
-      'Restoring state from server: resolved ${resolvedQueue.length} songs for hashes ${dto.queueFileHashes.join(", ")}',
-    );
-
-    Song current = resolvedQueue.first;
-    if (dto.currentFileHash != null) {
-      final matches = resolvedQueue.where(
-        (s) => s.getHash() == dto.currentFileHash,
-      );
-      if (matches.isNotEmpty) current = matches.first;
-    }
-    _rebuildShuffledQueue();
-    final idx = _activeQueue.indexWhere((s) => s == current);
-    _currentIndex = idx < 0 ? 0 : idx;
-    currentSong = current;
-
-    _logger.fine(
-      'Restored state: queue=${_activeQueue.length} songs, current=${current.getName()}, shuffle=${dto.shuffle}, repeat=${dto.repeat}',
-    );
-
-    await _initDone.future;
-
-    _logger.fine(
-      'Loading audio source for restored song: ${current.getName()} at position ${dto.positionMs}ms',
-    );
-    await audioPlayer.setAudioSource(
-      _buildAudioSource(current),
-      initialPosition: Duration(milliseconds: dto.positionMs),
-    );
-  }
-
   static const _nextSongTargets = [0.25, 0.20, 0.15, 0.10, 0.05];
   static const _prevSongTargets = [0.10, 0.05];
 
@@ -586,23 +498,18 @@ class AppAudioService {
     }
   }
 
-  void likeCurrentSong() {
+  Future<void> likeCurrentSong() async {
     currentSongNotifier.value?.likedByUser =
         !currentSongNotifier.value!.likedByUser;
     likedNotifier.value = currentSongNotifier.value!.likedByUser;
-    songService.updateSong(currentSongNotifier.value!);
-    playlistService.updateFavoritesPlaylist();
+    await songService.updateSong(currentSongNotifier.value!);
   }
 
   void _onSongStarted(Song song) {
     song.lastPlayed = DateTime.now();
     song.playCount += 1;
-    song.pendingPlayCountDelta += 1;
-    song.requiresSync = true;
     _playStartTime = DateTime.now();
     songService.updateSong(song);
-    playlistService.updateMostPlayedPlaylist();
-    playlistService.updateRecentlyPlayedPlaylist();
     _proactivelyCachePrefixes();
 
     if (song.isLocal) {
@@ -623,7 +530,6 @@ class AppAudioService {
     if (elapsed <= 0) return;
     final song = currentSong;
     if (song!.getHash().isEmpty && song.path!.isEmpty) return;
-    song.pendingPlayDurationSeconds += elapsed;
     songService.updateSong(song);
   }
 

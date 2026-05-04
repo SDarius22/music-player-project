@@ -37,6 +37,9 @@ class AlbumServiceTest {
     @Mock
     SortMapper sortMapper;
 
+    @Mock
+    SongEnrichmentService songEnrichmentService;
+
     AlbumMapper albumMapper;
 
 
@@ -48,8 +51,17 @@ class AlbumServiceTest {
         ReflectionTestUtils.setField(mapper, "artistMapper", new ArtistMapperImpl());
         albumMapper = mapper;
 
-        service = new AlbumService(albumRepository, albumMapper, sortMapper);
+        service = new AlbumService(albumRepository, albumMapper, sortMapper, songEnrichmentService);
         org.mockito.Mockito.lenient().when(sortMapper.toSort(any())).thenReturn(org.springframework.data.domain.Sort.by("name"));
+        org.mockito.Mockito.lenient().when(songEnrichmentService.enrich(anyList(), any())).thenAnswer(inv -> {
+            List<Song> songs = inv.getArgument(0);
+            return songs.stream().map(s -> {
+                SongDto dto = new SongDto();
+                dto.setFileHash(s.getFileHash());
+                dto.setName(s.getName());
+                return dto;
+            }).toList();
+        });
     }
 
     // ── CoverDecoder ─────────────────────────────────────────────────────────
@@ -249,7 +261,7 @@ class AlbumServiceTest {
         Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").build();
         when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
+        AlbumDetailDto result = service.getAlbumByHash("thriller-hash", 1L);
 
         assertEquals("thriller-hash", result.getHash());
         assertEquals("Thriller", result.getName());
@@ -259,7 +271,7 @@ class AlbumServiceTest {
     void shouldThrow404WhenAlbumByHashNotFound() {
         when(albumRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getAlbumByHash("missing-hash"));
+                () -> service.getAlbumByHash("missing-hash", 1L));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
@@ -271,7 +283,7 @@ class AlbumServiceTest {
         Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").songs(List.of(song)).build();
         when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumByHash("thriller-hash");
+        AlbumDetailDto result = service.getAlbumByHash("thriller-hash", 1L);
 
         assertEquals(1, result.getSongs().size());
         assertEquals("hash", result.getSongs().getFirst().getFileHash());
@@ -282,9 +294,9 @@ class AlbumServiceTest {
         Album album = Album.builder().id(1L).hash("no-songs-hash").name("No Songs").songs(null).build();
         when(albumRepository.findByHash("no-songs-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumByHash("no-songs-hash");
+        AlbumDetailDto result = service.getAlbumByHash("no-songs-hash", 1L);
 
-        assertNull(result.getSongs());
+        assertTrue(result.getSongs().isEmpty());
     }
 
     // ── getAlbumCover ────────────────────────────────────────────────────────

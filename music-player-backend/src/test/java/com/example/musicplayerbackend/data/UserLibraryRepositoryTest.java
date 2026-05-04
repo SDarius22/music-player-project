@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
@@ -143,29 +144,29 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         userLibraryRepository.save(buildEntry(user, song2, true, 50, null, Instant.now(), false));
         userLibraryRepository.save(buildEntry(user, song3, false, 99, null, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findLikedByUserId(user.getId(), PageRequest.of(0, 10));
+        Page<UserLibrary> result = userLibraryRepository.findLikedByUserId(user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getPlayCount()).isEqualTo(50); // highest first
-        assertThat(result.get(1).getPlayCount()).isEqualTo(10);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).getPlayCount()).isEqualTo(50); // highest first
+        assertThat(result.getContent().get(1).getPlayCount()).isEqualTo(10);
     }
 
     @Test
     void shouldExcludeDeletedFromLikedSongs() {
         userLibraryRepository.save(buildEntry(user, song1, true, 5, null, Instant.now(), true));
 
-        List<UserLibrary> result = userLibraryRepository.findLikedByUserId(user.getId(), PageRequest.of(0, 10));
+        Page<UserLibrary> result = userLibraryRepository.findLikedByUserId(user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test
     void shouldReturnEmptyWhenNoLikedSongs() {
         userLibraryRepository.save(buildEntry(user, song1, false, 5, null, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findLikedByUserId(user.getId(), PageRequest.of(0, 10));
+        Page<UserLibrary> result = userLibraryRepository.findLikedByUserId(user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     // ── findMostPlayedByUserId ───────────────────────────────────────────────
@@ -176,11 +177,11 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         userLibraryRepository.save(buildEntry(user, song2, false, 20, null, Instant.now(), false));
         userLibraryRepository.save(buildEntry(user, song3, false, 0, null, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findMostPlayedByUserId(user.getId(), PageRequest.of(0, 10));
+        Page<UserLibrary> result = userLibraryRepository.findMostPlayedByUserId(user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getPlayCount()).isEqualTo(20);
-        assertThat(result.get(1).getPlayCount()).isEqualTo(5);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).getPlayCount()).isEqualTo(20);
+        assertThat(result.getContent().get(1).getPlayCount()).isEqualTo(5);
     }
 
     @Test
@@ -188,9 +189,9 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         userLibraryRepository.save(buildEntry(user, song1, false, 0, null, Instant.now(), false));
         userLibraryRepository.save(buildEntry(user, song2, false, 0, null, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findMostPlayedByUserId(user.getId(), PageRequest.of(0, 10));
+        Page<UserLibrary> result = userLibraryRepository.findMostPlayedByUserId(user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     // ── findForgottenByUserId ────────────────────────────────────────────────
@@ -204,11 +205,11 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         userLibraryRepository.save(buildEntry(user, song1, false, 3, oldPlay, Instant.now(), false));
         userLibraryRepository.save(buildEntry(user, song2, false, 3, recentPlay, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findForgottenByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findForgottenByUserId(
                 user.getId(), cutoff, PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getId().getSongId()).isEqualTo(song1.getId());
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst().getId().getSongId()).isEqualTo(song1.getId());
     }
 
     @Test
@@ -218,22 +219,21 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
 
         userLibraryRepository.save(buildEntry(user, song1, false, 0, oldPlay, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findForgottenByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findForgottenByUserId(
                 user.getId(), cutoff, PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test
     void shouldExcludeForgottenEntriesWithNullLastPlayed() {
-        // Entries with null lastPlayed should NOT appear (query requires lastPlayed IS NOT NULL AND < cutoff)
         Instant cutoff = Instant.now().minus(30, ChronoUnit.DAYS);
         userLibraryRepository.save(buildEntry(user, song1, false, 3, null, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findForgottenByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findForgottenByUserId(
                 user.getId(), cutoff, PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test
@@ -243,10 +243,10 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         Instant oldPlay = Instant.now().minus(60, ChronoUnit.DAYS);
         userLibraryRepository.save(buildEntry(otherUser, song1, false, 5, oldPlay, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findForgottenByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findForgottenByUserId(
                 user.getId(), cutoff, PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     // ── findRecentlyAddedByUserId ────────────────────────────────────────────
@@ -259,19 +259,19 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         userLibraryRepository.save(buildEntry(user, song1, false, 0, null, t1, false));
         userLibraryRepository.save(buildEntry(user, song2, false, 0, null, t2, false));
 
-        List<UserLibrary> result = userLibraryRepository.findRecentlyAddedByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findRecentlyAddedByUserId(
                 user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getId().getSongId()).isEqualTo(song2.getId()); // most recent first
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).getId().getSongId()).isEqualTo(song2.getId()); // most recent first
     }
 
     @Test
     void shouldReturnEmptyWhenNoRecentlyAddedEntries() {
-        List<UserLibrary> result = userLibraryRepository.findRecentlyAddedByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findRecentlyAddedByUserId(
                 user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test
@@ -279,10 +279,10 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         User otherUser = userRepository.save(buildUser("recently-added-other@example.com"));
         userLibraryRepository.save(buildEntry(otherUser, song1, false, 0, null, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findRecentlyAddedByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findRecentlyAddedByUserId(
                 user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     // ── findRecentlyPlayedByUserId ───────────────────────────────────────────
@@ -296,22 +296,22 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         userLibraryRepository.save(buildEntry(user, song2, false, 1, playedRecent, Instant.now(), false));
         userLibraryRepository.save(buildEntry(user, song3, false, 0, null, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findRecentlyPlayedByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findRecentlyPlayedByUserId(
                 user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getId().getSongId()).isEqualTo(song2.getId()); // most recent first
-        assertThat(result.get(1).getId().getSongId()).isEqualTo(song1.getId());
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).getId().getSongId()).isEqualTo(song2.getId());
+        assertThat(result.getContent().get(1).getId().getSongId()).isEqualTo(song1.getId());
     }
 
     @Test
     void shouldReturnEmptyWhenNothingPlayed() {
         userLibraryRepository.save(buildEntry(user, song1, false, 0, null, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findRecentlyPlayedByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findRecentlyPlayedByUserId(
                 user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test
@@ -320,9 +320,9 @@ class UserLibraryRepositoryTest extends BaseRepositoryTest {
         Instant played = Instant.now().minus(1, ChronoUnit.HOURS);
         userLibraryRepository.save(buildEntry(otherUser, song1, false, 1, played, Instant.now(), false));
 
-        List<UserLibrary> result = userLibraryRepository.findRecentlyPlayedByUserId(
+        Page<UserLibrary> result = userLibraryRepository.findRecentlyPlayedByUserId(
                 user.getId(), PageRequest.of(0, 10));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 }

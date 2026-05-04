@@ -2,6 +2,7 @@ package com.example.musicplayerbackend.mapper;
 
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongDto;
+import com.example.musicplayerbackend.domain.UserLibrary;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -29,6 +30,23 @@ public interface SongMapper {
     @Mapping(target = "name", source = "song.name")
     @Mapping(target = "year", source = "song.releaseYear")
     SongDto toDto(Song song);
+
+    default SongDto toDto(Song song, UserLibrary entry) {
+        SongDto dto = toDto(song);
+        if (dto == null) {
+            return null;
+        }
+        if (entry == null || Boolean.TRUE.equals(entry.getIsDeleted())) {
+            dto.setLastPlayed(null);
+            dto.setPlayCount(0L);
+            dto.setLikedByUser(false);
+        } else {
+            dto.setLastPlayed(map(entry.getLastPlayed()));
+            dto.setPlayCount(entry.getPlayCount() == null ? 0L : entry.getPlayCount());
+            dto.setLikedByUser(Boolean.TRUE.equals(entry.getLiked()));
+        }
+        return dto;
+    }
 
     default List<SongDto> toDtoList(List<Song> songs) {
         if (songs == null) {

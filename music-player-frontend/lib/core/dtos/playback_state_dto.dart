@@ -1,34 +1,34 @@
 class PlaybackStateDto {
-  final List<String> queueFileHashes;
-  final String? currentFileHash;
-  final int positionMs;
+  final int positionSeconds;
   final bool shuffle;
   final bool repeat;
+  final DateTime? updatedAt;
 
   const PlaybackStateDto({
-    required this.queueFileHashes,
-    this.currentFileHash,
-    this.positionMs = 0,
+    this.positionSeconds = 0,
     this.shuffle = false,
     this.repeat = false,
+    this.updatedAt,
   });
+
+  int get positionMs => positionSeconds * 1000;
 
   factory PlaybackStateDto.fromJson(Map<String, dynamic> json) {
     return PlaybackStateDto(
-      queueFileHashes: (json['queueFileHashes'] as List<dynamic>? ?? [])
-          .map((e) => e.toString())
-          .toList(),
-      currentFileHash: json['currentFileHash'] as String?,
-      positionMs: (json['positionMs'] as num? ?? 0).toInt(),
+      positionSeconds:
+          (json['positionSeconds'] as num?)?.toInt() ??
+          ((json['positionMs'] as num? ?? 0).toInt() ~/ 1000),
       shuffle: json['shuffle'] as bool? ?? false,
       repeat: json['repeat'] as bool? ?? false,
+      updatedAt:
+          json['updatedAt'] != null
+              ? DateTime.parse(json['updatedAt'] as String)
+              : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'queueFileHashes': queueFileHashes,
-    'currentFileHash': currentFileHash,
-    'positionMs': positionMs,
+    'positionSeconds': positionSeconds,
     'shuffle': shuffle,
     'repeat': repeat,
   };

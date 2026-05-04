@@ -11,10 +11,7 @@ class Song implements BaseEntity {
   @Id()
   int id = 0;
 
-  bool requiresSync = true;
   bool fullyLoaded = false;
-  int pendingPlayCountDelta = 0;
-  int pendingPlayDurationSeconds = 0;
 
   @Index()
   @Unique()

@@ -41,7 +41,7 @@ public class Song {
     private Integer discNumber;
     private Integer releaseYear;
 
-    @Column(nullable = false, unique = true, length = 64)
+    @Column(name = "file_hash", nullable = false, unique = true, length = 64)
     private String fileHash;
 
     @Builder.Default

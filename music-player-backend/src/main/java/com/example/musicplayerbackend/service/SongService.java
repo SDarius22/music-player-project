@@ -9,6 +9,7 @@ import com.example.musicplayerbackend.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.time.Instant;
 import java.util.*;
 
 @Slf4j
@@ -31,7 +33,9 @@ public class SongService {
     private final AlbumRepository albumRepository;
     private final ChunkRepository chunkRepository;
     private final SongChunkRepository songChunkRepository;
+    private final UserLibraryRepository userLibraryRepository;
     private final SongMapper songMapper;
+    private final SongEnrichmentService songEnrichmentService;
     private final NegotiationMapper negotiationMapper;
 
     private final String STORAGE_ROOT = System.getProperty("user.home") + "/music-server/chunks";
@@ -39,15 +43,53 @@ public class SongService {
 
     @Transactional(readOnly = true)
     public Page<SongDto> getSongsVisibleToUser(String q, User user, Pageable pageable) {
-        return songRepository.findVisibleToUser(q == null ? "" : q, user.getId(), pageable)
-                .map(songMapper::toDto);
+        Page<Song> songs = songRepository.findVisibleToUser(q == null ? "" : q, user.getId(), pageable);
+        List<SongDto> enriched = songEnrichmentService.enrich(songs.getContent(), user.getId());
+        return new PageImpl<>(enriched, pageable, songs.getTotalElements());
     }
 
     @Transactional(readOnly = true)
-    public SongDto getSongByFileHash(String fileHash) {
-        return songRepository.findByFileHash(fileHash)
-                .map(songMapper::toDto)
+    public SongDto getSongByFileHash(String fileHash, Long userId) {
+        Song song = songRepository.findByFileHash(fileHash)
                 .orElseThrow(() -> new RuntimeException("Song not found with fileHash: " + fileHash));
+        return songEnrichmentService.enrich(song, userId);
+    }
+
+    @Transactional
+    public SongDto updateUserSongLibrary(String fileHash, Long userId, UpdateUserSongDto patch) {
+        Song song = songRepository.findByFileHash(fileHash)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Song not found"));
+
+        Instant now = java.time.Instant.now();
+        UserLibraryID id = new UserLibraryID(userId, song.getId());
+        UserLibrary entry = userLibraryRepository.findById(id).orElseGet(() ->
+                UserLibrary.builder()
+                        .id(id)
+                        .song(song)
+                        .user(User.builder().id(userId).build())
+                        .addedAt(now)
+                        .build());
+
+        if (patch != null) {
+            if (patch.getLikedByUser() != null) {
+                entry.setLiked(patch.getLikedByUser());
+            }
+            if (patch.getLastPlayed() != null) {
+                entry.setLastPlayed(patch.getLastPlayed().toInstant());
+            }
+            if (patch.getPlayCount() != null) {
+                entry.setPlayCount(Math.max(0L, patch.getPlayCount()));
+            }
+        }
+        entry.setIsDeleted(false);
+        entry.setLastUpdated(now);
+        if (entry.getAddedAt() == null) {
+            entry.setAddedAt(now);
+        }
+
+        UserLibrary saved = userLibraryRepository.save(entry);
+        return songMapper.toDto(song, saved);
     }
 
     @Transactional(readOnly = true)

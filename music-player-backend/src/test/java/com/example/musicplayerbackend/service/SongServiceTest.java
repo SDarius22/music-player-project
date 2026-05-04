@@ -41,19 +41,35 @@ class SongServiceTest {
     ChunkRepository chunkRepository;
     @Mock
     SongChunkRepository songChunkRepository;
+    @Mock
+    UserLibraryRepository userLibraryRepository;
+    @Mock
+    SongEnrichmentService songEnrichmentService;
 
     @TempDir
     Path tempDir;
 
+    SongMapperImpl songMapper;
     SongService service;
 
     @BeforeEach
     void setUp() throws Exception {
+        songMapper = new SongMapperImpl();
         service = new SongService(songRepository, artistRepository, albumRepository,
-                chunkRepository, songChunkRepository, new SongMapperImpl(), new NegotiationMapperImpl());
+                chunkRepository, songChunkRepository, userLibraryRepository, songMapper,
+                songEnrichmentService, new NegotiationMapperImpl());
         Field storageRoot = SongService.class.getDeclaredField("STORAGE_ROOT");
         storageRoot.setAccessible(true);
         storageRoot.set(service, tempDir.toString());
+
+        org.mockito.Mockito.lenient().when(songEnrichmentService.enrich(anyList(), any())).thenAnswer(inv -> {
+            List<Song> songs = inv.getArgument(0);
+            return songs.stream().map(songMapper::toDto).toList();
+        });
+        org.mockito.Mockito.lenient().when(songEnrichmentService.enrich(any(Song.class), any())).thenAnswer(inv -> {
+            Song s = inv.getArgument(0);
+            return songMapper.toDto(s);
+        });
     }
 
 
@@ -122,13 +138,13 @@ class SongServiceTest {
         Song song = Song.builder().id(1L).name("S").songType(ContentType.STREAMABLE).fileHash("h").build();
         when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
 
-        assertEquals("h", service.getSongByFileHash("h").getFileHash());
+        assertEquals("h", service.getSongByFileHash("h", 2L).getFileHash());
     }
 
     @Test
     void shouldThrowRuntimeExceptionWhenSongByFileHashNotFound() {
         when(songRepository.findByFileHash("missing")).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> service.getSongByFileHash("missing"));
+        assertThrows(RuntimeException.class, () -> service.getSongByFileHash("missing", 2L));
     }
 
     @Test

@@ -1,23 +1,24 @@
-import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_song_dto.dart';
 
 class PlaylistDetailDto {
   final int id;
   final String name;
-  final List<SongDto> songs;
+  final List<PlaylistSongDto> playlistSongs;
 
   PlaylistDetailDto({
     required this.id,
     required this.name,
-    required this.songs,
+    required this.playlistSongs,
   });
 
   factory PlaylistDetailDto.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw = (json['songs'] as List<dynamic>);
+    final List<dynamic> raw = (json['playlistSongs'] as List<dynamic>? ?? []);
     return PlaylistDetailDto(
       id: (json['id'] as num).toInt(),
       name: json['name'] as String,
-      songs:
-          raw.map((e) => SongDto.fromJson(e as Map<String, dynamic>)).toList(),
+      playlistSongs: raw
+          .map((e) => PlaylistSongDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

@@ -1,10 +1,8 @@
 package com.example.musicplayerbackend.components;
 
 import com.example.musicplayerbackend.domain.ClientConnection;
-import com.example.musicplayerbackend.domain.PlaybackStateDto;
 import com.example.musicplayerbackend.domain.WebRTCMessage;
 import com.example.musicplayerbackend.service.PeerTrackingService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +15,6 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,69 +31,6 @@ public class SignalingHandler extends TextWebSocketHandler {
     private final Map<String, ClientConnection> registry = new ConcurrentHashMap<>();
     private final Map<Long, Set<String>> userIndex = new ConcurrentHashMap<>();
     private final Map<String, String> peerIndex = new ConcurrentHashMap<>();
-
-    public void sendPlaybackStateChanged(Long userId, PlaybackStateDto state) {
-        try {
-            String message = objectMapper.writeValueAsString(Map.of("userId", userId, "state", state));
-            redisTemplate.convertAndSend("signaling:playback", message);
-        } catch (JsonProcessingException e) {
-            log.error("[SIGNALING] Failed to publish PLAYBACK_STATE_CHANGED to Redis: {}", e.getMessage());
-        }
-    }
-
-    public void deliverPlaybackStateChangedLocally(Long userId, PlaybackStateDto state) {
-        Set<String> sessionIds = userIndex.getOrDefault(userId, Collections.emptySet());
-        String payload;
-        try {
-            payload = objectMapper.writeValueAsString(Map.of(
-                    "type", "PLAYBACK_STATE_CHANGED",
-                    "senderId", "SERVER",
-                    "payload", state
-            ));
-        } catch (IOException e) {
-            log.error("[SIGNALING] Failed to serialize PLAYBACK_STATE_CHANGED: {}", e.getMessage());
-            return;
-        }
-        log.info("[SIGNALING] Delivering PLAYBACK_STATE_CHANGED to user {} ({} local session(s))", userId, sessionIds.size());
-        for (String sessionId : sessionIds) {
-            ClientConnection client = registry.get(sessionId);
-            if (client != null && client.session().isOpen()) {
-                try {
-                    client.session().sendMessage(new TextMessage(payload));
-                } catch (IOException e) {
-                    log.error("[SIGNALING] Failed to send PLAYBACK_STATE_CHANGED to session {}: {}", sessionId, e.getMessage());
-                }
-            }
-        }
-    }
-
-    public void sendSyncTrigger(Long userId) {
-        redisTemplate.convertAndSend("signaling:sync", String.valueOf(userId));
-    }
-
-    public void deliverSyncTriggerLocally(Long userId) {
-        Set<String> sessionIds = userIndex.getOrDefault(userId, Collections.emptySet());
-
-        String triggerMessage = """
-                    {
-                        "type": "SYNC_TRIGGER",
-                        "senderId": "SERVER",
-                        "targetId": "BROADCAST"
-                    }
-                """;
-
-        log.info("[SIGNALING] Delivering SYNC_TRIGGER to user {} ({} local session(s))", userId, sessionIds.size());
-        for (String sessionId : sessionIds) {
-            ClientConnection client = registry.get(sessionId);
-            if (client != null && client.session().isOpen()) {
-                try {
-                    client.session().sendMessage(new TextMessage(triggerMessage));
-                } catch (IOException e) {
-                    log.error("[SIGNALING] Failed to send SYNC_TRIGGER to session {} (user {}): {}", sessionId, userId, e.getMessage());
-                }
-            }
-        }
-    }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
@@ -176,8 +110,6 @@ public class SignalingHandler extends TextWebSocketHandler {
             }
 
             case "PING" -> { /* keepalive — silently ignored */ }
-
-            case "SYNC_TRIGGER", "PLAYBACK_STATE_CHANGED" -> { /* Server-sent only — ignore if echoed by client */ }
 
             default -> {
                 log.warn("[SIGNALING] Unknown signal type '{}' from session={}", type, session.getId());

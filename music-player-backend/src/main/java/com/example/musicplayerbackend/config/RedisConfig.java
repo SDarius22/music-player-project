@@ -12,7 +12,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
-    
+
     @Bean
     public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
         RedisTemplate<String, String> template = new RedisTemplate<>();
@@ -27,22 +27,6 @@ public class RedisConfig {
     }
 
     @Bean
-    public MessageListenerAdapter syncMessageListenerAdapter(RedisSignalingListener listener) {
-        MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onSyncTrigger");
-        adapter.setSerializer(new StringRedisSerializer());
-        adapter.afterPropertiesSet();
-        return adapter;
-    }
-
-    @Bean
-    public MessageListenerAdapter playbackMessageListenerAdapter(RedisSignalingListener listener) {
-        MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onPlaybackStateChanged");
-        adapter.setSerializer(new StringRedisSerializer());
-        adapter.afterPropertiesSet();
-        return adapter;
-    }
-
-    @Bean
     public MessageListenerAdapter webrtcMessageListenerAdapter(RedisSignalingListener listener) {
         MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onWebRTCSignal");
         adapter.setSerializer(new StringRedisSerializer());
@@ -53,14 +37,10 @@ public class RedisConfig {
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory factory,
-            MessageListenerAdapter syncMessageListenerAdapter,
-            MessageListenerAdapter playbackMessageListenerAdapter,
             MessageListenerAdapter webrtcMessageListenerAdapter) {
 
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(factory);
-        container.addMessageListener(syncMessageListenerAdapter, new ChannelTopic("signaling:sync"));
-        container.addMessageListener(playbackMessageListenerAdapter, new ChannelTopic("signaling:playback"));
         container.addMessageListener(webrtcMessageListenerAdapter, new ChannelTopic("signaling:webrtc"));
         return container;
     }

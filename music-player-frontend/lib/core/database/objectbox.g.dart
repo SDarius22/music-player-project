@@ -455,24 +455,6 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(24, 3835940553080101764),
-        name: 'requiresSync',
-        type: 1,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(27, 1880970681925066010),
-        name: 'pendingPlayCountDelta',
-        type: 6,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(28, 5586295309400875881),
-        name: 'pendingPlayDurationSeconds',
-        type: 6,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
         id: const obx_int.IdUid(29, 4064211658558057969),
         name: 'fileHash',
         type: 9,
@@ -640,6 +622,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
       2907426317388572025,
       4145861533755825969,
       1024957334078684974,
+      3835940553080101764,
+      1880970681925066010,
+      5586295309400875881,
     ],
     retiredRelationUids: const [
       1387782578054686999,
@@ -1112,9 +1097,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
               : object.lastPlayed!.microsecondsSinceEpoch * 1000,
         );
         fbb.addInt64(21, object.playCount);
-        fbb.addBool(23, object.requiresSync);
-        fbb.addInt64(26, object.pendingPlayCountDelta);
-        fbb.addInt64(27, object.pendingPlayDurationSeconds);
         fbb.addOffset(28, fileHashOffset);
         fbb.addOffset(29, nameOffset);
         fbb.addBool(30, object.isLocal);
@@ -1177,24 +1159,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
             buffer,
             rootOffset,
             46,
-            0,
-          )
-          ..requiresSync = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            50,
-            false,
-          )
-          ..pendingPlayCountDelta = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            56,
-            0,
-          )
-          ..pendingPlayDurationSeconds = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            58,
             0,
           )
           ..name = const fb.StringReader(
@@ -1532,33 +1496,18 @@ class Song_ {
     _entities[5].properties[11],
   );
 
-  /// See [Song.requiresSync].
-  static final requiresSync = obx.QueryBooleanProperty<Song>(
-    _entities[5].properties[12],
-  );
-
-  /// See [Song.pendingPlayCountDelta].
-  static final pendingPlayCountDelta = obx.QueryIntegerProperty<Song>(
-    _entities[5].properties[13],
-  );
-
-  /// See [Song.pendingPlayDurationSeconds].
-  static final pendingPlayDurationSeconds = obx.QueryIntegerProperty<Song>(
-    _entities[5].properties[14],
-  );
-
   /// See [Song.fileHash].
   static final fileHash = obx.QueryStringProperty<Song>(
-    _entities[5].properties[15],
+    _entities[5].properties[12],
   );
 
   /// See [Song.name].
   static final name = obx.QueryStringProperty<Song>(
-    _entities[5].properties[16],
+    _entities[5].properties[13],
   );
 
   /// See [Song.isLocal].
   static final isLocal = obx.QueryBooleanProperty<Song>(
-    _entities[5].properties[17],
+    _entities[5].properties[14],
   );
 }

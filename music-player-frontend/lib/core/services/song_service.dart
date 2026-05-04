@@ -1,19 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:math';
-
-import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
-import 'package:music_player_frontend/core/dtos/sync/song_sync_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
-import 'package:music_player_frontend/core/rest_clients/data_sync_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
-import 'package:universal_platform/universal_platform.dart';
 
 class SongService {
   static final _logger = Logger('SongService');
@@ -22,19 +13,12 @@ class SongService {
   final ArtistRepository _artistRepository;
   final AlbumRepository _albumRepository;
   final SongRestClient _songRestService;
-  final DataSyncClient _dataSyncService;
-
-  bool _isSyncing = false;
-  bool _isLibraryMetadataSyncing = false;
-  DateTime? _lastLibrarySyncTime;
-  static const int _chunkSize = 64 * 1024;
 
   SongService(
     this._songRepository,
     this._artistRepository,
     this._albumRepository,
     this._songRestService,
-    this._dataSyncService,
   );
 
   Map<String, dynamic> get sortFields => _songRepository.sortFields;
@@ -53,12 +37,19 @@ class SongService {
     }
   }
 
+  Song getOrCreateSong(String fileHash) {
+    if (fileHash.isEmpty) {
+      throw ArgumentError('File hash cannot be empty');
+    }
+    return _songRepository.getOrCreateSong(fileHash);
+  }
+
   Future<Song?> fetchSongByFileHash(String fileHash) async {
     final local = _songRepository.getSongByFileHash(fileHash);
     if (local != null) return local;
     try {
       final serverSong = await _songRestService.getServerSong(fileHash);
-      _cacheServerSongs([serverSong]);
+      cacheServerSongs([serverSong]);
       return _songRepository.getSongByFileHash(fileHash);
     } catch (e) {
       _logger.fine(
@@ -93,7 +84,19 @@ class SongService {
     }
   }
 
-  void updateSong(Song song) {
+  Future<void> updateSong(Song song) async {
+    try {
+      await _songRestService.updateSongLibraryEntry(
+        song.fileHash,
+        song.likedByUser,
+        song.lastPlayed,
+        song.playCount,
+      );
+    } catch (e) {
+      _logger.fine(
+        'SongService: failed to update song lib entry ${song.getHash()} on server: $e',
+      );
+    }
     _songRepository.updateSong(song);
   }
 
@@ -125,7 +128,7 @@ class SongService {
         sort: _toServerSort(sortField, ascending),
       );
       serverTotalPages = serverPage.totalPages;
-      _cacheServerSongs(serverPage.content);
+      cacheServerSongs(serverPage.content);
     } catch (e) {
       _logger.fine('SongService: server fetch failed for getSongsPage: $e');
     }
@@ -152,162 +155,63 @@ class SongService {
 
   Future<List<Song>> getRecommendations() async {
     final page = await _songRestService.getRecommendations();
-    return _cacheServerSongs(page.content);
+    return cacheServerSongs(page.content);
   }
 
   Future<List<Song>> getForgottenFavourites() async {
-    final page = await _songRestService.getForgottenFavourites();
-    return _cacheServerSongs(page.content);
+    final page = await _songRestService.getFavourites();
+    return cacheServerSongs(page.content);
   }
 
   Future<List<Song>> getQuickDial() async {
     final page = await _songRestService.getQuickDial();
-    return _cacheServerSongs(page.content);
+    return cacheServerSongs(page.content);
   }
 
-  void runSync() async {
-    if (_isSyncing) return;
-
-    if (UniversalPlatform.isWeb) {
-      _logger.fine('Song sync is not supported on web; skipping.');
-      return;
-    }
-
-    _isSyncing = true;
-
-    if (!_songRestService.authService.isLoggedIn) {
-      _logger.fine('User not logged in, skipping song sync');
-      _isSyncing = false;
-      return;
-    }
-
-    _logger.fine('Starting song sync...');
+  Future<List<Song>> getFavoriteSongs() async {
+    final local = _songRepository.getFavoriteSongs();
+    if (local.isNotEmpty) return local;
 
     try {
-      final unsyncedSongs = _songRepository.getUnsyncedSongs();
-
-      if (unsyncedSongs.isEmpty) {
-        _logger.fine('No songs to sync');
-        _isSyncing = false;
-        return;
-      }
-
-      for (int i = 0; i < unsyncedSongs.length; i++) {
-        await Future.delayed(const Duration(milliseconds: 50));
-
-        final song = unsyncedSongs[i];
-        if (song.path == null) {
-          continue;
-        }
-
-        final file = File(song.path!);
-
-        if (!await file.exists()) continue;
-
-        final fileBytes = await file.readAsBytes();
-        final fileHash = sha256.convert(fileBytes).toString();
-        final chunks = _splitIntoChunks(fileBytes);
-        final hashes = chunks.map((c) => sha256.convert(c).toString()).toList();
-
-        String photoBase64 = "";
-        final coverBytes = song.album.target?.imageBytes;
-        if (coverBytes != null && coverBytes.isNotEmpty) {
-          photoBase64 = base64Encode(coverBytes);
-        }
-
-        final request = NegotiationRequestDto(
-          name: song.getName(),
-          artistName: song.artist.target?.getName() ?? 'Unknown Artist',
-          albumName: song.album.target?.getName() ?? 'Unknown Album',
-          photoBase64: photoBase64,
-          durationInSeconds: song.durationInSeconds,
-          trackNumber: song.trackNumber,
-          discNumber: song.discNumber,
-          year: song.year,
-          hashes: hashes,
-          fileHash: fileHash,
-        );
-
-        final response = await _songRestService.negotiateUpload(request);
-
-        if (response != null) {
-          song.requiresSync = false;
-          _songRepository.updateSong(song);
-
-          if (response.missingIndices.isNotEmpty) {
-            for (final index in response.missingIndices) {
-              await Future.delayed(const Duration(milliseconds: 10));
-              if (index < chunks.length) {
-                await _songRestService.uploadChunk(
-                  fileHash: response.fileHash,
-                  chunkIndex: index,
-                  chunkBytes: chunks[index],
-                  hash: hashes[index],
-                );
-              }
-            }
-          }
-        }
-      }
+      final serverPage = await _songRestService.getFavourites();
+      return cacheServerSongs(serverPage.content);
     } catch (e) {
-      _logger.fine(e.toString());
-    } finally {
-      _isSyncing = false;
-    }
-  }
-
-  Future<void> syncLibraryMetadata() async {
-    if (_isLibraryMetadataSyncing) return;
-    if (!_songRestService.authService.isLoggedIn) return;
-
-    _isLibraryMetadataSyncing = true;
-    try {
-      final pending =
-          _songRepository
-              .getAllSongs()
-              .where((s) => s.requiresSync && s.getHash().isNotEmpty)
-              .toList();
-
-      if (pending.isEmpty) return;
-
-      final changes =
-          pending
-              .map(
-                (s) => SongSyncDto(
-                  fileHash: s.getHash(),
-                  playCountDelta: s.pendingPlayCountDelta,
-                  likedByUser: s.likedByUser,
-                  lastPlayed: s.lastPlayed,
-                  totalPlayDurationSeconds: s.pendingPlayDurationSeconds,
-                ),
-              )
-              .toList();
-
-      final response = await _dataSyncService.syncUserLibrary(
-        lastSyncTime: _lastLibrarySyncTime,
-        localChanges: changes,
+      _logger.fine(
+        'SongService: failed to fetch favorite songs from server: $e',
       );
-
-      if (response != null) {
-        _lastLibrarySyncTime = response.newSyncTime.toLocal();
-        for (final s in pending) {
-          s.requiresSync = false;
-          s.pendingPlayCountDelta = 0;
-          s.pendingPlayDurationSeconds = 0;
-          _songRepository.updateSong(s);
-        }
-        _logger.fine(
-          '[SongService] Library metadata sync complete — ${pending.length} song(s) synced',
-        );
-      }
-    } catch (e) {
-      _logger.fine('[SongService] Library metadata sync failed: $e');
-    } finally {
-      _isLibraryMetadataSyncing = false;
+      return [];
     }
   }
 
-  List<Song> _cacheServerSongs(List<SongDto> serverSongs) {
+  Future<List<Song>> getMostPlayedSongs(int limit) async {
+    final local = _songRepository.getMostPlayedSongs(limit);
+    if (local.isNotEmpty) return local;
+
+    try {
+      final serverPage = await _songRestService.getMostPlayed(size: limit);
+      return cacheServerSongs(serverPage.content);
+    } catch (e) {
+      _logger.fine('SongService: failed to fetch most played from server: $e');
+      return [];
+    }
+  }
+
+  Future<List<Song>> getRecentlyPlayedSongs(int limit) async {
+    final local = _songRepository.getRecentlyPlayedSongs(limit);
+    if (local.isNotEmpty) return local;
+
+    try {
+      final serverPage = await _songRestService.getRecentlyPlayed(size: limit);
+      return cacheServerSongs(serverPage.content);
+    } catch (e) {
+      _logger.fine(
+        'SongService: failed to fetch recently played from server: $e',
+      );
+      return [];
+    }
+  }
+
+  List<Song> cacheServerSongs(List<SongDto> serverSongs) {
     List<Song> cached = [];
     for (var serverSong in serverSongs) {
       cached.add(_cacheServerSong(serverSong));
@@ -326,6 +230,9 @@ class SongService {
     cachedSong.trackNumber = serverSong.trackNumber;
     cachedSong.discNumber = serverSong.discNumber;
     cachedSong.year = serverSong.releaseYear;
+    cachedSong.lastPlayed = serverSong.lastPlayed;
+    cachedSong.playCount = serverSong.playCount;
+    cachedSong.likedByUser = serverSong.likedByUser;
     cachedSong.fullyLoaded = true;
 
     var artist = _artistRepository.getOrCreateArtist(
@@ -350,14 +257,6 @@ class SongService {
     _albumRepository.updateAlbum(album);
 
     return finalSong;
-  }
-
-  List<List<int>> _splitIntoChunks(List<int> bytes) {
-    List<List<int>> chunks = [];
-    for (int i = 0; i < bytes.length; i += _chunkSize) {
-      chunks.add(bytes.sublist(i, min(i + _chunkSize, bytes.length)));
-    }
-    return chunks;
   }
 
   String _toServerSort(String sortField, bool ascending) {

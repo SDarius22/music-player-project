@@ -137,14 +137,6 @@ class ObjectBoxSongRepository implements SongRepository {
   }
 
   @override
-  List<Song> getUnsyncedSongs() {
-    return _songBox
-        .query(Song_.requiresSync.equals(true).and(Song_.path.notNull()))
-        .build()
-        .find();
-  }
-
-  @override
   void deleteSong(Song song) {
     _songBox.remove(song.id);
   }
