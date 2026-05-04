@@ -1,8 +1,6 @@
 import 'package:music_player_frontend/core/entities/playlist.dart';
 
 abstract class PlaylistRepository {
-  Stream watchPlaylists();
-
   Map<String, dynamic> get sortFields;
 
   Playlist savePlaylist(Playlist playlist);

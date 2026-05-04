@@ -10,10 +10,6 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   Box<Playlist> get _playlistBox => ObjectBox.store.box<Playlist>();
 
   @override
-  Stream watchPlaylists() =>
-      _playlistBox.query().watch(triggerImmediately: true);
-
-  @override
   Map<String, dynamic> get sortFields => {
     'Name': Playlist_.name,
     'Created At': Playlist_.createdAt,

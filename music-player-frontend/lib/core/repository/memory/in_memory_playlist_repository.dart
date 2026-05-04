@@ -1,30 +1,9 @@
-import 'dart:async';
-
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 
 class InMemoryPlaylistRepository implements PlaylistRepository {
   final Map<int, Playlist> _byId = {};
   int _nextId = 1;
-
-  final StreamController<List<Playlist>> _controller =
-      StreamController<List<Playlist>>.broadcast();
-
-  void _emit() => _controller.add(getAllPlaylists());
-
-  @override
-  Stream watchPlaylists() {
-    return _controller.stream.transform(
-      StreamTransformer.fromHandlers(
-        handleData: (playlists, sink) {
-          sink.add(playlists);
-        },
-        handleDone: (sink) {
-          sink.close();
-        },
-      ),
-    );
-  }
 
   @override
   Map<String, dynamic> get sortFields => const {
@@ -38,7 +17,6 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
       playlist.id = _nextId++;
     }
     _byId[playlist.id] = playlist;
-    _emit();
     return playlist;
   }
 
@@ -135,6 +113,5 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   @override
   void deletePlaylist(Playlist playlist) {
     _byId.remove(playlist.id);
-    _emit();
   }
 }

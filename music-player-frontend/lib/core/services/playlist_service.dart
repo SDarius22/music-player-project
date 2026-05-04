@@ -27,8 +27,6 @@ class PlaylistService {
     this._songService,
   );
 
-  Stream watchPlaylists() => _playlistRepository.watchPlaylists();
-
   Map<String, dynamic> get sortFields => _playlistRepository.sortFields;
 
   Future<Playlist> addPlaylist(

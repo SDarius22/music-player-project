@@ -10,7 +10,10 @@ void configureAppLogging() {
   _loggingConfigured = true;
 
   hierarchicalLoggingEnabled = true;
-  Logger.root.level = kDebugMode ? Level.FINE : Level.INFO;
+  //Logger.root.level = kDebugMode ? Level.FINE : Level.INFO;
+  Logger.root.level =
+      Level
+          .FINE; // temporarily set to FINE for more detailed logs during development
 
   Logger.root.onRecord.listen((record) {
     final time = record.time.toIso8601String();
