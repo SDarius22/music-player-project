@@ -1,0 +1,58 @@
+@startuml flow_press_play_chunk
+!theme plain
+skinparam defaultFontName monospaced
+
+title Press Play — Chunk Streaming Loop and Statistics
+
+participant "P2PChunkedAudioSource\n/ WebP2PBridge" as chunkPath
+participant "ChunkService" as chunkSvc
+participant "Local cache" as cache
+participant "WebRTCService" as webrtc
+participant "Peer" as peer
+participant "Backend\n(Streaming REST)" as streamServer
+
+loop for each needed chunk N
+  chunkPath -> chunkSvc: getChunk(N)
+  chunkSvc -> cache: lookup chunk N
+
+  alt cache hit
+    cache --> chunkSvc: bytes [local cache]
+
+  else cache miss
+    alt N < server bootstrap prefix
+      chunkSvc -> streamServer: GET /stream/{fileHash}/chunk/{N}
+      streamServer --> chunkSvc: bytes [server bootstrap]
+
+    else peers available
+      chunkSvc -> webrtc: requestChunkFromPeer(N)
+      webrtc -> peer: REQUEST_CHUNK:{fileHash}:{N}
+      peer --> webrtc: chunk bytes (binary)
+      alt peer responds in time
+        webrtc --> chunkSvc: bytes [P2P]
+      else timeout / failure
+        chunkSvc -> streamServer: GET /stream/{fileHash}/chunk/{N}
+        streamServer --> chunkSvc: bytes [server fallback]
+      end
+
+    else no peers known
+      chunkSvc -> streamServer: GET /stream/{fileHash}/chunk/{N}
+      streamServer --> chunkSvc: bytes [server]
+    end
+
+    chunkSvc -> chunkSvc: verify SHA-256 vs manifest hash
+    alt hash mismatch
+      chunkSvc -> streamServer: GET /stream/{fileHash}/chunk/{N}
+      streamServer --> chunkSvc: bytes [server retry]
+    end
+
+    chunkSvc -> cache: save chunk N
+    chunkSvc -> webrtc: registerCache(fileHash, [N])
+  end
+
+  chunkSvc --> chunkPath: chunk bytes
+  chunkPath -> chunkSvc: prefetch next 1..16 chunks
+end
+
+chunkSvc -> streamServer: POST /statistics\n{songFileHash, localCachedChunks,\np2pChunks, serverChunks}
+
+@enduml

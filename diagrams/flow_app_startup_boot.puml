@@ -1,0 +1,18 @@
+@startuml flow_app_startup_boot
+!theme plain
+skinparam defaultFontName monospaced
+
+title App Startup — Boot and Signaling Connect
+
+participant "main.dart" as main
+participant "MultiProvider\n(abstract_app.dart)" as provider
+participant "WebRTCService" as webrtc
+participant "LoadingScreen" as loading
+
+main -> main: app initialization\n(db, audio plugin, etc.)
+main -> provider: build MultiProvider tree\n(services, repos, audio, providers)
+provider -> webrtc: instantiate
+webrtc -> webrtc: connect WS\n(wss://.../ws/signaling)
+provider -> loading: navigate
+
+@enduml

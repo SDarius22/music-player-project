@@ -1,0 +1,29 @@
+@startuml flow_app_startup_login
+!theme plain
+skinparam defaultFontName monospaced
+
+title App Startup — Auto Login and Token Refresh
+
+participant "LoadingScreen" as loading
+participant "UserProvider" as userProv
+participant "SecureStorage" as storage
+participant "AuthService" as auth
+participant "Backend" as backend
+
+loading -> userProv: tryAutoLogin()
+userProv -> storage: read "refresh_token"
+
+alt refresh token found
+  storage --> userProv: token
+  userProv -> auth: refreshAccessToken(token)
+  auth -> backend: POST /auth/refresh
+  backend --> auth: access_token + refresh_token
+  auth -> storage: store new tokens
+  auth -> auth: startTokenRefresh()\n(every 10 min)
+  userProv --> loading: authenticated
+else no token
+  storage --> userProv: null
+  userProv --> loading: unauthenticated\n-> WelcomeScreen
+end
+
+@enduml

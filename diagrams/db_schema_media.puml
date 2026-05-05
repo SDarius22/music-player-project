@@ -1,0 +1,74 @@
+@startuml db_schema_media
+!theme plain
+hide circle
+skinparam linetype ortho
+skinparam defaultFontName monospaced
+
+title Database Schema — Media Catalog and Chunk Storage
+
+entity "artists" as artists {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255) <<UNIQUE>>
+  * hash : VARCHAR(255) <<UNIQUE>>
+  * artist_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
+  owner_id : BIGINT
+}
+
+entity "albums" as albums {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255) <<UNIQUE>>
+  * hash : VARCHAR(255) <<UNIQUE>>
+  * album_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
+  owner_id : BIGINT
+  artist_id : BIGINT <<FK, legacy>>
+  cover_image : TEXT
+}
+
+entity "album_artists" as album_artists {
+  * album_id : BIGINT <<PK, FK>>
+  * artist_id : BIGINT <<PK, FK>>
+}
+
+entity "songs" as songs {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255)
+  artist_id : BIGINT <<FK, nullable>>
+  album_id : BIGINT <<FK, nullable>>
+  duration_in_seconds : INT
+  track_number : INT
+  disc_number : INT
+  release_year : INT
+  * song_type : VARCHAR(50) [STREAMABLE | USER_UPLOAD]
+  owner_id : BIGINT
+  * file_hash : VARCHAR(64) <<UNIQUE>>
+}
+
+entity "song_chunks" as song_chunks {
+  * id : BIGINT <<PK>>
+  --
+  * song_id : BIGINT <<FK>>
+  * chunk_id : BIGINT <<FK>>
+  * order_index : INT
+}
+
+entity "chunks" as chunks {
+  * id : BIGINT <<PK>>
+  --
+  * content_hash : VARCHAR(64) <<UNIQUE>>
+  * size : INT
+  * storage_path : VARCHAR(255)
+}
+
+artists ||--o{ album_artists
+albums  ||--o{ album_artists
+
+artists ||--o{ songs : "artist_id"
+albums  ||--o{ songs : "album_id"
+
+songs  ||--o{ song_chunks
+chunks ||--o{ song_chunks
+
+@enduml

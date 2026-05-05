@@ -1,0 +1,38 @@
+@startuml db_schema_auxiliary
+!theme plain
+hide circle
+skinparam linetype ortho
+skinparam defaultFontName monospaced
+
+title Database Schema — Auxiliary Tables
+
+entity "verification_codes" as verification_codes {
+  * id : BIGINT <<PK>>
+  --
+  * email : VARCHAR(255)
+  * code : VARCHAR(255)
+  * expiry_date : TIMESTAMPTZ
+}
+
+entity "chunk_stats" as chunk_stats {
+  * id : BIGINT <<PK>>
+  --
+  * timestamp : TIMESTAMPTZ
+  user_id : BIGINT <<FK, nullable>>
+  song_file_hash : VARCHAR(64)
+  song_name : VARCHAR(255)
+  * local_chunks : INT
+  * local_cached_chunks : INT
+  * p2p_chunks : INT
+  * server_chunks : INT
+  * total_chunks : INT
+  * p2p_percentage : DOUBLE PRECISION
+}
+
+entity "users" as users <<external>> {
+  id : BIGINT
+}
+
+users ||--o{ chunk_stats
+
+@enduml

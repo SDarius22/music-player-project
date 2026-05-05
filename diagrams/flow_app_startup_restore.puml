@@ -1,0 +1,27 @@
+@startuml flow_app_startup_restore
+!theme plain
+skinparam defaultFontName monospaced
+
+title App Startup — Library Sync and Playback State Restore
+
+participant "LoadingScreen" as loading
+participant "SongService" as songSvc
+participant "SettingsService" as settingsSvc
+participant "PlaybackRestClient" as playbackRest
+participant "AppAudioService" as audioSvc
+participant "Backend" as backend
+
+loading -> songSvc: initialize(musicDirs) [desktop]
+songSvc -> songSvc: scan local music directories
+songSvc -> backend: POST /sync\n(delta, lastSyncTime)
+backend --> songSvc: SyncResponse
+
+loading -> settingsSvc: getAudioSettings()
+settingsSvc -> playbackRest: getPlaybackState()
+playbackRest -> backend: GET /playback
+backend --> playbackRest: PlaybackStateDto\n(positionSeconds, shuffle, repeat)
+settingsSvc --> audioSvc: apply (position, shuffle, repeat)
+
+loading -> loading: navigate -> MainScaffold
+
+@enduml

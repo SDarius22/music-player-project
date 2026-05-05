@@ -1,0 +1,33 @@
+@startuml flow_redis_pubsub_push
+!theme plain
+skinparam defaultFontName monospaced
+
+title Cross-Instance Push — Playback State and Library Sync
+
+participant "Client A" as clientA
+participant "Instance 1\nSignalingHandler" as inst1
+participant "Redis" as redis
+participant "Instance 2\nRedisSignalingListener" as redisSub2
+participant "Instance 2\nSignalingHandler" as inst2
+participant "Client B\n(same user)" as clientB
+
+== Playback State Broadcast ==
+
+clientA -> inst1: PUT /playback
+inst1 -> inst1: PlaybackStateService.saveState()
+inst1 -> redis: PUBLISH signaling:playback\n{userId, state JSON}
+redis -> redisSub2: deliver
+redisSub2 -> inst2: deliverPlaybackStateChangedLocally(userId, state)
+inst2 -> clientB: WS PLAYBACK_STATE_CHANGED
+
+== Library Sync Trigger ==
+
+clientA -> inst1: POST /sync
+inst1 -> inst1: DataSyncService.performSync()
+inst1 -> redis: PUBLISH signaling:sync\n{userId}
+redis -> redisSub2: deliver
+redisSub2 -> inst2: deliverSyncTriggerLocally(userId)
+inst2 -> clientB: WS SYNC_TRIGGER
+clientB -> inst2: POST /sync (pulls latest)
+
+@enduml

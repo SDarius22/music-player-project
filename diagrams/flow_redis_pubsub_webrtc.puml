@@ -1,0 +1,28 @@
+@startuml flow_redis_pubsub_webrtc
+!theme plain
+skinparam defaultFontName monospaced
+
+title Cross-Instance WebRTC Signaling
+
+participant "Client A" as clientA
+participant "Instance 1\nSignalingHandler" as inst1
+participant "Redis" as redis
+participant "Instance 2\nRedisSignalingListener" as redisSub2
+participant "Instance 2\nSignalingHandler" as inst2
+participant "Client B" as clientB
+
+clientA -> inst1: WS OFFER\n{targetId: peerB}
+inst1 -> inst1: routeToTarget(peerB)\n-> not in local peerIndex
+inst1 -> redis: PUBLISH signaling:webrtc\n{type:OFFER, targetId:peerB}
+redis -> redisSub2: deliver
+redisSub2 -> inst2: routeToTargetLocally(peerB)
+inst2 -> clientB: WS OFFER
+
+clientB -> inst2: WS ANSWER\n{targetId: peerA}
+inst2 -> redis: PUBLISH signaling:webrtc\n{type:ANSWER, targetId:peerA}
+redis -> inst1: deliver via RedisSignalingListener
+inst1 -> clientA: WS ANSWER
+
+clientA <-> clientB: ICE candidates relayed\nthe same way
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml flow_app_quit_local
+!theme plain
+skinparam defaultFontName monospaced
+
+title App Quit — Local Teardown (Playback and Auth)
+
+actor User
+participant "OS / Flutter" as os
+participant "AudioProvider" as audioProv
+participant "AppAudioService" as audioSvc
+participant "AuthService" as auth
+
+User -> os: close app window
+
+== Playback Teardown ==
+
+os -> audioProv: dispose()
+audioProv -> audioProv: disposeListeners()
+audioProv -> audioSvc: audioPlayer.dispose()
+audioSvc -> audioSvc: _positionSaveTimer.cancel()
+audioSvc -> audioSvc: audioPlayer.dispose()
+
+== Auth Teardown ==
+
+os -> auth: stopTokenRefresh()
+auth -> auth: cancel periodic refresh Timer
+
+@enduml

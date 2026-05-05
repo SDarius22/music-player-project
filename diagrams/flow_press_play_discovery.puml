@@ -1,0 +1,35 @@
+@startuml flow_press_play_discovery
+!theme plain
+skinparam defaultFontName monospaced
+
+title Press Play — Manifest Fetch and Peer Discovery
+
+participant "ChunkService" as chunkSvc
+participant "Local cache" as cache
+participant "WebRTCService" as webrtc
+participant "Backend\n(Streaming REST)" as streamServer
+participant "Backend\n(Signaling WS)" as sigServer
+participant "Peer\n(RTCDataChannel)" as peer
+
+chunkSvc -> streamServer: GET /stream/{fileHash}/manifest
+streamServer --> chunkSvc: ChunkManifestDto\n(totalChunks, chunkSize, hashes[])
+
+chunkSvc -> webrtc: discoverPeers(fileHash)
+webrtc -> sigServer: WS DISCOVER_PEERS\n{fileHash, userId}
+sigServer --> webrtc: WS PEER_BUFFER_MAP\n{peerId -> [cachedIndices]}
+
+chunkSvc -> cache: getAvailableChunkIndices(fileHash)
+cache --> chunkSvc: cached indices
+chunkSvc -> webrtc: registerCache(fileHash, cachedIndices)
+webrtc -> sigServer: WS REGISTER_CACHE
+
+alt peers available
+  webrtc -> sigServer: WS OFFER -> peerId
+  sigServer --> peer: WS OFFER
+  peer --> sigServer: WS ANSWER
+  sigServer --> webrtc: WS ANSWER
+  webrtc <-> peer: ICE candidate exchange
+  webrtc <-> peer: RTCDataChannel open
+end
+
+@enduml
