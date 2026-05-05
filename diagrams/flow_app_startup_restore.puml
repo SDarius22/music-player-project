@@ -2,19 +2,13 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title App Startup — Library Sync and Playback State Restore
+title App Startup — Playback State Restore
 
 participant "LoadingScreen" as loading
-participant "SongService" as songSvc
 participant "SettingsService" as settingsSvc
 participant "PlaybackRestClient" as playbackRest
 participant "AppAudioService" as audioSvc
 participant "Backend" as backend
-
-loading -> songSvc: initialize(musicDirs) [desktop]
-songSvc -> songSvc: scan local music directories
-songSvc -> backend: POST /sync\n(delta, lastSyncTime)
-backend --> songSvc: SyncResponse
 
 loading -> settingsSvc: getAudioSettings()
 settingsSvc -> playbackRest: getPlaybackState()

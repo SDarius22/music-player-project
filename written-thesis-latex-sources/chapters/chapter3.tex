@@ -86,7 +86,7 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{db_schema_media}
+\includegraphics[width=\textwidth]{figures/db_schema_media.png}
 \caption{Tables for the media catalogue and the chunked audio storage.}
 \label{fig:db-schema-media}
 \end{figure}
@@ -98,11 +98,12 @@
 \subsection{Users, Library and Playlists}
 \label{subsec:schema-user}
 
-\indent \par The user-side tables, drawn in Figure \ref{fig:db-schema-user}, keep the per-user state. The \texttt{users} table holds the email and the role (USER or ADMIN), plus the authentication provider (LOCAL or GOOGLE). The \texttt{user\_library} table, with a composite primary key of (user\_id, song\_id), records the user's relation to a song: liked flag, play count, total play duration in seconds, the timestamps of last played and added at, a soft-deletion flag, and the \texttt{last\_updated} timestamp on which the synchronisation protocol relies.
+\indent \par The user-side tables, drawn in Figure \ref{fig:db-schema-user}, keep the per-user state. The \texttt{users} table holds the email and the role (USER or ADMIN), plus the authentication provider (LOCAL or GOOGLE). The \texttt{user\_library} table, with a composite primary key of (user\_id, song\_id), records the user's relation to a song: liked flag, play count, total play duration in seconds, the timestamps of last played and added at, a soft-deletion flag, and a \texttt{last\_updated} timestamp recording when the row was last modified.
+
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{db_schema_user}
+\includegraphics[width=\textwidth]{figures/db_schema_user.png}
 \caption{Tables for users, library, playback state, playlists and the playlist-to-song mapping.}
 \label{fig:db-schema-user}
 \end{figure}
@@ -118,7 +119,7 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.9\textwidth]{db_schema_auxiliary}
+\includegraphics[width=0.9\textwidth]{figures/db_schema_auxiliary.png}
 \caption{Auxiliary tables: email verification codes and per-session chunk delivery telemetry.}
 \label{fig:db-schema-auxiliary}
 \end{figure}
@@ -131,7 +132,7 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{backend_architecture}
+\includegraphics[width=\textwidth]{figures/backend_architecture.png}
 \caption{Backend service architecture inside a Spring Boot replica and its external dependencies.}
 \label{fig:backend-architecture}
 \end{figure}
@@ -141,7 +142,7 @@
 
 \indent \par The security stack is built around Spring Security and a custom JWT filter. The filter extracts the bearer token from the \texttt{Authorization} header, validates it against the JWT service, and populates the \texttt{SecurityContext} with the corresponding user. Endpoints that require authentication are declared in the security configuration; the open ones (registration, login, refresh) are explicitly listed as \texttt{permitAll}.
 
-\par Two flows feed the JWT service. The first one is the email-based registration: the user sends his email, the backend creates a row in \texttt{verification\_codes} with a 6-digit code and an expiry, and an email is dispatched through SMTP. When the user submits the code, the row is consumed, the user record is created, and the access/refresh pair is returned. The second flow is the Google OAuth path, which short-circuits the email verification because the identity has already been verified by Google.
+\par The authentication is fully passwordless and code-based. The client first calls \texttt{POST /auth/send-code} with an email address; the backend creates a row in \texttt{verification\_codes} with a 6-digit code and an expiry, and dispatches an email through SMTP. The client then calls \texttt{POST /auth/verify} with the email and the code; the row is consumed, the user record is created on first sign-in or looked up on subsequent ones, and the access/refresh pair is returned. The same two endpoints are therefore used for both registration and login. The \texttt{users.provider} column accepts \texttt{LOCAL} and \texttt{GOOGLE} as values; only the \texttt{LOCAL} provider is currently in use, with \texttt{GOOGLE} reserved for a future OAuth integration.
 
 \par The refresh tokens have a long lifetime (several days), and the access tokens have a short one (several minutes). On the client, a periodic timer asks the backend for a new access token every ten minutes, well before the actual expiry, so that requests in flight do not have to deal with a 401 in the middle of an action.
 
@@ -155,7 +156,7 @@
 \subsection{Negotiated Upload Pipeline}
 \label{subsec:upload}
 
-\indent \par Uploading a song is a two-step protocol. The first call sends the file metadata together with the manifest of chunk hashes that the client computed locally. The backend looks up each hash in the \texttt{chunks} table and replies with the list of indices that it does not have yet. The second call (or a series of them) sends only the missing chunks, one by one, through a per-chunk PUT endpoint. Once all the missing chunks are uploaded, the song row is created together with its \texttt{song\_chunks} entries.
+\indent \par Uploading a song is a two-step protocol. The first call (\texttt{POST /songs/negotiate}) sends the file metadata together with the manifest of chunk hashes that the client computed locally. The backend looks up each hash in the \texttt{chunks} table and replies with the list of indices that it does not have yet. The second call, or a series of them, sends only the missing chunks, one by one, through \texttt{POST /songs/\{fileHash\}/chunks/\{chunkIndex\}}. Once all the missing chunks are uploaded, the song row is created together with its \texttt{song\_chunks} entries.
 
 \par This protocol gives two benefits. The first one is the obvious bandwidth saving when the same file, or a file that shares blocks with an existing one, is uploaded again. The second one is resilience to interrupted uploads: if the user loses the connection halfway through, only the chunks that did not yet land on the server need to be retried on the next attempt. The chunks that already arrived stay in \texttt{chunks} and are simply skipped during the retry.
 
@@ -166,10 +167,13 @@
 
 \par All four endpoints share the same access control. A request for a streamable song is allowed for any authenticated user. A request for a user-uploaded song is allowed only if the authenticated user is the owner. The check is performed at the query level, by adding the owner condition to the \texttt{WHERE} clause, so that a wrong user gets a 404 instead of a 403, which avoids leaking the existence of someone else's private uploads.
 
-\subsection{State, Sync and Telemetry}
+\subsection{Playback State and Telemetry}
 \label{subsec:state-sync}
 
-\indent \par The playback state service reads and writes the simplified \texttt{user\_playback\_state} row. The data sync service implements a timestamp-based delta protocol: the client sends its local changes together with the timestamp of its last sync, the service applies the changes inside a single transaction, and replies with everything in \texttt{user\_library} that has been updated on the server side after that timestamp. Both services publish a small notification on Redis after a write, so that the user's other devices can react. The telemetry service receives the per-session chunk delivery counts and writes them to \texttt{chunk\_stats}.
+\indent \par The playback state service reads and writes the simplified \texttt{user\_playback\_state} row through \texttt{GET /playback} and \texttt{PUT /playback}. After a successful save, it publishes a small notification on Redis so that the user's other devices can refetch the new state. The telemetry service receives the per-session chunk delivery counts via \texttt{POST /statistics} and writes them to \texttt{chunk\_stats}.
+
+\par Library mutations (likes, play count, last played) take a different path. Each one is sent as a \texttt{PATCH /songs/\{fileHash\}} call with an \texttt{UpdateUserSongDto} body that carries only the fields that changed. The backend updates the corresponding \texttt{user\_library} row in place. There is no batched delta protocol and no dedicated synchronisation endpoint anymore. The other devices of the same user see the new state when they navigate to a list that re-fetches it, because lists like \texttt{/songs/recently-played}, \texttt{/songs/favourites} or \texttt{/songs/most-played} read directly from the user library table at request time.
+
 
 \subsection{Realtime Signaling and Peer Tracking}
 \label{subsec:signaling-arch}
@@ -188,6 +192,9 @@
   \item \texttt{OFFER}, \texttt{ANSWER}, \texttt{ICE\_CANDIDATE}, the WebRTC signaling messages, all carrying a \texttt{targetId}. If the target peer is on this replica, the message is forwarded directly. Otherwise, the message is published to a Redis channel so that another replica can deliver it.
 
   \item \texttt{SYNC\_TRIGGER} and \texttt{PLAYBACK\_STATE\_CHANGED}, server-initiated messages, generated when the catalogue or the playback state changes for a user. These are also published on Redis and delivered to all the user's sessions, no matter on which replica they are connected.
+
+    \item \texttt{PLAYBACK\_STATE\_CHANGED}, a server-initiated message, generated when the playback state changes for a user. It is also published on Redis and delivered to all the user's sessions, no matter on which replica they are connected.
+
 
   \item \texttt{PING}, a lightweight keepalive that prevents intermediate boxes from dropping the WebSocket as idle.
 \end{itemize}
@@ -227,7 +234,7 @@
 \section{Application Bootstrap}
 \label{sec:bootstrap}
 
-\indent \par The bootstrap of the client is broken in three smaller flows: the boot, the auto-login, and the library/playback restore. Each one is shown in its own figure below, so the reader can follow them one at a time.
+\indent \par The bootstrap of the client is broken in three smaller flows: the boot, the auto-login, and the playback state restore. Each one is shown in its own figure below, so the reader can follow them one at a time.
 
 \subsection{Boot}
 \label{subsec:boot}
@@ -236,7 +243,7 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_app_startup_boot}
+\includegraphics[width=\textwidth]{figures/flow_app_startup_boot.png}
 \caption{Boot of the Flutter application and connection to the signaling WebSocket.}
 \label{fig:flow-startup-boot}
 \end{figure}
@@ -248,20 +255,20 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_app_startup_login}
+\includegraphics[width=\textwidth]{figures/flow_app_startup_login.png}
 \caption{Auto-login: refresh-token exchange and the start of the periodic token refresh timer.}
 \label{fig:flow-startup-login}
 \end{figure}
 
-\subsection{Library Sync and Playback Restore}
+\subsection{Playback State Restore}
 \label{subsec:restore}
 
-\indent \par Once the user is authenticated, the loading screen runs the last part of the bootstrap, depicted in Figure \ref{fig:flow-startup-restore}. On desktop, the \texttt{SongService} scans the configured music directories and posts a delta to \texttt{POST /sync}; on the web and on mobile, the local scan is skipped, but the same endpoint is called with an empty local change set in order to pull the latest server-side changes. After the sync, the loading screen calls the settings service, which retrieves the playback state from \texttt{GET /playback}. The DTO contains only \texttt{positionSeconds}, \texttt{shuffle} and \texttt{repeat}; these three values are then applied to the local audio settings. When all this is done, the application navigates to the main scaffold.
+\indent \par Once the user is authenticated, the loading screen runs the last part of the bootstrap, depicted in Figure \ref{fig:flow-startup-restore}. The settings service is asked for the audio settings, and it in turn calls \texttt{GET /playback}. The DTO contains only \texttt{positionSeconds}, \texttt{shuffle} and \texttt{repeat}; these three values are then applied to the local audio settings. When this is done, the application navigates to the main scaffold. The library content itself (recently played, favourites, playlists, and so on) is not pre-fetched at this point; each list is loaded lazily when the user opens it, by reading from the corresponding endpoint that queries the \texttt{user\_library} table.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_app_startup_restore}
-\caption{Library synchronisation and playback state restore at the end of the bootstrap.}
+\includegraphics[width=\textwidth]{figures/flow_app_startup_restore.png}
+\caption{Playback state restore at the end of the bootstrap.}
 \label{fig:flow-startup-restore}
 \end{figure}
 
@@ -278,7 +285,7 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.95\textwidth]{flow_press_play_load}
+\includegraphics[width=0.95\textwidth]{figures/flow_press_play_load.png}
 \caption{Press Play: building the audio source on native and web.}
 \label{fig:flow-press-play-load}
 \end{figure}
@@ -292,7 +299,7 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_press_play_discovery}
+\includegraphics[width=\textwidth]{figures/flow_press_play_discovery.png}
 \caption{Manifest fetch, peer discovery and the start of the WebRTC handshake.}
 \label{fig:flow-press-play-discovery}
 \end{figure}
@@ -311,7 +318,7 @@ as the number of prefix chunks (5\% of the song, with a minimum of one). Chunks 
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_press_play_chunk}
+\includegraphics[width=\textwidth]{figures/flow_press_play_chunk.png}
 \caption{Chunk streaming loop: cache lookup, prefix versus peer decision, hash verification and statistics reporting.}
 \label{fig:flow-press-play-chunk}
 \end{figure}
@@ -422,7 +429,7 @@ where the success rate is the fraction of requests answered successfully (not ti
 \section{Audio Service and Playback State}
 \label{sec:audio-service}
 
-\indent \par The audio service is the top-level coordinator for playback on the client. It owns the audio player instance (either \texttt{just\_audio} or the \texttt{media\_kit} equivalent depending on the platform), manages the song queue, and bridges the playback events to the data synchronisation and peer registry subsystems.
+\indent \par The audio service is the top-level coordinator for playback on the client. It owns the audio player instance (either \texttt{just\_audio} or the \texttt{media\_kit} equivalent depending on the platform), manages the song queue, and bridges the playback events to the library mutation and peer registry subsystems.
 
 \subsection{Queue and Source Selection}
 \label{subsec:queue}
@@ -463,12 +470,12 @@ where the success rate is the fraction of requests answered successfully (not ti
 
 \indent \par When a user changes their playback state on one device, the playback state service persists the change in the database and then publishes the new state on the playback channel together with the user id. Every replica runs a Redis listener, which subscribes to the three channels and dispatches incoming messages to the local signaling component. The signaling component looks up the user's other sessions in the user index and pushes a \texttt{PLAYBACK\_STATE\_CHANGED} message over the corresponding WebSocket connections.
 
-\par The same pattern applies for the sync triggers. After the data sync service applies a delta, every other device of the same user gets a \texttt{SYNC\_TRIGGER} message and pulls the latest changes itself. Figure \ref{fig:flow-redis-push} shows the two scenarios.
+\par This is the only server-initiated push the system uses. Library mutations (likes, play counts, last played) do not trigger any cross-replica notification. The other devices of the same user observe them implicitly the next time they re-fetch a list. Figure \ref{fig:flow-redis-push} shows the playback push scenario.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_redis_pubsub_push}
-\caption{Server-initiated cross-instance push: playback state change and library sync trigger.}
+\includegraphics[width=\textwidth]{figures/flow_redis_pubsub_push.png}
+\caption{Server-initiated cross-instance push: playback state change.}
 \label{fig:flow-redis-push}
 \end{figure}
 
@@ -479,7 +486,7 @@ where the success rate is the fraction of requests answered successfully (not ti
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_redis_pubsub_webrtc}
+\includegraphics[width=\textwidth]{figures/flow_redis_pubsub_webrtc.png}
 \caption{Cross-replica routing of WebRTC offer/answer messages through the signaling channel.}
 \label{fig:flow-redis-webrtc}
 \end{figure}
@@ -491,7 +498,7 @@ where the success rate is the fraction of requests answered successfully (not ti
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_instance_shutdown}
+\includegraphics[width=\textwidth]{figures/flow_instance_shutdown.png}
 \caption{Replica shutdown and client reconnection on a different replica.}
 \label{fig:flow-instance-shutdown}
 \end{figure}
@@ -509,7 +516,7 @@ where the success rate is the fraction of requests answered successfully (not ti
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_app_quit_local}
+\includegraphics[width=\textwidth]{figures/flow_app_quit_local.png}
 \caption{Local teardown of playback and authentication on app quit.}
 \label{fig:flow-quit-local}
 \end{figure}
@@ -521,7 +528,7 @@ where the success rate is the fraction of requests answered successfully (not ti
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{flow_app_quit_p2p}
+\includegraphics[width=\textwidth]{figures/flow_app_quit_p2p.png}
 \caption{Closing the P2P channels and the signaling session, with the corresponding Redis cleanup on the backend.}
 \label{fig:flow-quit-p2p}
 \end{figure}

@@ -166,7 +166,7 @@ where $\epsilon$ is the per-client server overhead used for bootstrapping (the p
 \subsection{Why a Server is Still Needed}
 \label{subsec:signaling-role}
 
-\indent \par WebRTC requires an out-of-band signaling channel for the exchange of SDP (Session Description Protocol) offer/answer payloads and ICE candidates. This channel is the only persistent server dependency on the P2P path. Once the data channel is open, the server is no longer involved in the media transfer. Choosing WebSocket as the signaling transport aligns well with the existing server infrastructure and lets the same connection also carry library synchronisation events and peer discovery messages, which reduces the number of persistent connections each client has to maintain.
+\indent \par WebRTC requires an out-of-band signaling channel for the exchange of SDP (Session Description Protocol) offer/answer payloads and ICE candidates. This channel is the only persistent server dependency on the P2P path. Once the data channel is open, the server is no longer involved in the media transfer. Choosing WebSocket as the signaling transport aligns well with the existing server infrastructure and lets the same connection also carry server-initiated events (such as playback state changes) and peer discovery messages, which reduces the number of persistent connections each client has to maintain.
 
 
 \section{Prefix Caching as a Bootstrap Strategy}
