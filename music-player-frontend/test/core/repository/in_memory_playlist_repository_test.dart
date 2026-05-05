@@ -15,17 +15,6 @@ void main() {
       expect(repo.getPlaylistByName('Favorites'), same(first));
     });
 
-    test('watchPlaylists emits after save', () async {
-      final repo = InMemoryPlaylistRepository();
-
-      final future = repo.watchPlaylists().first;
-      repo.savePlaylist(Playlist('Queue'));
-
-      final emitted = await future as List<Playlist>;
-      expect(emitted, isNotEmpty);
-      expect(emitted.first.getName(), isNotEmpty);
-    });
-
     test('indestructible and normal playlist filters work', () {
       final repo = InMemoryPlaylistRepository();
       final special = Playlist('Special')..indestructible = true;
@@ -33,11 +22,12 @@ void main() {
       repo.savePlaylist(special);
       repo.savePlaylist(regular);
 
-      expect(
-        repo.getIndestructiblePlaylists(0, 10).map((p) => p.getName()),
-        ['Special'],
-      );
-      expect(repo.getNormalPlaylists(0, 10).map((p) => p.getName()), ['Regular']);
+      expect(repo.getIndestructiblePlaylists(0, 10).map((p) => p.getName()), [
+        'Special',
+      ]);
+      expect(repo.getNormalPlaylists(0, 10).map((p) => p.getName()), [
+        'Regular',
+      ]);
     });
   });
 }

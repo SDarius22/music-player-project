@@ -7,23 +7,23 @@ skinparam defaultFontName monospaced
 title Backend Service Architecture
 
 package "Spring Boot backend replica(s)" {
-  [REST API adapters\nAuth, Song, Album, Artist, Playlist,\nStreaming, Playback, Sync, Statistics controllers] as api
+  [REST API adapters\nAuth, Song, Album, Artist, Playlist,\nStreaming, Playback, Sync, Statistics] as api
 
-  [Security & authentication\nSecurityConfig + JWTAuthenticationFilter\nAuthService + JWTService\nemail verification + JWT refresh] as auth
+  [Security & Authentication\nSecurityConfig, JWTAuthenticationFilter\nAuthService, JWTService] as auth
 
-  [Catalog & library\nSongService, AlbumService, ArtistService,\nPlaylistService, RecommendationService\nsearch, metadata, playlists, recommendations] as catalog
+  [Catalog & Library\nSongService, AlbumService, ArtistService,\nPlaylistService, RecommendationService] as catalog
 
-  [Upload pipeline\nSongService\n64 KB chunking + SHA-256 dedup\nnegotiated upload + missing chunk ingest] as upload
+  [Upload Pipeline\n64 KiB chunking + SHA-256 dedup\nnegotiated upload + missing chunk ingest] as upload
 
   [Streaming\nStreamingService\nmanifest, prefix, chunk, full fallback] as streaming
 
-  [State, sync & telemetry\nPlaybackStateService, DataSyncService, StatisticsService] as userState
+  [State, Sync & Telemetry\nPlaybackStateService, DataSyncService,\nStatisticsService] as userState
 
-  [Realtime signaling\n/ws/signaling\nSignalingHandler + RedisSignalingListener\nWebRTC routing + playback/sync fan-out] as signaling
+  [Realtime Signaling\nSignalingHandler\nRedisSignalingListener] as signaling
 
-  [Peer Tracking\nPeerTrackingService] as peerTracking
+  [PeerTrackingService] as peerTracking
 
-  [Persistence\nJPA repositories\nusers, verification_codes, songs, chunks, song_chunks,\nalbums, artists, playlists, playlist_songs,\nuser_library, user_playback_state, chunk_stats] as repos
+  [Persistence\nJPA repositories\nusers, verification_codes, songs, chunks, song_chunks,\nalbums, artists, album_artists,\nplaylists, playlist_songs,\nuser_library, user_playback_state, chunk_stats] as repos
 }
 
 database "PostgreSQL\nmusic_library schema" as postgres
@@ -37,19 +37,17 @@ api --> upload
 api --> streaming
 api --> userState
 
-auth --> repos
-auth --> mail
-
-catalog --> repos
-upload --> repos
-upload --> fs : write chunk files
-
+auth     --> repos
+catalog  --> repos
+upload   --> repos
 streaming --> repos
-streaming --> fs : read chunk files
-
 userState --> repos
-userState --> signaling : playback + sync events
 
+auth     --> mail : verification email
+upload   --> fs   : write chunk files
+streaming --> fs  : read chunk files
+
+userState --> signaling : playback / sync events
 signaling --> peerTracking : REGISTER_CACHE / DISCOVER_PEERS
 signaling <--> redis : signaling:webrtc\nsignaling:sync\nsignaling:playback
 peerTracking --> redis : peer:chunks:*\npeer:songs:*
