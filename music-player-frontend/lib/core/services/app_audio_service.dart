@@ -22,7 +22,9 @@ import 'package:universal_platform/universal_platform.dart';
 class AppAudioService {
   static final _logger = Logger('AppAudioService');
 
-  final AudioPlayer audioPlayer;
+  AudioPlayer _audioPlayer;
+
+  AudioPlayer get audioPlayer => _audioPlayer;
   final SongService songService;
   final SettingsService settingsService;
   final PlaylistService playlistService;
@@ -32,6 +34,7 @@ class AppAudioService {
 
   ValueNotifier<Song?> currentSongNotifier = ValueNotifier<Song?>(null);
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<int> playerInstanceVersion = ValueNotifier<int>(0);
 
   void Function(String fileHash, String songName)? _onWebSongChange;
 
@@ -81,7 +84,7 @@ class AppAudioService {
     this.createChunkManager,
     this.playbackRestService, {
     AudioPlayer? audioPlayer,
-  }) : audioPlayer = audioPlayer ?? AudioPlayer();
+  }) : _audioPlayer = audioPlayer ?? AudioPlayer();
 
   Future<void> initializeAppAudio() async {
     if (_initialized) return;
@@ -92,11 +95,7 @@ class AppAudioService {
     _normalQueue = List.from(_queuePlaylist.getSongs());
     await _initPlayer();
 
-    audioPlayer.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
-        _onSongCompleted();
-      }
-    });
+    _attachPlayerListeners();
 
     _positionSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (audioPlayer.playing) {
@@ -104,10 +103,87 @@ class AppAudioService {
         unawaited(_proactivelyCachePrefixes());
       }
     });
+  }
 
-    audioPlayer.errorStream.listen((error) {
-      _logger.severe("Audio Player Error: $error");
+  void _attachPlayerListeners() {
+    _processingStateSubscription = audioPlayer.processingStateStream.listen((
+      state,
+    ) {
+      if (state == ProcessingState.completed) {
+        _onSongCompleted();
+      }
     });
+
+    _errorSubscription = audioPlayer.errorStream.listen((error) {
+      _logger.severe("Audio Player Error: $error");
+      unawaited(_recoverFromPlayerError());
+    });
+  }
+
+  bool _isRecoveringFromError = false;
+  DateTime? _lastRecoveryAt;
+  int _consecutiveRecoveryCount = 0;
+  static const int _maxConsecutiveRecoveries = 3;
+
+  Future<void> _recoverFromPlayerError() async {
+    if (_isRecoveringFromError) return;
+    if (_isSwitchingSong) return;
+    if (_activeQueue.isEmpty) return;
+    _isRecoveringFromError = true;
+    try {
+      final now = DateTime.now();
+      if (_lastRecoveryAt != null &&
+          now.difference(_lastRecoveryAt!) < const Duration(seconds: 5)) {
+        _consecutiveRecoveryCount++;
+      } else {
+        _consecutiveRecoveryCount = 1;
+      }
+      _lastRecoveryAt = now;
+
+      if (_consecutiveRecoveryCount > _maxConsecutiveRecoveries) {
+        _logger.severe(
+          '[AppAudioService] Player error recovered ${_consecutiveRecoveryCount - 1} times '
+          'in a row without progress; skipping to next song',
+        );
+        _consecutiveRecoveryCount = 0;
+        await skipToNext();
+        return;
+      }
+
+      final pos = audioPlayer.position;
+      final rewindSeconds =
+          (pos.inMilliseconds - 1000).clamp(0, 1 << 30) ~/ 1000;
+      _logger.warning(
+        '[AppAudioService] Recovering from player error: rewinding to ${rewindSeconds}s with a fresh AudioPlayer instance',
+      );
+
+      await _processingStateSubscription?.cancel();
+      _processingStateSubscription = null;
+      await _errorSubscription?.cancel();
+      _errorSubscription = null;
+      try {
+        await _audioPlayer.dispose();
+      } catch (e) {
+        _logger.fine('[AppAudioService] Old player dispose threw: $e');
+      }
+
+      _audioPlayer = AudioPlayer();
+      _attachPlayerListeners();
+      playerInstanceVersion.value++;
+
+      await _audioPlayer.setVolume(_currentAudioSettings.volume);
+      await _audioPlayer.setSpeed(_currentAudioSettings.speed);
+      await _audioPlayer.setLoopMode(
+        _currentAudioSettings.repeat ? LoopMode.one : LoopMode.off,
+      );
+
+      await _loadIndex(_currentIndex, position: rewindSeconds);
+      await play();
+    } catch (e, st) {
+      _logger.severe('[AppAudioService] Player recovery failed: $e\n$st');
+    } finally {
+      _isRecoveringFromError = false;
+    }
   }
 
   Future<void> play() {

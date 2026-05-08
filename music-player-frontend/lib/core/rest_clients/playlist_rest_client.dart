@@ -74,6 +74,7 @@ class PlaylistRestClient extends AbstractRestClient {
 
     try {
       final endpoint = '/playlists?${Uri(queryParameters: qp).query}';
+      _logger.fine('Fetching playlists with endpoint: $endpoint');
       final response = await get(endpoint);
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);

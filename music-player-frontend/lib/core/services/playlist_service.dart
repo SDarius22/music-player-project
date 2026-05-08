@@ -306,6 +306,7 @@ class PlaylistService {
       serverPlaylist.name,
     );
     cachedPlaylist.serverId = serverPlaylist.id;
+    cachedPlaylist.indestructible = serverPlaylist.indestructible;
 
     for (final hash in serverPlaylist.songFileHashes) {
       final song = _songService.getOrCreateSong(hash);
@@ -326,6 +327,7 @@ class PlaylistService {
       serverPlaylist.name,
     );
     cachedPlaylist.serverId = serverPlaylist.id;
+    cachedPlaylist.indestructible = serverPlaylist.indestructible;
     cachedPlaylist.clearSongs();
     final orderedPlaylistSongs = [...serverPlaylist.playlistSongs]
       ..sort((a, b) => a.position.compareTo(b.position));

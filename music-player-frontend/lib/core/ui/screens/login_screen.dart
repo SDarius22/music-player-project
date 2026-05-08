@@ -205,13 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       busy ? null : (codeStep ? handleVerify : handleContinue),
                   child: Text(codeStep ? 'Verify' : 'Continue'),
                 ),
-                Text(
-                  _toggleLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
+                Text(_toggleLabel, style: const TextStyle(color: Colors.white)),
                 if (codeStep) ...[
                   const SizedBox(height: 12),
                   TextButton(

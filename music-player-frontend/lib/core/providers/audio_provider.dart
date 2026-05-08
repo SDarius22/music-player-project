@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
@@ -42,6 +43,12 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   AudioSettings get _currentAudioSettings => _audioService.currentAudioSettings;
 
+  StreamSubscription<Duration?>? _durationSub;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration>? _bufferedPositionSub;
+  StreamSubscription<PlaybackEvent>? _playbackEventSub;
+  VoidCallback? _playerVersionListener;
+
   AudioProvider(this._audioService, this._fileService) {
     repeatNotifier.value = _currentAudioSettings.repeat;
     shuffleNotifier.value = _currentAudioSettings.shuffle;
@@ -53,6 +60,14 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     );
 
     _startListeners();
+    _playerVersionListener = () {
+      _logger.fine(
+        'AudioPlayer instance replaced (v=${_audioService.playerInstanceVersion.value}); rebinding stream listeners',
+      );
+      _bindPlayerStreams();
+    };
+    _audioService.playerInstanceVersion.addListener(_playerVersionListener!);
+
     _setColors();
     _changeMediaItem();
     notifyListeners();
@@ -61,6 +76,11 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   @override
   void dispose() {
     disposeListeners();
+    if (_playerVersionListener != null) {
+      _audioService.playerInstanceVersion.removeListener(
+        _playerVersionListener!,
+      );
+    }
     _audioService.audioPlayer.dispose();
     super.dispose();
   }
@@ -221,7 +241,18 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       notifyListeners();
     });
 
-    _audioService.audioPlayer.durationStream.listen((duration) {
+    _bindPlayerStreams();
+  }
+
+  void _bindPlayerStreams() {
+    _durationSub?.cancel();
+    _positionSub?.cancel();
+    _bufferedPositionSub?.cancel();
+    _playbackEventSub?.cancel();
+
+    final player = _audioService.audioPlayer;
+
+    _durationSub = player.durationStream.listen((duration) {
       if (duration == null || duration.inSeconds <= 0) return;
       if (currentSong == null) return;
       var currentSongDuration = currentSong?.durationInSeconds ?? 0;
@@ -233,16 +264,18 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       totalDurationNotifier.value = duration;
     });
 
-    _audioService.audioPlayer.positionStream.listen((Duration event) {
+    _positionSub = player.positionStream.listen((Duration event) {
       sliderNotifier.value = event.inMilliseconds;
       _audioService.updateSliderInSeconds(event.inSeconds);
     });
 
-    _audioService.audioPlayer.bufferedPositionStream.listen((Duration event) {
+    _bufferedPositionSub = player.bufferedPositionStream.listen((
+      Duration event,
+    ) {
       bufferedPositionNotifier.value = event.inSeconds;
     });
 
-    _audioService.audioPlayer.playbackEventStream.listen((event) {
+    _playbackEventSub = player.playbackEventStream.listen((event) {
       var playing = _audioService.audioPlayer.playing;
       playingNotifier.value = playing;
       processingState.value = _audioService.audioPlayer.processingState;
@@ -280,8 +313,9 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   void disposeListeners() {
-    _audioService.audioPlayer.positionStream.drain();
-    _audioService.audioPlayer.bufferedPositionStream.drain();
-    _audioService.audioPlayer.playbackEventStream.drain();
+    _durationSub?.cancel();
+    _positionSub?.cancel();
+    _bufferedPositionSub?.cancel();
+    _playbackEventSub?.cancel();
   }
 }

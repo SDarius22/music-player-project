@@ -105,7 +105,7 @@ class Playlist implements BaseEntity {
 
   @override
   String getImageUrl() {
-    return "/playlist/$serverId/cover";
+    return "/playlists/$serverId/cover";
   }
 
   @override

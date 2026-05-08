@@ -4,11 +4,13 @@ class PlaylistDetailDto {
   final int id;
   final String name;
   final List<PlaylistSongDto> playlistSongs;
+  final bool indestructible;
 
   PlaylistDetailDto({
     required this.id,
     required this.name,
     required this.playlistSongs,
+    this.indestructible = false,
   });
 
   factory PlaylistDetailDto.fromJson(Map<String, dynamic> json) {
@@ -16,9 +18,11 @@ class PlaylistDetailDto {
     return PlaylistDetailDto(
       id: (json['id'] as num).toInt(),
       name: json['name'] as String,
-      playlistSongs: raw
-          .map((e) => PlaylistSongDto.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      playlistSongs:
+          raw
+              .map((e) => PlaylistSongDto.fromJson(e as Map<String, dynamic>))
+              .toList(),
+      indestructible: json['indestructible'] as bool? ?? false,
     );
   }
 }
