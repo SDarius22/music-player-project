@@ -117,7 +117,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
     }
   }
 
-  void handleDone() {
+  Future<void> handleDone() async {
     if (selected.value.isEmpty) {
       showToast("Please select at least one playlist");
       return;
@@ -129,7 +129,8 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
       return;
     }
 
-    _addSongsToPlaylists();
+    await _addSongsToPlaylists();
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
@@ -151,14 +152,22 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
     }
   }
 
-  void _addSongsToPlaylists() {
+  Future<void> _addSongsToPlaylists() async {
     final playlistProvider = Provider.of<PlaylistProvider>(
       context,
       listen: false,
     );
 
     for (final playlist in selected.value) {
-      playlistProvider.addSongsToPlaylist(playlist, widget.songs);
+      if (playlist.indestructible && playlist.name == 'Queue') {
+        final audioProvider = Provider.of<AudioProvider>(
+          context,
+          listen: false,
+        );
+        await audioProvider.addLastToQueue(widget.songs);
+        continue;
+      }
+      await playlistProvider.addSongsToPlaylist(playlist, widget.songs);
     }
   }
 
@@ -210,51 +219,7 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
             ),
             const Spacer(),
             ElevatedButton(
-              onPressed: () {
-                if (selected.value.isEmpty) {
-                  BotToast.showText(
-                    text: "Please select at least one playlist",
-                  );
-                  return;
-                }
-                if (widget.export) {
-                  var abstractAppStateProvider =
-                      Provider.of<AbstractAppStateProvider>(
-                        context,
-                        listen: false,
-                      );
-                  for (int i = 0; i < selected.value.length; i++) {
-                    Playlist playlist = selected.value[i];
-                    var songHashes =
-                        playlist.getSongs().map((e) => e.getHash()).toList();
-                    var fileName =
-                        "${abstractAppStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
-                    final fileService = Provider.of<AbstractFileService>(
-                      context,
-                      listen: false,
-                    );
-                    fileService.exportPlaylist(fileName, songHashes);
-                  }
-                }
-                for (int i = 0; i < selected.value.length; i++) {
-                  Playlist playlist = selected.value[i];
-                  if (playlist.indestructible &&
-                      playlist.name == 'Current Queue') {
-                    var audioProvider = Provider.of<AudioProvider>(
-                      context,
-                      listen: false,
-                    );
-                    audioProvider.addLastToQueue(widget.songs);
-                  } else {
-                    var playlistProvider = Provider.of<PlaylistProvider>(
-                      context,
-                      listen: false,
-                    );
-                    playlistProvider.addSongsToPlaylist(playlist, widget.songs);
-                  }
-                }
-                Navigator.pop(context);
-              },
+              onPressed: () async => handleDone(),
               child: Text(
                 "Done",
                 style: Theme.of(context).textTheme.headlineMedium,
@@ -340,7 +305,9 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
               child: Center(
                 child: TextButton(
                   onPressed: () => unawaited(_loadPage()),
-                  child: const Text('Failed to load more playlists. Tap to retry.'),
+                  child: const Text(
+                    'Failed to load more playlists. Tap to retry.',
+                  ),
                 ),
               ),
             ),

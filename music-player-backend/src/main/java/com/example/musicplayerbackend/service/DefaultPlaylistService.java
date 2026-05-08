@@ -89,6 +89,55 @@ public class DefaultPlaylistService {
                 name, entries.size(), user.getId());
     }
 
+    @Transactional
+    public void syncAfterLibraryPatch(Long userId,
+                                      boolean likedChanged,
+                                      boolean playCountChanged,
+                                      boolean lastPlayedChanged,
+                                      boolean entryLikedNow) {
+        if (userId == null) return;
+
+        if (likedChanged || (playCountChanged && entryLikedNow)) {
+            rebuildPlaylist(userId, FAVOURITES,
+                    songsFromLibrary(userLibraryRepository.findLikedByUserId(
+                            userId, PageRequest.of(0, LIBRARY_SNAPSHOT_SIZE)).getContent()));
+        }
+        if (playCountChanged) {
+            rebuildPlaylist(userId, MOST_PLAYED,
+                    songsFromLibrary(userLibraryRepository.findMostPlayedByUserId(
+                            userId, PageRequest.of(0, LIBRARY_SNAPSHOT_SIZE)).getContent()));
+        }
+        if (lastPlayedChanged) {
+            rebuildPlaylist(userId, RECENTLY_PLAYED,
+                    songsFromLibrary(userLibraryRepository.findRecentlyPlayedByUserId(
+                            userId, PageRequest.of(0, LIBRARY_SNAPSHOT_SIZE)).getContent()));
+        }
+    }
+
+    private void rebuildPlaylist(Long userId, String name, List<Song> songs) {
+        Playlist playlist = playlistRepository.findByUser_IdAndName(userId, name).orElse(null);
+        if (playlist == null) return;
+
+        playlistSongRepository.deleteByPlaylist_Id(playlist.getId());
+        playlistSongRepository.flush();
+
+        List<PlaylistSong> entries = new ArrayList<>(songs.size());
+        int position = 0;
+        for (Song song : songs) {
+            if (song == null || song.getId() == null) continue;
+            entries.add(PlaylistSong.builder()
+                    .id(new PlaylistSongId(playlist.getId(), position++))
+                    .playlist(playlist)
+                    .song(song)
+                    .build());
+        }
+        if (!entries.isEmpty()) {
+            playlistSongRepository.saveAll(entries);
+        }
+        log.info("[SYNC] Rebuilt default playlist '{}' for userId={} ({} songs)",
+                name, userId, entries.size());
+    }
+
     private List<Song> songsFromLibrary(List<UserLibrary> entries) {
         List<Song> songs = new ArrayList<>(entries.size());
         for (UserLibrary entry : entries) {

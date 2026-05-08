@@ -343,18 +343,19 @@ class AppAudioService {
 
     for (final song in songs.reversed) {
       if (_normalQueue.any((s) => s == song)) continue;
+      final currentInNormal = _normalQueue.indexWhere((s) => s == currentSong);
+      final normalInsert =
+          currentInNormal < 0 ? _normalQueue.length : currentInNormal + 1;
+      _normalQueue.insert(normalInsert, song);
 
-      final activeInsert = _activeQueue.isEmpty ? 0 : _currentIndex + 1;
-      _activeQueue.insert(activeInsert, song);
+      final currentInShuffled = _shuffledQueue.indexWhere(
+        (s) => s == currentSong,
+      );
+      final shuffledInsert =
+          currentInShuffled < 0 ? _shuffledQueue.length : currentInShuffled + 1;
+      _shuffledQueue.insert(shuffledInsert, song);
 
-      final other =
-          _currentAudioSettings.shuffle ? _normalQueue : _shuffledQueue;
-      final currentInOther = other.indexWhere((s) => s == currentSong);
-      final otherInsert =
-          currentInOther < 0 ? other.length : currentInOther + 1;
-      other.insert(otherInsert, song);
-
-      _queuePlaylist.addSong(song);
+      _queuePlaylist.insertSongAt(song, normalInsert);
     }
 
     await playlistService.updatePlaylist(_queuePlaylist);

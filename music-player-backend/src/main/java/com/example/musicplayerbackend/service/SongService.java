@@ -37,6 +37,7 @@ public class SongService {
     private final SongMapper songMapper;
     private final SongEnrichmentService songEnrichmentService;
     private final NegotiationMapper negotiationMapper;
+    private final DefaultPlaylistService defaultPlaylistService;
 
     private final String STORAGE_ROOT = System.getProperty("user.home") + "/music-server/chunks";
 
@@ -71,15 +72,30 @@ public class SongService {
                         .addedAt(now)
                         .build());
 
+        boolean likedChanged = false;
+        boolean playCountChanged = false;
+        boolean lastPlayedChanged = false;
+
         if (patch != null) {
-            if (patch.getLikedByUser() != null) {
+            if (patch.getLikedByUser() != null
+                    && !Objects.equals(patch.getLikedByUser(), entry.getLiked())) {
                 entry.setLiked(patch.getLikedByUser());
+                likedChanged = true;
             }
             if (patch.getLastPlayed() != null) {
-                entry.setLastPlayed(patch.getLastPlayed().toInstant());
+                Instant newLastPlayed = patch.getLastPlayed().toInstant();
+                if (!Objects.equals(newLastPlayed, entry.getLastPlayed())) {
+                    entry.setLastPlayed(newLastPlayed);
+                    lastPlayedChanged = true;
+                }
             }
             if (patch.getPlayCount() != null) {
-                entry.setPlayCount(Math.max(0L, patch.getPlayCount()));
+                long newPlayCount = Math.max(0L, patch.getPlayCount());
+                Long currentPlayCount = entry.getPlayCount();
+                if (currentPlayCount == null || currentPlayCount != newPlayCount) {
+                    entry.setPlayCount(newPlayCount);
+                    playCountChanged = true;
+                }
             }
         }
         entry.setIsDeleted(false);
@@ -89,6 +105,16 @@ public class SongService {
         }
 
         UserLibrary saved = userLibraryRepository.save(entry);
+
+        if (likedChanged || playCountChanged || lastPlayedChanged) {
+            defaultPlaylistService.syncAfterLibraryPatch(
+                    userId,
+                    likedChanged,
+                    playCountChanged,
+                    lastPlayedChanged,
+                    Boolean.TRUE.equals(saved.getLiked()));
+        }
+
         return songMapper.toDto(song, saved);
     }
 

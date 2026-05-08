@@ -44,6 +44,15 @@ class Playlist implements BaseEntity {
     duration += song.durationInSeconds;
   }
 
+  void insertSongAt(Song song, int index) {
+    if (songFileHashes.contains(song.getHash())) {
+      return;
+    }
+    songs.add(song);
+    songFileHashes.insert(index, song.getHash());
+    duration += song.durationInSeconds;
+  }
+
   void removeSong(Song song) {
     songs.remove(song);
     songFileHashes.remove(song.getHash());

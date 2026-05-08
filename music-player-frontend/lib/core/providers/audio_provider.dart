@@ -175,18 +175,18 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     return await _audioService.getDuration();
   }
 
-  void addLastToQueue(List<Song> songs) {
-    _audioService.addToQueue(songs);
+  Future<void> addLastToQueue(List<Song> songs) async {
+    await _audioService.addToQueue(songs);
     notifyListeners();
   }
 
-  void addNextToQueue(List<Song> songs) {
-    _audioService.addNextToQueue(songs);
+  Future<void> addNextToQueue(List<Song> songs) async {
+    await _audioService.addNextToQueue(songs);
     notifyListeners();
   }
 
-  void removeFromQueue(Song song) {
-    _audioService.removeFromQueue(song);
+  Future<void> removeFromQueue(Song song) async {
+    await _audioService.removeFromQueue(song);
     notifyListeners();
   }
 
@@ -194,8 +194,8 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     await _audioService.setCurrentSongAndPlay(song);
   }
 
-  void likeCurrentSong() {
-    _audioService.likeCurrentSong();
+  Future<void> likeCurrentSong() async {
+    await _audioService.likeCurrentSong();
   }
 
   Future<void> _changeMediaItem() async {

@@ -85,13 +85,6 @@ class CoverService {
       return null;
     }
 
-    if (entity is Playlist) {
-      return (bytes) {
-        entity.imageBytes = bytes;
-        playlistService.updatePlaylist(entity);
-      };
-    }
-
     return null;
   }
 

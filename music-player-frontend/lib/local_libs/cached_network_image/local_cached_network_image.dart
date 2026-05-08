@@ -128,8 +128,10 @@ class _LocalCachedNetworkImageState extends State<LocalCachedNetworkImage> {
       );
       if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         final bytes = response.bodyBytes;
-        _MemoryCache.put(widget.imageUrl, bytes);
-        file?.writeAsBytes(bytes, flush: true).ignore();
+        if (!widget.imageUrl.contains('playlists')) {
+          _MemoryCache.put(widget.imageUrl, bytes);
+          file?.writeAsBytes(bytes, flush: true).ignore();
+        }
         widget.onBytesLoaded?.call(bytes);
         return bytes;
       }
