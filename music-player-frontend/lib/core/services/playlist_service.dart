@@ -159,6 +159,7 @@ class PlaylistService {
     try {
       final serverPlaylists = await _playlistRestService.getPlaylistsPage(
         filterIndestructible: false,
+        includeQueue: true,
       );
       serverTotalPages = serverPlaylists.totalPages;
       for (final serverPlaylist in serverPlaylists.content) {

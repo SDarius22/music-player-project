@@ -84,7 +84,7 @@ class PlaylistServiceTest {
         when(playlistRepository.findAllWithHashes(eq(1L), any(), any(), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(playlistMapper.toDto(proj)).thenReturn(dto);
 
-        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, 0, 20);
+        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, null, 0, 20);
 
         assertEquals(1, result.getContent().size());
         assertEquals("My Mix", result.getContent().getFirst().getName());
@@ -98,7 +98,7 @@ class PlaylistServiceTest {
         when(playlistRepository.findAllWithHashes(eq(1L), any(), any(), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(playlistMapper.toDto(proj)).thenReturn(dto);
 
-        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, 0, 20);
+        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, null, 0, 20);
 
         assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
     }
@@ -111,7 +111,7 @@ class PlaylistServiceTest {
         when(playlistRepository.findAllWithHashes(eq(1L), any(), any(), any())).thenReturn(new PageImpl<>(List.of(proj)));
         when(playlistMapper.toDto(proj)).thenReturn(dto);
 
-        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, 0, 20);
+        PlaylistPageDto result = service.getPlaylists(1L, null, null, null, null, 0, 20);
 
         assertEquals(List.of("h1", "h2", "h3"), result.getContent().getFirst().getSongFileHashes());
     }

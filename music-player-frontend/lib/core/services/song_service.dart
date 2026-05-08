@@ -159,7 +159,7 @@ class SongService {
   }
 
   Future<List<Song>> getForgottenFavourites() async {
-    final page = await _songRestService.getFavourites();
+    final page = await _songRestService.getForgottenFavourites();
     return cacheServerSongs(page.content);
   }
 

@@ -51,6 +51,7 @@ class PlaylistRestClient extends AbstractRestClient {
   Future<PlaylistPageDto> getPlaylistsPage({
     String? query,
     bool? filterIndestructible,
+    bool? includeQueue,
     int page = 0,
     int size = 50,
   }) async {
@@ -65,6 +66,10 @@ class PlaylistRestClient extends AbstractRestClient {
 
     if (filterIndestructible != null) {
       qp['filter[indestructible]'] = filterIndestructible.toString();
+    }
+
+    if (includeQueue != null) {
+      qp['includeQueue'] = includeQueue.toString();
     }
 
     try {

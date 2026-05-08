@@ -31,15 +31,25 @@ public class PlaylistService {
     private final PlaylistMapper playlistMapper;
     private final SongEnrichmentService songEnrichmentService;
 
-    public PlaylistPageDto getPlaylists(Long userId, String q, String sort, Boolean indestructibleFilter, int page, int size) {
+    public PlaylistPageDto getPlaylists(Long userId, String q, String sort, Boolean indestructibleFilter, Boolean includeQueue, int page, int size) {
         String search = (q == null || q.isBlank()) ? "" : q.trim();
         Page<PlaylistListProjection> result = playlistRepository.findAllWithHashes(
                 userId, search, indestructibleFilter,
                 PageRequest.of(page, size, parsePlaylistSort(sort)));
 
-        List<PlaylistDto> content = result.getContent().stream()
+        List<PlaylistDto> content = new ArrayList<>(result.getContent().stream()
                 .map(playlistMapper::toDto)
-                .toList();
+                .toList());
+
+        if (Boolean.TRUE.equals(includeQueue) && page == 0) {
+            content.removeIf(p -> DefaultPlaylistService.QUEUE.equals(p.getName()));
+            playlistRepository.findAllWithHashes(userId, DefaultPlaylistService.QUEUE, null, PageRequest.of(0, 50))
+                    .getContent().stream()
+                    .filter(p -> DefaultPlaylistService.QUEUE.equals(p.getName()))
+                    .findFirst()
+                    .map(playlistMapper::toDto)
+                    .ifPresent(content::addFirst);
+        }
 
         return new PlaylistPageDto(
                 content,

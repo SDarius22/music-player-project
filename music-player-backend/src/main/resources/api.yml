@@ -643,6 +643,12 @@ paths:
           schema:
             type: boolean
           description: When set, restricts the result to indestructible (`true`) or destructible (`false`) playlists.
+        - name: includeQueue
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: When true, the Queue playlist is prepended to the first page of results.
         - name: page
           in: query
           required: false

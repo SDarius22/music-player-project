@@ -67,6 +67,7 @@ class FakePlaylistRestClient extends PlaylistRestClient {
   Future<PlaylistPageDto> getPlaylistsPage({
     String? query,
     bool? filterIndestructible,
+    bool? includeQueue,
     int page = 0,
     int size = 50,
   }) async {
