@@ -54,7 +54,6 @@ class ArtistServiceTest {
             }).toList();
         });
 
-        // Keep service tests independent from generated mapper impl classes.
         org.mockito.Mockito.lenient().when(artistMapper.toExpandedDto(any())).thenAnswer(invocation -> {
             Artist artist = invocation.getArgument(0);
             ArtistExpandedDto dto = new ArtistExpandedDto();
@@ -62,21 +61,6 @@ class ArtistServiceTest {
             dto.setName(artist.getName());
             var songs = artist.getSongs();
             dto.setSongFileHashes(songs == null ? List.of() : songs.stream().map(Song::getFileHash).toList());
-            return dto;
-        });
-
-        org.mockito.Mockito.lenient().when(artistMapper.toDetailDto(any())).thenAnswer(invocation -> {
-            Artist artist = invocation.getArgument(0);
-            ArtistDetailDto dto = new ArtistDetailDto();
-            dto.setHash(artist.getHash());
-            dto.setName(artist.getName());
-            var songs = artist.getSongs();
-            dto.setSongs(songs == null ? List.of() : songs.stream().map(song -> {
-                SongDto songDto = new SongDto();
-                songDto.setFileHash(song.getFileHash());
-                songDto.setName(song.getName());
-                return songDto;
-            }).toList());
             return dto;
         });
     }
@@ -172,11 +156,11 @@ class ArtistServiceTest {
         Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of()).build();
         when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
 
-        ArtistDetailDto result = service.getArtistByHash("beatles-hash", 1L);
+        ArtistExpandedDto result = service.getArtistByHash("beatles-hash", 1L);
 
         assertEquals("beatles-hash", result.getHash());
         assertEquals("Beatles", result.getName());
-        assertTrue(result.getSongs().isEmpty());
+        assertTrue(result.getSongFileHashes().isEmpty());
     }
 
     @Test
@@ -194,10 +178,10 @@ class ArtistServiceTest {
         Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of(song)).build();
         when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
 
-        ArtistDetailDto result = service.getArtistByHash("beatles-hash", 1L);
+        ArtistExpandedDto result = service.getArtistByHash("beatles-hash", 1L);
 
-        assertEquals(1, result.getSongs().size());
-        assertEquals("hash1", result.getSongs().getFirst().getFileHash());
+        assertEquals(1, result.getSongFileHashes().size());
+        assertEquals("hash1", result.getSongFileHashes().getFirst());
     }
 
     @Test
@@ -205,9 +189,9 @@ class ArtistServiceTest {
         Artist artist = Artist.builder().id(1L).hash("solo-hash").name("Solo").songs(null).build();
         when(artistRepository.findByHash("solo-hash")).thenReturn(Optional.of(artist));
 
-        ArtistDetailDto result = service.getArtistByHash("solo-hash", 1L);
+        ArtistExpandedDto result = service.getArtistByHash("solo-hash", 1L);
 
-        assertTrue(result.getSongs().isEmpty());
+        assertTrue(result.getSongFileHashes().isEmpty());
     }
 
     // ── getArtistCover ───────────────────────────────────────────────────────

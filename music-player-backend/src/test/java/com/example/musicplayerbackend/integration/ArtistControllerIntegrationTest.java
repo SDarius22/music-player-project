@@ -117,6 +117,6 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
     void shouldReturnSongsForArtist() throws Exception {
         mockMvc.perform(get("/api/v1/artists/{artistHash}", artist.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.songs", not(empty())));
+                .andExpect(jsonPath("$.songFileHashes", not(empty())));
     }
 }

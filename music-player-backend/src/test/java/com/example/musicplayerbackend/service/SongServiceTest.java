@@ -14,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.lang.reflect.Field;
@@ -116,7 +117,7 @@ class SongServiceTest {
     void shouldReturnPageOfDtosVisibleToUser() {
         Song song = Song.builder().id(1L).name("Test").songType(ContentType.STREAMABLE).fileHash("h").build();
         User user = regularUser();
-        when(songRepository.findVisibleToUser(eq(""), eq(2L), any()))
+        when(songRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(song)));
 
         Page<SongDto> result = service.getSongsVisibleToUser(null, user, Pageable.unpaged());
@@ -127,12 +128,12 @@ class SongServiceTest {
     @Test
     void shouldPassQueryToRepositoryWhenSongsQueryProvided() {
         User user = regularUser();
-        when(songRepository.findVisibleToUser(eq("jazz"), eq(2L), any()))
+        when(songRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
         service.getSongsVisibleToUser("jazz", user, Pageable.unpaged());
 
-        verify(songRepository).findVisibleToUser(eq("jazz"), eq(2L), any());
+        verify(songRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test

@@ -52,17 +52,6 @@ class PlaylistServiceTest {
         owner = User.builder().id(1L).email("u@test.com").role(Role.USER)
                 .provider(AuthProvider.LOCAL).build();
 
-        lenient().when(playlistMapper.toDetailDto(any(Playlist.class), anyList()))
-                .thenAnswer(invocation -> {
-                    Playlist playlist = invocation.getArgument(0);
-                    List<PlaylistSongDto> entries = invocation.getArgument(1);
-                    PlaylistDetailDto dto = new PlaylistDetailDto();
-                    dto.setId(playlist.getId());
-                    dto.setName(playlist.getName());
-                    dto.setPlaylistSongs(entries);
-                    return dto;
-                });
-
         lenient().when(songEnrichmentService.enrich(anyList(), any())).thenAnswer(inv -> {
             List<Song> songs = inv.getArgument(0);
             return songs.stream().map(s -> {
@@ -136,9 +125,8 @@ class PlaylistServiceTest {
         when(playlistRepository.save(any())).thenReturn(saved);
         when(songRepository.findAllByFileHashIn(List.of("h2", "h1"))).thenReturn(List.of(song1, song2));
         when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(99L)).thenReturn(List.of(ps0, ps1));
-        when(songRepository.findAllById(List.of(20L, 10L))).thenReturn(List.of(song1, song2));
 
-        PlaylistDetailDto result = service.createPlaylist(owner, req);
+        PlaylistExpandedDto result = service.createPlaylist(owner, req);
 
         verify(playlistSongRepository).saveAll(playlistSongsCaptor.capture());
         List<PlaylistSong> persisted = playlistSongsCaptor.getValue();
@@ -148,8 +136,7 @@ class PlaylistServiceTest {
         assertEquals(2, persisted.get(1).getId().getPosition());
         assertEquals(10L, persisted.get(1).getSong().getId());
 
-        assertEquals(List.of("h2", "h1"), result.getPlaylistSongs().stream().map(e -> e.getSong().getFileHash()).toList());
-        assertEquals(List.of(0, 1), result.getPlaylistSongs().stream().map(PlaylistSongDto::getPosition).toList());
+        assertEquals(List.of("h2", "h1"), result.getSongFileHashes());
     }
 
     @Test
@@ -194,11 +181,10 @@ class PlaylistServiceTest {
 
         when(playlistRepository.findById(5L)).thenReturn(Optional.of(playlist));
         when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(5L)).thenReturn(List.of(ps0, ps1));
-        when(songRepository.findAllById(List.of(22L, 11L))).thenReturn(List.of(song1, song2));
 
-        PlaylistDetailDto result = service.getPlaylistById(5L, 1L);
+        PlaylistExpandedDto result = service.getPlaylistById(5L, 1L);
 
-        assertEquals(List.of("h2", "h1"), result.getPlaylistSongs().stream().map(e -> e.getSong().getFileHash()).toList());
+        assertEquals(List.of("h2", "h1"), result.getSongFileHashes());
     }
 
     @Test
@@ -232,16 +218,15 @@ class PlaylistServiceTest {
         when(playlistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(songRepository.findAllByFileHashIn(List.of("h"))).thenReturn(List.of(song));
         when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(1L)).thenReturn(List.of(relation));
-        when(songRepository.findAllById(List.of(5L))).thenReturn(List.of(song));
 
         UpdatePlaylistDto req = new UpdatePlaylistDto();
         req.setPlaylistSongs(List.of(songInput("h", 0)));
 
-        PlaylistDetailDto result = service.updatePlaylist(1L, 1L, req);
+        PlaylistExpandedDto result = service.updatePlaylist(1L, 1L, req);
 
         verify(playlistSongRepository).deleteByPlaylist_Id(1L);
         verify(playlistSongRepository).saveAll(anyList());
-        assertEquals(1, result.getPlaylistSongs().size());
+        assertEquals(1, result.getSongFileHashes().size());
     }
 
     @Test
@@ -267,7 +252,7 @@ class PlaylistServiceTest {
         when(playlistRepository.findById(1L)).thenReturn(Optional.of(p));
         when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(1L)).thenReturn(List.of());
 
-        PlaylistDetailDto result = service.getPlaylistById(1L, 1L);
+        PlaylistExpandedDto result = service.getPlaylistById(1L, 1L);
 
         assertEquals(1L, result.getId());
         assertEquals("Chill", result.getName());

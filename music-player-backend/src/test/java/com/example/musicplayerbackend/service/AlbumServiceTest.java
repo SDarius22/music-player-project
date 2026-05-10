@@ -258,10 +258,10 @@ class AlbumServiceTest {
 
     @Test
     void shouldReturnAlbumDetailDto() {
-        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").build();
+        Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").songs(List.of()).build();
         when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumByHash("thriller-hash", 1L);
+        AlbumExpandedDto result = service.getAlbumByHash("thriller-hash", 1L);
 
         assertEquals("thriller-hash", result.getHash());
         assertEquals("Thriller", result.getName());
@@ -283,20 +283,20 @@ class AlbumServiceTest {
         Album album = Album.builder().id(1L).hash("thriller-hash").name("Thriller").songs(List.of(song)).build();
         when(albumRepository.findByHash("thriller-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumByHash("thriller-hash", 1L);
+        AlbumExpandedDto result = service.getAlbumByHash("thriller-hash", 1L);
 
-        assertEquals(1, result.getSongs().size());
-        assertEquals("hash", result.getSongs().getFirst().getFileHash());
+        assertEquals(1, result.getSongFileHashes().size());
+        assertEquals("hash", result.getSongFileHashes().getFirst());
     }
 
     @Test
     void shouldReturnEmptySongsWhenAlbumSongsAreNull() {
-        Album album = Album.builder().id(1L).hash("no-songs-hash").name("No Songs").songs(null).build();
+        Album album = Album.builder().id(1L).hash("no-songs-hash").name("No Songs").songs(List.of()).build();
         when(albumRepository.findByHash("no-songs-hash")).thenReturn(Optional.of(album));
 
-        AlbumDetailDto result = service.getAlbumByHash("no-songs-hash", 1L);
+        AlbumExpandedDto result = service.getAlbumByHash("no-songs-hash", 1L);
 
-        assertTrue(result.getSongs().isEmpty());
+        assertTrue(result.getSongFileHashes().isEmpty());
     }
 
     // ── getAlbumCover ────────────────────────────────────────────────────────

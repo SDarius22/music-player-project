@@ -53,7 +53,8 @@ public class ArtistService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
 
         ArtistExpandedDto dto = artistMapper.toExpandedDto(artist);
-        List<Song> filteredSongs = artist.getSongs().stream()
+        List<Song> artistSongs = artist.getSongs() == null ? List.of() : artist.getSongs();
+        List<Song> filteredSongs = artistSongs.stream()
                 .filter(song -> Objects.isNull(song.getOwnerId()) || Objects.equals(song.getOwnerId(), userId))
                 .toList();
         dto.setSongFileHashes(filteredSongs.stream()

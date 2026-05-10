@@ -168,6 +168,32 @@ public class PlaylistService {
         return CoverDecoder.decodeCoverImage(firstSong.getAlbum().getCoverImage());
     }
 
+    private PlaylistExpandedDto toDetailDto(Playlist playlist) {
+        List<PlaylistSong> playlistSongs = playlistSongRepository
+                .findByPlaylist_IdOrderById_PositionAsc(playlist.getId());
+
+        List<String> songFileHashes = playlistSongs.stream()
+                .map(PlaylistSong::getSong)
+                .filter(Objects::nonNull)
+                .map(Song::getFileHash)
+                .toList();
+
+        int durationInSeconds = playlistSongs.stream()
+                .map(PlaylistSong::getSong)
+                .filter(Objects::nonNull)
+                .map(Song::getDurationInSeconds)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        return new PlaylistExpandedDto()
+                .id(playlist.getId())
+                .name(playlist.getName())
+                .indestructible(Boolean.TRUE.equals(playlist.getIndestructible()))
+                .songFileHashes(songFileHashes)
+                .durationInSeconds(durationInSeconds);
+    }
+
     private Playlist findAndAuthorize(Long playlistId, Long userId) {
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist not found"));

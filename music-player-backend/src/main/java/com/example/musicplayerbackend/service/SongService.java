@@ -64,15 +64,35 @@ public class SongService {
 
 
   @Transactional(readOnly = true)
+  public Page<SongDto> getSongsVisibleToUser(String q, User user, Pageable pageable) {
+    return getSongsVisibleToUser(q, null, null, null, user, pageable);
+  }
+
+  @Transactional(readOnly = true)
   public Page<SongDto> getSongsVisibleToUser(String q, String filterAlbumHash,
       String filterArtistHash, Long filterPlaylistId, User user, Pageable pageable) {
 
-    Specification<Song> spec = Specification
-        .where(SongSpecification.visibleToUser(user.getId()))
-        .and(SongSpecification.matchesQuery(q))
-        .and(SongSpecification.hasAlbumHash(filterAlbumHash))
-        .and(SongSpecification.hasArtistHash(filterArtistHash))
-        .and(SongSpecification.inPlaylist(filterPlaylistId));
+    Specification<Song> spec = SongSpecification.visibleToUser(user.getId());
+
+    Specification<Song> querySpec = SongSpecification.matchesQuery(q);
+    if (querySpec != null) {
+      spec = spec.and(querySpec);
+    }
+
+    Specification<Song> albumSpec = SongSpecification.hasAlbumHash(filterAlbumHash);
+    if (albumSpec != null) {
+      spec = spec.and(albumSpec);
+    }
+
+    Specification<Song> artistSpec = SongSpecification.hasArtistHash(filterArtistHash);
+    if (artistSpec != null) {
+      spec = spec.and(artistSpec);
+    }
+
+    Specification<Song> playlistSpec = SongSpecification.inPlaylist(filterPlaylistId);
+    if (playlistSpec != null) {
+      spec = spec.and(playlistSpec);
+    }
 
     Page<Song> songs = songRepository.findAll(spec, pageable);
     List<SongDto> enriched = songEnrichmentService.enrich(songs.getContent(), user.getId());
