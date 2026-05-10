@@ -5,7 +5,8 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
-import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/custom_tile_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
@@ -69,7 +70,8 @@ class PlaylistScreen extends EntityScreen {
                             vertical: height * 0.01,
                             horizontal: width * 0.01,
                           ),
-                          sliver: ListComponent(
+                          sliver: CustomTileComponent(
+                            tileType: TileType.list,
                             items: songs,
                             itemExtent: itemExtent,
                             isSelected: (entity) => false,

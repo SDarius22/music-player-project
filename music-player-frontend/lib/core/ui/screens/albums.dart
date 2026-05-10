@@ -32,12 +32,10 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
       icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
       onPressed: () async {
         if (entity is! Album) return;
-        Album album = entity;
-        var audioProvider = Provider.of<AudioProvider>(context, listen: false);
-        await audioProvider.setQueueAndPlay(
-          album.getSongs(),
-          album.getSongs().first,
-        );
+        final songs = entity.getSongs();
+        if (songs.isEmpty) return;
+        await Provider.of<AudioProvider>(context, listen: false)
+            .setQueueAndPlay(songs, songs.first);
       },
     );
   }
@@ -48,55 +46,36 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
   }
 
   @override
-  Widget buildRightAction(BaseEntity entity, BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(FluentIcons.moreVertical, color: Colors.white, size: 28),
-      onSelected: (String value) async {
-        switch (value) {
-          case 'add':
-            Album album = entity as Album;
-            var abstractAppStateProvider =
-                Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.innerNavigatorKey.currentState!.push(
-              AddOrExportScreen.route(songs: album.getSongs()),
-            );
-            break;
-          case 'playNext':
-            Album album = entity as Album;
-            var audioProvider = Provider.of<AudioProvider>(
-              context,
-              listen: false,
-            );
-            audioProvider.addNextToQueue(album.getSongs());
-            break;
-          case 'select':
-            var selectionProvider = Provider.of<SelectionProvider>(
-              context,
-              listen: false,
-            );
-            var selected = selectionProvider.selectedEntities;
-            if (selected.contains(entity)) {
-              selectionProvider.deselectEntity(entity);
-            } else {
-              selectionProvider.selectEntity(entity);
-            }
-            break;
+  List<Widget Function(BaseEntity, BuildContext)> get extraActions => [
+    (entity, context) => const Text("Add to Playlist"),
+    (entity, context) => const Text("Play Next"),
+    (entity, context) => const Text("Select"),
+  ];
+
+  @override
+  void onDropdownAction(
+    BaseEntity entity,
+    int dropdownIndex,
+    BuildContext context,
+  ) {
+    final album = entity as Album;
+    switch (dropdownIndex) {
+      case 0:
+        Provider.of<AbstractAppStateProvider>(context, listen: false)
+            .innerNavigatorKey
+            .currentState!
+            .push(AddOrExportScreen.route(songs: album.getSongs()));
+      case 1:
+        Provider.of<AudioProvider>(context, listen: false)
+            .addNextToQueue(album.getSongs());
+      case 2:
+        final sp = Provider.of<SelectionProvider>(context, listen: false);
+        if (sp.selectedEntities.contains(entity)) {
+          sp.deselectEntity(entity);
+        } else {
+          sp.selectEntity(entity);
         }
-      },
-      itemBuilder: (context) {
-        return [
-          const PopupMenuItem<String>(
-            value: 'add',
-            child: Text("Add to Playlist"),
-          ),
-          const PopupMenuItem<String>(
-            value: 'playNext',
-            child: Text("Play Next"),
-          ),
-          const PopupMenuItem<String>(value: 'select', child: Text("Select")),
-        ];
-      },
-    );
+    }
   }
 
   @override
@@ -105,12 +84,9 @@ class Albums extends MultipleEntitiesScreen<AlbumProvider> {
     List<dynamic> items,
     BuildContext context,
   ) async {
-    var abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
-      context,
-      listen: false,
-    );
-    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
-      AlbumScreen.route(album: entity as Album),
-    );
+    Provider.of<AbstractAppStateProvider>(context, listen: false)
+        .innerNavigatorKey
+        .currentState!
+        .push(AlbumScreen.route(album: entity as Album));
   }
 }

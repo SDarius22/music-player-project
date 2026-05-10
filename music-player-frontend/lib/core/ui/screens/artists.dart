@@ -6,12 +6,11 @@ import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/artist_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
-
-import 'abstract/route_builder.dart';
 
 class Artists extends MultipleEntitiesScreen<ArtistProvider> {
   static Route<dynamic> route() {
@@ -33,12 +32,10 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
       icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
       onPressed: () async {
         if (entity is! Artist) return;
-        Artist artist = entity;
-        var audioProvider = Provider.of<AudioProvider>(context, listen: false);
-        await audioProvider.setQueueAndPlay(
-          artist.getSongs(),
-          artist.getSongs().first,
-        );
+        final songs = entity.getSongs();
+        if (songs.isEmpty) return;
+        await Provider.of<AudioProvider>(context, listen: false)
+            .setQueueAndPlay(songs, songs.first);
       },
     );
   }
@@ -49,55 +46,36 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
   }
 
   @override
-  Widget buildRightAction(BaseEntity entity, BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(FluentIcons.moreVertical, color: Colors.white, size: 28),
-      onSelected: (String value) {
-        switch (value) {
-          case 'add':
-            Artist artist = entity as Artist;
-            var abstractAppStateProvider =
-                Provider.of<AbstractAppStateProvider>(context, listen: false);
-            abstractAppStateProvider.innerNavigatorKey.currentState!.push(
-              AddOrExportScreen.route(songs: artist.getSongs()),
-            );
-            break;
-          case 'playNext':
-            Artist artist = entity as Artist;
-            var audioProvider = Provider.of<AudioProvider>(
-              context,
-              listen: false,
-            );
-            audioProvider.addNextToQueue(artist.getSongs());
-            break;
-          case 'select':
-            var selectionProvider = Provider.of<SelectionProvider>(
-              context,
-              listen: false,
-            );
-            var selected = selectionProvider.selectedEntities;
-            if (selected.contains(entity)) {
-              selectionProvider.deselectEntity(entity);
-            } else {
-              selectionProvider.selectEntity(entity);
-            }
-            break;
+  List<Widget Function(BaseEntity, BuildContext)> get extraActions => [
+    (entity, context) => const Text("Add to Playlist"),
+    (entity, context) => const Text("Play Next"),
+    (entity, context) => const Text("Select"),
+  ];
+
+  @override
+  void onDropdownAction(
+    BaseEntity entity,
+    int dropdownIndex,
+    BuildContext context,
+  ) {
+    final artist = entity as Artist;
+    switch (dropdownIndex) {
+      case 0:
+        Provider.of<AbstractAppStateProvider>(context, listen: false)
+            .innerNavigatorKey
+            .currentState!
+            .push(AddOrExportScreen.route(songs: artist.getSongs()));
+      case 1:
+        Provider.of<AudioProvider>(context, listen: false)
+            .addNextToQueue(artist.getSongs());
+      case 2:
+        final sp = Provider.of<SelectionProvider>(context, listen: false);
+        if (sp.selectedEntities.contains(entity)) {
+          sp.deselectEntity(entity);
+        } else {
+          sp.selectEntity(entity);
         }
-      },
-      itemBuilder: (context) {
-        return [
-          const PopupMenuItem<String>(
-            value: 'add',
-            child: Text("Add to Playlist"),
-          ),
-          const PopupMenuItem<String>(
-            value: 'playNext',
-            child: Text("Play Next"),
-          ),
-          const PopupMenuItem<String>(value: 'select', child: Text("Select")),
-        ];
-      },
-    );
+    }
   }
 
   @override
@@ -106,12 +84,9 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
     List<dynamic> items,
     BuildContext context,
   ) async {
-    var abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
-      context,
-      listen: false,
-    );
-    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
-      ArtistScreen.route(artist: entity as Artist),
-    );
+    Provider.of<AbstractAppStateProvider>(context, listen: false)
+        .innerNavigatorKey
+        .currentState!
+        .push(ArtistScreen.route(artist: entity as Artist));
   }
 }

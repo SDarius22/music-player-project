@@ -1,6 +1,9 @@
 package com.example.musicplayerbackend.mapper;
 
-import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.domain.Album;
+import com.example.musicplayerbackend.domain.AlbumDto;
+import com.example.musicplayerbackend.domain.AlbumExpandedDto;
+import com.example.musicplayerbackend.domain.Artist;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -14,14 +17,7 @@ import org.mapstruct.ReportingPolicy;
 public interface AlbumMapper {
 
     AlbumDto toDto(Album album);
-
-    @Mapping(target = "artist", source = "mainArtist")
-    @Mapping(target = "hash", source = "album.hash")
-    @Mapping(target = "name", source = "album.name")
-    @Mapping(target = "songs", source = "album.songs")
-    AlbumDetailDto toDetailDto(Album album, Artist mainArtist);
-
-    @Mapping(target = "songFileHashes", source = "album.songs")
+    
     @Mapping(target = "artist", source = "mainArtist")
     @Mapping(target = "hash", source = "album.hash")
     @Mapping(target = "name", source = "album.name")

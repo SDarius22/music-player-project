@@ -60,7 +60,7 @@ public class PlaylistService {
         );
     }
 
-    public PlaylistDetailDto getPlaylistByName(Long userId, String name) {
+    public PlaylistExpandedDto getPlaylistByName(Long userId, String name) {
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name is required");
         }
@@ -88,7 +88,7 @@ public class PlaylistService {
     }
 
     @Transactional
-    public PlaylistDetailDto createPlaylist(User user, CreatePlaylistDto req) {
+    public PlaylistExpandedDto createPlaylist(User user, CreatePlaylistDto req) {
         if (req.getPlaylistSongs() == null || req.getPlaylistSongs().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Playlist must contain at least one song");
         }
@@ -113,13 +113,13 @@ public class PlaylistService {
         return toDetailDto(saved);
     }
 
-    public PlaylistDetailDto getPlaylistById(Long playlistId, Long userId) {
+    public PlaylistExpandedDto getPlaylistById(Long playlistId, Long userId) {
         Playlist playlist = findAndAuthorize(playlistId, userId);
         return toDetailDto(playlist);
     }
 
     @Transactional
-    public PlaylistDetailDto updatePlaylist(Long playlistId, Long userId, UpdatePlaylistDto req) {
+    public PlaylistExpandedDto updatePlaylist(Long playlistId, Long userId, UpdatePlaylistDto req) {
         Playlist playlist = findAndAuthorize(playlistId, userId);
         if (req.getName() != null && !req.getName().equals(playlist.getName())) {
             if (playlistRepository.existsByUser_IdAndName(userId, req.getName())) {
@@ -175,47 +175,6 @@ public class PlaylistService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
         return playlist;
-    }
-
-    private PlaylistDetailDto toDetailDto(Playlist playlist) {
-        List<PlaylistSong> playlistSongs = playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(playlist.getId());
-
-        if (playlistSongs.isEmpty()) {
-            return playlistMapper.toDetailDto(playlist, List.of());
-        }
-
-        List<Long> uniqueSongIds = playlistSongs.stream()
-                .map(entry -> entry.getSong().getId())
-                .distinct()
-                .toList();
-
-        Map<Long, Song> songsById = songRepository.findAllById(uniqueSongIds).stream()
-                .collect(Collectors.toMap(Song::getId, Function.identity()));
-
-        Long ownerId = playlist.getUser() == null ? null : playlist.getUser().getId();
-        Map<String, SongDto> dtosByFileHash = songEnrichmentService
-                .enrich(new ArrayList<>(songsById.values()), ownerId).stream()
-                .collect(Collectors.toMap(SongDto::getFileHash, Function.identity()));
-
-        List<PlaylistSongDto> entries = playlistSongs.stream()
-                .map(entry -> {
-                    Song song = songsById.get(entry.getSong().getId());
-                    if (song == null) {
-                        return null;
-                    }
-                    SongDto songDto = dtosByFileHash.get(song.getFileHash());
-                    if (songDto == null) {
-                        return null;
-                    }
-                    PlaylistSongDto dto = new PlaylistSongDto();
-                    dto.setSong(songDto);
-                    dto.setPosition(entry.getId().getPosition());
-                    return dto;
-                })
-                .filter(Objects::nonNull)
-                .toList();
-
-        return playlistMapper.toDetailDto(playlist, entries);
     }
 
     private void replacePlaylistSongs(Playlist playlist, List<PlaylistSongPositionDto> items) {

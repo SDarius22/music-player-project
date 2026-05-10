@@ -1,6 +1,7 @@
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
@@ -108,7 +109,7 @@ class SongService {
     _songRepository.deleteSong(song);
   }
 
-  Future<({List<Song> content, int totalPages, int page})> getSongsPage(
+  Future<PageResult<Song>> getSongsPage(
     String query,
     String sortField,
     bool ascending,
@@ -150,7 +151,7 @@ class SongService {
                     pageSize)
                 .clamp(1, 999999);
 
-    return (content: localSongs, totalPages: totalPages, page: page);
+    return PageResult(content: localSongs, totalPages: totalPages, page: page);
   }
 
   Future<List<Song>> getRecommendations() async {

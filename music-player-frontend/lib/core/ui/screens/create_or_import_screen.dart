@@ -9,7 +9,8 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -58,12 +59,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
   late ValueNotifier<Uint8List?> coverArt;
   late FocusNode searchNode;
   late FocusNode nameNode;
-
-  final List<Song> _songs = [];
-  int _currentPage = 0;
-  bool _isLoading = false;
-  bool _hasMore = true;
-  late ScrollController _scrollController;
+  int _reloadToken = 0;
 
   @override
   void initState() {
@@ -74,11 +70,10 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     coverArt = ValueNotifier<Uint8List?>(null);
     searchNode = FocusNode();
     nameNode = FocusNode();
-    _scrollController = ScrollController()..addListener(_onScroll);
 
     initializeSelectedSongs();
     nameNode.requestFocus();
-    _fetchPage(0, reset: true);
+    _reloadToken++;
   }
 
   @override
@@ -87,43 +82,19 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     coverArt.dispose();
     searchNode.dispose();
     nameNode.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 300) {
-      if (!_hasMore || _isLoading) return;
-      _fetchPage(_currentPage + 1);
-    }
+  void _triggerReload() {
+    if (!mounted) return;
+    setState(() {
+      _reloadToken++;
+    });
   }
 
-  Future<void> _fetchPage(int page, {bool reset = false}) async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-    try {
-      final songProvider = Provider.of<SongProvider>(context, listen: false);
-      final result = await songProvider.fetchPage(
-        search,
-        'Title',
-        true,
-        false,
-        page,
-        30,
-      );
-      if (!mounted) return;
-      setState(() {
-        if (reset) _songs.clear();
-        _songs.addAll(result.content.whereType<Song>());
-        _currentPage = result.page;
-        _hasMore = result.page < result.totalPages - 1;
-      });
-    } catch (e) {
-      debugPrint('CreateOrImportScreen: fetchPage error: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+  void _onSearchChanged(String value) {
+    search = value;
+    _triggerReload();
   }
 
   @override
@@ -424,8 +395,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                   child: TextFormField(
                     focusNode: searchNode,
                     onChanged: (value) {
-                      search = value;
-                      _fetchPage(0, reset: true);
+                      _onSearchChanged(value);
                     },
                     cursorColor: Colors.white,
                     style: Theme.of(
@@ -451,61 +421,59 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
                   ),
                 ),
                 Expanded(
-                  child:
-                      _songs.isEmpty && !_isLoading
-                          ? Center(
-                            child: Text(
-                              "No songs found",
-                              style: Theme.of(context).textTheme.bodySmall!
-                                  .copyWith(color: Colors.white),
-                            ),
-                          )
-                          : CustomScrollView(
-                            controller: _scrollController,
-                            slivers: [
-                              SliverPadding(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: height * 0.01,
-                                  horizontal: width * 0.01,
-                                ),
-                                sliver: ValueListenableBuilder<List<Song>>(
-                                  valueListenable: selected,
-                                  builder: (context, selectedSongs, child) {
-                                    return ListComponent(
-                                      items: _songs,
-                                      itemExtent: height * 0.1,
-                                      isSelected:
-                                          (entity) => selectedSongs.contains(
-                                            entity as Song,
-                                          ),
-                                      onTap: (entity) {
-                                        final song = entity as Song;
-                                        if (selected.value.contains(song)) {
-                                          selected.value = List.from(
-                                            selected.value,
-                                          )..remove(song);
-                                        } else {
-                                          selected.value = List.from(
-                                            selected.value,
-                                          )..add(song);
-                                        }
-                                      },
-                                      onLongPress: (entity) {},
-                                    );
-                                  },
-                                ),
-                              ),
-                              if (_isLoading)
-                                const SliverToBoxAdapter(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                    child: Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
+                  child: ValueListenableBuilder<List<Song>>(
+                    valueListenable: selected,
+                    builder: (context, selectedSongs, child) {
+                      return Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: height * 0.01,
+                          horizontal: width * 0.01,
+                        ),
+                        child: PaginatedComponent(
+                          type: TileType.list,
+                          reloadToken: _reloadToken,
+                          pageSize: 30,
+                          itemExtent: height * 0.1,
+                          emptyText: 'No songs found',
+                          onRefresh: () {
+                            final songProvider = Provider.of<SongProvider>(
+                              context,
+                              listen: false,
+                            );
+                            return songProvider.refresh();
+                          },
+                          fetchPage: (page, size) {
+                            final songProvider = Provider.of<SongProvider>(
+                              context,
+                              listen: false,
+                            );
+                            return songProvider.fetchPage(
+                              search,
+                              'Title',
+                              true,
+                              false,
+                              page,
+                              size,
+                            );
+                          },
+                          isSelected:
+                              (entity) =>
+                                  selectedSongs.contains(entity as Song),
+                          onTap: (entity, items) async {
+                            final song = entity as Song;
+                            if (selected.value.contains(song)) {
+                              selected.value = List.from(selected.value)
+                                ..remove(song);
+                            } else {
+                              selected.value = List.from(selected.value)
+                                ..add(song);
+                            }
+                          },
+                          onLongPress: (entity, items) {},
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

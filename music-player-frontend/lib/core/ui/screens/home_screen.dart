@@ -156,6 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
           separatorBuilder: (_, _) => SizedBox(width: width * 0.015),
           itemBuilder: (context, i) {
             return CustomGridTile(
+              isWide: wide,
               onTap:
                   () => context.read<AudioProvider>().setQueueAndPlay(
                     songs,
@@ -163,13 +164,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
               onLongPress: () {},
               entity: songs[i],
-              wide: wide,
               isSelected: false,
-              mainAction: Icon(
-                FluentIcons.play,
-                color: Colors.white.withValues(alpha: 0.8),
-                size: 30,
-              ),
+              actions: [
+                Icon(
+                  FluentIcons.play,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  size: 30,
+                ),
+              ],
             );
           },
         ),
@@ -263,6 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             delegate: SliverChildBuilderDelegate((context, i) {
               return CustomGridTile(
+                isWide: true,
                 onTap:
                     () => context.read<AudioProvider>().setQueueAndPlay(
                       songs,
@@ -271,7 +274,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 onLongPress: () {},
                 entity: capped[i],
                 isSelected: false,
-                wide: true,
               );
             }, childCount: capped.length),
           ),
@@ -298,11 +300,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 onLongPress: () {},
                 entity: capped[i],
                 isSelected: false,
-                mainAction: Icon(
-                  FluentIcons.play,
-                  color: Colors.white.withValues(alpha: 0.8),
-                  size: 30,
-                ),
+                actions: [
+                  Icon(
+                    FluentIcons.play,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    size: 30,
+                  ),
+                ],
               );
             }, childCount: capped.length),
           ),

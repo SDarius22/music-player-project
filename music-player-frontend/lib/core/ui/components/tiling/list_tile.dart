@@ -12,8 +12,11 @@ import 'package:provider/provider.dart';
 
 class CustomListTile extends StatelessWidget {
   final BaseEntity? entity;
-  final Widget? leadingAction;
-  final Widget? trailingAction;
+
+  // actions[0] = main action (hover overlay on thumbnail)
+  // actions[1+] = dropdown items
+  final List<Widget> actions;
+  final void Function(int dropdownIndex)? onDropdownSelected;
   final GestureTapCallback? onTap;
   final GestureLongPressCallback? onLongPress;
   final bool isSelected;
@@ -21,33 +24,46 @@ class CustomListTile extends StatelessWidget {
 
   const CustomListTile({
     super.key,
-    required this.entity,
     required this.onTap,
     required this.onLongPress,
+    required this.entity,
     required this.isSelected,
-    this.leadingAction = const SizedBox.shrink(),
-    this.trailingAction = const SizedBox.shrink(),
+    this.actions = const [],
+    this.onDropdownSelected,
     this.isLoading = false,
   });
 
   const CustomListTile._loading({super.key})
-    : entity = null,
+    : actions = const [],
+      onDropdownSelected = null,
       onTap = null,
       onLongPress = null,
       isSelected = false,
-      leadingAction = const SizedBox.shrink(),
-      trailingAction = const SizedBox.shrink(),
+      entity = null,
       isLoading = true;
 
   static Widget loading({Key? key}) => CustomListTile._loading(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return _buildLoadingTile(context);
-    }
+  Widget get _hoverOverlay =>
+      actions.isNotEmpty ? actions[0] : const SizedBox.shrink();
 
-    return _buildListTileContent(context);
+  Widget _buildDropdown(BuildContext context) {
+    if (actions.length <= 1) return const SizedBox.shrink();
+    return PopupMenuButton<void>(
+      icon: const Icon(FluentIcons.moreVertical, color: Colors.white, size: 24),
+      padding: EdgeInsets.zero,
+      itemBuilder:
+          (context) => [
+            for (int i = 1; i < actions.length; i++)
+              PopupMenuItem<void>(
+                onTap:
+                    onDropdownSelected != null
+                        ? () => onDropdownSelected!(i - 1)
+                        : null,
+                child: actions[i],
+              ),
+          ],
+    );
   }
 
   Widget _buildLoadingTile(BuildContext context) {
@@ -98,10 +114,13 @@ class CustomListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildListTileContent(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) return _buildLoadingTile(context);
+
     final entity = this.entity!;
-    var width = MediaQuery.of(context).size.width;
-    var height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
 
     return MouseRegion(
       cursor:
@@ -131,12 +150,10 @@ class CustomListTile extends StatelessWidget {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(
-                    MediaQuery.of(context).size.height * 0.015,
-                  ),
+                  borderRadius: BorderRadius.circular(height * 0.015),
                   child: ImageWidget(
                     entity: entity,
-                    hoveredChild: leadingAction,
+                    hoveredChild: _hoverOverlay,
                     child:
                         isSelected
                             ? ClipRect(
@@ -211,8 +228,7 @@ class CustomListTile extends StatelessWidget {
                         builder: (_, audioProvider, _) {
                           return CustomTextScroll(
                             text:
-                                (entity).artist.target?.name ??
-                                'Unknown Artist',
+                                entity.artist.target?.name ?? 'Unknown Artist',
                             style: Theme.of(
                               context,
                             ).textTheme.bodySmall!.copyWith(
@@ -259,8 +275,7 @@ class CustomListTile extends StatelessWidget {
                     );
                   },
                 ),
-
-              trailingAction!,
+              if (actions.length > 2) _buildDropdown(context),
             ],
           ),
         ),

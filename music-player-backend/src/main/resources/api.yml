@@ -47,6 +47,25 @@ paths:
             type: string
             default: name,asc
           description: Sort as `field,direction` (e.g. `name,asc`, `year,desc`).
+        - name: filter[albumHash]
+          in: query
+          required: false
+          schema:
+            type: string
+          description: When set, restricts the result to songs belonging to the specified album.
+        - name: filter[artistHash]
+          in: query
+          required: false
+          schema:
+            type: string
+          description: When set, restricts the result to songs belonging to the specified artist.
+        - name: filter[playlistId]
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: When set, restricts the result to songs belonging to the specified playlist. Only songs in the user's own playlists are considered.
       responses:
         '200':
           description: A page of songs
@@ -499,7 +518,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AlbumDetailDto'
+                $ref: '#/components/schemas/AlbumExpandedDto'
         '404':
           description: Album not found
 
@@ -586,7 +605,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArtistDetailDto'
+                $ref: '#/components/schemas/ArtistExpandedDto'
         '404':
           description: Artist not found
 
@@ -693,7 +712,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaylistDetailDto'
+                $ref: '#/components/schemas/PlaylistExpandedDto'
         '401':
           description: Unauthorized
 
@@ -722,7 +741,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaylistDetailDto'
+                $ref: '#/components/schemas/PlaylistExpandedDto'
         '401':
           description: Unauthorized
         '404':
@@ -750,7 +769,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaylistDetailDto'
+                $ref: '#/components/schemas/PlaylistExpandedDto'
         '401':
           description: Unauthorized
         '403':
@@ -784,7 +803,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaylistDetailDto'
+                $ref: '#/components/schemas/PlaylistExpandedDto'
         '401':
           description: Unauthorized
         '403':
@@ -1078,18 +1097,6 @@ components:
             type: string
           description: Ordered file hashes of all songs by this artist (ordered by song name).
 
-    ArtistDetailDto:
-      type: object
-      properties:
-        hash:
-          type: string
-        name:
-          type: string
-        songs:
-          type: array
-          items:
-            $ref: '#/components/schemas/SongDto'
-
     ArtistPageDto:
       type: object
       required:
@@ -1125,20 +1132,6 @@ components:
         name:
           type: string
 
-    AlbumDetailDto:
-      type: object
-      properties:
-        hash:
-          type: string
-        name:
-          type: string
-        songs:
-          type: array
-          items:
-            $ref: '#/components/schemas/SongDto'
-        artist:
-          $ref: '#/components/schemas/ArtistDto'
-
     AlbumExpandedDto:
       type: object
       description: Album summary used in paginated list responses. Includes ordered song file hashes.
@@ -1152,6 +1145,9 @@ components:
           items:
             type: string
           description: Ordered file hashes of the album's songs (disc, track).
+        durationInSeconds:
+          type: integer
+          description: Total duration of all songs in the album.
         artist:
           $ref: '#/components/schemas/ArtistDto'
 
@@ -1200,8 +1196,9 @@ components:
             type: string
           description: Ordered song file hashes for this playlist (index equals playlist position).
 
-    PlaylistDetailDto:
+    PlaylistExpandedDto:
       type: object
+      description: Playlist detail used in paginated list responses. Includes song metadata.
       properties:
         id:
           type: integer
@@ -1212,11 +1209,14 @@ components:
           type: boolean
           default: false
           description: When true, the playlist cannot be deleted by the user.
-        playlistSongs:
+        songFileHashes:
           type: array
           items:
-            $ref: '#/components/schemas/PlaylistSongDto'
-          description: Songs in playlist order with their persisted positions.
+            type: string
+          description: Ordered song file hashes for this playlist (index equals playlist position).
+        durationInSeconds:
+          type: integer
+          description: Total duration of all songs in the playlist.
 
     PlaylistPageDto:
       type: object

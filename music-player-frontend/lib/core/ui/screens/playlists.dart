@@ -53,10 +53,10 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
       icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
       onPressed: () async {
         if (entity is! Playlist) return;
-        Playlist playlist = entity;
-        final songs = playlist.getSongs();
-        var audioProvider = Provider.of<AudioProvider>(context, listen: false);
-        await audioProvider.setQueueAndPlay(songs, songs.first);
+        final songs = entity.getSongs();
+        if (songs.isEmpty) return;
+        await Provider.of<AudioProvider>(context, listen: false)
+            .setQueueAndPlay(songs, songs.first);
       },
     );
   }
@@ -67,25 +67,11 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   }
 
   @override
-  Widget buildRightAction(BaseEntity entity, BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(FluentIcons.moreVertical, color: Colors.white, size: 28),
-      onSelected: (String value) {},
-      itemBuilder: (context) {
-        return [
-          const PopupMenuItem<String>(
-            value: 'add',
-            child: Text("Add to Playlist"),
-          ),
-          const PopupMenuItem<String>(
-            value: 'playNext',
-            child: Text("Play Next"),
-          ),
-          const PopupMenuItem<String>(value: 'select', child: Text("Select")),
-        ];
-      },
-    );
-  }
+  List<Widget Function(BaseEntity, BuildContext)> get extraActions => [
+    (entity, context) => const Text("Add to Playlist"),
+    (entity, context) => const Text("Play Next"),
+    (entity, context) => const Text("Select"),
+  ];
 
   @override
   Future<void> onEntityTap(
@@ -93,12 +79,9 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
     List<dynamic> items,
     BuildContext context,
   ) async {
-    var abstractAppStateProvider = Provider.of<AbstractAppStateProvider>(
-      context,
-      listen: false,
-    );
-    abstractAppStateProvider.innerNavigatorKey.currentState!.push(
-      PlaylistScreen.route(playlist: entity as Playlist),
-    );
+    Provider.of<AbstractAppStateProvider>(context, listen: false)
+        .innerNavigatorKey
+        .currentState!
+        .push(PlaylistScreen.route(playlist: entity as Playlist));
   }
 }

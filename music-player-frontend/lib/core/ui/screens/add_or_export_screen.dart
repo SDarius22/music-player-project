@@ -8,7 +8,8 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
-import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/custom_tile_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -275,7 +276,8 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
           sliver: ValueListenableBuilder(
             valueListenable: selected,
             builder: (context, value, child) {
-              return CustomGridComponent(
+              return CustomTileComponent(
+                tileType: TileType.grid,
                 items: _playlists,
                 isSelected: (entity) {
                   return selected.value.contains(entity as Playlist);

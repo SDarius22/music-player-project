@@ -1,5 +1,7 @@
-class PageResult {
-  final List<dynamic> content;
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+
+class PageResult<T extends BaseEntity> {
+  final List<T> content;
   final int totalPages;
   final int page;
 

@@ -48,12 +48,21 @@ public class AlbumService {
     }
 
     @Transactional(readOnly = true)
-    public AlbumDetailDto getAlbumByHash(String albumHash, Long userId) {
+    public AlbumExpandedDto getAlbumByHash(String albumHash, Long userId) {
         Album album = albumRepository.findByHash(albumHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
 
-        AlbumDetailDto dto = albumMapper.toDetailDto(album, getMainArtist(album));
-        dto.setSongs(songEnrichmentService.enrich(album.getSongs(), userId));
+        AlbumExpandedDto dto = albumMapper.toExpandedDto(album, getMainArtist(album));
+        List<Song> filteredSongs = album.getSongs().stream()
+                .filter(song -> Objects.isNull(song.getOwnerId()) || Objects.equals(song.getOwnerId(), userId))
+                .toList();
+        dto.setSongFileHashes(filteredSongs.stream()
+                .map(Song::getFileHash)
+                .toList());
+        dto.setDurationInSeconds(filteredSongs.stream()
+                .filter(song -> song.getDurationInSeconds() != null)
+                .mapToInt(Song::getDurationInSeconds)
+                .sum());
         return dto;
     }
 

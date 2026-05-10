@@ -1,6 +1,6 @@
 package com.example.musicplayerbackend.controller;
 
-import com.example.musicplayerbackend.domain.AlbumDetailDto;
+import com.example.musicplayerbackend.domain.AlbumExpandedDto;
 import com.example.musicplayerbackend.domain.AlbumPageDto;
 import com.example.musicplayerbackend.domain.User;
 import com.example.musicplayerbackend.service.AlbumService;
@@ -29,7 +29,7 @@ public class AlbumController implements AlbumsApi {
     }
 
     @Override
-    public ResponseEntity<AlbumDetailDto> getAlbumByHash(String albumHash) {
+    public ResponseEntity<AlbumExpandedDto> getAlbumByHash(String albumHash) {
         return ResponseEntity.ok(albumService.getAlbumByHash(albumHash, currentUserId()));
     }
 

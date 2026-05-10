@@ -3,7 +3,8 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
-import 'package:music_player_frontend/core/ui/components/tiling/grid_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -17,14 +18,23 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
 
   String get screenTitle;
 
-  Widget buildLeftAction(BaseEntity entity, BuildContext context) =>
-      const SizedBox.shrink();
-
+  // actions[0]: main action (grid center button)
   Widget buildMainAction(BaseEntity entity, BuildContext context) =>
       const SizedBox.shrink();
 
-  Widget buildRightAction(BaseEntity entity, BuildContext context) =>
+  // actions[1]: secondary action (grid left button, list hover overlay)
+  Widget buildLeftAction(BaseEntity entity, BuildContext context) =>
       const SizedBox.shrink();
+
+  // actions[2+]: each entry provides the display widget for a dropdown item
+  List<Widget Function(BaseEntity, BuildContext)> get extraActions => [];
+
+  // Called when dropdown item at [dropdownIndex] is tapped.
+  void onDropdownAction(
+    BaseEntity entity,
+    int dropdownIndex,
+    BuildContext context,
+  ) {}
 
   Widget Function(BuildContext)? get buildExtraTile => null;
 
@@ -41,17 +51,12 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
 
 class _MultipleEntitiesScreenState<T extends QueryableProvider>
     extends State<MultipleEntitiesScreen<T>> {
-  static const int _pageSize = 50;
-
   late String _sortField;
   late bool _localOnly;
   late bool _ascending;
   String _query = '';
-  late ScrollController _scrollController;
-  late final ValueNotifier<_PagedViewState> _viewState;
-  late final ValueNotifier<Future<void>> _loadFuture;
   late final AbstractAppStateProvider _appStateProvider;
-  int _requestId = 0;
+  int _reloadToken = 0;
 
   @override
   void initState() {
@@ -59,119 +64,62 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     _localOnly = false;
     _sortField = widget.provider.sortFields.keys.firstOrNull ?? 'Name';
     _ascending = true;
-    _viewState = ValueNotifier<_PagedViewState>(const _PagedViewState());
-    _loadFuture = ValueNotifier<Future<void>>(Future.value());
     _appStateProvider = context.read<AbstractAppStateProvider>();
-    _scrollController = ScrollController();
-    _scrollController.addListener(_onScroll);
     (widget.provider as ChangeNotifier).addListener(_onProviderChanged);
     _appStateProvider.refreshRequestNotifier.addListener(_onGlobalRefresh);
     _appStateProvider.shouldDisplayLocalOnly.addListener(_onLocalOnlyChanged);
-    _runLoad(() => _fetchPage(0, reset: true));
+    _reloadToken++;
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    _viewState.dispose();
-    _loadFuture.dispose();
     (widget.provider as ChangeNotifier).removeListener(_onProviderChanged);
     _appStateProvider.refreshRequestNotifier.removeListener(_onGlobalRefresh);
+    _appStateProvider.shouldDisplayLocalOnly.removeListener(
+      _onLocalOnlyChanged,
+    );
     super.dispose();
   }
 
   void _onGlobalRefresh() {
     if (!mounted) return;
-    _runLoad(() => _fetchPage(0, reset: true));
+    _triggerReload();
   }
 
   void _onLocalOnlyChanged() {
     _localOnly = _appStateProvider.shouldDisplayLocalOnly.value;
-    _runLoad(() => _fetchPage(0, reset: true));
+    _triggerReload();
   }
 
-  void _onProviderChanged() {
-    _runLoad(() => _fetchPage(0, reset: true));
-  }
+  void _onProviderChanged() => _triggerReload();
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 300) {
-      _fetchNextPage();
-    }
-  }
-
-  void _fetchNextPage() {
-    final state = _viewState.value;
-    if (!state.hasMore || state.isLoading) return;
-    _runLoad(() => _fetchPage(state.currentPage + 1));
-  }
-
-  Future<void> _fetchPage(int page, {bool reset = false}) async {
-    final state = _viewState.value;
-    if (state.isLoading) return;
-
-    final requestId = ++_requestId;
-    _viewState.value = state.copyWith(isLoading: true, clearError: true);
-
-    try {
-      final result = await widget.provider.fetchPage(
-        _query,
-        _sortField,
-        _ascending,
-        _localOnly,
-        page,
-        _pageSize,
-      );
-      if (!mounted || requestId != _requestId) return;
-
-      final current = _viewState.value;
-      final nextItems =
-          reset
-              ? List<dynamic>.from(result.content)
-              : <dynamic>[...current.items, ...result.content];
-
-      _viewState.value = current.copyWith(
-        items: nextItems,
-        currentPage: result.page,
-        hasMore: result.page < result.totalPages - 1,
-        isLoading: false,
-      );
-    } catch (e) {
-      if (!mounted || requestId != _requestId) return;
-      debugPrint('MultipleEntitiesScreen: fetchPage error: $e');
-      _viewState.value = _viewState.value.copyWith(isLoading: false, error: e);
-    }
-  }
-
-  void _runLoad(Future<void> Function() action) {
-    _loadFuture.value = action();
+  void _triggerReload() {
+    if (!mounted) return;
+    setState(() => _reloadToken++);
   }
 
   void _onToggleLocalOnly(bool value) {
     _localOnly = value;
-    _runLoad(() => _fetchPage(0, reset: true));
+    _triggerReload();
   }
 
   void _onQuery(String q) {
     _query = q;
-    _runLoad(() => _fetchPage(0, reset: true));
+    _triggerReload();
   }
 
   void _onSortField(String field) {
     _sortField = field;
-    _runLoad(() => _fetchPage(0, reset: true));
+    _triggerReload();
   }
 
   void _onAscending(bool asc) {
     _ascending = asc;
-    _runLoad(() => _fetchPage(0, reset: true));
+    _triggerReload();
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.screenTitle;
     final width = MediaQuery.of(context).size.width;
 
     return GlassScaffold(
@@ -182,7 +130,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
           padding: EdgeInsets.symmetric(horizontal: width * 0.01),
           margin: EdgeInsets.symmetric(vertical: width * 0.005),
           child: SearchHeader(
-            title: title,
+            title: widget.screenTitle,
             sortFields: widget.provider.sortFields,
             initialSortField: _sortField,
             initialAscending: _ascending,
@@ -194,60 +142,11 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
           ),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await widget.provider.refresh();
-          _runLoad(() => _fetchPage(0, reset: true));
-          await _loadFuture.value;
-        },
-        child: ValueListenableBuilder<Future<void>>(
-          valueListenable: _loadFuture,
-          builder: (context, future, _) {
-            return FutureBuilder<void>(
-              future: future,
-              builder: (context, snapshot) {
-                return ValueListenableBuilder<_PagedViewState>(
-                  valueListenable: _viewState,
-                  builder: (context, state, _) {
-                    return CustomScrollView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        if (snapshot.connectionState ==
-                                ConnectionState.waiting &&
-                            state.items.isEmpty)
-                          const SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: Center(child: CircularProgressIndicator()),
-                          )
-                        else
-                          SliverPadding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.01,
-                              right: width * 0.01,
-                            ),
-                            sliver: _buildGrid(context, state),
-                          ),
-                        if (state.isLoading && state.items.isNotEmpty)
-                          const SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
-      ),
+      body: _buildGrid(context),
     );
   }
 
-  Widget _buildGrid(BuildContext context, _PagedViewState state) {
+  Widget _buildGrid(BuildContext context) {
     final selectionProvider = Provider.of<SelectionProvider>(
       context,
       listen: false,
@@ -255,10 +154,21 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     return Selector<SelectionProvider, Set<BaseEntity>>(
       selector: (context, p) => p.selectedEntities,
       builder: (context, selected, child) {
-        return CustomGridComponent(
-          items: state.items,
+        return PaginatedComponent(
+          type: TileType.grid,
+          reloadToken: _reloadToken,
+          onRefresh: widget.provider.refresh,
+          fetchPage:
+              (page, size) => widget.provider.fetchPage(
+                _query,
+                _sortField,
+                _ascending,
+                _localOnly,
+                page,
+                size,
+              ),
           isSelected: (entity) => selected.contains(entity),
-          onTap: (entity) async {
+          onTap: (entity, items) async {
             if (selected.isNotEmpty) {
               if (selected.contains(entity)) {
                 selectionProvider.deselectEntity(entity);
@@ -267,74 +177,49 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
               }
               return;
             }
-            await widget.onEntityTap(entity, state.items, context);
+            await widget.onEntityTap(entity, items, context);
           },
-          onLongPress: (entity) {
+          onLongPress: (entity, items) {
             if (selected.contains(entity)) {
               selectionProvider.deselectEntity(entity);
             } else {
               selectionProvider.selectEntity(entity);
             }
           },
-          buildLeftAction: (entity) {
-            if (selected.contains(entity)) return const SizedBox.shrink();
-            return widget.buildLeftAction(entity, context);
-          },
-          buildMainAction: (entity) {
-            if (selected.contains(entity)) {
-              return const Icon(FluentIcons.checkCircleOn, color: Colors.white);
-            }
-            if (selected.isNotEmpty) {
-              return const Icon(
-                FluentIcons.checkCircleOff,
-                color: Colors.white,
-              );
-            }
-            return widget.buildMainAction(entity, context);
-          },
-          buildRightAction: (entity) {
-            if (selected.contains(entity)) return const SizedBox.shrink();
-            return widget.buildRightAction(entity, context);
-          },
+          actions: [
+            // [0] main action
+            (entity) {
+              if (selected.contains(entity)) {
+                return const Icon(
+                  FluentIcons.checkCircleOn,
+                  color: Colors.white,
+                );
+              }
+              if (selected.isNotEmpty) {
+                return const Icon(
+                  FluentIcons.checkCircleOff,
+                  color: Colors.white,
+                );
+              }
+              return widget.buildMainAction(entity, context);
+            },
+            // [1] secondary action
+            (entity) {
+              if (selected.contains(entity)) return const SizedBox.shrink();
+              return widget.buildLeftAction(entity, context);
+            },
+            // [2+] extra dropdown items
+            for (final actionFn in widget.extraActions)
+              (entity) => actionFn(entity, context),
+          ],
+          onDropdownSelected:
+              (entity, i) => widget.onDropdownAction(entity, i, context),
           buildExtraTile:
               widget.buildExtraTile == null
                   ? null
                   : () => widget.buildExtraTile!(context),
         );
       },
-    );
-  }
-}
-
-class _PagedViewState {
-  final List<dynamic> items;
-  final int currentPage;
-  final bool isLoading;
-  final bool hasMore;
-  final Object? error;
-
-  const _PagedViewState({
-    this.items = const [],
-    this.currentPage = 0,
-    this.isLoading = false,
-    this.hasMore = true,
-    this.error,
-  });
-
-  _PagedViewState copyWith({
-    List<dynamic>? items,
-    int? currentPage,
-    bool? isLoading,
-    bool? hasMore,
-    Object? error,
-    bool clearError = false,
-  }) {
-    return _PagedViewState(
-      items: items ?? this.items,
-      currentPage: currentPage ?? this.currentPage,
-      isLoading: isLoading ?? this.isLoading,
-      hasMore: hasMore ?? this.hasMore,
-      error: clearError ? null : (error ?? this.error),
     );
   }
 }

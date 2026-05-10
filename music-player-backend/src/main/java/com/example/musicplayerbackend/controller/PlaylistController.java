@@ -31,26 +31,26 @@ public class PlaylistController implements PlaylistsApi {
     }
 
     @Override
-    public ResponseEntity<PlaylistDetailDto> getPlaylistByName(String name) {
+    public ResponseEntity<PlaylistExpandedDto> getPlaylistByName(String name) {
         User user = currentUser();
         return ResponseEntity.ok(playlistService.getPlaylistByName(user.getId(), name));
     }
 
     @Override
-    public ResponseEntity<PlaylistDetailDto> createPlaylist(CreatePlaylistDto body) {
+    public ResponseEntity<PlaylistExpandedDto> createPlaylist(CreatePlaylistDto body) {
         User user = currentUser();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(playlistService.createPlaylist(user, body));
     }
 
     @Override
-    public ResponseEntity<PlaylistDetailDto> getPlaylistById(Long playlistId) {
+    public ResponseEntity<PlaylistExpandedDto> getPlaylistById(Long playlistId) {
         User user = currentUser();
         return ResponseEntity.ok(playlistService.getPlaylistById(playlistId, user.getId()));
     }
 
     @Override
-    public ResponseEntity<PlaylistDetailDto> updatePlaylist(Long playlistId, UpdatePlaylistDto body) {
+    public ResponseEntity<PlaylistExpandedDto> updatePlaylist(Long playlistId, UpdatePlaylistDto body) {
         User user = currentUser();
         return ResponseEntity.ok(playlistService.updatePlaylist(playlistId, user.getId(), body));
     }

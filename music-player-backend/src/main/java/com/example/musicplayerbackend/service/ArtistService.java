@@ -1,10 +1,7 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.ArtistRepository;
-import com.example.musicplayerbackend.domain.Album;
-import com.example.musicplayerbackend.domain.Artist;
-import com.example.musicplayerbackend.domain.ArtistDetailDto;
-import com.example.musicplayerbackend.domain.ArtistPageDto;
+import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.ArtistMapper;
 import com.example.musicplayerbackend.mapper.SortMapper;
@@ -15,6 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -48,11 +48,17 @@ public class ArtistService {
     }
 
     @Transactional(readOnly = true)
-    public ArtistDetailDto getArtistByHash(String artistHash, Long userId) {
+    public ArtistExpandedDto getArtistByHash(String artistHash, Long userId) {
         Artist artist = artistRepository.findByHash(artistHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
-        ArtistDetailDto dto = artistMapper.toDetailDto(artist);
-        dto.setSongs(songEnrichmentService.enrich(artist.getSongs(), userId));
+
+        ArtistExpandedDto dto = artistMapper.toExpandedDto(artist);
+        List<Song> filteredSongs = artist.getSongs().stream()
+                .filter(song -> Objects.isNull(song.getOwnerId()) || Objects.equals(song.getOwnerId(), userId))
+                .toList();
+        dto.setSongFileHashes(filteredSongs.stream()
+                .map(Song::getFileHash)
+                .toList());
         return dto;
     }
 

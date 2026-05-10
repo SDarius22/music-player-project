@@ -43,7 +43,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   }
 
   @override
-  Future<PageResult> fetchPage(
+  Future<PageResult<Song>> fetchPage(
     String query,
     String sortField,
     bool ascending,
@@ -51,18 +51,13 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     int page,
     int size,
   ) async {
-    final result = await _songService.getSongsPage(
+    return await _songService.getSongsPage(
       query,
       sortField,
       ascending,
       localOnly,
       page,
       size,
-    );
-    return PageResult(
-      content: result.content,
-      totalPages: result.totalPages,
-      page: result.page,
     );
   }
 

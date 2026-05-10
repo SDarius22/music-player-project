@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
-import 'package:music_player_frontend/core/ui/components/tiling/list_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/custom_tile_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:provider/provider.dart';
 
 class QueueTab extends StatelessWidget {
@@ -27,7 +28,8 @@ class QueueTab extends StatelessWidget {
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(right: width * 0.01),
-            sliver: ListComponent(
+            sliver: CustomTileComponent(
+              tileType: TileType.list,
               items: Provider.of<AudioProvider>(context).normalQueue,
               itemExtent: height * 0.085,
               isSelected: (entity) {
