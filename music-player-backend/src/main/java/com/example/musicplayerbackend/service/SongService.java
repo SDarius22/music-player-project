@@ -3,6 +3,7 @@ package com.example.musicplayerbackend.service;
 import com.example.musicplayerbackend.data.AlbumRepository;
 import com.example.musicplayerbackend.data.ArtistRepository;
 import com.example.musicplayerbackend.data.ChunkRepository;
+import com.example.musicplayerbackend.data.PlaylistSongRepository;
 import com.example.musicplayerbackend.data.SongChunkRepository;
 import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.UserLibraryRepository;
@@ -13,6 +14,7 @@ import com.example.musicplayerbackend.domain.Chunk;
 import com.example.musicplayerbackend.domain.ContentType;
 import com.example.musicplayerbackend.domain.NegotiationRequestDto;
 import com.example.musicplayerbackend.domain.NegotiationResponseDto;
+import com.example.musicplayerbackend.domain.PlaylistSong;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongChunk;
 import com.example.musicplayerbackend.domain.SongDto;
@@ -31,14 +33,19 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +61,7 @@ public class SongService {
   private final AlbumRepository albumRepository;
   private final ChunkRepository chunkRepository;
   private final SongChunkRepository songChunkRepository;
+  private final PlaylistSongRepository playlistSongRepository;
   private final UserLibraryRepository userLibraryRepository;
   private final SongMapper songMapper;
   private final SongEnrichmentService songEnrichmentService;
@@ -72,6 +80,16 @@ public class SongService {
   public Page<SongDto> getSongsVisibleToUser(String q, String filterAlbumHash,
       String filterArtistHash, Long filterPlaylistId, User user, Pageable pageable) {
 
+    boolean hasAlbumFilter = hasText(filterAlbumHash);
+    boolean hasArtistFilter = hasText(filterArtistHash);
+    boolean hasPlaylistFilter = filterPlaylistId != null;
+
+    int activeFilterCount = (hasAlbumFilter ? 1 : 0) + (hasArtistFilter ? 1 : 0)
+        + (hasPlaylistFilter ? 1 : 0);
+    if (activeFilterCount > 1) {
+      return new PageImpl<>(List.of(), pageable, 0);
+    }
+
     Specification<Song> spec = SongSpecification.visibleToUser(user.getId());
 
     Specification<Song> querySpec = SongSpecification.matchesQuery(q);
@@ -79,24 +97,87 @@ public class SongService {
       spec = spec.and(querySpec);
     }
 
-    Specification<Song> albumSpec = SongSpecification.hasAlbumHash(filterAlbumHash);
-    if (albumSpec != null) {
-      spec = spec.and(albumSpec);
+    if (hasAlbumFilter) {
+      spec = spec.and(SongSpecification.hasAlbumHash(filterAlbumHash));
     }
 
-    Specification<Song> artistSpec = SongSpecification.hasArtistHash(filterArtistHash);
-    if (artistSpec != null) {
-      spec = spec.and(artistSpec);
+    if (hasArtistFilter) {
+      spec = spec.and(SongSpecification.hasArtistHash(filterArtistHash));
     }
 
-    Specification<Song> playlistSpec = SongSpecification.inPlaylist(filterPlaylistId);
-    if (playlistSpec != null) {
-      spec = spec.and(playlistSpec);
+    if (hasPlaylistFilter) {
+      spec = spec.and(SongSpecification.inPlaylist(filterPlaylistId));
+      return getPlaylistOrderedSongs(spec, filterPlaylistId, user.getId(), pageable);
+    }
+
+    Sort effectiveSort = null;
+    if (hasAlbumFilter) {
+      effectiveSort = Sort.by(
+          Sort.Order.asc("trackNumber"),
+          Sort.Order.asc("discNumber"),
+          Sort.Order.asc("name")
+      );
+    } else if (hasArtistFilter) {
+      effectiveSort = Sort.by(Sort.Order.asc("name"));
+    }
+
+    if (effectiveSort != null) {
+      if (pageable.isPaged()) {
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+            effectiveSort);
+        Page<Song> songs = songRepository.findAll(spec, sortedPageable);
+        List<SongDto> enriched = songEnrichmentService.enrich(songs.getContent(), user.getId());
+        return new PageImpl<>(enriched, sortedPageable, songs.getTotalElements());
+      }
+      List<Song> songs = songRepository.findAll(spec, effectiveSort);
+      List<SongDto> enriched = songEnrichmentService.enrich(songs, user.getId());
+      return new PageImpl<>(enriched, pageable, songs.size());
     }
 
     Page<Song> songs = songRepository.findAll(spec, pageable);
     List<SongDto> enriched = songEnrichmentService.enrich(songs.getContent(), user.getId());
     return new PageImpl<>(enriched, pageable, songs.getTotalElements());
+  }
+
+  private Page<SongDto> getPlaylistOrderedSongs(Specification<Song> spec, Long playlistId, Long userId,
+      Pageable pageable) {
+    List<PlaylistSong> playlistSongs = playlistSongRepository
+        .findByPlaylist_IdOrderById_PositionAsc(playlistId);
+
+    if (playlistSongs.isEmpty()) {
+      return new PageImpl<>(List.of(), pageable, 0);
+    }
+
+    Map<String, Integer> orderByHash = new HashMap<>();
+    int order = 0;
+    for (PlaylistSong playlistSong : playlistSongs) {
+      if (playlistSong.getSong() != null && playlistSong.getSong().getFileHash() != null) {
+        orderByHash.putIfAbsent(playlistSong.getSong().getFileHash(), order++);
+      }
+    }
+
+    List<Song> songs = songRepository.findAll(spec);
+    songs.sort(Comparator.comparingInt(song -> orderByHash.getOrDefault(song.getFileHash(), Integer.MAX_VALUE)));
+
+    List<Song> pagedSongs;
+    if (pageable.isPaged()) {
+      long from = pageable.getOffset();
+      if (from >= songs.size()) {
+        return new PageImpl<>(List.of(), pageable, songs.size());
+      }
+      int fromIndex = (int) from;
+      int toIndex = (int) Math.min(from + pageable.getPageSize(), songs.size());
+      pagedSongs = songs.subList(fromIndex, toIndex);
+    } else {
+      pagedSongs = songs;
+    }
+
+    List<SongDto> enriched = songEnrichmentService.enrich(pagedSongs, userId);
+    return new PageImpl<>(enriched, pageable, songs.size());
+  }
+
+  private boolean hasText(String value) {
+    return value != null && !value.isBlank();
   }
 
   @Transactional(readOnly = true)

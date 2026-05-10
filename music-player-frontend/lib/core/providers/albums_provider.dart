@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
@@ -13,8 +14,9 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
 
   String get defaultSortField => 'Name';
 
-  Future<Album?> fetchAlbumDetails(String albumHash) async {
-    return await _albumService.fetchAlbumDetails(albumHash);
+  @override
+  Future<Album?> fetchEntity(BaseEntity album) async {
+    return await _albumService.fetchAlbumDetails(album.getHash());
   }
 
   @override

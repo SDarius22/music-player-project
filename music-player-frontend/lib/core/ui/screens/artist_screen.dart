@@ -30,9 +30,9 @@ class ArtistScreen extends EntityScreen {
   Future<BaseEntity> loadEntityData(BuildContext context) async {
     final artist = entity as Artist;
     try {
-      final fetchedArtist = await context
-          .read<ArtistProvider>()
-          .fetchArtistDetails(artist.hash);
+      final fetchedArtist = await context.read<ArtistProvider>().fetchEntity(
+        artist,
+      );
       return fetchedArtist!;
     } catch (e) {
       debugPrint("Error fetching artist details: $e");
@@ -112,7 +112,7 @@ class ArtistScreen extends EntityScreen {
   }
 
   @override
-  Widget buildBody(BuildContext context, BaseEntity entity) {
+  Widget _buildBody(BuildContext context, BaseEntity entity) {
     var artist = entity as Artist;
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;

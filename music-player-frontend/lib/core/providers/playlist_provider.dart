@@ -1,13 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 
 class PlaylistProvider with ChangeNotifier implements QueryableProvider {
-
   final PlaylistService _playlistService;
 
   PlaylistProvider(this._playlistService);
@@ -41,7 +41,9 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     );
   }
 
-  Future<Playlist> fetchPlaylistDetails(Playlist playlist) async {
+  @override
+  Future<Playlist?> fetchEntity(BaseEntity playlist) async {
+    if (playlist is! Playlist) return null;
     return await _playlistService.getPlaylistDetails(playlist);
   }
 
@@ -50,7 +52,11 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     notifyListeners();
   }
 
-  Future<void> addPlaylist(String name, List<Song> songs, Uint8List? coverArt) async {
+  Future<void> addPlaylist(
+    String name,
+    List<Song> songs,
+    Uint8List? coverArt,
+  ) async {
     await _playlistService.addPlaylist(name, songs, coverArt);
     notifyListeners();
   }
@@ -60,11 +66,13 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     notifyListeners();
   }
 
-  Future<({List<Playlist> content, int page, int totalPages})> getIndestructiblePlaylists(int page, int size) async {
+  Future<({List<Playlist> content, int page, int totalPages})>
+  getIndestructiblePlaylists(int page, int size) async {
     return await _playlistService.getIndestructiblePlaylists(page, size);
   }
 
-  Future<({List<Playlist> content, int page, int totalPages})> getNormalPlaylists(int page, int size) async {
+  Future<({List<Playlist> content, int page, int totalPages})>
+  getNormalPlaylists(int page, int size) async {
     return await _playlistService.getNormalPlaylists(page, size);
   }
 

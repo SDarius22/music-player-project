@@ -189,7 +189,7 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
       final songProvider = Provider.of<SongProvider>(context, listen: false);
       selected.value =
           widget.songFileHashes
-              .map((path) => songProvider.fetchSongByFileHash(path))
+              .map((hash) => songProvider.fetchEntity(Song(hash)))
               .whereType<Song>()
               .toList();
       if (selected.value.isNotEmpty) {

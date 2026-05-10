@@ -7,6 +7,7 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/custom_tile_component.dart';
+import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
@@ -17,38 +18,20 @@ import 'package:provider/provider.dart';
 
 import 'abstract/route_builder.dart';
 
-class AlbumScreen extends EntityScreen {
+class AlbumScreen extends EntityScreen<AlbumProvider> {
   static Route<void> route({required Album album}) {
     return buildFadeRoute(
-      (context, animation, secondaryAnimation) => AlbumScreen(entity: album),
+      (context, animation, secondaryAnimation) =>
+          AlbumScreen(entity: album, provider: context.read<AlbumProvider>()),
       settings: RouteSettings(name: "/album/${album.getHash()}"),
     );
   }
 
-  const AlbumScreen({super.key, required super.entity});
-
-  @override
-  Future<BaseEntity> loadEntityData(BuildContext context) async {
-    final album = entity as Album;
-    try {
-      var fetchedAlbum = await context.read<AlbumProvider>().fetchAlbumDetails(
-        album.getHash(),
-      );
-      fetchedAlbum!.songs.sort((a, b) {
-        final discComparison = a.discNumber.compareTo(b.discNumber);
-        if (discComparison != 0) return discComparison;
-
-        final trackComparison = a.trackNumber.compareTo(b.trackNumber);
-        if (trackComparison != 0) return trackComparison;
-
-        return a.name.compareTo(b.name);
-      });
-      return fetchedAlbum;
-    } catch (e) {
-      debugPrint("Error loading album details: $e");
-      return album;
-    }
-  }
+  const AlbumScreen({
+    super.key,
+    required super.entity,
+    required super.provider,
+  });
 
   @override
   PreferredSizeWidget buildAppBar(BuildContext context, BaseEntity entity) {
@@ -98,14 +81,7 @@ class AlbumScreen extends EntityScreen {
               padding: EdgeInsets.all(height * 0.005),
               onPressed: () async {
                 debugPrint("Play ${album.name}");
-                var audioProvider = Provider.of<AudioProvider>(
-                  context,
-                  listen: false,
-                );
-                await audioProvider.setQueueAndPlay(
-                  album.getSongs(),
-                  album.getSongs().first,
-                );
+                await _playAlbum(context, album);
               },
               icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
             ),
@@ -122,213 +98,217 @@ class AlbumScreen extends EntityScreen {
   }
 
   @override
-  Widget buildBody(BuildContext context, BaseEntity entity) {
+  Widget buildCompactBody(
+    BuildContext context,
+    BaseEntity entity,
+    BoxConstraints constraints,
+  ) {
     final album = entity as Album;
-    var width = MediaQuery.of(context).size.width;
-    var height = MediaQuery.of(context).size.height;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
-        if (isMobile) {
-          final imageSize = constraints.maxWidth * 0.45;
-          return Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: width * 0.05,
-                  vertical: height * 0.02,
-                ),
-                child: Column(
-                  children: [
-                    Hero(
-                      tag: album.getHash(),
-                      child: Container(
-                        height: imageSize,
-                        width: imageSize,
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: ImageWidget(entity: album),
-                        ),
-                      ),
-                    ),
-                    Text(
-                      album.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      album.getArtistName(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "${album.getSongs().length} Songs | ${Duration(seconds: album.getDurationInSeconds()).pretty()}",
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: GlassContainer(
-                  margin: EdgeInsets.only(
-                    left: width * 0.05,
-                    right: width * 0.05,
-                    bottom: height * 0.025,
-                  ),
-                  color: Colors.black.withValues(alpha: 0.4),
-                  borderColor: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  blur: 45.0,
-                  borderWidth: 0.0,
-                  elevation: 3.0,
-                  shadowColor: Colors.black.withValues(alpha: 0.20),
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverPadding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: height * 0.01,
-                          horizontal: width * 0.01,
-                        ),
-                        sliver: CustomTileComponent(
-                          tileType: TileType.list,
-                          items: album.getSongs(),
-                          itemExtent: height * 0.1,
-                          isSelected: (entity) => false,
-                          onTap: (entity) async {
-                            var audioProvider = Provider.of<AudioProvider>(
-                              context,
-                              listen: false,
-                            );
-                            await audioProvider.setQueueAndPlay(
-                              album.getSongs(),
-                              entity as Song,
-                            );
-                          },
-                          onLongPress: (entity) {},
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+    final imageSize = constraints.maxWidth * 0.45;
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Hero(
-                      tag: album.getHash(),
-                      child: Container(
-                        height: height * 0.5,
-                        width: height * 0.5,
-                        padding: EdgeInsets.only(bottom: height * 0.01),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            MediaQuery.of(context).size.height * 0.015,
-                          ),
-                          child: ImageWidget(entity: album),
-                        ),
-                      ),
-                    ),
-                    Text(
-                      album.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    SizedBox(height: height * 0.005),
-                    Text(
-                      album.getArtistName(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    SizedBox(height: height * 0.005),
-                    Text(
-                      "${album.getSongs().length} Songs | ${Duration(seconds: album.getDurationInSeconds()).pretty()}",
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: width * 0.05,
+            vertical: height * 0.02,
+          ),
+          child: _buildAlbumHeader(
+            context,
+            album,
+            imageSize: imageSize,
+            borderRadius: BorderRadius.circular(12),
+            infoSpacing: 4,
+            artworkBottomPadding: 8,
+          ),
+        ),
+        Expanded(
+          child: _buildSongsPanel(
+            context,
+            album,
+            margin: EdgeInsets.only(
+              left: width * 0.05,
+              right: width * 0.05,
+              bottom: height * 0.025,
             ),
-            Expanded(
-              child: GlassContainer(
-                margin: EdgeInsets.only(
-                  top: height * 0.025,
-                  bottom: height * 0.025,
-                  right: width * 0.05,
-                ),
-                color: Colors.black.withValues(alpha: 0.4),
-                borderColor: Colors.transparent,
-                borderRadius: BorderRadius.circular(
-                  MediaQuery.of(context).size.height * 0.015,
-                ),
-                blur: 45.0,
-                borderWidth: 0.0,
-                elevation: 3.0,
-                shadowColor: Colors.black.withValues(alpha: 0.20),
-                child: CustomScrollView(
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: height * 0.01,
-                        horizontal: width * 0.01,
-                      ),
-                      sliver: CustomTileComponent(
-                        tileType: TileType.list,
-                        items: album.getSongs(),
-                        itemExtent: height * 0.1,
-                        isSelected: (entity) {
-                          return false;
-                        },
-                        onTap: (entity) async {
-                          debugPrint("Tapped on ${entity.getName()}");
-                          var audioProvider = Provider.of<AudioProvider>(
-                            context,
-                            listen: false,
-                          );
-                          await audioProvider.setQueueAndPlay(
-                            album.getSongs(),
-                            entity as Song,
-                          );
-                        },
-                        onLongPress: (entity) {
-                          debugPrint("Long pressed on ${entity.getName()}");
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            borderRadius: BorderRadius.circular(12),
+            itemExtent: height * 0.1,
+            listPadding: EdgeInsets.symmetric(
+              vertical: height * 0.01,
+              horizontal: width * 0.01,
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget buildExpandedBody(
+    BuildContext context,
+    BaseEntity entity,
+    BoxConstraints constraints,
+  ) {
+    final album = entity as Album;
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+    final borderRadius = BorderRadius.circular(height * 0.015);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildAlbumHeader(
+                  context,
+                  album,
+                  imageSize: height * 0.5,
+                  borderRadius: borderRadius,
+                  infoSpacing: height * 0.005,
+                  artworkBottomPadding: height * 0.01,
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: _buildSongsPanel(
+            context,
+            album,
+            margin: EdgeInsets.only(
+              top: height * 0.025,
+              bottom: height * 0.025,
+              right: width * 0.05,
+            ),
+            borderRadius: borderRadius,
+            itemExtent: height * 0.1,
+            listPadding: EdgeInsets.symmetric(
+              vertical: height * 0.01,
+              horizontal: width * 0.01,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAlbumHeader(
+    BuildContext context,
+    Album album, {
+    required double imageSize,
+    required BorderRadius borderRadius,
+    required double infoSpacing,
+    required double artworkBottomPadding,
+  }) {
+    return Column(
+      children: [
+        Hero(
+          tag: album.getHash(),
+          child: Container(
+            height: imageSize,
+            width: imageSize,
+            padding: EdgeInsets.only(bottom: artworkBottomPadding),
+            child: ClipRRect(
+              borderRadius: borderRadius,
+              child: ImageWidget(entity: album),
+            ),
+          ),
+        ),
+        Text(
+          album.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        SizedBox(height: infoSpacing),
+        Text(
+          album.getArtistName(),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        SizedBox(height: infoSpacing),
+        Text(
+          "${album.getSongs().length} Songs | ${Duration(seconds: album.getDurationInSeconds()).pretty()}",
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSongsPanel(
+    BuildContext context,
+    Album album, {
+    required EdgeInsets margin,
+    required BorderRadius borderRadius,
+    required double itemExtent,
+    required EdgeInsets listPadding,
+  }) {
+    return GlassContainer(
+      margin: margin,
+      color: Colors.black.withValues(alpha: 0.4),
+      borderColor: Colors.transparent,
+      borderRadius: borderRadius,
+      blur: 45.0,
+      borderWidth: 0.0,
+      elevation: 3.0,
+      shadowColor: Colors.black.withValues(alpha: 0.20),
+      child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: listPadding,
+            sliver: CustomTileComponent(
+              tileType: TileType.list,
+              items: album.getSongs(),
+              itemExtent: itemExtent,
+              isSelected: (entity) => false,
+              onTap: (entity) async {
+                await _playSong(context, album, entity as Song);
+              },
+              onLongPress: (entity) {},
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _playSong(BuildContext context, Album album, Song song) async {
+    final audioProvider = context.read<AudioProvider>();
+    await audioProvider.setQueueAndPlay(album.getSongs(), song);
+  }
+
+  Future<void> _playAlbum(BuildContext context, Album album) async {
+    if (album.getSongs().isEmpty) {
+      return;
+    }
+    await _playSong(context, album, album.getSongs().first);
+  }
+
+  @override
+  Widget buildContentSection(BuildContext context, BaseEntity entity, BoxConstraints constraints) {
+    return GlassContainer(
+      margin: margin,
+      color: Colors.black.withValues(alpha: 0.4),
+      borderColor: Colors.transparent,
+      borderRadius: borderRadius,
+      blur: 45.0,
+      borderWidth: 0.0,
+      elevation: 3.0,
+      shadowColor: Colors.black.withValues(alpha: 0.20),
+      child: PaginatedComponent(type: , fetchPage: fetchPage, onTap: onTap, onLongPress: onLongPress, isSelected: isSelected, reloadToken: reloadToken)
     );
   }
 }

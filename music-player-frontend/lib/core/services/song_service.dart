@@ -112,6 +112,9 @@ class SongService {
   Future<PageResult<Song>> getSongsPage(
     String query,
     String sortField,
+    String? filterAlbumHash,
+    String? filterArtistHash,
+    int? filterPlaylistId,
     bool ascending,
     bool localOnly,
     int page,
@@ -124,6 +127,9 @@ class SongService {
       }
       final serverPage = await _songRestService.getSongsPage(
         query: query,
+        filterAlbumHash: filterAlbumHash,
+        filterArtistHash: filterArtistHash,
+        filterPlaylistId: filterPlaylistId,
         page: page,
         size: pageSize,
         sort: _toServerSort(sortField, ascending),
@@ -154,9 +160,18 @@ class SongService {
     return PageResult(content: localSongs, totalPages: totalPages, page: page);
   }
 
-  Future<List<Song>> getRecommendations() async {
-    final page = await _songRestService.getRecommendations();
-    return cacheServerSongs(page.content);
+  Future<PageResult<Song>> getRecommendations(int page, int size) async {
+    final serverPage = await _songRestService.getRecommendations(
+      page: page,
+      size: size,
+    );
+    var serverTotalPages = serverPage.totalPages;
+    var recommendations = cacheServerSongs(serverPage.content);
+    return PageResult(
+      content: recommendations,
+      totalPages: serverTotalPages,
+      page: page,
+    );
   }
 
   Future<List<Song>> getForgottenFavourites() async {

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
@@ -38,8 +39,9 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     return await _songService.fullyFetchSong(song);
   }
 
-  Future<Song?> fetchSongByFileHash(String fileHash) async {
-    return await _songService.fetchSongByFileHash(fileHash);
+  @override
+  Future<Song?> fetchEntity(BaseEntity song) async {
+    return await _songService.fetchSongByFileHash(song.getHash());
   }
 
   @override
@@ -49,11 +51,17 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     bool ascending,
     bool localOnly,
     int page,
-    int size,
-  ) async {
+    int size, {
+    String? filterAlbumHash,
+    String? filterArtistHash,
+    int? filterPlaylistId,
+  }) async {
     return await _songService.getSongsPage(
       query,
       sortField,
+      filterAlbumHash,
+      filterArtistHash,
+      filterPlaylistId,
       ascending,
       localOnly,
       page,
@@ -62,7 +70,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   }
 
   Future<List<Song>> fetchRecommendedSongs() async {
-    return await _songService.getRecommendations();
+    return (await _songService.getRecommendations(0, 10)).content;
   }
 
   Future<List<Song>> fetchRediscoverSongs() async {

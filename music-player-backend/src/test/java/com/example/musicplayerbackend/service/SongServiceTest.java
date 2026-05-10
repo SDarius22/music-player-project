@@ -43,6 +43,8 @@ class SongServiceTest {
     @Mock
     SongChunkRepository songChunkRepository;
     @Mock
+    PlaylistSongRepository playlistSongRepository;
+    @Mock
     UserLibraryRepository userLibraryRepository;
     @Mock
     SongEnrichmentService songEnrichmentService;
@@ -59,8 +61,8 @@ class SongServiceTest {
     void setUp() throws Exception {
         songMapper = new SongMapperImpl();
         service = new SongService(songRepository, artistRepository, albumRepository,
-                chunkRepository, songChunkRepository, userLibraryRepository, songMapper,
-                songEnrichmentService, new NegotiationMapperImpl(), defaultPlaylistService);
+                chunkRepository, songChunkRepository, playlistSongRepository, userLibraryRepository,
+                songMapper, songEnrichmentService, new NegotiationMapperImpl(), defaultPlaylistService);
         Field storageRoot = SongService.class.getDeclaredField("STORAGE_ROOT");
         storageRoot.setAccessible(true);
         storageRoot.set(service, tempDir.toString());

@@ -143,6 +143,9 @@ class SongRestClient extends AbstractRestClient {
 
   Future<SongPageDto> getSongsPage({
     String? query,
+    String? filterAlbumHash,
+    String? filterArtistHash,
+    int? filterPlaylistId,
     int page = 0,
     int size = 50,
     String sort = 'name,asc',
@@ -156,6 +159,15 @@ class SongRestClient extends AbstractRestClient {
     };
     if (query != null && query.trim().isNotEmpty) {
       qp['q'] = query.trim();
+    }
+    if (filterAlbumHash != null) {
+      qp['filter[albumHash]'] = filterAlbumHash;
+    }
+    if (filterArtistHash != null) {
+      qp['filter[artistHash]'] = filterArtistHash;
+    }
+    if (filterPlaylistId != null) {
+      qp['filter[playlistId]'] = filterPlaylistId.toString();
     }
 
     final endpoint = '/songs?${Uri(queryParameters: qp).query}';

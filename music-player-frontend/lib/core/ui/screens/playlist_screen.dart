@@ -38,9 +38,9 @@ class PlaylistScreen extends EntityScreen {
     try {
       final fetchedPlaylist = await context
           .read<PlaylistProvider>()
-          .fetchPlaylistDetails(playlist);
+          .fetchEntity(playlist);
       debugPrint("Fetched playlist $fetchedPlaylist");
-      return fetchedPlaylist;
+      return fetchedPlaylist!;
     } catch (e) {
       debugPrint("Error fetching playlist details: $e");
       return playlist;
@@ -48,7 +48,7 @@ class PlaylistScreen extends EntityScreen {
   }
 
   @override
-  Widget buildBody(BuildContext context, BaseEntity entity) {
+  Widget _buildBody(BuildContext context, BaseEntity entity) {
     final playlist = entity as Playlist;
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;

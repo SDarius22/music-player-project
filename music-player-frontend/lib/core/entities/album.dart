@@ -4,11 +4,12 @@ import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/entities/abstract/detailed_entity.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 
 @Entity()
-class Album implements BaseEntity {
+class Album implements BaseEntity, DetailedEntity {
   @Id()
   int id = 0;
 
@@ -47,10 +48,6 @@ class Album implements BaseEntity {
 
   List<Song> getSongs() {
     return List.unmodifiable(songs);
-  }
-
-  String getArtistName() {
-    return artist.target?.getName() ?? 'Unknown Artist';
   }
 
   void setArtist(Artist artist) {
@@ -107,5 +104,10 @@ class Album implements BaseEntity {
   @override
   String toString() {
     return "Album{id: $id, hash: $hash, name: $name, artist: ${artist.target?.name}, songs: ${songs.length}}";
+  }
+
+  @override
+  List<BaseEntity> getDisplayableDetails() {
+    return songs;
   }
 }

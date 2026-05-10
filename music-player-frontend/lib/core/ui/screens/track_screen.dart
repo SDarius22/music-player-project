@@ -97,7 +97,7 @@ class TrackScreen extends EntityScreen {
   }
 
   @override
-  Widget buildBody(BuildContext context, BaseEntity entity) {
+  Widget _buildBody(BuildContext context, BaseEntity entity) {
     var song = entity as Song;
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
