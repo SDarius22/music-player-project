@@ -45,6 +45,8 @@ class SongServiceTest {
     UserLibraryRepository userLibraryRepository;
     @Mock
     SongEnrichmentService songEnrichmentService;
+    @Mock
+    DefaultPlaylistService defaultPlaylistService;
 
     @TempDir
     Path tempDir;
@@ -57,7 +59,7 @@ class SongServiceTest {
         songMapper = new SongMapperImpl();
         service = new SongService(songRepository, artistRepository, albumRepository,
                 chunkRepository, songChunkRepository, userLibraryRepository, songMapper,
-                songEnrichmentService, new NegotiationMapperImpl());
+                songEnrichmentService, new NegotiationMapperImpl(), defaultPlaylistService);
         Field storageRoot = SongService.class.getDeclaredField("STORAGE_ROOT");
         storageRoot.setAccessible(true);
         storageRoot.set(service, tempDir.toString());
