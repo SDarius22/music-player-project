@@ -38,8 +38,7 @@ public class SongController implements SongsApi {
 
   @Override
   public ResponseEntity<SongPageDto> getAllSongs(@Nullable String q, Integer page, Integer size,
-      String sort, @Nullable String filterAlbumHash, @Nullable String filterArtistHash,
-      @Nullable Long filterPlaylistId) {
+      String sort) {
     int safePage = page == null ? 0 : Math.max(page, 0);
     int safeSize = size == null ? 50 : Math.max(size, 1);
     if (safeSize > 200) {
@@ -50,8 +49,7 @@ public class SongController implements SongsApi {
 
     User user = getCurrentUser();
 
-    Page<SongDto> result = songService.getSongsVisibleToUser(q, filterAlbumHash, filterArtistHash,
-        filterPlaylistId, user, pageable);
+    Page<SongDto> result = songService.getSongsVisibleToUser(q, user, pageable);
 
     return ResponseEntity.ok(new SongPageDto(
         result.getContent(),

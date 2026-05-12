@@ -2,10 +2,13 @@ package com.example.musicplayerbackend.integration;
 
 import com.example.musicplayerbackend.data.AlbumRepository;
 import com.example.musicplayerbackend.data.ArtistRepository;
+import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.UserRepository;
 import com.example.musicplayerbackend.domain.Album;
 import com.example.musicplayerbackend.domain.Artist;
+import com.example.musicplayerbackend.domain.ContentType;
 import com.example.musicplayerbackend.domain.Role;
+import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +30,8 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     ArtistRepository artistRepository;
     @Autowired
+    SongRepository songRepository;
+    @Autowired
     UserRepository userRepository;
 
     User testUser;
@@ -42,10 +47,30 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
                 .artists(Set.of(artist))
                 .coverImage(Base64.getEncoder().encodeToString("img".getBytes()))
                 .build());
+
+        songRepository.save(Song.builder()
+                .name("Disc 2 Track 1")
+                .artist(artist)
+                .album(album)
+                .discNumber(2)
+                .trackNumber(1)
+                .songType(ContentType.STREAMABLE)
+                .fileHash("album-song-002001")
+                .build());
+        songRepository.save(Song.builder()
+                .name("Disc 1 Track 2")
+                .artist(artist)
+                .album(album)
+                .discNumber(1)
+                .trackNumber(2)
+                .songType(ContentType.STREAMABLE)
+                .fileHash("album-song-001002")
+                .build());
     }
 
     @AfterEach
     void tearDown() {
+        songRepository.deleteAll();
         albumRepository.deleteAll();
         artistRepository.deleteAll();
         userRepository.deleteById(testUser.getId());
@@ -117,5 +142,13 @@ class AlbumControllerIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/v1/albums/{hash}", album.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.artist.name").value("Test Artist"));
+    }
+
+    @Test
+    void shouldReturnAlbumSongsOrderedByDiscThenTrack() throws Exception {
+        mockMvc.perform(get("/api/v1/albums/{hash}/songs", album.getHash()).with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].fileHash").value("album-song-001002"))
+                .andExpect(jsonPath("$.content[1].fileHash").value("album-song-002001"));
     }
 }

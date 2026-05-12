@@ -2,6 +2,7 @@ package com.example.musicplayerbackend.controller;
 
 import com.example.musicplayerbackend.domain.ArtistExpandedDto;
 import com.example.musicplayerbackend.domain.ArtistPageDto;
+import com.example.musicplayerbackend.domain.SongPageDto;
 import com.example.musicplayerbackend.domain.User;
 import com.example.musicplayerbackend.service.ArtistService;
 import lombok.RequiredArgsConstructor;
@@ -47,5 +48,10 @@ public class ArtistController implements ArtistsApi {
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
                 .body(new ByteArrayResource(bytes));
+    }
+
+    @Override
+    public ResponseEntity<SongPageDto> getArtistSongs(String artistHash, Integer page, Integer size) {
+        return ResponseEntity.ok(artistService.getArtistSongs(artistHash, currentUserId(), page, size));
     }
 }

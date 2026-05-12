@@ -1,12 +1,17 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.AlbumRepository;
+import com.example.musicplayerbackend.data.SongRepository;
+import com.example.musicplayerbackend.data.specification.SongSpecification;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
 import com.example.musicplayerbackend.mapper.SortMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +26,7 @@ import java.util.Objects;
 public class AlbumService {
 
     private final AlbumRepository albumRepository;
+    private final SongRepository songRepository;
     private final AlbumMapper albumMapper;
     private final SortMapper sortMapper;
     private final SongEnrichmentService songEnrichmentService;
@@ -71,6 +77,30 @@ public class AlbumService {
         Album album = albumRepository.findByHash(albumHash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
         return CoverDecoder.decodeCoverImage(album.getCoverImage());
+    }
+
+    @Transactional(readOnly = true)
+    public SongPageDto getAlbumSongs(String albumHash, Long userId, Integer page, Integer size) {
+        Album album = albumRepository.findByHash(albumHash)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Album not found"));
+
+        int safePage = page == null ? 0 : Math.max(page, 0);
+        int safeSize = size == null ? 50 : Math.clamp(size, 1, 200);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(
+                Sort.Order.asc("discNumber").nullsLast(),
+                Sort.Order.asc("trackNumber").nullsLast(),
+                Sort.Order.asc("name"),
+                Sort.Order.asc("fileHash")
+        ));
+
+        Specification<Song> spec = SongSpecification.visibleToUser(userId)
+                .and(SongSpecification.hasAlbumHash(album.getHash()));
+
+        var result = songRepository.findAll(spec, pageable);
+        var content = songEnrichmentService.enrich(result.getContent(), userId);
+
+        return new SongPageDto(content, result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages());
     }
 
     private Artist getMainArtist(Album album) {

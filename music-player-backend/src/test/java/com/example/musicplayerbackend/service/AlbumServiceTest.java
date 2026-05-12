@@ -1,6 +1,7 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.AlbumRepository;
+import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.AlbumMapper;
@@ -38,6 +39,9 @@ class AlbumServiceTest {
     SortMapper sortMapper;
 
     @Mock
+    SongRepository songRepository;
+
+    @Mock
     SongEnrichmentService songEnrichmentService;
 
     AlbumMapper albumMapper;
@@ -51,7 +55,7 @@ class AlbumServiceTest {
         ReflectionTestUtils.setField(mapper, "artistMapper", new ArtistMapperImpl());
         albumMapper = mapper;
 
-        service = new AlbumService(albumRepository, albumMapper, sortMapper, songEnrichmentService);
+        service = new AlbumService(albumRepository, songRepository, albumMapper, sortMapper, songEnrichmentService);
         org.mockito.Mockito.lenient().when(sortMapper.toSort(any())).thenReturn(org.springframework.data.domain.Sort.by("name"));
         org.mockito.Mockito.lenient().when(songEnrichmentService.enrich(anyList(), any())).thenAnswer(inv -> {
             List<Song> songs = inv.getArgument(0);

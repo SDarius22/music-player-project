@@ -51,6 +51,13 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
                 .songType(ContentType.STREAMABLE)
                 .fileHash("artist-test-hash-001")
                 .build());
+        songRepository.save(Song.builder()
+                .name("Another Song")
+                .artist(artist)
+                .album(album)
+                .songType(ContentType.STREAMABLE)
+                .fileHash("artist-test-hash-000")
+                .build());
     }
 
     @AfterEach
@@ -118,5 +125,13 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/v1/artists/{artistHash}", artist.getHash()).with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.songFileHashes", not(empty())));
+    }
+
+    @Test
+    void shouldReturnArtistSongsOrderedByName() throws Exception {
+        mockMvc.perform(get("/api/v1/artists/{artistHash}/songs", artist.getHash()).with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].name").value("Another Song"))
+                .andExpect(jsonPath("$.content[1].name").value("Test Song"));
     }
 }

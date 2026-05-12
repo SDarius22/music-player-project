@@ -72,6 +72,12 @@ public class PlaylistController implements PlaylistsApi {
                 .body(new ByteArrayResource(bytes));
     }
 
+    @Override
+    public ResponseEntity<SongPageDto> getPlaylistSongs(Long playlistId, Integer page, Integer size) {
+        User user = currentUser();
+        return ResponseEntity.ok(playlistService.getPlaylistSongs(playlistId, user.getId(), page, size));
+    }
+
     private User currentUser() {
         return (User) Objects.requireNonNull(
                 SecurityContextHolder.getContext().getAuthentication()).getPrincipal();

@@ -9,7 +9,9 @@ import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.PlaylistMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -166,6 +168,39 @@ public class PlaylistService {
         }
 
         return CoverDecoder.decodeCoverImage(firstSong.getAlbum().getCoverImage());
+    }
+
+    @Transactional(readOnly = true)
+    public SongPageDto getPlaylistSongs(Long playlistId, Long userId, Integer page, Integer size) {
+        Playlist playlist = findAndAuthorize(playlistId, userId);
+        List<PlaylistSong> playlistSongs = playlistSongRepository
+                .findByPlaylist_IdOrderById_PositionAsc(playlist.getId());
+
+        List<Song> orderedVisibleSongs = playlistSongs.stream()
+                .map(PlaylistSong::getSong)
+                .filter(Objects::nonNull)
+                .filter(song -> song.getOwnerId() == null || Objects.equals(song.getOwnerId(), userId))
+                .toList();
+
+        int safePage = page == null ? 0 : Math.max(page, 0);
+        int safeSize = size == null ? 50 : Math.clamp(size, 1, 200);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+
+        long from = pageable.getOffset();
+        List<Song> pagedSongs;
+        if (from >= orderedVisibleSongs.size()) {
+            pagedSongs = List.of();
+        } else {
+            int fromIndex = (int) from;
+            int toIndex = Math.min(fromIndex + pageable.getPageSize(), orderedVisibleSongs.size());
+            pagedSongs = orderedVisibleSongs.subList(fromIndex, toIndex);
+        }
+
+        var enriched = songEnrichmentService.enrich(pagedSongs, userId);
+        Page<SongDto> result = new PageImpl<>(enriched, pageable, orderedVisibleSongs.size());
+
+        return new SongPageDto(result.getContent(), result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages());
     }
 
     private PlaylistExpandedDto toDetailDto(Playlist playlist) {

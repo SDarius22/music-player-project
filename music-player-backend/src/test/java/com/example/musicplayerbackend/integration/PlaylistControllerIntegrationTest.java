@@ -1,6 +1,7 @@
 package com.example.musicplayerbackend.integration;
 
 import com.example.musicplayerbackend.data.PlaylistRepository;
+import com.example.musicplayerbackend.data.PlaylistSongRepository;
 import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.UserRepository;
 import com.example.musicplayerbackend.domain.*;
@@ -25,6 +26,8 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     PlaylistRepository playlistRepository;
     @Autowired
+    PlaylistSongRepository playlistSongRepository;
+    @Autowired
     UserRepository userRepository;
     @Autowired
     SongRepository songRepository;
@@ -42,6 +45,7 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        playlistSongRepository.deleteAll();
         playlistRepository.deleteAll();
         songRepository.deleteAll();
         userRepository.deleteById(testUser.getId());
@@ -221,5 +225,38 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/v1/playlists/{id}/cover", playlist.getId()).with(user(testUser)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnPlaylistSongsOrderedByPosition() throws Exception {
+        Song second = songRepository.save(Song.builder()
+                .name("Second")
+                .songType(ContentType.STREAMABLE)
+                .fileHash("playlist-song-2")
+                .build());
+        Song first = songRepository.save(Song.builder()
+                .name("First")
+                .songType(ContentType.STREAMABLE)
+                .fileHash("playlist-song-1")
+                .build());
+        Playlist playlist = playlistRepository.save(Playlist.builder().user(testUser)
+                .name("Ordered")
+                .createdAt(Instant.now()).updatedAt(Instant.now()).build());
+
+        playlistSongRepository.save(PlaylistSong.builder()
+                .id(new PlaylistSongId(playlist.getId(), 0))
+                .playlist(playlist)
+                .song(first)
+                .build());
+        playlistSongRepository.save(PlaylistSong.builder()
+                .id(new PlaylistSongId(playlist.getId(), 1))
+                .playlist(playlist)
+                .song(second)
+                .build());
+
+        mockMvc.perform(get("/api/v1/playlists/{id}/songs", playlist.getId()).with(user(testUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].fileHash").value("playlist-song-1"))
+                .andExpect(jsonPath("$.content[1].fileHash").value("playlist-song-2"));
     }
 }

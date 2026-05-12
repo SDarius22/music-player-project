@@ -1,6 +1,8 @@
 package com.example.musicplayerbackend.service;
 
 import com.example.musicplayerbackend.data.ArtistRepository;
+import com.example.musicplayerbackend.data.SongRepository;
+import com.example.musicplayerbackend.data.specification.SongSpecification;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.ArtistMapper;
@@ -8,6 +10,8 @@ import com.example.musicplayerbackend.mapper.SortMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +25,7 @@ import java.util.Objects;
 public class ArtistService {
 
     private final ArtistRepository artistRepository;
+    private final SongRepository songRepository;
     private final ArtistMapper artistMapper;
     private final SortMapper sortMapper;
     private final SongEnrichmentService songEnrichmentService;
@@ -79,5 +84,25 @@ public class ArtistService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cover not found"));
 
         return CoverDecoder.decodeCoverImage(coverImage);
+    }
+
+    @Transactional(readOnly = true)
+    public SongPageDto getArtistSongs(String artistHash, Long userId, Integer page, Integer size) {
+        Artist artist = artistRepository.findByHash(artistHash)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
+
+        int safePage = page == null ? 0 : Math.max(page, 0);
+        int safeSize = size == null ? 50 : Math.clamp(size, 1, 200);
+        Pageable pageable = PageRequest.of(safePage, safeSize,
+                Sort.by(Sort.Order.asc("name"), Sort.Order.asc("fileHash")));
+
+        Specification<Song> spec = SongSpecification.visibleToUser(userId)
+                .and(SongSpecification.hasArtistHash(artist.getHash()));
+
+        var result = songRepository.findAll(spec, pageable);
+        var content = songEnrichmentService.enrich(result.getContent(), userId);
+
+        return new SongPageDto(content, result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages());
     }
 }
