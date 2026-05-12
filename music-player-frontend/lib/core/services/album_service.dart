@@ -4,8 +4,11 @@ import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_expanded_dto.dart';
+import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
@@ -160,6 +163,75 @@ class AlbumService {
     _artistRepository.updateArtist(cachedArtist);
 
     return _albumRepository.saveAlbum(cachedAlbum);
+  }
+
+  Future<PageResult<Song>> getAlbumSongsPage(
+    String albumHash, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 50,
+  }) async {
+    int? serverTotalPages;
+    try {
+      if (localOnly) {
+        throw Exception('Skipping server fetch due to localOnly=true');
+      }
+      final serverPage = await _albumRestService.getAlbumSongsPage(
+        albumHash: albumHash,
+        page: page,
+        size: size,
+      );
+      serverTotalPages = serverPage.totalPages;
+      _songRepository.saveSongs(
+        serverPage.content.map(_cacheServerSong).toList(growable: false),
+      );
+    } catch (e) {
+      _logger.fine('AlbumService: server fetch failed for album songs: $e');
+    }
+
+    final localSongs = _songRepository.getAlbumSongsPaged(
+      albumHash,
+      localOnly,
+      page * size,
+      size,
+    );
+
+    final totalPages =
+        (serverTotalPages != null && serverTotalPages > 0)
+            ? serverTotalPages
+            : ((_songRepository.getAlbumSongCount(albumHash, localOnly) + size - 1) ~/
+                    size)
+                .clamp(1, 999999);
+
+    return PageResult(content: localSongs, totalPages: totalPages, page: page);
+  }
+
+  Song _cacheServerSong(SongDto song) {
+    var cachedSong = _songRepository.getOrCreateSong(song.fileHash);
+    cachedSong.name = song.name;
+    cachedSong.durationInSeconds = song.durationInSeconds;
+    cachedSong.trackNumber = song.trackNumber;
+    cachedSong.discNumber = song.discNumber;
+    cachedSong.year = song.releaseYear;
+    cachedSong.lastPlayed = song.lastPlayed;
+    cachedSong.playCount = song.playCount;
+    cachedSong.likedByUser = song.likedByUser;
+    cachedSong.fullyLoaded = true;
+
+    var artist = _artistRepository.getOrCreateArtist(song.artist.hash, song.artist.name);
+    cachedSong.artist.target = artist;
+
+    var album = _albumRepository.getOrCreateAlbum(song.album.hash, song.album.name, artist);
+    cachedSong.album.target = album;
+
+    var finalSong = _songRepository.saveSong(cachedSong);
+    artist.addSong(finalSong);
+    _artistRepository.updateArtist(artist);
+
+    album.addSong(finalSong);
+    _albumRepository.updateAlbum(album);
+
+    return finalSong;
   }
 
   String _toServerSortField(String sortField) {

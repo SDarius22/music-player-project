@@ -14,6 +14,7 @@ import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_playlist_repository.dart';
+import 'package:music_player_frontend/core/repository/memory/in_memory_song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
@@ -98,15 +99,17 @@ class FakePlaylistRestClient extends PlaylistRestClient {
 void main() {
   group('PlaylistService', () {
     late InMemoryPlaylistRepository playlistRepo;
+    late InMemorySongRepository songRepo;
     late FakeSongService songService;
     late FakePlaylistRestClient restClient;
     late PlaylistService service;
 
     setUp(() {
       playlistRepo = InMemoryPlaylistRepository();
+      songRepo = InMemorySongRepository();
       songService = FakeSongService();
       restClient = FakePlaylistRestClient();
-      service = PlaylistService(playlistRepo, restClient, songService);
+      service = PlaylistService(playlistRepo, restClient, songRepo, songService);
     });
 
     test(

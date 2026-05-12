@@ -11,19 +11,23 @@ import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.da
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 
 class PlaylistService {
   static final _logger = Logger('PlaylistService');
 
   final PlaylistRepository _playlistRepository;
+  final SongRepository _songRepository;
   final SongService _songService;
   final PlaylistRestClient _playlistRestService;
 
   PlaylistService(
     this._playlistRepository,
     this._playlistRestService,
+    this._songRepository,
     this._songService,
   );
 
@@ -341,5 +345,61 @@ class PlaylistService {
     }
 
     return _playlistRepository.savePlaylist(cachedPlaylist);
+  }
+
+  Future<PageResult<Song>> getPlaylistSongsPage(
+    Playlist playlist, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 50,
+  }) async {
+    int? serverTotalPages;
+    List<Song>? serverSongs;
+    try {
+      if (localOnly) {
+        throw Exception('Skipping server fetch due to localOnly=true');
+      }
+      if (playlist.serverId <= 0) {
+        throw Exception('Playlist does not have a valid server ID');
+      }
+      final serverPage = await _playlistRestService.getPlaylistSongsPage(
+        playlistId: playlist.serverId,
+        page: page,
+        size: size,
+      );
+      serverTotalPages = serverPage.totalPages;
+      serverSongs = _songService.cacheServerSongs(serverPage.content);
+    } catch (e) {
+      _logger.fine('PlaylistService: server fetch failed for playlist songs: $e');
+    }
+
+    if (serverSongs != null) {
+      return PageResult(
+        content: serverSongs,
+        totalPages: serverTotalPages ?? 1,
+        page: page,
+      );
+    }
+
+    final localPlaylist =
+        _playlistRepository.getPlaylistByName(playlist.getName()) ?? playlist;
+    final localSongs = _songRepository.getPlaylistSongsPaged(
+      localPlaylist.songFileHashes,
+      localOnly,
+      page * size,
+      size,
+    );
+
+    final totalPages =
+        ((_songRepository.getPlaylistSongCount(
+                      localPlaylist.songFileHashes,
+                      localOnly,
+                    ) +
+                    size -
+                    1) ~/
+                size)
+            .clamp(1, double.maxFinite.toInt());
+
+    return PageResult(content: localSongs, totalPages: totalPages, page: page);
   }
 }

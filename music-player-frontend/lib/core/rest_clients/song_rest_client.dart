@@ -160,17 +160,23 @@ class SongRestClient extends AbstractRestClient {
     if (query != null && query.trim().isNotEmpty) {
       qp['q'] = query.trim();
     }
-    if (filterAlbumHash != null) {
-      qp['filter[albumHash]'] = filterAlbumHash;
-    }
-    if (filterArtistHash != null) {
-      qp['filter[artistHash]'] = filterArtistHash;
-    }
-    if (filterPlaylistId != null) {
-      qp['filter[playlistId]'] = filterPlaylistId.toString();
-    }
 
-    final endpoint = '/songs?${Uri(queryParameters: qp).query}';
+    late final String endpoint;
+    if (filterAlbumHash != null && filterAlbumHash.trim().isNotEmpty) {
+      qp.remove('sort');
+      endpoint =
+          '/albums/$filterAlbumHash/songs?${Uri(queryParameters: qp).query}';
+    } else if (filterArtistHash != null && filterArtistHash.trim().isNotEmpty) {
+      qp.remove('sort');
+      endpoint =
+          '/artists/$filterArtistHash/songs?${Uri(queryParameters: qp).query}';
+    } else if (filterPlaylistId != null) {
+      qp.remove('sort');
+      endpoint =
+          '/playlists/$filterPlaylistId/songs?${Uri(queryParameters: qp).query}';
+    } else {
+      endpoint = '/songs?${Uri(queryParameters: qp).query}';
+    }
 
     try {
       final response = await get(endpoint);

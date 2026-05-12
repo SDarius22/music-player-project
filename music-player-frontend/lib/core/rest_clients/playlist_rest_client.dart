@@ -5,6 +5,7 @@ import 'package:music_player_frontend/core/dtos/playlists/create_playlist_dto.da
 import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.dart';
+import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
@@ -133,5 +134,42 @@ class PlaylistRestClient extends AbstractRestClient {
       _logger.warning('Error deleting playlist', e);
     }
     return false;
+  }
+
+  Future<SongPageDto> getPlaylistSongsPage({
+    required int playlistId,
+    int page = 0,
+    int size = 50,
+  }) async {
+    final qp = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+    };
+
+    try {
+      final endpoint =
+          '/playlists/$playlistId/songs?${Uri(queryParameters: qp).query}';
+      final response = await get(endpoint);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return SongPageDto.fromJson(decoded);
+        }
+      } else {
+        _logger.warning(
+          'Failed to fetch playlist songs: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      _logger.warning('Error fetching playlist songs', e);
+    }
+
+    return SongPageDto(
+      content: const [],
+      page: page,
+      size: size,
+      totalPages: 0,
+      totalElements: 0,
+    );
   }
 }

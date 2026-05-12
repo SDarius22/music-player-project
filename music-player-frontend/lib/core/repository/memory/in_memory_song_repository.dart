@@ -14,6 +14,16 @@ class InMemorySongRepository implements SongRepository {
     _controller.add(getAllSongs());
   }
 
+  bool _isLocalSong(Song song) => song.path != null && song.path!.isNotEmpty;
+
+  List<Song> _paginate(List<Song> songs, int offset, int limit) {
+    if (offset >= songs.length) {
+      return [];
+    }
+    final end = (offset + limit).clamp(0, songs.length);
+    return songs.sublist(offset, end);
+  }
+
   @override
   Stream watchSongs() {
     return _controller.stream.transform(
@@ -154,6 +164,151 @@ class InMemorySongRepository implements SongRepository {
     final all = getSongs(query, sortField, ascending, localOnly);
     if (offset >= all.length) return [];
     return all.sublist(offset, (offset + limit).clamp(0, all.length));
+  }
+
+  @override
+  int getAlbumSongCount(String albumHash, bool localOnly) {
+    return _byId.values.where((song) {
+      if (!song.fullyLoaded) {
+        return false;
+      }
+      if (song.album.target?.hash != albumHash) {
+        return false;
+      }
+      if (localOnly && !_isLocalSong(song)) {
+        return false;
+      }
+      return true;
+    }).length;
+  }
+
+  @override
+  List<Song> getAlbumSongsPaged(
+    String albumHash,
+    bool localOnly,
+    int offset,
+    int limit,
+  ) {
+    final songs =
+        _byId.values.where((song) {
+          if (!song.fullyLoaded) {
+            return false;
+          }
+          if (song.album.target?.hash != albumHash) {
+            return false;
+          }
+          if (localOnly && !_isLocalSong(song)) {
+            return false;
+          }
+          return true;
+        }).toList();
+
+    songs.sort((a, b) {
+      final discCompare = a.discNumber.compareTo(b.discNumber);
+      if (discCompare != 0) {
+        return discCompare;
+      }
+      final trackCompare = a.trackNumber.compareTo(b.trackNumber);
+      if (trackCompare != 0) {
+        return trackCompare;
+      }
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+
+    return _paginate(songs, offset, limit);
+  }
+
+  @override
+  int getArtistSongCount(String artistHash, bool localOnly) {
+    return _byId.values.where((song) {
+      if (!song.fullyLoaded) {
+        return false;
+      }
+      if (song.artist.target?.hash != artistHash) {
+        return false;
+      }
+      if (localOnly && !_isLocalSong(song)) {
+        return false;
+      }
+      return true;
+    }).length;
+  }
+
+  @override
+  List<Song> getArtistSongsPaged(
+    String artistHash,
+    bool localOnly,
+    int offset,
+    int limit,
+  ) {
+    final songs =
+        _byId.values.where((song) {
+          if (!song.fullyLoaded) {
+            return false;
+          }
+          if (song.artist.target?.hash != artistHash) {
+            return false;
+          }
+          if (localOnly && !_isLocalSong(song)) {
+            return false;
+          }
+          return true;
+        }).toList();
+
+    songs.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return _paginate(songs, offset, limit);
+  }
+
+  @override
+  int getPlaylistSongCount(List<String> songFileHashes, bool localOnly) {
+    final hashSet = songFileHashes.toSet();
+    return _byId.values.where((song) {
+      if (!song.fullyLoaded) {
+        return false;
+      }
+      if (!hashSet.contains(song.fileHash)) {
+        return false;
+      }
+      if (localOnly && !_isLocalSong(song)) {
+        return false;
+      }
+      return true;
+    }).length;
+  }
+
+  @override
+  List<Song> getPlaylistSongsPaged(
+    List<String> songFileHashes,
+    bool localOnly,
+    int offset,
+    int limit,
+  ) {
+    final orderByHash = <String, int>{};
+    for (var i = 0; i < songFileHashes.length; i++) {
+      orderByHash[songFileHashes[i]] = i;
+    }
+
+    final songs =
+        _byId.values.where((song) {
+          if (!song.fullyLoaded) {
+            return false;
+          }
+          if (!orderByHash.containsKey(song.fileHash)) {
+            return false;
+          }
+          if (localOnly && !_isLocalSong(song)) {
+            return false;
+          }
+          return true;
+        }).toList();
+
+    songs.sort((a, b) {
+      final aOrder = orderByHash[a.fileHash] ?? 1 << 30;
+      final bOrder = orderByHash[b.fileHash] ?? 1 << 30;
+      return aOrder.compareTo(bOrder);
+    });
+
+    return _paginate(songs, offset, limit);
   }
 
   @override

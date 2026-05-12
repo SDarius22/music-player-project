@@ -1,4 +1,5 @@
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
 
 abstract class QueryableProvider {
   Map<String, dynamic> get sortFields;
@@ -11,6 +12,13 @@ abstract class QueryableProvider {
     int page,
     int size,
   );
+
+  Future<PageResult<Song>> getSongsPage(
+    String hash, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 10,
+  });
 
   Future<BaseEntity?> fetchEntity(BaseEntity entity);
 

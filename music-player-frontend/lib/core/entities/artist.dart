@@ -34,6 +34,7 @@ class Artist implements BaseEntity {
   }
 
   List<Song> getSongs() {
+    songs.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     return List.unmodifiable(songs);
   }
 

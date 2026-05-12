@@ -4,16 +4,13 @@ import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/entities/abstract/detailed_entity.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 
 @Entity()
-class Album implements BaseEntity, DetailedEntity {
+class Album implements BaseEntity {
   @Id()
   int id = 0;
-
-  bool requiresSync = false;
 
   @Index()
   @Unique()
@@ -47,6 +44,17 @@ class Album implements BaseEntity, DetailedEntity {
   }
 
   List<Song> getSongs() {
+    songs.sort((a, b) {
+      final discCompare = a.discNumber.compareTo(b.discNumber);
+      if (discCompare != 0) {
+        return discCompare;
+      }
+      final trackCompare = a.trackNumber.compareTo(b.trackNumber);
+      if (trackCompare != 0) {
+        return trackCompare;
+      }
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
     return List.unmodifiable(songs);
   }
 
@@ -104,10 +112,5 @@ class Album implements BaseEntity, DetailedEntity {
   @override
   String toString() {
     return "Album{id: $id, hash: $hash, name: $name, artist: ${artist.target?.name}, songs: ${songs.length}}";
-  }
-
-  @override
-  List<BaseEntity> getDisplayableDetails() {
-    return songs;
   }
 }

@@ -32,6 +32,33 @@ abstract class SongRepository {
     int limit,
   );
 
+  int getAlbumSongCount(String albumHash, bool localOnly);
+
+  List<Song> getAlbumSongsPaged(
+    String albumHash,
+    bool localOnly,
+    int offset,
+    int limit,
+  );
+
+  int getArtistSongCount(String artistHash, bool localOnly);
+
+  List<Song> getArtistSongsPaged(
+    String artistHash,
+    bool localOnly,
+    int offset,
+    int limit,
+  );
+
+  int getPlaylistSongCount(List<String> songFileHashes, bool localOnly);
+
+  List<Song> getPlaylistSongsPaged(
+    List<String> songFileHashes,
+    bool localOnly,
+    int offset,
+    int limit,
+  );
+
   List<Song> getAllSongs();
 
   void deleteSong(Song song);

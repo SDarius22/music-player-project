@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 
@@ -40,6 +41,21 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
       content: result.content,
       totalPages: result.totalPages,
       page: result.page,
+    );
+  }
+
+  @override
+  Future<PageResult<Song>> getSongsPage(
+    String hash, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 10,
+  }) async {
+    return await _albumService.getAlbumSongsPage(
+      hash,
+      localOnly: localOnly,
+      page: page,
+      size: size,
     );
   }
 

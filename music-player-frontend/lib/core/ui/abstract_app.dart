@@ -219,6 +219,7 @@ abstract class AbstractApp extends StatelessWidget {
             (context) => PlaylistService(
               context.read<PlaylistRepository>(),
               context.read<PlaylistRestClient>(),
+              context.read<SongRepository>(),
               context.read<SongService>(),
             ),
       ),
