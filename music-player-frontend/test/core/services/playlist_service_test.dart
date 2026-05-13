@@ -127,7 +127,9 @@ void main() {
         restClient.createResult = PlaylistExpandedDto(
           id: 77,
           name: 'Roadtrip',
-          playlistSongs: const [],
+          songFileHashes: const [],
+          indestructible: false,
+          durationSeconds: 0,
         );
 
         final saved = await service.addPlaylist('Roadtrip', [
@@ -182,10 +184,9 @@ void main() {
       final details = PlaylistExpandedDto(
         id: 9,
         name: 'Ordered',
-        playlistSongs: [
-          PlaylistSongDto(song: _songDto('b'), position: 1),
-          PlaylistSongDto(song: _songDto('a'), position: 0),
-        ],
+        songFileHashes: ['a', 'b'],
+        indestructible: false,
+        durationSeconds: 2,
       );
 
       final cached = service.cacheServerPlaylistDetails(details);

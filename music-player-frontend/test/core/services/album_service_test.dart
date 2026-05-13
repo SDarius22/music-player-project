@@ -74,6 +74,7 @@ void main() {
         name: 'Album',
         songFileHashes: ['s1', 's2'],
         artist: ArtistDto(hash: 'artist-hash', name: 'Artist'),
+        durationInSeconds: 2,
       );
       final cachedArtist = Artist('artist-hash', 'Artist')..id = 10;
       final cachedAlbum = Album('album-hash', 'Album')..id = 20;
@@ -113,6 +114,7 @@ void main() {
             name: 'Album',
             songFileHashes: const [],
             artist: ArtistDto(hash: 'artist-hash', name: 'Artist'),
+            durationInSeconds: 0,
           ),
         ],
         page: 0,

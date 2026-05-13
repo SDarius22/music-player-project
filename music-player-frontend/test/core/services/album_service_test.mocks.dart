@@ -10,7 +10,7 @@ import 'dart:typed_data' as _i16;
 import 'package:http/http.dart' as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i14;
-import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart'
+import 'package:music_player_frontend/core/dtos/albums/album_expanded_dto.dart'
     as _i15;
 import 'package:music_player_frontend/core/dtos/albums/album_page_dto.dart'
     as _i6;
@@ -605,14 +605,14 @@ class MockAlbumRestClient extends _i1.Mock implements _i13.AlbumRestClient {
           as _i12.Future<_i6.AlbumPageDto>);
 
   @override
-  _i12.Future<_i15.AlbumDetailDto?> getAlbumByHash(String? albumHash) =>
+  _i12.Future<_i15.AlbumExpandedDto?> getAlbumByHash(String? albumHash) =>
       (super.noSuchMethod(
             Invocation.method(#getAlbumByHash, [albumHash]),
-            returnValue: _i12.Future<_i15.AlbumDetailDto?>.value(),
+            returnValue: _i12.Future<_i15.AlbumExpandedDto?>.value(),
             returnValueForMissingStub:
-                _i12.Future<_i15.AlbumDetailDto?>.value(),
+                _i12.Future<_i15.AlbumExpandedDto?>.value(),
           )
-          as _i12.Future<_i15.AlbumDetailDto?>);
+          as _i12.Future<_i15.AlbumExpandedDto?>);
 
   @override
   _i12.Future<_i16.Uint8List?> getAlbumCover(int? albumId) =>
