@@ -18,6 +18,7 @@ class CustomTileComponent extends StatelessWidget {
   final Function(BaseEntity) onLongPress;
   final bool Function(BaseEntity) isSelected;
   final Function(BaseEntity)? enrichEntity;
+  final bool showEnrichLoadingPlaceholder;
   final Widget Function()? buildExtraTile; // grid/wide only
   final double itemExtent; // list only
 
@@ -31,6 +32,7 @@ class CustomTileComponent extends StatelessWidget {
     this.actions = const [],
     this.onDropdownSelected,
     this.enrichEntity,
+    this.showEnrichLoadingPlaceholder = true,
     this.buildExtraTile,
     this.itemExtent = 72,
   });
@@ -76,6 +78,9 @@ class CustomTileComponent extends StatelessWidget {
     future: enrichEntity != null ? enrichEntity!(entity) : Future.value(),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
+        if (!showEnrichLoadingPlaceholder) {
+          return _buildTile(entity);
+        }
         return tileType == TileType.list
             ? CustomListTile.loading()
             : CustomGridTile.loading(isWide: tileType == TileType.wide);

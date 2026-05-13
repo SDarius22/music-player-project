@@ -50,21 +50,31 @@ class PaginatedComponent extends StatefulWidget {
 
 class _PaginatedComponentState extends State<PaginatedComponent> {
   late final ScrollController _scrollController;
-  _PagedState _state = const _PagedState();
-  int _requestId = 0;
+  late final _PaginationController _controller;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
-    _loadPage(0, reset: true);
+    _controller = _PaginationController(
+      fetchPage: widget.fetchPage,
+      pageSize: widget.pageSize,
+    )..loadPage(0, reset: true);
   }
 
   @override
   void didUpdateWidget(covariant PaginatedComponent oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.fetchPage != oldWidget.fetchPage ||
+        widget.pageSize != oldWidget.pageSize) {
+      _controller.updateConfig(
+        fetchPage: widget.fetchPage,
+        pageSize: widget.pageSize,
+      );
+    }
+
     if (widget.reloadToken != oldWidget.reloadToken) {
-      _loadPage(0, reset: true);
+      _controller.loadPage(0, reset: true);
     }
   }
 
@@ -72,6 +82,7 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -83,58 +94,25 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
   }
 
   void _fetchNextPage() {
-    if (!_state.hasMore || _state.isLoading) return;
-    _loadPage(_state.currentPage + 1);
+    final state = _controller.state;
+    if (!state.hasMore || state.isLoading) return;
+    _controller.loadPage(state.currentPage + 1);
   }
 
   Future<void> _refresh() async {
     if (widget.onRefresh != null) await widget.onRefresh!.call();
-    await _loadPage(0, reset: true);
+    await _controller.loadPage(0, reset: true);
   }
 
-  Future<void> _loadPage(int page, {bool reset = false}) async {
-    if (_state.isLoading) return;
-
-    final requestId = ++_requestId;
-    setState(() {
-      _state = _state.copyWith(isLoading: true, clearError: true);
-    });
-
-    try {
-      final result = await widget.fetchPage(page, widget.pageSize);
-      if (!mounted || requestId != _requestId) return;
-
-      final mergedItems =
-          reset
-              ? List<dynamic>.from(result.content)
-              : <dynamic>[..._state.items, ...result.content];
-
-      setState(() {
-        _state = _state.copyWith(
-          items: mergedItems,
-          currentPage: result.page,
-          hasMore: result.page < result.totalPages - 1,
-          isLoading: false,
-        );
-      });
-    } catch (e) {
-      if (!mounted || requestId != _requestId) return;
-      debugPrint('PaginatedComponent: loadPage error: $e');
-      setState(() {
-        _state = _state.copyWith(isLoading: false, error: e);
-      });
-    }
-  }
-
-  Widget _buildContent(BuildContext context) {
-    if (_state.isLoading && _state.items.isEmpty) {
+  Widget _buildContent(BuildContext context, _PagedState state) {
+    if (state.isLoading && state.items.isEmpty) {
       return const SliverFillRemaining(
         hasScrollBody: false,
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (_state.items.isEmpty && widget.type == TileType.list) {
+    if (state.items.isEmpty && widget.type == TileType.list) {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: Center(
@@ -155,12 +133,13 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
         padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
         sliver: CustomTileComponent(
           tileType: TileType.list,
-          items: _state.items,
+          items: state.items,
           actions: widget.actions,
           onDropdownSelected: widget.onDropdownSelected,
+          showEnrichLoadingPlaceholder: false,
           isSelected: widget.isSelected,
-          onTap: (entity) => widget.onTap(entity, _state.items),
-          onLongPress: (entity) => widget.onLongPress(entity, _state.items),
+          onTap: (entity) => widget.onTap(entity, state.items),
+          onLongPress: (entity) => widget.onLongPress(entity, state.items),
           enrichEntity: widget.enrichEntity,
           itemExtent: widget.itemExtent ?? 72,
         ),
@@ -171,12 +150,13 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
       padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
       sliver: CustomTileComponent(
         tileType: widget.type,
-        items: _state.items,
+        items: state.items,
         actions: widget.actions,
         onDropdownSelected: widget.onDropdownSelected,
+        showEnrichLoadingPlaceholder: false,
         isSelected: widget.isSelected,
-        onTap: (entity) => widget.onTap(entity, _state.items),
-        onLongPress: (entity) => widget.onLongPress(entity, _state.items),
+        onTap: (entity) => widget.onTap(entity, state.items),
+        onLongPress: (entity) => widget.onLongPress(entity, state.items),
         buildExtraTile: widget.buildExtraTile,
         enrichEntity: widget.enrichEntity,
       ),
@@ -185,37 +165,106 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _refresh,
-      child: CustomScrollView(
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          _buildContent(context),
-          if (_state.isLoading && _state.items.isNotEmpty)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ),
-          if (_state.error != null &&
-              !_state.isLoading &&
-              _state.items.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Center(
-                  child: TextButton(
-                    onPressed: () => _loadPage(_state.currentPage + 1),
-                    child: const Text('Failed to load more. Tap to retry.'),
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) {
+        final state = _controller.state;
+
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              _buildContent(context, state),
+              if (state.isLoading && state.items.isNotEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
                   ),
                 ),
-              ),
-            ),
-        ],
-      ),
+              if (state.error != null &&
+                  !state.isLoading &&
+                  state.items.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Center(
+                      child: TextButton(
+                        onPressed:
+                            () => _controller.loadPage(state.currentPage + 1),
+                        child: const Text('Failed to load more. Tap to retry.'),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
+  }
+}
+
+class _PaginationController extends ChangeNotifier {
+  _PaginationController({required PageFetcher fetchPage, required int pageSize})
+    : _fetchPage = fetchPage,
+      _pageSize = pageSize;
+
+  PageFetcher _fetchPage;
+  int _pageSize;
+  int _requestId = 0;
+  bool _disposed = false;
+  _PagedState _state = const _PagedState();
+
+  _PagedState get state => _state;
+
+  void updateConfig({required PageFetcher fetchPage, required int pageSize}) {
+    _fetchPage = fetchPage;
+    _pageSize = pageSize;
+  }
+
+  Future<void> loadPage(int page, {bool reset = false}) async {
+    if (_state.isLoading) return;
+
+    final requestId = ++_requestId;
+    _updateState(_state.copyWith(isLoading: true, clearError: true));
+
+    try {
+      final result = await _fetchPage(page, _pageSize);
+      if (_disposed || requestId != _requestId) return;
+
+      final mergedItems =
+          reset
+              ? List<dynamic>.from(result.content)
+              : <dynamic>[..._state.items, ...result.content];
+
+      _updateState(
+        _state.copyWith(
+          items: mergedItems,
+          currentPage: result.page,
+          hasMore: result.page < result.totalPages - 1,
+          isLoading: false,
+        ),
+      );
+    } catch (e) {
+      if (_disposed || requestId != _requestId) return;
+      debugPrint('PaginatedComponent: loadPage error: $e');
+      _updateState(_state.copyWith(isLoading: false, error: e));
+    }
+  }
+
+  void _updateState(_PagedState value) {
+    if (_disposed) return;
+    _state = value;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }
 
