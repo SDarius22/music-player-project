@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/dtos/artists/artist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_expanded_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
@@ -42,7 +41,7 @@ class ArtistService {
   Future<Artist?> fetchArtistDetails(String artistHash) async {
     try {
       final result = await _artistRestService.getArtistByHash(artistHash);
-      return cacheServerArtistDetail(result!);
+      return cacheServerArtist(result!);
     } catch (e) {
       _logger.warning('Failed to fetch artist', e);
     }
@@ -113,39 +112,6 @@ class ArtistService {
     return _artistRepository.saveArtist(cachedArtist);
   }
 
-  Artist cacheServerArtistDetail(ArtistDetailDto serverArtist) {
-    var cachedArtist = _artistRepository.getOrCreateArtist(
-      serverArtist.hash,
-      serverArtist.name,
-    );
-
-    for (var song in serverArtist.songs) {
-      var cachedSong = _songRepository.getOrCreateSong(song.fileHash);
-
-      var cachedAlbum = _albumRepository.getOrCreateAlbum(
-        song.album.hash,
-        song.album.name,
-        cachedArtist,
-      );
-
-      cachedSong.name = song.name;
-      cachedSong.artist.target = cachedArtist;
-      cachedSong.album.target = cachedAlbum;
-      cachedSong.discNumber = song.discNumber;
-      cachedSong.trackNumber = song.trackNumber;
-      cachedSong.durationInSeconds = song.durationInSeconds;
-      cachedSong.year = song.releaseYear;
-      cachedSong.fullyLoaded = true;
-      _songRepository.updateSong(cachedSong);
-
-      cachedArtist.addSong(cachedSong);
-      cachedAlbum.addSong(cachedSong);
-      _albumRepository.updateAlbum(cachedAlbum);
-    }
-
-    return _artistRepository.saveArtist(cachedArtist);
-  }
-
   Future<PageResult<Song>> getArtistSongsPage(
     String artistHash, {
     bool localOnly = false,
@@ -180,7 +146,9 @@ class ArtistService {
     final totalPages =
         (serverTotalPages != null && serverTotalPages > 0)
             ? serverTotalPages
-            : ((_songRepository.getArtistSongCount(artistHash, localOnly) + size - 1) ~/
+            : ((_songRepository.getArtistSongCount(artistHash, localOnly) +
+                        size -
+                        1) ~/
                     size)
                 .clamp(1, 999999);
 

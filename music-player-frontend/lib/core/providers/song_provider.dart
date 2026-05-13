@@ -99,4 +99,14 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
   void refreshSongs() {
     notifyListeners();
   }
+
+  @override
+  Future<PageResult<Song>> getSongsPage(
+    String hash, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 10,
+  }) {
+    throw UnimplementedError('getSongsPage is not supported in SongProvider');
+  }
 }

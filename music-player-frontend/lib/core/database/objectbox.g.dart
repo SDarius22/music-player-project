@@ -43,12 +43,6 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(12, 5063639271441214345),
-        name: 'requiresSync',
-        type: 1,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
         id: const obx_int.IdUid(14, 3015516692456152657),
         name: 'hash',
         type: 9,
@@ -625,6 +619,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
       3835940553080101764,
       1880970681925066010,
       5586295309400875881,
+      5063639271441214345,
     ],
     retiredRelationUids: const [
       1387782578054686999,
@@ -666,7 +661,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.startTable(19);
         fbb.addInt64(0, object.id);
         fbb.addOffset(8, imageBytesOffset);
-        fbb.addBool(11, object.requiresSync);
         fbb.addOffset(13, hashOffset);
         fbb.addOffset(14, nameOffset);
         fbb.addInt64(15, object.duration);
@@ -691,12 +685,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
                     lazy: false,
                   ).vTableGetNullable(buffer, rootOffset, 20)
                   as Uint8List?
-          ..requiresSync = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            26,
-            false,
-          )
           ..duration = const fb.Int64Reader().vTableGet(
             buffer,
             rootOffset,
@@ -1202,34 +1190,29 @@ class Album_ {
     _entities[0].properties[1],
   );
 
-  /// See [Album.requiresSync].
-  static final requiresSync = obx.QueryBooleanProperty<Album>(
-    _entities[0].properties[2],
-  );
-
   /// See [Album.hash].
   static final hash = obx.QueryStringProperty<Album>(
-    _entities[0].properties[3],
+    _entities[0].properties[2],
   );
 
   /// See [Album.name].
   static final name = obx.QueryStringProperty<Album>(
-    _entities[0].properties[4],
+    _entities[0].properties[3],
   );
 
   /// See [Album.duration].
   static final duration = obx.QueryIntegerProperty<Album>(
-    _entities[0].properties[5],
+    _entities[0].properties[4],
   );
 
   /// See [Album.artist].
   static final artist = obx.QueryRelationToOne<Album, Artist>(
-    _entities[0].properties[6],
+    _entities[0].properties[5],
   );
 
   /// See [Album.isLocal].
   static final isLocal = obx.QueryBooleanProperty<Album>(
-    _entities[0].properties[7],
+    _entities[0].properties[6],
   );
 
   /// see [Album.songs]

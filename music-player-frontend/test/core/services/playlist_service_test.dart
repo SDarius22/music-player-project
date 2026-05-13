@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_dto.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/create_playlist_dto.dart';
@@ -54,7 +53,7 @@ class FakePlaylistRestClient extends PlaylistRestClient {
     totalPages: 0,
     totalElements: 0,
   );
-  PlaylistDetailDto? createResult;
+  PlaylistExpandedDto? createResult;
   bool updateResult = true;
   bool deleteResult = true;
 
@@ -76,14 +75,19 @@ class FakePlaylistRestClient extends PlaylistRestClient {
   }
 
   @override
-  Future<PlaylistDetailDto?> createPlaylist(CreatePlaylistDto createPlaylistDto) async {
+  Future<PlaylistExpandedDto?> createPlaylist(
+    CreatePlaylistDto createPlaylistDto,
+  ) async {
     createCalls++;
     lastCreateRequest = createPlaylistDto;
     return createResult;
   }
 
   @override
-  Future<bool> updatePlaylist(int playlistId, UpdatePlaylistDto updatePlaylistDto) async {
+  Future<bool> updatePlaylist(
+    int playlistId,
+    UpdatePlaylistDto updatePlaylistDto,
+  ) async {
     updateCalls++;
     lastUpdateRequest = updatePlaylistDto;
     return updateResult;
@@ -109,13 +113,18 @@ void main() {
       songRepo = InMemorySongRepository();
       songService = FakeSongService();
       restClient = FakePlaylistRestClient();
-      service = PlaylistService(playlistRepo, restClient, songRepo, songService);
+      service = PlaylistService(
+        playlistRepo,
+        restClient,
+        songRepo,
+        songService,
+      );
     });
 
     test(
       'addPlaylist saves local playlist and applies returned server id',
       () async {
-        restClient.createResult = PlaylistDetailDto(
+        restClient.createResult = PlaylistExpandedDto(
           id: 77,
           name: 'Roadtrip',
           playlistSongs: const [],
@@ -170,7 +179,7 @@ void main() {
     );
 
     test('cacheServerPlaylistDetails respects server song order', () {
-      final details = PlaylistDetailDto(
+      final details = PlaylistExpandedDto(
         id: 9,
         name: 'Ordered',
         playlistSongs: [
@@ -184,15 +193,18 @@ void main() {
       expect(cached.getSongs().map((s) => s.getHash()).toList(), ['a', 'b']);
     });
 
-    test('deletePlaylist removes normal playlist and hits server when needed', () async {
-      final custom = Playlist('Custom')..serverId = 55;
-      playlistRepo.savePlaylist(custom);
+    test(
+      'deletePlaylist removes normal playlist and hits server when needed',
+      () async {
+        final custom = Playlist('Custom')..serverId = 55;
+        playlistRepo.savePlaylist(custom);
 
-      await service.deletePlaylist(custom);
+        await service.deletePlaylist(custom);
 
-      expect(restClient.deleteCalls, 1);
-      expect(playlistRepo.getPlaylistByName('Custom'), isNull);
-    });
+        expect(restClient.deleteCalls, 1);
+        expect(playlistRepo.getPlaylistByName('Custom'), isNull);
+      },
+    );
   });
 }
 

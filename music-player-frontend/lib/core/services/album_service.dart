@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_expanded_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -46,7 +45,7 @@ class AlbumService {
   Future<Album?> fetchAlbumDetails(String albumHash) async {
     try {
       final serverAlbum = await _albumRestService.getAlbumByHash(albumHash);
-      return cacheServerAlbumDetail(serverAlbum!);
+      return cacheServerAlbum(serverAlbum!);
     } catch (e) {
       _logger.warning('AlbumService: server fetch failed, using local', e);
     }
@@ -131,40 +130,6 @@ class AlbumService {
     return _albumRepository.saveAlbum(cachedAlbum);
   }
 
-  Album cacheServerAlbumDetail(AlbumDetailDto serverAlbum) {
-    var cachedArtist = _artistRepository.getOrCreateArtist(
-      serverAlbum.artist.hash,
-      serverAlbum.artist.name,
-    );
-
-    var cachedAlbum = _albumRepository.getOrCreateAlbum(
-      serverAlbum.hash,
-      serverAlbum.name,
-      cachedArtist,
-    );
-
-    for (var song in serverAlbum.songs) {
-      var cachedSong = _songRepository.getOrCreateSong(song.fileHash);
-
-      cachedSong.artist.targetId = cachedArtist.id;
-      cachedSong.album.targetId = cachedAlbum.id;
-      cachedSong.name = song.name;
-      cachedSong.discNumber = song.discNumber;
-      cachedSong.trackNumber = song.trackNumber;
-      cachedSong.durationInSeconds = song.durationInSeconds;
-      cachedSong.year = song.releaseYear;
-      cachedSong.fullyLoaded = true;
-      _songRepository.updateSong(cachedSong);
-
-      cachedArtist.addSong(cachedSong);
-      cachedAlbum.addSong(cachedSong);
-    }
-
-    _artistRepository.updateArtist(cachedArtist);
-
-    return _albumRepository.saveAlbum(cachedAlbum);
-  }
-
   Future<PageResult<Song>> getAlbumSongsPage(
     String albumHash, {
     bool localOnly = false,
@@ -199,7 +164,9 @@ class AlbumService {
     final totalPages =
         (serverTotalPages != null && serverTotalPages > 0)
             ? serverTotalPages
-            : ((_songRepository.getAlbumSongCount(albumHash, localOnly) + size - 1) ~/
+            : ((_songRepository.getAlbumSongCount(albumHash, localOnly) +
+                        size -
+                        1) ~/
                     size)
                 .clamp(1, 999999);
 
@@ -218,10 +185,17 @@ class AlbumService {
     cachedSong.likedByUser = song.likedByUser;
     cachedSong.fullyLoaded = true;
 
-    var artist = _artistRepository.getOrCreateArtist(song.artist.hash, song.artist.name);
+    var artist = _artistRepository.getOrCreateArtist(
+      song.artist.hash,
+      song.artist.name,
+    );
     cachedSong.artist.target = artist;
 
-    var album = _albumRepository.getOrCreateAlbum(song.album.hash, song.album.name, artist);
+    var album = _albumRepository.getOrCreateAlbum(
+      song.album.hash,
+      song.album.name,
+      artist,
+    );
     cachedSong.album.target = album;
 
     var finalSong = _songRepository.saveSong(cachedSong);

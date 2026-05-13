@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/dtos/albums/album_detail_dto.dart';
+import 'package:music_player_frontend/core/dtos/albums/album_expanded_dto.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_page_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
@@ -55,11 +55,11 @@ class AlbumRestClient extends AbstractRestClient {
     );
   }
 
-  Future<AlbumDetailDto?> getAlbumByHash(String albumHash) async {
+  Future<AlbumExpandedDto?> getAlbumByHash(String albumHash) async {
     try {
       final response = await get('/albums/$albumHash');
       if (response.statusCode == 200) {
-        return AlbumDetailDto.fromJson(
+        return AlbumExpandedDto.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       }
@@ -90,7 +90,8 @@ class AlbumRestClient extends AbstractRestClient {
       'page': page.toString(),
       'size': size.toString(),
     };
-    final endpoint = '/albums/$albumHash/songs?${Uri(queryParameters: qp).query}';
+    final endpoint =
+        '/albums/$albumHash/songs?${Uri(queryParameters: qp).query}';
 
     try {
       final response = await get(endpoint);

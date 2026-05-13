@@ -10,11 +10,11 @@ import 'package:music_player_frontend/core/dtos/playlists/playlist_song_position
 import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
-import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 
 class PlaylistService {
   static final _logger = Logger('PlaylistService');
@@ -346,7 +346,7 @@ class PlaylistService {
     return _playlistRepository.savePlaylist(cachedPlaylist);
   }
 
-  Playlist cacheServerPlaylistDetails(PlaylistDetailDto serverPlaylist) {
+  Playlist cacheServerPlaylistDetails(PlaylistExpandedDto serverPlaylist) {
     if (serverPlaylist.id <= 0) {
       throw Exception('Server playlist must have a valid ID');
     }
@@ -357,15 +357,11 @@ class PlaylistService {
     cachedPlaylist.serverId = serverPlaylist.id;
     cachedPlaylist.indestructible = serverPlaylist.indestructible;
     cachedPlaylist.clearSongs();
-    final orderedPlaylistSongs = [...serverPlaylist.playlistSongs]
-      ..sort((a, b) => a.position.compareTo(b.position));
 
-    var songs = orderedPlaylistSongs.map((ps) => ps.song).toList();
+    for (var songHash in serverPlaylist.songFileHashes) {
+      var cachedSong = _songRepository.getOrCreateSong(songHash);
 
-    _songService.cacheServerSongs(songs);
-
-    for (final ps in orderedPlaylistSongs) {
-      cachedPlaylist.addSong(_songService.getOrCreateSong(ps.song.fileHash));
+      cachedPlaylist.addSong(cachedSong);
     }
 
     return _playlistRepository.savePlaylist(cachedPlaylist);
@@ -394,7 +390,9 @@ class PlaylistService {
       serverTotalPages = serverPage.totalPages;
       serverSongs = _songService.cacheServerSongs(serverPage.content);
     } catch (e) {
-      _logger.fine('PlaylistService: server fetch failed for playlist songs: $e');
+      _logger.fine(
+        'PlaylistService: server fetch failed for playlist songs: $e',
+      );
     }
 
     if (serverSongs != null) {
@@ -414,15 +412,14 @@ class PlaylistService {
       size,
     );
 
-    final totalPages =
-        ((_songRepository.getPlaylistSongCount(
-                      localPlaylist.songFileHashes,
-                      localOnly,
-                    ) +
-                    size -
-                    1) ~/
-                size)
-            .clamp(1, double.maxFinite.toInt());
+    final totalPages = ((_songRepository.getPlaylistSongCount(
+                  localPlaylist.songFileHashes,
+                  localOnly,
+                ) +
+                size -
+                1) ~/
+            size)
+        .clamp(1, double.maxFinite.toInt());
 
     return PageResult(content: localSongs, totalPages: totalPages, page: page);
   }

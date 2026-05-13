@@ -133,6 +133,7 @@ class AlbumScreen extends EntityScreen<AlbumProvider> {
       shadowColor: Colors.black.withValues(alpha: 0.20),
       child: PaginatedComponent(
         type: TileType.list,
+        itemExtent: height * 0.1,
         fetchPage: (page, size) {
           return provider.getSongsPage(album.getHash(), page: page, size: size);
         },

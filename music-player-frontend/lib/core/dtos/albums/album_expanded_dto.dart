@@ -5,20 +5,23 @@ class AlbumExpandedDto {
   final String name;
   final List<String> songFileHashes;
   final ArtistDto artist;
+  final int durationInSeconds;
 
   AlbumExpandedDto({
     required this.hash,
     required this.name,
     required this.songFileHashes,
     required this.artist,
+    required this.durationInSeconds,
   });
- 
+
   factory AlbumExpandedDto.fromJson(Map<String, dynamic> json) {
     final List<dynamic> raw = (json['songFileHashes'] as List<dynamic>);
     return AlbumExpandedDto(
       hash: json['hash'] as String,
       name: json['name'] as String,
       songFileHashes: raw.map((e) => e as String).toList(),
+      durationInSeconds: (json['durationInSeconds'] as num? ?? 0).toInt(),
       artist: ArtistDto.fromJson(json['artist'] as Map<String, dynamic>),
     );
   }

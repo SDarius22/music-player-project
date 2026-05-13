@@ -20,11 +20,11 @@ class PlaylistRestClient extends AbstractRestClient {
     super.authService = authService;
   }
 
-  Future<PlaylistDetailDto?> getPlaylistDetails(int playlistId) async {
+  Future<PlaylistExpandedDto?> getPlaylistDetails(int playlistId) async {
     try {
       final response = await get('/playlists/$playlistId');
       if (response.statusCode == 200) {
-        return PlaylistDetailDto.fromJson(jsonDecode(response.body));
+        return PlaylistExpandedDto.fromJson(jsonDecode(response.body));
       }
     } catch (e) {
       _logger.warning('Error fetching playlist details', e);
@@ -32,7 +32,7 @@ class PlaylistRestClient extends AbstractRestClient {
     return null;
   }
 
-  Future<PlaylistDetailDto?> getPlaylistDetailsByName(
+  Future<PlaylistExpandedDto?> getPlaylistDetailsByName(
     String playlistName,
   ) async {
     try {
@@ -40,7 +40,7 @@ class PlaylistRestClient extends AbstractRestClient {
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         if (decoded is Map<String, dynamic>) {
-          return PlaylistDetailDto.fromJson(decoded);
+          return PlaylistExpandedDto.fromJson(decoded);
         }
       }
     } catch (e) {
@@ -95,13 +95,13 @@ class PlaylistRestClient extends AbstractRestClient {
     );
   }
 
-  Future<PlaylistDetailDto?> createPlaylist(
+  Future<PlaylistExpandedDto?> createPlaylist(
     CreatePlaylistDto createPlaylistDto,
   ) async {
     try {
       final response = await post('/playlists', createPlaylistDto.toJson());
       if (response.statusCode == 201) {
-        return PlaylistDetailDto.fromJson(jsonDecode(response.body));
+        return PlaylistExpandedDto.fromJson(jsonDecode(response.body));
       }
       _logger.warning('Failed to create playlist: ${response.statusCode}');
     } catch (e) {

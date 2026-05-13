@@ -148,21 +148,25 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
       );
     }
 
+    final width = MediaQuery.of(context).size.width;
+
     if (widget.type == TileType.list) {
-      return CustomTileComponent(
-        tileType: TileType.list,
-        items: _state.items,
-        actions: widget.actions,
-        onDropdownSelected: widget.onDropdownSelected,
-        isSelected: widget.isSelected,
-        onTap: (entity) => widget.onTap(entity, _state.items),
-        onLongPress: (entity) => widget.onLongPress(entity, _state.items),
-        enrichEntity: widget.enrichEntity,
-        itemExtent: widget.itemExtent ?? 72,
+      return SliverPadding(
+        padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
+        sliver: CustomTileComponent(
+          tileType: TileType.list,
+          items: _state.items,
+          actions: widget.actions,
+          onDropdownSelected: widget.onDropdownSelected,
+          isSelected: widget.isSelected,
+          onTap: (entity) => widget.onTap(entity, _state.items),
+          onLongPress: (entity) => widget.onLongPress(entity, _state.items),
+          enrichEntity: widget.enrichEntity,
+          itemExtent: widget.itemExtent ?? 72,
+        ),
       );
     }
 
-    final width = MediaQuery.of(context).size.width;
     return SliverPadding(
       padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
       sliver: CustomTileComponent(

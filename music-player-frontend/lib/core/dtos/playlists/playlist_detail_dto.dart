@@ -1,27 +1,25 @@
-import 'package:music_player_frontend/core/dtos/playlists/playlist_song_dto.dart';
-
-class PlaylistDetailDto {
+class PlaylistExpandedDto {
   final int id;
   final String name;
-  final List<PlaylistSongDto> playlistSongs;
   final bool indestructible;
+  final List<String> songFileHashes;
+  final int durationSeconds;
 
-  PlaylistDetailDto({
+  PlaylistExpandedDto({
     required this.id,
     required this.name,
-    required this.playlistSongs,
-    this.indestructible = false,
+    required this.songFileHashes,
+    required this.indestructible,
+    required this.durationSeconds,
   });
 
-  factory PlaylistDetailDto.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw = (json['playlistSongs'] as List<dynamic>? ?? []);
-    return PlaylistDetailDto(
+  factory PlaylistExpandedDto.fromJson(Map<String, dynamic> json) {
+    final List<dynamic> raw = (json['songFileHashes'] as List<dynamic>);
+    return PlaylistExpandedDto(
       id: (json['id'] as num).toInt(),
       name: json['name'] as String,
-      playlistSongs:
-          raw
-              .map((e) => PlaylistSongDto.fromJson(e as Map<String, dynamic>))
-              .toList(),
+      songFileHashes: raw.map((e) => e as String).toList(),
+      durationSeconds: (json['durationInSeconds'] as num? ?? 0).toInt(),
       indestructible: json['indestructible'] as bool? ?? false,
     );
   }

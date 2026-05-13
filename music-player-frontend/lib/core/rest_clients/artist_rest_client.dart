@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/dtos/artists/artist_detail_dto.dart';
+import 'package:music_player_frontend/core/dtos/artists/artist_expanded_dto.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_page_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
@@ -57,11 +57,11 @@ class ArtistRestClient extends AbstractRestClient {
     );
   }
 
-  Future<ArtistDetailDto?> getArtistByHash(String artistHash) async {
+  Future<ArtistExpandedDto?> getArtistByHash(String artistHash) async {
     try {
       final response = await get('/artists/$artistHash');
       if (response.statusCode == 200) {
-        return ArtistDetailDto.fromJson(
+        return ArtistExpandedDto.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,
         );
       }
@@ -80,7 +80,8 @@ class ArtistRestClient extends AbstractRestClient {
       'page': page.toString(),
       'size': size.toString(),
     };
-    final endpoint = '/artists/$artistHash/songs?${Uri(queryParameters: qp).query}';
+    final endpoint =
+        '/artists/$artistHash/songs?${Uri(queryParameters: qp).query}';
 
     try {
       final response = await get(endpoint);

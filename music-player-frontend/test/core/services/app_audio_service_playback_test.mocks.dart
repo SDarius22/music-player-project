@@ -691,7 +691,7 @@ class MockPlaylistService extends _i1.Mock implements _i15.PlaylistService {
 
   @override
   _i7.Playlist cacheServerPlaylistDetails(
-    _i18.PlaylistDetailDto? serverPlaylist,
+    _i18.PlaylistExpandedDto? serverPlaylist,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#cacheServerPlaylistDetails, [serverPlaylist]),
