@@ -37,6 +37,9 @@ class FakeSongRestClient extends SongRestClient {
   @override
   Future<SongPageDto> getSongsPage({
     String? query,
+    String? filterAlbumHash,
+    String? filterArtistHash,
+    int? filterPlaylistId,
     int page = 0,
     int size = 50,
     String sort = 'name,asc',
@@ -109,7 +112,17 @@ void main() {
         ..fullyLoaded = true;
       songRepo.saveSong(local);
 
-      final page = await service.getSongsPage('', 'Title', true, true, 0, 20);
+      final page = await service.getSongsPage(
+        '',
+        'Title',
+        null,
+        null,
+        null,
+        true,
+        true,
+        0,
+        20,
+      );
 
       expect(page.content, hasLength(1));
       expect(page.content.first.getHash(), 'h1');

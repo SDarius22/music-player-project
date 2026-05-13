@@ -264,6 +264,30 @@ class PlaylistService {
     return cached;
   }
 
+  Future<PageResult<Song>> getPlaylistSongsPageByHash(
+    String playlistHash, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 50,
+  }) async {
+    final playlists = _playlistRepository.getAllPlaylists();
+    final playlist = playlists
+        .where((p) => p.getHash() == playlistHash)
+        .cast<Playlist?>()
+        .firstWhere((p) => p != null, orElse: () => null);
+
+    if (playlist == null) {
+      return PageResult(content: const [], totalPages: 1, page: page);
+    }
+
+    return getPlaylistSongsPage(
+      playlist,
+      localOnly: localOnly,
+      page: page,
+      size: size,
+    );
+  }
+
   Future<Playlist> addToPlaylist(Playlist playlist, List<Song> songs) async {
     for (var song in songs) {
       playlist.addSong(song);

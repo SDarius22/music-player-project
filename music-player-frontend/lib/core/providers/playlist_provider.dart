@@ -42,6 +42,35 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
   }
 
   @override
+  Future<PageResult<Song>> getSongsPage(
+    String hash, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 10,
+  }) async {
+    return _playlistService.getPlaylistSongsPageByHash(
+      hash,
+      localOnly: localOnly,
+      page: page,
+      size: size,
+    );
+  }
+
+  Future<PageResult<Song>> getPlaylistSongsPage(
+    Playlist playlist, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 10,
+  }) async {
+    return _playlistService.getPlaylistSongsPage(
+      playlist,
+      localOnly: localOnly,
+      page: page,
+      size: size,
+    );
+  }
+
+  @override
   Future<Playlist?> fetchEntity(BaseEntity playlist) async {
     if (playlist is! Playlist) return null;
     return await _playlistService.getPlaylistDetails(playlist);

@@ -76,7 +76,10 @@ class ArtistControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.content[0].hash").isNotEmpty())
                 .andExpect(jsonPath("$.content[0].hash").value(artist.getHash()))
                 .andExpect(jsonPath("$.content[0].name").value("Test Artist"))
-                .andExpect(jsonPath("$.content[0].songFileHashes", contains("artist-test-hash-001")));
+                .andExpect(jsonPath("$.content[0].songFileHashes", containsInAnyOrder(
+                        "artist-test-hash-001",
+                        "artist-test-hash-000"
+                )));
     }
 
     @Test
