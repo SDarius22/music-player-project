@@ -191,6 +191,8 @@ void main() {
       final settings = AudioSettings.fromJson({
         'repeat': true,
         'shuffle': true,
+        'autoPlay': true,
+        'autoPlayRecommendationsPage': 3,
         'pitch': 0.5,
         'speed': 1.5,
         'volume': 0.8,
@@ -199,6 +201,8 @@ void main() {
 
       expect(settings.repeat, isTrue);
       expect(settings.shuffle, isTrue);
+      expect(settings.autoPlay, isTrue);
+      expect(settings.autoPlayRecommendationsPage, 3);
       expect(settings.pitch, 0.5);
       expect(settings.speed, 1.5);
       expect(settings.volume, 0.8);
@@ -209,6 +213,13 @@ void main() {
     test('toJson omits transient playing field', () {
       final json = AudioSettings().toJson();
       expect(json.containsKey('playing'), isFalse);
+      expect(json.containsKey('autoPlay'), isTrue);
+    });
+
+    test('fromJson defaults autoPlay to false when missing', () {
+      final settings = AudioSettings.fromJson({});
+      expect(settings.autoPlay, isFalse);
+      expect(settings.autoPlayRecommendationsPage, 0);
     });
   });
 }

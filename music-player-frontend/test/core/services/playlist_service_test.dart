@@ -1,13 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:music_player_frontend/core/dtos/albums/album_dto.dart';
-import 'package:music_player_frontend/core/dtos/artists/artist_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/create_playlist_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
-import 'package:music_player_frontend/core/dtos/playlists/playlist_song_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
@@ -207,19 +204,4 @@ void main() {
       },
     );
   });
-}
-
-SongDto _songDto(String hash) {
-  return SongDto(
-    fileHash: hash,
-    name: 'Song $hash',
-    durationInSeconds: 1,
-    trackNumber: 1,
-    discNumber: 1,
-    year: 2024,
-    artist: ArtistDto(hash: 'ar-$hash', name: 'Artist'),
-    album: AlbumDto(hash: 'al-$hash', name: 'Album'),
-    playCount: 0,
-    likedByUser: false,
-  );
 }

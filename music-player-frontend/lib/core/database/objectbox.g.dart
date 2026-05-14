@@ -237,7 +237,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(4, 125102733176896809),
     name: 'AudioSettings',
-    lastPropertyId: const obx_int.IdUid(13, 165460848049108724),
+    lastPropertyId: const obx_int.IdUid(15, 4761010866120498881),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -280,6 +280,18 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(13, 165460848049108724),
         name: 'pitch',
         type: 8,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 6520005387068455275),
+        name: 'autoPlay',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 4761010866120498881),
+        name: 'autoPlayRecommendationsPage',
+        type: 6,
         flags: 0,
       ),
     ],
@@ -906,7 +918,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (AudioSettings object, fb.Builder fbb) {
-        fbb.startTable(14);
+        fbb.startTable(16);
         fbb.addInt64(0, object.id);
         fbb.addBool(4, object.repeat);
         fbb.addBool(5, object.shuffle);
@@ -914,6 +926,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addFloat64(8, object.volume);
         fbb.addInt64(11, object.sliderInSeconds);
         fbb.addFloat64(12, object.pitch);
+        fbb.addBool(13, object.autoPlay);
+        fbb.addInt64(14, object.autoPlayRecommendationsPage);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -957,6 +971,18 @@ obx_int.ModelDefinition getObjectBoxModel() {
             buffer,
             rootOffset,
             28,
+            0,
+          )
+          ..autoPlay = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            30,
+            false,
+          )
+          ..autoPlayRecommendationsPage = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            32,
             0,
           );
 
@@ -1361,6 +1387,15 @@ class AudioSettings_ {
   static final pitch = obx.QueryDoubleProperty<AudioSettings>(
     _entities[3].properties[6],
   );
+
+  /// See [AudioSettings.autoPlay].
+  static final autoPlay = obx.QueryBooleanProperty<AudioSettings>(
+    _entities[3].properties[7],
+  );
+
+  /// See [AudioSettings.autoPlayRecommendationsPage].
+  static final autoPlayRecommendationsPage =
+      obx.QueryIntegerProperty<AudioSettings>(_entities[3].properties[8]);
 }
 
 /// [Playlist] entity fields to define ObjectBox queries.

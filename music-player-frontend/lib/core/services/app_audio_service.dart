@@ -35,6 +35,7 @@ class AppAudioService {
   ValueNotifier<Song?> currentSongNotifier = ValueNotifier<Song?>(null);
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   final ValueNotifier<int> playerInstanceVersion = ValueNotifier<int>(0);
+  final ValueNotifier<int> queueMutationNotifier = ValueNotifier<int>(0);
 
   void Function(String fileHash, String songName)? _onWebSongChange;
 
@@ -46,6 +47,8 @@ class AppAudioService {
 
   bool _initialized = false;
   bool _isSwitchingSong = false;
+  bool _autoPlayFetchInProgress = false;
+  bool _autoPlayTailFetchArmed = true;
   int _currentIndex = 0;
   Timer? _positionSaveTimer;
   DateTime? _playStartTime;
@@ -310,6 +313,21 @@ class AppAudioService {
     await settingsService.updateAudioSettings(_currentAudioSettings);
   }
 
+  Future<void> setAutoPlay(bool autoPlay) async {
+    if (autoPlay == _currentAudioSettings.autoPlay) return;
+    _currentAudioSettings.autoPlay = autoPlay;
+    await settingsService.updateAudioSettings(_currentAudioSettings);
+    if (autoPlay) {
+      unawaited(_maybeExtendQueueForAutoPlay());
+    }
+  }
+
+  int getCurrentSongPeerCount() {
+    final song = currentSong;
+    if (song == null || song.isLocal || song.getHash().isEmpty) return 0;
+    return createChunkManager(song.getHash()).availablePeerCount;
+  }
+
   void _rebuildShuffledQueue() {
     _shuffledQueue = List.from(_normalQueue)..shuffle();
   }
@@ -328,6 +346,7 @@ class AppAudioService {
   }
 
   Future<void> addToQueue(List<Song> songs) async {
+    _logger.fine("Adding ${songs.length} song(s) to queue");
     final existingHashes = _normalQueue.map((s) => s.getHash()).toSet();
     final toAdd =
         songs.where((s) => !existingHashes.contains(s.getHash())).toList();
@@ -336,10 +355,13 @@ class AppAudioService {
     _normalQueue.addAll(toAdd);
     _shuffledQueue.addAll(toAdd);
     _queuePlaylist = await playlistService.addToPlaylist(_queuePlaylist, toAdd);
+    _notifyQueueMutation();
   }
 
   Future<void> addNextToQueue(List<Song> songs) async {
     if (songs.isEmpty) return;
+
+    var insertedAny = false;
 
     for (final song in songs.reversed) {
       if (_normalQueue.any((s) => s == song)) continue;
@@ -356,9 +378,12 @@ class AppAudioService {
       _shuffledQueue.insert(shuffledInsert, song);
 
       _queuePlaylist.insertSongAt(song, normalInsert);
+      insertedAny = true;
     }
 
+    if (!insertedAny) return;
     await playlistService.updatePlaylist(_queuePlaylist);
+    _notifyQueueMutation();
   }
 
   Future<void> removeFromQueue(Song song) async {
@@ -369,6 +394,11 @@ class AppAudioService {
     _normalQueue.remove(song);
     _shuffledQueue.remove(song);
     await playlistService.deleteFromPlaylist(song, _queuePlaylist);
+    _notifyQueueMutation();
+
+    if (_normalQueue.isEmpty) {
+      _resetAutoPlayQueueSession();
+    }
 
     if (wasCurrentSong) {
       if (_activeQueue.isNotEmpty) {
@@ -396,6 +426,7 @@ class AppAudioService {
         _normalQueue,
       );
       _rebuildShuffledQueue();
+      _notifyQueueMutation();
     }
 
     await setCurrentSongAndPlay(loadedSong);
@@ -580,6 +611,7 @@ class AppAudioService {
   }
 
   void _onSongStarted(Song song) {
+    unawaited(_maybeExtendQueueForAutoPlay());
     song.lastPlayed = DateTime.now();
     song.playCount += 1;
     _playStartTime = DateTime.now();
@@ -597,6 +629,57 @@ class AppAudioService {
     }
   }
 
+  void _resetAutoPlayQueueSession() {
+    _currentAudioSettings.autoPlayRecommendationsPage = 0;
+    _autoPlayTailFetchArmed = true;
+    unawaited(settingsService.updateAudioSettings(_currentAudioSettings));
+  }
+
+  Future<void> _maybeExtendQueueForAutoPlay() async {
+    _logger.fine(
+      '[autoPlay] Checking if queue extension needed: autoPlay=${_currentAudioSettings.autoPlay}, inLastThree=${_activeQueue.length - _currentIndex <= 3}, fetchInProgress=$_autoPlayFetchInProgress',
+    );
+    if (!_currentAudioSettings.autoPlay || _autoPlayFetchInProgress) {
+      return;
+    }
+
+    final queueLength = _activeQueue.length;
+    if (queueLength == 0) return;
+
+    final lastThreeStart = queueLength - 3;
+    final inLastThree =
+        _currentIndex >= (lastThreeStart > 0 ? lastThreeStart : 0);
+
+    if (!inLastThree) {
+      _autoPlayTailFetchArmed = true;
+      return;
+    }
+
+    if (!_autoPlayTailFetchArmed) {
+      return;
+    }
+
+    _autoPlayTailFetchArmed = false;
+    _autoPlayFetchInProgress = true;
+    try {
+      final page = await songService.getRecommendations(
+        _currentAudioSettings.autoPlayRecommendationsPage,
+        5,
+      );
+      _currentAudioSettings.autoPlayRecommendationsPage++;
+      await settingsService.updateAudioSettings(_currentAudioSettings);
+      if (page.content.isEmpty) return;
+      await addToQueue(page.content);
+      _logger.fine(
+        '[autoPlay] Added ${page.content.length} recommended song(s) from page ${page.page}',
+      );
+    } catch (e) {
+      _logger.warning('[autoPlay] Failed to extend queue: $e');
+    } finally {
+      _autoPlayFetchInProgress = false;
+    }
+  }
+
   void _finalizePlayDuration() {
     if (_playStartTime == null) return;
     final elapsed = DateTime.now().difference(_playStartTime!).inSeconds;
@@ -605,6 +688,10 @@ class AppAudioService {
     final song = currentSong;
     if (song!.getHash().isEmpty && song.path!.isEmpty) return;
     songService.updateSong(song);
+  }
+
+  void _notifyQueueMutation() {
+    queueMutationNotifier.value++;
   }
 
   void updateSliderInSeconds(int seconds) {

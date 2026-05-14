@@ -22,6 +22,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   ValueNotifier<bool> playingNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> repeatNotifier = ValueNotifier<bool>(false);
   ValueNotifier<bool> shuffleNotifier = ValueNotifier<bool>(false);
+  ValueNotifier<bool> autoPlayNotifier = ValueNotifier<bool>(false);
   ValueNotifier<int> sliderNotifier = ValueNotifier<int>(0);
   ValueNotifier<int> bufferedPositionNotifier = ValueNotifier<int>(0);
   ValueNotifier<double> volumeNotifier = ValueNotifier<double>(0.5);
@@ -48,10 +49,12 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   StreamSubscription<Duration>? _bufferedPositionSub;
   StreamSubscription<PlaybackEvent>? _playbackEventSub;
   VoidCallback? _playerVersionListener;
+  VoidCallback? _queueMutationListener;
 
   AudioProvider(this._audioService, this._fileService) {
     repeatNotifier.value = _currentAudioSettings.repeat;
     shuffleNotifier.value = _currentAudioSettings.shuffle;
+    autoPlayNotifier.value = _currentAudioSettings.autoPlay;
     volumeNotifier.value = _currentAudioSettings.volume;
 
     sliderNotifier.value = currentSong?.durationInSeconds ?? 0;
@@ -67,6 +70,10 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       _bindPlayerStreams();
     };
     _audioService.playerInstanceVersion.addListener(_playerVersionListener!);
+    _queueMutationListener = () {
+      notifyListeners();
+    };
+    _audioService.queueMutationNotifier.addListener(_queueMutationListener!);
 
     _setColors();
     _changeMediaItem();
@@ -79,6 +86,11 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     if (_playerVersionListener != null) {
       _audioService.playerInstanceVersion.removeListener(
         _playerVersionListener!,
+      );
+    }
+    if (_queueMutationListener != null) {
+      _audioService.queueMutationNotifier.removeListener(
+        _queueMutationListener!,
       );
     }
     _audioService.audioPlayer.dispose();
@@ -162,6 +174,15 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     _audioService.setShuffle(shuffle);
   }
 
+  void setAutoPlay(bool autoPlay) {
+    autoPlayNotifier.value = autoPlay;
+    _audioService.setAutoPlay(autoPlay);
+  }
+
+  int getCurrentSongPeerCount() {
+    return _audioService.getCurrentSongPeerCount();
+  }
+
   Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
     await _audioService.setQueueAndPlay(songs, song);
     notifyListeners();
@@ -235,6 +256,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       var currentSongDuration = currentSong?.durationInSeconds ?? 0;
       shuffleNotifier.value = _audioService.currentAudioSettings.shuffle;
       repeatNotifier.value = _audioService.currentAudioSettings.repeat;
+      autoPlayNotifier.value = _audioService.currentAudioSettings.autoPlay;
       totalDurationNotifier.value = Duration(seconds: currentSongDuration);
       _setColors();
       _changeMediaItem();

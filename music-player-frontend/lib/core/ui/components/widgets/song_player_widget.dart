@@ -26,6 +26,9 @@ class SongPlayerWidget extends StatefulWidget {
 
 class _SongPlayerWidgetState extends State<SongPlayerWidget>
     with TickerProviderStateMixin {
+  static const double _statusChipWidth = 132;
+  static const double _statusChipHeight = 34;
+
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   final ScrollController itemScrollController = ScrollController();
   late AbstractAppStateProvider appStateProvider;
@@ -624,7 +627,11 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
 
                   SizedBox(
                     width: width * 0.5,
-                    child: _buildPlayerButtons(audioProvider, expanded: true),
+                    child: _buildPlayerButtons(
+                      audioProvider,
+                      expanded: true,
+                      desktopMaximized: true,
+                    ),
                   ),
 
                   const Spacer(),
@@ -781,13 +788,16 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                 Opacity(
                   opacity: progressBarOpacity,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      buildShuffleButton(context),
+                      buildAutoPlayButton(context, compact: true),
+
+                      const Spacer(),
 
                       _buildListButton(context),
 
-                      buildRepeatButton(context),
+                      const Spacer(),
+
+                      buildPeerCountLabel(context, compact: true),
                     ],
                   ),
                 ),
@@ -858,7 +868,10 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     children: [
                       SizedBox(
                         width: width * 0.8,
-                        child: _buildPlayerButtons(audioProvider),
+                        child: _buildPlayerButtons(
+                          audioProvider,
+                          expanded: true,
+                        ),
                       ),
                     ],
                   ),
@@ -1158,19 +1171,120 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
     );
   }
 
+  Widget buildAutoPlayButton(
+    BuildContext context, {
+    bool expanded = false,
+    bool compact = false,
+  }) {
+    return ValueListenableBuilder(
+      valueListenable: audioProvider.autoPlayNotifier,
+      builder: (context, enabled, child) {
+        return SizedBox(
+          width: _statusChipWidth,
+          height: _statusChipHeight,
+          child: Container(
+            padding: EdgeInsets.only(left: 10, top: 4, bottom: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Colors.white24, width: 1),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Auto play',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Transform.scale(
+                  scale: compact ? 0.68 : 0.72,
+                  child: Switch.adaptive(
+                    value: enabled,
+                    onChanged: audioProvider.setAutoPlay,
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: Colors.white38,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget buildPeerCountLabel(BuildContext context, {bool compact = false}) {
+    return ValueListenableBuilder(
+      valueListenable: audioProvider.sliderNotifier,
+      builder: (context, _, child) {
+        final peerCount = audioProvider.getCurrentSongPeerCount();
+        final dotColor =
+            peerCount == 0
+                ? Colors.redAccent
+                : (peerCount <= 2 ? Colors.amberAccent : Colors.greenAccent);
+
+        return Tooltip(
+          message: '$peerCount peer${peerCount == 1 ? '' : 's'} for this song',
+          child: SizedBox(
+            width: _statusChipWidth,
+            height: _statusChipHeight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white24, width: 1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: dotColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    compact
+                        ? '$peerCount peer${peerCount == 1 ? '' : 's'}'
+                        : 'Peers: $peerCount',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildPlayerButtons(
     AudioProvider audioProvider, {
     bool expanded = false,
+    bool desktopMaximized = false,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        if (desktopMaximized) buildPeerCountLabel(context),
         if (expanded) buildShuffleButton(context),
         buildPreviousButton(context),
         buildPlayPauseButton(context),
         buildNextButton(context),
         if (expanded) buildRepeatButton(context),
+        if (desktopMaximized) buildAutoPlayButton(context),
       ],
     );
   }

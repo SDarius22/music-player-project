@@ -18,6 +18,7 @@ import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart'
 import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 class DrawerWidget extends StatefulWidget {
   final bool mobileDrawer;
@@ -100,20 +101,22 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   ];
 
   List<Map<String, dynamic>> get adminMenuItems => [
-    {
-      "text": "Upload songs",
-      "tooltip": "Upload songs",
-      "icon": FluentIcons.cloudUpload,
-      "index": 6,
-      "onTap": (BuildContext context) {
-        setState(() => _appStateProvider.currentDrawerIndex = 6);
-        context
-            .read<AbstractAppStateProvider>()
-            .innerNavigatorKey
-            .currentState!
-            .pushReplacement(UploadSongsScreen.route());
+    if (!UniversalPlatform.isWeb) ...[
+      {
+        "text": "Upload songs",
+        "tooltip": "Upload songs",
+        "icon": FluentIcons.cloudUpload,
+        "index": 6,
+        "onTap": (BuildContext context) {
+          setState(() => _appStateProvider.currentDrawerIndex = 6);
+          context
+              .read<AbstractAppStateProvider>()
+              .innerNavigatorKey
+              .currentState!
+              .pushReplacement(UploadSongsScreen.route());
+        },
       },
-    },
+    ],
     {
       "text": "Statistics",
       "tooltip": "Chunk delivery statistics",

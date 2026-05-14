@@ -39,9 +39,7 @@ void main() {
     mockAuthService = MockAuthService();
     mockPlaybackRestService = MockPlaybackRestClient();
     mockAudioPlayer = MockAudioPlayer();
-    when(
-      mockSettingsService.updateAudioSettings(any),
-    ).thenAnswer((_) async {});
+    when(mockSettingsService.updateAudioSettings(any)).thenAnswer((_) async {});
 
     service = AppAudioService(
       mockSongService,
@@ -59,9 +57,11 @@ void main() {
       service.updateSliderInSeconds(42);
       await Future<void>.delayed(Duration.zero);
 
-      final captured = verify(
-        mockSettingsService.updateAudioSettings(captureAny),
-      ).captured.last as AudioSettings;
+      final captured =
+          verify(
+                mockSettingsService.updateAudioSettings(captureAny),
+              ).captured.last
+              as AudioSettings;
       expect(captured.sliderInSeconds, 42);
     });
 
@@ -74,6 +74,17 @@ void main() {
 
       expect(song.likedByUser, isTrue);
       verify(mockSongService.updateSong(song)).called(1);
+    });
+
+    test('setAutoPlay persists updated audio settings', () async {
+      await service.setAutoPlay(true);
+
+      final captured =
+          verify(
+                mockSettingsService.updateAudioSettings(captureAny),
+              ).captured.last
+              as AudioSettings;
+      expect(captured.autoPlay, isTrue);
     });
   });
 }

@@ -12,7 +12,6 @@ import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'settings_service_test.mocks.dart';
 
 @GenerateNiceMocks([MockSpec<SettingsRepository>()])
-
 class FakePlaybackRestClient extends PlaybackRestClient {
   FakePlaybackRestClient()
     : super(
@@ -48,20 +47,21 @@ void main() {
     fakePlaybackClient = FakePlaybackRestClient();
     service = SettingsService(mockRepo, fakePlaybackClient);
 
-    when(
-      mockRepo.saveAudioSettings(any),
-    ).thenAnswer((invocation) => invocation.positionalArguments.first as AudioSettings);
-    when(
-      mockRepo.saveAppSettings(any),
-    ).thenAnswer((invocation) => invocation.positionalArguments.first as AppSettings);
+    when(mockRepo.saveAudioSettings(any)).thenAnswer(
+      (invocation) => invocation.positionalArguments.first as AudioSettings,
+    );
+    when(mockRepo.saveAppSettings(any)).thenAnswer(
+      (invocation) => invocation.positionalArguments.first as AppSettings,
+    );
   });
 
   group('getAudioSettings', () {
     test('returns cached server playback values when available', () async {
-      final localSettings = AudioSettings()
-        ..sliderInSeconds = 1
-        ..shuffle = false
-        ..repeat = false;
+      final localSettings =
+          AudioSettings()
+            ..sliderInSeconds = 1
+            ..shuffle = false
+            ..repeat = false;
       when(mockRepo.getAudioSettings()).thenReturn(localSettings);
       fakePlaybackClient.playbackToReturn = const PlaybackStateDto(
         positionSeconds: 45,
@@ -101,25 +101,30 @@ void main() {
   });
 
   group('updateAudioSettings', () {
-    test('saves remotely when settings changed and always saves locally', () async {
-      final existing = AudioSettings()
-        ..sliderInSeconds = 1
-        ..repeat = false
-        ..shuffle = false;
-      final updated = AudioSettings()
-        ..sliderInSeconds = 7
-        ..repeat = true
-        ..shuffle = true;
-      when(mockRepo.getAudioSettings()).thenReturn(existing);
+    test(
+      'saves remotely when settings changed and always saves locally',
+      () async {
+        final existing =
+            AudioSettings()
+              ..sliderInSeconds = 1
+              ..repeat = false
+              ..shuffle = false;
+        final updated =
+            AudioSettings()
+              ..sliderInSeconds = 7
+              ..repeat = true
+              ..shuffle = true;
+        when(mockRepo.getAudioSettings()).thenReturn(existing);
 
-      await service.updateAudioSettings(updated);
+        await service.updateAudioSettings(updated);
 
-      expect(fakePlaybackClient.savedState, isNotNull);
-      expect(fakePlaybackClient.savedState!.positionSeconds, 7);
-      expect(fakePlaybackClient.savedState!.repeat, isTrue);
-      expect(fakePlaybackClient.savedState!.shuffle, isTrue);
-      verify(mockRepo.saveAudioSettings(updated)).called(1);
-    });
+        expect(fakePlaybackClient.savedState, isNotNull);
+        expect(fakePlaybackClient.savedState!.positionSeconds, 7);
+        expect(fakePlaybackClient.savedState!.repeat, isTrue);
+        expect(fakePlaybackClient.savedState!.shuffle, isTrue);
+        verify(mockRepo.saveAudioSettings(updated)).called(1);
+      },
+    );
 
     test('still saves locally when remote update throws', () async {
       final existing = AudioSettings();
@@ -131,6 +136,30 @@ void main() {
 
       verify(mockRepo.saveAudioSettings(updated)).called(1);
     });
+
+    test(
+      'autoPlay-only change saves locally without remote playback save',
+      () async {
+        final existing =
+            AudioSettings()
+              ..sliderInSeconds = 11
+              ..repeat = false
+              ..shuffle = true
+              ..autoPlay = false;
+        final updated =
+            AudioSettings()
+              ..sliderInSeconds = 11
+              ..repeat = false
+              ..shuffle = true
+              ..autoPlay = true;
+        when(mockRepo.getAudioSettings()).thenReturn(existing);
+
+        await service.updateAudioSettings(updated);
+
+        expect(fakePlaybackClient.savedState, isNull);
+        verify(mockRepo.saveAudioSettings(updated)).called(1);
+      },
+    );
   });
 
   group('updateAppSettings', () {

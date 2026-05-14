@@ -46,6 +46,9 @@ class ChunkService {
 
   int get totalChunks => manifest?.totalChunks ?? 0;
 
+  int get availablePeerCount =>
+      _webrtcManager.getSortedPeersForSong(fileHash).length;
+
   int get _serverPrefixCount => max(1, (totalChunks * 0.05).round());
 
   ChunkService({
@@ -185,7 +188,9 @@ class ChunkService {
           data = await _streamingClient.downloadChunkFallback(fileHash, index);
         }
       } else {
-        _logger.fine('[P2P] No peers available for file=$fileHash idx=$index; using server');
+        _logger.fine(
+          '[P2P] No peers available for file=$fileHash idx=$index; using server',
+        );
         data = await _streamingClient.downloadChunkFallback(fileHash, index);
       }
     }
