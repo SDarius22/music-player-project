@@ -1219,7 +1219,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
 
   Widget buildPeerCountLabel(BuildContext context, {bool compact = false}) {
     return ValueListenableBuilder(
-      valueListenable: audioProvider.sliderNotifier,
+      valueListenable: audioProvider.songPeerCountNotifier,
       builder: (context, _, child) {
         final peerCount = audioProvider.getCurrentSongPeerCount();
         final dotColor =

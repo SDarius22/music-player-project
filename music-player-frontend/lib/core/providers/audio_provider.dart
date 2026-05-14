@@ -36,6 +36,9 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   ValueNotifier<bool> get likedNotifier => _audioService.likedNotifier;
 
+  ValueNotifier<int> get songPeerCountNotifier =>
+      _audioService.songPeerCountNotifier;
+
   Song? get currentSong => currentSongNotifier.value;
 
   int get currentIndexInNonShuffled => normalQueue.indexOf(currentSong!);

@@ -96,6 +96,7 @@ class WebRTCService {
   final Map<String, _ChunkAssembly> _assemblies = {};
 
   Timer? _keepaliveTimer;
+  final ValueNotifier<int> peerStateVersionNotifier = ValueNotifier<int>(0);
 
   //    DataChannel binary protocol constants
   //    Legacy packet:   [hash:64][chunkIdx:4][data…]
@@ -171,6 +172,10 @@ class WebRTCService {
   }
 
   bool get isConnected => _dataChannels.isNotEmpty;
+
+  void _notifyPeerStateChanged() {
+    peerStateVersionNotifier.value++;
+  }
 
   List<String> getSortedPeersForSong(String fileHash) {
     final peers =
@@ -557,6 +562,7 @@ class WebRTCService {
     _pendingChunkRequests.remove(peerId);
     _awaitingAnswer.remove(peerId);
     _pendingOfferId.remove(peerId);
+    _notifyPeerStateChanged();
 
     _outstandingChunkRequests.removeWhere((_, v) {
       if (v.peerId == peerId) {
@@ -896,6 +902,7 @@ class WebRTCService {
               _createPeerConnection(peerId, true);
             }
           }
+          _notifyPeerStateChanged();
 
         case 'OFFER':
           // Glare: both sides sent an offer simultaneously.

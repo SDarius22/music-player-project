@@ -36,6 +36,7 @@ class AppAudioService {
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
   final ValueNotifier<int> playerInstanceVersion = ValueNotifier<int>(0);
   final ValueNotifier<int> queueMutationNotifier = ValueNotifier<int>(0);
+  final ValueNotifier<int> songPeerCountNotifier = ValueNotifier<int>(0);
 
   void Function(String fileHash, String songName)? _onWebSongChange;
 
@@ -56,6 +57,8 @@ class AppAudioService {
   StreamSubscription<PlayerState>? _playerStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<PlayerException>? _errorSubscription;
+  ValueNotifier<int>? _boundPeerStateNotifier;
+  VoidCallback? _boundPeerStateListener;
 
   List<Song> _normalQueue = [];
   List<Song> _shuffledQueue = [];
@@ -434,6 +437,7 @@ class AppAudioService {
 
   Future<void> setCurrentSongAndPlay(Song song) async {
     currentSong = song;
+    _bindSongPeerCountNotifier(song);
     try {
       final idx = _activeQueue.indexWhere((s) => s == song);
       _currentIndex = idx < 0 ? 0 : idx;
@@ -611,6 +615,7 @@ class AppAudioService {
   }
 
   void _onSongStarted(Song song) {
+    _bindSongPeerCountNotifier(song);
     unawaited(_maybeExtendQueueForAutoPlay());
     song.lastPlayed = DateTime.now();
     song.playCount += 1;
@@ -694,12 +699,44 @@ class AppAudioService {
     queueMutationNotifier.value++;
   }
 
+  void _bindSongPeerCountNotifier(Song song) {
+    if (_boundPeerStateNotifier != null && _boundPeerStateListener != null) {
+      _boundPeerStateNotifier!.removeListener(_boundPeerStateListener!);
+    }
+    _boundPeerStateNotifier = null;
+    _boundPeerStateListener = null;
+
+    if (song.isLocal || song.getHash().isEmpty) {
+      songPeerCountNotifier.value = 0;
+      return;
+    }
+
+    final manager = createChunkManager(song.getHash());
+    songPeerCountNotifier.value = manager.availablePeerCount;
+    _boundPeerStateNotifier = manager.peerStateVersionNotifier;
+    _boundPeerStateListener = () {
+      final current = currentSong;
+      if (current == null ||
+          current.isLocal ||
+          current.getHash().isEmpty ||
+          current.getHash() != song.getHash()) {
+        songPeerCountNotifier.value = 0;
+        return;
+      }
+      songPeerCountNotifier.value = manager.availablePeerCount;
+    };
+    _boundPeerStateNotifier!.addListener(_boundPeerStateListener!);
+  }
+
   void updateSliderInSeconds(int seconds) {
     _currentAudioSettings.sliderInSeconds = seconds;
     settingsService.updateAudioSettings(_currentAudioSettings);
   }
 
   Future<void> dispose() async {
+    if (_boundPeerStateNotifier != null && _boundPeerStateListener != null) {
+      _boundPeerStateNotifier!.removeListener(_boundPeerStateListener!);
+    }
     _positionSaveTimer?.cancel();
     await _processingStateSubscription?.cancel();
     await _playerStateSubscription?.cancel();

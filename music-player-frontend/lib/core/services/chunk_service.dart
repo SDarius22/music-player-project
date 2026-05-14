@@ -49,6 +49,9 @@ class ChunkService {
   int get availablePeerCount =>
       _webrtcManager.getSortedPeersForSong(fileHash).length;
 
+  ValueNotifier<int> get peerStateVersionNotifier =>
+      _webrtcManager.peerStateVersionNotifier;
+
   int get _serverPrefixCount => max(1, (totalChunks * 0.05).round());
 
   ChunkService({
