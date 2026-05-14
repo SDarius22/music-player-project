@@ -37,6 +37,8 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
                 .positionSeconds(5L)
                 .shuffle(true)
                 .repeat(false)
+                .autoPlay(true)
+                .autoPlayRecommendationsPage(2L)
                 .build();
 
         UserPlaybackState saved = playbackStateRepository.save(state);
@@ -45,6 +47,8 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
         assertThat(saved.getPositionSeconds()).isEqualTo(5L);
         assertThat(saved.getShuffle()).isTrue();
         assertThat(saved.getRepeat()).isFalse();
+        assertThat(saved.getAutoPlay()).isTrue();
+        assertThat(saved.getAutoPlayRecommendationsPage()).isEqualTo(2L);
     }
 
     @Test
@@ -54,6 +58,8 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
                 .positionSeconds(123L)
                 .shuffle(false)
                 .repeat(true)
+                .autoPlay(true)
+                .autoPlayRecommendationsPage(5L)
                 .build());
 
         var found = playbackStateRepository.findById(user.getId());
@@ -61,6 +67,8 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
         assertThat(found).isPresent();
         assertThat(found.get().getPositionSeconds()).isEqualTo(123L);
         assertThat(found.get().getRepeat()).isTrue();
+        assertThat(found.get().getAutoPlay()).isTrue();
+        assertThat(found.get().getAutoPlayRecommendationsPage()).isEqualTo(5L);
     }
 
     @Test
@@ -75,16 +83,20 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
     @Test
     void shouldOverwritePlaybackStateWhenSavedTwiceWithSameUserId() {
         playbackStateRepository.save(UserPlaybackState.builder()
-                .userId(user.getId()).positionSeconds(1L).shuffle(false).repeat(false).build());
+                .userId(user.getId()).positionSeconds(1L).shuffle(false).repeat(false)
+                .autoPlay(false).autoPlayRecommendationsPage(0L).build());
 
         playbackStateRepository.save(UserPlaybackState.builder()
-                .userId(user.getId()).positionSeconds(99L).shuffle(true).repeat(true).build());
+                .userId(user.getId()).positionSeconds(99L).shuffle(true).repeat(true)
+                .autoPlay(true).autoPlayRecommendationsPage(4L).build());
 
         var found = playbackStateRepository.findById(user.getId());
 
         assertThat(found).isPresent();
         assertThat(found.get().getPositionSeconds()).isEqualTo(99L);
         assertThat(found.get().getShuffle()).isTrue();
+        assertThat(found.get().getAutoPlay()).isTrue();
+        assertThat(found.get().getAutoPlayRecommendationsPage()).isEqualTo(4L);
     }
 
     @Test
@@ -98,5 +110,7 @@ class UserPlaybackStateRepositoryTest extends BaseRepositoryTest {
         assertThat(saved.getPositionSeconds()).isEqualTo(0L);
         assertThat(saved.getShuffle()).isFalse();
         assertThat(saved.getRepeat()).isFalse();
+        assertThat(saved.getAutoPlay()).isFalse();
+        assertThat(saved.getAutoPlayRecommendationsPage()).isEqualTo(0L);
     }
 }

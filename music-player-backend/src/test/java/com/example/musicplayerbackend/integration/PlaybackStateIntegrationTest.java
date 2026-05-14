@@ -97,6 +97,8 @@ class PlaybackStateIntegrationTest {
         dto.setPositionSeconds(45L);
         dto.setShuffle(true);
         dto.setRepeat(false);
+        dto.setAutoPlay(true);
+        dto.setAutoPlayRecommendationsPage(8L);
 
         mockMvc.perform(put("/api/v1/playback")
                         .with(user(testUser))
@@ -106,13 +108,17 @@ class PlaybackStateIntegrationTest {
                 .andExpect(jsonPath("$.positionSeconds").value(45))
                 .andExpect(jsonPath("$.shuffle").value(true))
                 .andExpect(jsonPath("$.repeat").value(false))
+                .andExpect(jsonPath("$.autoPlay").value(true))
+                .andExpect(jsonPath("$.autoPlayRecommendationsPage").value(8))
                 .andExpect(jsonPath("$.updatedAt").isNotEmpty());
 
         mockMvc.perform(get("/api/v1/playback").with(user(testUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.positionSeconds").value(45))
                 .andExpect(jsonPath("$.shuffle").value(true))
-                .andExpect(jsonPath("$.repeat").value(false));
+                .andExpect(jsonPath("$.repeat").value(false))
+                .andExpect(jsonPath("$.autoPlay").value(true))
+                .andExpect(jsonPath("$.autoPlayRecommendationsPage").value(8));
     }
 
     @Test
@@ -121,6 +127,8 @@ class PlaybackStateIntegrationTest {
         first.setShuffle(false);
         first.setRepeat(false);
         first.setPositionSeconds(1L);
+        first.setAutoPlay(false);
+        first.setAutoPlayRecommendationsPage(0L);
 
         mockMvc.perform(put("/api/v1/playback")
                         .with(user(testUser))
@@ -132,6 +140,8 @@ class PlaybackStateIntegrationTest {
         second.setShuffle(true);
         second.setRepeat(true);
         second.setPositionSeconds(99L);
+        second.setAutoPlay(true);
+        second.setAutoPlayRecommendationsPage(5L);
 
         mockMvc.perform(put("/api/v1/playback")
                         .with(user(testUser))
@@ -143,6 +153,8 @@ class PlaybackStateIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.positionSeconds").value(99))
                 .andExpect(jsonPath("$.shuffle").value(true))
-                .andExpect(jsonPath("$.repeat").value(true));
+                .andExpect(jsonPath("$.repeat").value(true))
+                .andExpect(jsonPath("$.autoPlay").value(true))
+                .andExpect(jsonPath("$.autoPlayRecommendationsPage").value(5));
     }
 }

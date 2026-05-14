@@ -34,5 +34,13 @@ public class UserPlaybackState {
 
     @Column(nullable = false)
     @Builder.Default
+    private Boolean autoPlay = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Long autoPlayRecommendationsPage = 0L;
+
+    @Column(nullable = false)
+    @Builder.Default
     private Instant updatedAt = Instant.now();
 }

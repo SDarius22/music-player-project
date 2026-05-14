@@ -67,6 +67,8 @@ void main() {
         positionSeconds: 45,
         shuffle: true,
         repeat: true,
+        autoPlay: true,
+        autoPlayRecommendationsPage: 6,
       );
 
       final result = await service.getAudioSettings();
@@ -74,6 +76,8 @@ void main() {
       expect(result.sliderInSeconds, 45);
       expect(result.shuffle, isTrue);
       expect(result.repeat, isTrue);
+      expect(result.autoPlay, isTrue);
+      expect(result.autoPlayRecommendationsPage, 6);
       verify(mockRepo.saveAudioSettings(any)).called(1);
     });
 
@@ -108,12 +112,16 @@ void main() {
             AudioSettings()
               ..sliderInSeconds = 1
               ..repeat = false
-              ..shuffle = false;
+              ..shuffle = false
+              ..autoPlay = false
+              ..autoPlayRecommendationsPage = 0;
         final updated =
             AudioSettings()
               ..sliderInSeconds = 7
               ..repeat = true
-              ..shuffle = true;
+              ..shuffle = true
+              ..autoPlay = true
+              ..autoPlayRecommendationsPage = 3;
         when(mockRepo.getAudioSettings()).thenReturn(existing);
 
         await service.updateAudioSettings(updated);
@@ -122,6 +130,8 @@ void main() {
         expect(fakePlaybackClient.savedState!.positionSeconds, 7);
         expect(fakePlaybackClient.savedState!.repeat, isTrue);
         expect(fakePlaybackClient.savedState!.shuffle, isTrue);
+        expect(fakePlaybackClient.savedState!.autoPlay, isTrue);
+        expect(fakePlaybackClient.savedState!.autoPlayRecommendationsPage, 3);
         verify(mockRepo.saveAudioSettings(updated)).called(1);
       },
     );
@@ -137,29 +147,30 @@ void main() {
       verify(mockRepo.saveAudioSettings(updated)).called(1);
     });
 
-    test(
-      'autoPlay-only change saves locally without remote playback save',
-      () async {
-        final existing =
-            AudioSettings()
-              ..sliderInSeconds = 11
-              ..repeat = false
-              ..shuffle = true
-              ..autoPlay = false;
-        final updated =
-            AudioSettings()
-              ..sliderInSeconds = 11
-              ..repeat = false
-              ..shuffle = true
-              ..autoPlay = true;
-        when(mockRepo.getAudioSettings()).thenReturn(existing);
+    test('autoPlay-only change is saved remotely and locally', () async {
+      final existing =
+          AudioSettings()
+            ..sliderInSeconds = 11
+            ..repeat = false
+            ..shuffle = true
+            ..autoPlay = false
+            ..autoPlayRecommendationsPage = 0;
+      final updated =
+          AudioSettings()
+            ..sliderInSeconds = 11
+            ..repeat = false
+            ..shuffle = true
+            ..autoPlay = true
+            ..autoPlayRecommendationsPage = 4;
+      when(mockRepo.getAudioSettings()).thenReturn(existing);
 
-        await service.updateAudioSettings(updated);
+      await service.updateAudioSettings(updated);
 
-        expect(fakePlaybackClient.savedState, isNull);
-        verify(mockRepo.saveAudioSettings(updated)).called(1);
-      },
-    );
+      expect(fakePlaybackClient.savedState, isNotNull);
+      expect(fakePlaybackClient.savedState!.autoPlay, isTrue);
+      expect(fakePlaybackClient.savedState!.autoPlayRecommendationsPage, 4);
+      verify(mockRepo.saveAudioSettings(updated)).called(1);
+    });
   });
 
   group('updateAppSettings', () {

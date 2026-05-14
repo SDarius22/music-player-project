@@ -26,7 +26,10 @@ class SettingsService {
     var existingSettings = _settingsRepository.getAudioSettings();
     if (existingSettings.sliderInSeconds == newSettings.sliderInSeconds &&
         existingSettings.repeat == newSettings.repeat &&
-        existingSettings.shuffle == newSettings.shuffle) {
+        existingSettings.shuffle == newSettings.shuffle &&
+        existingSettings.autoPlay == newSettings.autoPlay &&
+        existingSettings.autoPlayRecommendationsPage ==
+            newSettings.autoPlayRecommendationsPage) {
       _settingsRepository.saveAudioSettings(newSettings);
       return;
     }
@@ -36,6 +39,8 @@ class SettingsService {
         positionSeconds: newSettings.sliderInSeconds,
         repeat: newSettings.repeat,
         shuffle: newSettings.shuffle,
+        autoPlay: newSettings.autoPlay,
+        autoPlayRecommendationsPage: newSettings.autoPlayRecommendationsPage,
       );
       await _playbackRestClient.savePlaybackState(playbackState);
     } catch (_) {
@@ -57,6 +62,9 @@ class SettingsService {
     audioSettings.sliderInSeconds = playbackState.positionSeconds;
     audioSettings.repeat = playbackState.repeat;
     audioSettings.shuffle = playbackState.shuffle;
+    audioSettings.autoPlay = playbackState.autoPlay;
+    audioSettings.autoPlayRecommendationsPage =
+        playbackState.autoPlayRecommendationsPage;
     return _settingsRepository.saveAudioSettings(audioSettings);
   }
 }

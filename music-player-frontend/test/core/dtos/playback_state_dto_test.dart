@@ -8,6 +8,8 @@ void main() {
         'positionSeconds': 45,
         'shuffle': true,
         'repeat': false,
+        'autoPlay': true,
+        'autoPlayRecommendationsPage': 4,
         'updatedAt': '2026-05-04T10:30:00Z',
       });
 
@@ -15,6 +17,8 @@ void main() {
       expect(dto.positionMs, equals(45000));
       expect(dto.shuffle, isTrue);
       expect(dto.repeat, isFalse);
+      expect(dto.autoPlay, isTrue);
+      expect(dto.autoPlayRecommendationsPage, equals(4));
       expect(dto.updatedAt, DateTime.parse('2026-05-04T10:30:00Z'));
     });
 
@@ -24,6 +28,8 @@ void main() {
       expect(dto.positionSeconds, equals(0));
       expect(dto.shuffle, isFalse);
       expect(dto.repeat, isFalse);
+      expect(dto.autoPlay, isFalse);
+      expect(dto.autoPlayRecommendationsPage, equals(0));
       expect(dto.updatedAt, isNull);
     });
 
@@ -39,6 +45,8 @@ void main() {
       expect(dto.positionSeconds, equals(0));
       expect(dto.shuffle, isFalse);
       expect(dto.repeat, isFalse);
+      expect(dto.autoPlay, isFalse);
+      expect(dto.autoPlayRecommendationsPage, equals(0));
     });
 
     test('fromJson falls back to legacy positionMs when needed', () {
@@ -56,6 +64,8 @@ void main() {
         positionSeconds: 5,
         shuffle: true,
         repeat: true,
+        autoPlay: true,
+        autoPlayRecommendationsPage: 2,
       );
 
       final json = dto.toJson();
@@ -63,6 +73,8 @@ void main() {
       expect(json['positionSeconds'], equals(5));
       expect(json['shuffle'], isTrue);
       expect(json['repeat'], isTrue);
+      expect(json['autoPlay'], isTrue);
+      expect(json['autoPlayRecommendationsPage'], equals(2));
       expect(json.containsKey('queueFileHashes'), isFalse);
       expect(json.containsKey('currentFileHash'), isFalse);
       expect(json.containsKey('updatedAt'), isFalse);
@@ -73,6 +85,8 @@ void main() {
         positionSeconds: 72,
         shuffle: true,
         repeat: false,
+        autoPlay: true,
+        autoPlayRecommendationsPage: 9,
       );
 
       final restored = PlaybackStateDto.fromJson(original.toJson());
@@ -80,6 +94,11 @@ void main() {
       expect(restored.positionSeconds, equals(original.positionSeconds));
       expect(restored.shuffle, equals(original.shuffle));
       expect(restored.repeat, equals(original.repeat));
+      expect(restored.autoPlay, equals(original.autoPlay));
+      expect(
+        restored.autoPlayRecommendationsPage,
+        equals(original.autoPlayRecommendationsPage),
+      );
     });
 
     test('positionMs getter mirrors positionSeconds', () {
