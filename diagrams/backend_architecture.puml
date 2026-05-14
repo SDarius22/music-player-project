@@ -4,20 +4,18 @@ skinparam componentStyle rectangle
 skinparam linetype ortho
 skinparam defaultFontName monospaced
 
-title Backend Service Architecture
-
 package "Spring Boot backend replica(s)" {
-  [REST API adapters\nAuth, Song, Album, Artist, Playlist,\nStreaming, Playback, Sync, Statistics] as api
+  [REST API adapters\nAuth, Song, Album, Artist, Playlist,\nStreaming, Playback, Statistics, Health] as api
 
   [Security & Authentication\nSecurityConfig, JWTAuthenticationFilter\nAuthService, JWTService] as auth
 
-  [Catalog & Library\nSongService, AlbumService, ArtistService,\nPlaylistService, RecommendationService] as catalog
+  [Catalog & Library\nSongService, AlbumService, ArtistService,\nPlaylistService, DefaultPlaylistService,\nRecommendationService] as catalog
 
-  [Upload Pipeline\n64 KiB chunking + SHA-256 dedup\nnegotiated upload + missing chunk ingest] as upload
+  [Upload Pipeline\n64 KiB chunking + SHA-256 dedup\nnegotiated upload + missing chunk ingest\nSongEnrichmentService] as upload
 
-  [Streaming\nStreamingService\nmanifest, prefix, chunk, full fallback] as streaming
+  [Streaming\nStreamingService\nGET /stream/{fileHash}/manifest\nGET /stream/{fileHash}/chunk/{chunkIndex}] as streaming
 
-  [State, Sync & Telemetry\nPlaybackStateService, DataSyncService,\nStatisticsService] as userState
+  [State & Telemetry\nPlaybackStateService\nStatisticsService] as userState
 
   [Realtime Signaling\nSignalingHandler\nRedisSignalingListener] as signaling
 
@@ -47,9 +45,8 @@ auth     --> mail : verification email
 upload   --> fs   : write chunk files
 streaming --> fs  : read chunk files
 
-userState --> signaling : playback / sync events
 signaling --> peerTracking : REGISTER_CACHE / DISCOVER_PEERS
-signaling <--> redis : signaling:webrtc\nsignaling:sync\nsignaling:playback
+signaling <--> redis : signaling:webrtc
 peerTracking --> redis : peer:chunks:*\npeer:songs:*
 
 repos --> postgres

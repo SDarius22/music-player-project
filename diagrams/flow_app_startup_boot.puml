@@ -2,8 +2,6 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title App Startup — Boot and Signaling Connect
-
 participant "main.dart" as main
 participant "MultiProvider\n(abstract_app.dart)" as provider
 participant "WebRTCService" as webrtc

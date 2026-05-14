@@ -4,8 +4,6 @@ hide circle
 skinparam linetype ortho
 skinparam defaultFontName monospaced
 
-title Database Schema — Auxiliary Tables
-
 entity "verification_codes" as verification_codes {
   * id : BIGINT <<PK>>
   --

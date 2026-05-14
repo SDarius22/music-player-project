@@ -2,8 +2,6 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title App Quit — Local Teardown (Playback and Auth)
-
 actor User
 participant "OS / Flutter" as os
 participant "AudioProvider" as audioProv

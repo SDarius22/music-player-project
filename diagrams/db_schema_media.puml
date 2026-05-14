@@ -4,8 +4,6 @@ hide circle
 skinparam linetype ortho
 skinparam defaultFontName monospaced
 
-title Database Schema — Media Catalog and Chunk Storage
-
 entity "artists" as artists {
   * id : BIGINT <<PK>>
   --

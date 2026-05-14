@@ -4,44 +4,54 @@
 \tolerance=9999
 \emergencystretch=3em
 
-\indent \par Chapter 1 has identified the building blocks that a peer-assisted streaming system has to rest upon. The current chapter takes a step back and looks at each of these blocks more carefully, with the aim of understanding when they help and when they hurt. The discussion here is intentionally less applied: there is no Spring Boot or Flutter yet, only the equations and the trade-offs that govern cost, latency, and integrity of any system that fits in this category. What I want from this chapter is that, by the time the reader gets to the end, the implementation choices in Chapter \ref{chap:ch3} require no further justification.
+\indent \par Chapter \ref{intro} laid down the five problems that any peer-assisted streaming system has to solve: latency, connectivity, storage, integrity and flow control. Each one of those problems has a few candidate solutions, and Chapter \ref{intro} picked a winner for every domain on the basis of a qualitative argument. The current chapter goes back to those choices with the intention of justifying them quantitatively, before any line of code is written down.
 
-\par I will also use the last section of the chapter to describe an abstraction of the system, before all the technologies and the framework names are layered on top of it. This is useful because it isolates the conceptual roles from their concrete realisation, which makes it easier to reason about correctness and about replaceability later on.
+\par What we will try to do here is to derive, from a few simple equations and a handful of measurements borrowed from the literature, the constraints that the proposed system has to respect. The discussion is deliberately framework-agnostic: there is no Spring Boot, no Flutter, no Postgres yet. The reader who finishes the chapter should have no more surprise when reading Chapter \ref{chap:ch3} than to find that yes, indeed, that is how one would write the code for what was just described.
+
+\par The chapter closes with an abstract view of the system. The role of that section is to separate the conceptual roles from the technologies that realise them, which is useful both because it makes the implementation easier to reason about and because it makes it clear which parts of the architecture could be swapped out without changing the design as a whole.
 
 
 \section{Formalizing the Cost Problem}
 \label{sec:delivery-models}
 
-\indent \par The original motivation of this paper, presented in Chapter 1, is the rapidly growing cost of cloud egress. The discussion was qualitative there. In what follows, I model it more rigorously, so that the gain promised by the peer-assisted approach can be measured and not only claimed.
+\indent \par The cost discussion in Chapter \ref{intro} was qualitative: cloud egress is expensive, streaming companies pay too much, AI-driven workloads make things worse. None of that gave any way to compare two delivery models on a common scale. The aim of this section is to turn the same problem into an equation that says, for a swarm of $N$ concurrent listeners, exactly how many bytes the server has to push out for each delivery model. Three models are evaluated in turn: the pure client-server baseline, the CDN-augmented variant, and the peer-assisted hybrid that this thesis proposes.
 
 \subsection{The Pure Client-Server Baseline}
 \label{subsec:client-server}
 
-\indent \par In the simplest delivery architecture, every client opens a direct TCP connection to the origin server and pulls data at the required bitrate. The model is easy to reason about. The server holds all content, all the bandwidth is paid by the provider, and the clients are purely passive consumers. The fundamental issue is that the server egress cost grows linearly with the number of concurrent listeners. If a song of size $S$ bytes is listened to by $N$ concurrent users, the total egress volume is
+\indent \par The simplest model is also the one against which everything else is measured. Every client opens a direct TCP connection to the origin server and pulls the audio data at the required bitrate. The server holds all the content, all the bandwidth is paid by the provider, and the clients are purely passive consumers. There is no peer interaction and no edge layer in between.
+
+\par The fundamental issue is that the server egress cost grows linearly with the number of concurrent listeners. If a song of size $S$ bytes is listened to by $N$ concurrent users, the total egress volume is
 
 \begin{equation}
   B_{\text{server}} = N \cdot S.
   \label{eq:server-cost}
 \end{equation}
 
-\par For large $N$, this is commercially unsustainable, exactly the situation that Spotify is currently in \cite{spotify_google}. Cloud egress pricing from major providers (AWS, GCP, Azure) is typically charged per gigabyte transferred out of the data centre, so equation \eqref{eq:server-cost} translates directly into an infrastructure bill that scales with popularity.
+\par Equation \eqref{eq:server-cost} is what produces the kind of contracts that Spotify signed with Google back in 2018 \cite{spotify_google}, in which the listening cost is paid per gigabyte transferred out of the data centre. Cloud egress is priced almost identically across the three major providers (AWS, GCP, Azure) at roughly \$0.08 to \$0.12 per gigabyte once the free tier is exhausted, which means that the formula above translates directly into an invoice that scales with popularity rather than with revenue. For a song that goes viral, this is the worst possible behaviour: the more it is loved, the more it costs to serve.
 
 \subsection{Content Delivery Networks}
 \label{subsec:cdn}
 
-\indent \par Content Delivery Networks (CDNs) try to address the latency dimension of the client-server problem by replicating popular content to geographically distributed edge nodes. A client is routed to the closest edge node, which reduces the round-trip time and often improves the throughput. CDNs do not reduce the total egress though. Every byte still originates from infrastructure that the provider owns or rents and is billed at egress rates, with the replication itself adding intra-CDN transfer fees for warming the edge caches. The model is also poorly suited for long-tail content (songs that are rarely played) which has to be replicated to many edge locations even though it is requested only occasionally. CDNs therefore solve in part the latency problem while leaving the cost problem intact \cite{web_performance}.
+\indent \par Content Delivery Networks are the industry's first answer to the egress problem, and they have been around long enough that almost every modern streaming platform uses them in some form. A CDN replicates the popular content to geographically distributed edge nodes, and a client is routed to the closest one. The round-trip time drops and the throughput usually improves, both of which directly translate into a better playback experience.
+
+\par What a CDN does not do, however, is reduce the total egress. Every byte still originates from infrastructure that the provider owns or rents, and is billed at egress rates. The replication itself adds intra-CDN transfer fees for warming the edge caches \cite{web_performance}, which is a non-trivial cost in its own right when the catalogue contains millions of long-tail tracks. The model is also poorly suited for content that is rarely played, since the same track has to be replicated to many edge locations even though it is requested only occasionally.
+
+\par In other words, the CDN solves the latency part of the client-server problem while leaving the cost part essentially intact. For a thesis whose stated objective is to reduce the infrastructure bill, a CDN is therefore not enough on its own; it can be part of a larger solution but it is not the lever that lowers the cost curve.
 
 \subsection{Peer-Assisted Hybrid Delivery}
 \label{subsec:hybrid}
 
-\indent \par The peer-assisted model adds a device-to-device transfer layer on top of the client-server baseline \cite{d2d_survey}. After a client downloads a portion of the content from the server, it advertises that portion to other interested clients and serves it directly over a P2P channel. The server shifts from serving every byte to serving only the initial fraction that bootstraps each new client into the swarm. The theoretical minimum server egress for a swarm of $N$ users is reached when the first client downloads the full content from the server and every subsequent client downloads only from peers:
+\indent \par The peer-assisted model adds a device-to-device transfer layer on top of the client-server baseline \cite{d2d_survey}. After a client downloads a portion of the content from the server, it advertises that portion to other interested clients and serves it directly over a peer-to-peer channel. The server stops being the only source of every byte and becomes instead a bootstrapper that hands out only the initial fraction needed to seed a new listener into the swarm.
+
+\par The theoretical lower bound on the server egress for a swarm of $N$ users is reached when the first client downloads the full content from the server and every subsequent client downloads only from peers:
 
 \begin{equation}
   B_{\text{hybrid}}^{\min} = S + (N-1) \cdot \epsilon,
   \label{eq:hybrid-min}
 \end{equation}
 
-where $\epsilon$ is the per-client server overhead used for bootstrapping (the prefix). In practice, churn (clients that leave before peers manage to download from them) raises this floor, but the gain over equation \eqref{eq:server-cost} remains substantial even under realistic churn rates \cite{measurement_p2p}. Figure \ref{fig:cost-comparison} illustrates the asymptotic difference between the two models.
+where $\epsilon$ is the per-client server overhead used for bootstrapping. In practice, $\epsilon$ corresponds to the prefix discussed in Section \ref{sec:prefix-theory}, and churn (peers that leave before any other peer manages to download from them) raises this floor a little. Even under the realistic churn rates reported by Stutzbach and Rejaie for residential users \cite{measurement_p2p}, the gain over equation \eqref{eq:server-cost} remains substantial. Figure \ref{fig:cost-comparison} illustrates the asymptotic difference between the two models, with a 15\% prefix share that is itself conservative compared to the 5\% used in the implementation.
 
 \begin{figure}[htbp]
 \centering
@@ -68,53 +78,55 @@ where $\epsilon$ is the per-client server overhead used for bootstrapping (the p
 \label{fig:cost-comparison}
 \end{figure}
 
-\par The hybrid model brings design constraints that the pure server model does not have. Peers must be discoverable, must hold the relevant data at the right moment, and must be reachable despite NAT and firewall boundaries. The rest of this chapter addresses each of these constraints in turn.
+\indent \par The hybrid model is therefore the only one of the three that converts the server bill from $O(N)$ to a value bounded by $O(1)$ in the ideal case. This is the structural property that motivates the rest of the chapter. The price for it is a list of new constraints that the pure server model does not have: peers must be discoverable, must hold the relevant data at the right moment, and must be reachable across NATs and firewalls. The next four sections look at each one of these constraints in turn.
 
 
 \section{Chunks, Hashes and Deduplication}
 \label{sec:chunk-theory}
 
-\indent \par Chapter 1 already argued that the chunk-based approach is the only sensible choice for a P2P system. This section makes the argument quantitative, by showing how the chunk size, the cryptographic hash and the integrity check fit together.
+\indent \par Chapter \ref{intro} already argued that the chunk-based approach is the only sensible choice for a peer-to-peer system. The argument there was a structural one: monolithic byte streams cannot be parallelised across peers and cannot recover from corruption without restarting. This section takes that conclusion further and shows how the three parameters that the chunk model exposes (chunk size, hash function, integrity check) interact with each other, and how their concrete values are derived from the literature rather than picked arbitrarily.
 
 \subsection{Choosing the Chunk Size}
 \label{subsec:fixed-chunks}
 
-\indent \par Fixed-size partitioning of an audio file in blocks of $C$ bytes produces $\lceil S / C \rceil$ chunks. The choice of $C$ is a tuning parameter that trades latency for overhead. Smaller chunks reduce the time-to-first-byte of a P2P transfer but increase the number of round trips and the size of the index. Larger chunks amortise the per-request overhead but coarsen the granularity at which a peer can serve partial data.
+\indent \par Fixed-size partitioning of an audio file in blocks of $C$ bytes produces $\lceil S / C \rceil$ chunks. The choice of $C$ is a tuning parameter that trades latency against overhead. Smaller chunks reduce the time-to-first-byte of a P2P transfer because the first useful response arrives sooner, but they multiply the number of round trips and inflate the size of the manifest that the client has to fetch upfront. Larger chunks amortise the per-request overhead but coarsen the granularity at which a peer can serve partial data.
 
-\par A size of $C = 65\,536$ bytes (64 KiB) sits at the intersection of efficient I/O alignment (a power-of-two multiple of typical disk and network buffer sizes) and practical P2P scheduling granularity. At a typical audio bitrate of 320 kbps for a high-quality MP3, one chunk holds approximately 1.6 seconds of audio, a resolution that is finer than the human perception of buffering artefacts (around two to three seconds) while still being coarse enough to keep the chunk count per song in the tens to low hundreds. The same value also has a precedent in BitTorrent's default piece sizes, which were tuned for the same balance \cite{bittorent}.
+\par A size of $C = 65\,536$ bytes (64 KiB) sits at the intersection of efficient I/O alignment and practical P2P scheduling granularity. It is a power-of-two multiple of the typical disk and network buffer sizes, which means that no extra fragmentation happens at the operating-system level. At a typical audio bitrate of 320 kbps for a high-quality MP3, one chunk holds approximately 1.6 seconds of audio, a resolution that is finer than the human perception of buffering artefacts (which sits around two to three seconds for music) while keeping the chunk count per song in the tens to low hundreds. The same value also has a precedent in BitTorrent's default piece sizes, which were tuned for the same balance \cite{bittorent}.
+
+\par The 64 KiB choice is therefore not the result of an optimisation pass; it is the value at which several independent constraints stop disagreeing. Any other value in the 32 to 128 KiB range would also work, but with diminishing returns and added complexity in the file allocation logic.
 
 \subsection{Content-Addressed Storage}
 \label{subsec:cas}
 
-\indent \par Content-addressed storage (CAS) is a paradigm in which the identity of a data block is derived from its content rather than from an externally assigned identifier or file path. The canonical mechanism is to use a cryptographic hash of the block's bytes as the key. This thesis uses SHA-256, which maps any input to a 256-bit digest and has a collision probability of approximately $2^{-256}$, negligible in any practical context.
+\indent \par Content-addressed storage (CAS) is a paradigm in which the identity of a data block is derived from its content rather than from an externally assigned identifier or file path. The canonical mechanism is to use a cryptographic hash of the block's bytes as the key, which means that two blocks with the same content always end up with the same identifier, no matter where they came from. This thesis uses SHA-256, which maps any input to a 256-bit digest and has a collision probability of approximately $2^{-256}$, negligible in any practical context.
 
-\par The deduplication benefit of CAS is directly applicable to a music library. Many tracks share silence segments, common fade-outs, or identical metadata headers embedded in the audio container. With CAS, all such identical 64 KiB blocks are stored only once, regardless of how many songs reference them. Formally, if $k$ distinct byte-level 64 KiB blocks occur across all songs, the storage footprint is $k \cdot C$ bytes, which is at most $\sum_i S_i$ (the sum of all song sizes) and often substantially less. The duplicates that hide inside the long tail of any user's library are surprisingly numerous, especially when the same song was downloaded from two different sources.
+\par The deduplication benefit of CAS is directly applicable to a music library. Many tracks share silence segments, common fade-outs, or identical metadata headers embedded in the audio container, especially when the same album was downloaded from different sources or when the same track appears on a compilation. With CAS, all such identical 64 KiB blocks are stored only once, regardless of how many songs reference them. Formally, if $k$ distinct byte-level 64 KiB blocks occur across all songs, the storage footprint is $k \cdot C$ bytes, which is at most $\sum_i S_i$ (the sum of all song sizes) and often substantially less.
+
+\par What makes CAS particularly attractive for the peer-assisted model is that the same identifier is used everywhere: on the server filesystem, on the client cache, and in the WebRTC request that asks a peer for a chunk. A peer that has the chunk and a peer that does not have it agree on the same name for it, which is the precondition for any peer discovery scheme to work at all.
 
 \subsection{Hash-Based Integrity Verification}
 \label{subsec:integrity}
 
-\indent \par The same SHA-256 digest that deduplicates the storage is also used as an integrity check. Because the digest is precomputed at upload time and stored in the chunk manifest, a client receiving chunk $i$ from any source (origin server or peer) can recompute the SHA-256 of the received bytes and compare it with the expected value. A mismatch unambiguously indicates corruption or deliberate tampering. This property is critical in the peer-assisted model, where a misbehaving or compromised peer could otherwise inject corrupted audio data \cite{webrtc_security}. The verification cost is negligible relative to the network latency, which means that we get the integrity check for free in the cost model.
+\indent \par The same SHA-256 digest that deduplicates the storage is also used as an integrity check. Because the digest is precomputed at upload time and stored in the chunk manifest, a client receiving chunk $i$ from any source (origin server or peer) can recompute the SHA-256 of the received bytes and compare it with the expected value. A mismatch unambiguously indicates corruption or deliberate tampering.
+
+\par This property is critical in the peer-assisted model, where a misbehaving or compromised peer could otherwise inject corrupted audio data \cite{webrtc_security}. The cost of the verification is essentially free: SHA-256 throughput on a modern CPU is in the hundreds of megabytes per second, while a 64 KiB chunk arrives over the network in tens of milliseconds at best. The hash computation finishes long before the next chunk request is ready, so the integrity check imposes no measurable penalty on the playback pipeline.
+
+\indent \par The combination of chunking, content addressing and hash verification gives the system three properties for the price of one design choice: parallel downloading, transparent deduplication, and zero-trust integrity. None of the three could be obtained from a continuous byte stream, which is the reason why every modern P2P-flavoured architecture from BitTorrent onwards has converged on the same basic shape.
 
 
 \section{WebRTC: From Theory to Numbers}
 \label{sec:webrtc-theory}
 
-\indent \par Web Real-Time Communication, already introduced in Chapter 1, is the only viable transport for cross-platform peer connectivity. Its adoption in this system is motivated by three properties: ubiquity (it is supported natively by every major browser, and Flutter exposes it through the \texttt{flutter\_webrtc} package), the ability to traverse NATs, and the support for ordered reliable data channels \cite{latency_and_reliability}.
+\indent \par Web Real-Time Communication, already introduced in Chapter \ref{intro}, is the only viable transport for cross-platform peer connectivity. The reasons are three and they are non-negotiable: it is supported natively by every major browser, it knows how to traverse NATs, and it exposes ordered reliable data channels \cite{latency_and_reliability}. The first reason is what makes a single code path possible for a Flutter application that targets the browser alongside the native platforms. The other two are what makes the data channel usable as a chunk transport. This section walks through how each of those three properties actually works under the hood, because the implementation in Chapter \ref{chap:ch3} relies on understanding them.
 
 \subsection{NAT Traversal: ICE, STUN, TURN}
 \label{subsec:nat-traversal}
 
-\indent \par The majority of end-user devices sit behind Network Address Translation (NAT) gateways, which rewrite the source IP address and the port of the outgoing packets. A device behind NAT cannot be contacted directly by an external peer using its private address, so a traversal mechanism is needed.
+\indent \par The majority of end-user devices sit behind Network Address Translation (NAT) gateways, which rewrite the source IP address and the port of the outgoing packets. A device behind NAT cannot be contacted directly by an external peer using its private address, so a traversal mechanism is needed before any peer-to-peer data can flow.
 
-\par Interactive Connectivity Establishment (ICE) is the WebRTC framework for discovering and negotiating a viable network path between two peers. Given that it has the word ``establishment'' in its name, it should be no surprise that it takes its time. ICE collects candidates (possible transport addresses) from three sources:
+\par Interactive Connectivity Establishment (ICE) is the WebRTC framework for discovering and negotiating a viable network path between two peers. Given that it has the word ``establishment'' in its name, it should be no surprise that it takes its time. ICE collects candidates (possible transport addresses) from three sources: host candidates, which are the device's own network interface addresses; server-reflexive candidates, which are the public IP/port mapping created by the NAT and discovered by querying a STUN (Session Traversal Utilities for NAT) server; and relayed candidates on a TURN (Traversal Using Relays around NAT) relay server, used only when direct connectivity fails \cite{relays_turn}.
 
-\begin{enumerate}
-  \item \textbf{Host candidates}: the device's own network interface addresses.
-  \item \textbf{Server-reflexive candidates}: the public IP/port mapping created by the NAT, discovered by querying a STUN (Session Traversal Utilities for NAT) server.
-  \item \textbf{Relayed candidates}: addresses on a TURN (Traversal Using Relays around NAT) relay server, used only when direct connectivity fails \cite{relays_turn}.
-\end{enumerate}
-
-\par In most residential NAT configurations, a STUN exchange is enough. Both peers learn their server-reflexive addresses and use UDP hole-punching to establish a direct path \cite{top_down_cn}. TURN relaying is reserved for symmetric NATs and enterprise firewalls. Its cost is significantly higher, but the traffic volume is bounded because the system falls back to server delivery rather than to TURN whenever P2P fails. Figure \ref{fig:ice-flow} illustrates the ICE candidate exchange sequence.
+\par In most residential NAT configurations, a STUN exchange is enough: both peers learn their server-reflexive addresses and use UDP hole-punching to establish a direct path \cite{top_down_cn}. TURN relaying is reserved for symmetric NATs and for enterprise firewalls that block direct UDP altogether, and its cost is significantly higher than STUN because all the relayed bytes traverse the TURN operator's infrastructure. The system therefore avoids TURN entirely by falling back to the origin server when ICE cannot find a direct path, since a TURN-served chunk is economically identical to a server-served chunk. Figure \ref{fig:ice-flow} illustrates the ICE candidate exchange sequence.
 
 \begin{figure}[htbp]
 \centering
@@ -159,20 +171,26 @@ where $\epsilon$ is the per-client server overhead used for bootstrapping (the p
 \subsection{Data Channels and Binary Transfer}
 \label{subsec:data-channels}
 
-\indent \par WebRTC Data Channels provide an SCTP-over-DTLS transport that supports both reliable ordered delivery (similar to TCP) and unreliable unordered delivery (similar to UDP). For audio chunk transfer, the reliable ordered mode is the appropriate choice. The audio data has to arrive uncorrupted and the chunk boundary semantics depend on receiving complete 64 KiB blocks. Unlike TCP, however, the SCTP head-of-line blocking is confined to a single stream, so a stalled chunk request on one data channel does not block data channels to other peers \cite{webrtc_testing}.
+\indent \par WebRTC Data Channels provide an SCTP-over-DTLS transport that supports both reliable ordered delivery (similar to TCP) and unreliable unordered delivery (similar to UDP). For audio chunk transfer, the reliable ordered mode is the appropriate choice. The audio data has to arrive uncorrupted, and the SHA-256 verification described above will reject any partial or scrambled chunk. Unlike TCP, however, the SCTP head-of-line blocking is confined to a single stream, so a stalled chunk request on one data channel does not block data channels open to other peers \cite{webrtc_testing}. This is what allows the staggered fan-out in Section \ref{subsec:fanout} to be useful: if the first peer stalls, the second peer's data channel keeps making progress on its own request.
 
-\par The binary message format over a data channel is intentionally minimal. A short fixed header encodes the file hash and the chunk index, followed directly by the audio payload. Choosing a fixed-length header over a framing protocol such as Protocol Buffers is motivated by the fact that the chunk transfers are entirely homogeneous. There is no multiplexing of different message types on a single data channel, so a length-prefixed header would only add overhead without bringing any benefit.
+\par The binary message format over a data channel is intentionally minimal. A short fixed header encodes the file hash and the chunk index, followed directly by the audio payload. Choosing a fixed-length header over a framing protocol such as Protocol Buffers is motivated by the fact that the chunk transfers are entirely homogeneous: there is no multiplexing of different message types on a single data channel, so a length-prefixed header would only add overhead without bringing any benefit.
+
+\par There is one wrinkle that the theory does not show but the practice does: some WebRTC implementations refuse to send messages larger than around 16 KiB, even though the SCTP specification allows larger ones. A chunk of 64 KiB therefore has to be either fragmented at the application layer or refused. The implementation in Chapter \ref{chap:ch3} chooses fragmentation, with a magic byte sequence that tells the receiver to reassemble the pieces before passing them to the verification step.
 
 \subsection{Why a Server is Still Needed}
 \label{subsec:signaling-role}
 
-\indent \par WebRTC requires an out-of-band signaling channel for the exchange of SDP (Session Description Protocol) offer/answer payloads and ICE candidates. This channel is the only persistent server dependency on the P2P path. Once the data channel is open, the server is no longer involved in the media transfer. Choosing WebSocket as the signaling transport aligns well with the existing server infrastructure and lets the same connection also carry server-initiated events (such as playback state changes) and peer discovery messages, which reduces the number of persistent connections each client has to maintain.
+\indent \par WebRTC requires an out-of-band signaling channel for the exchange of SDP (Session Description Protocol) offer/answer payloads and ICE candidates. This channel is the only persistent server dependency on the P2P path. Once the data channel is open, the server is no longer involved in the media transfer, and the bytes flow directly between the two peers.
+
+\par Choosing WebSocket as the signaling transport is a natural fit for the existing server infrastructure. The same connection can carry, at no extra cost, server-initiated events (such as playback state changes that need to reach the user's other devices) and peer discovery messages (the buffer map that tells a new listener which peers already hold the chunks they need). Re-using a single connection for all three purposes also reduces the number of TLS handshakes and the number of TCP sessions that a client has to keep alive, which is particularly relevant on mobile networks where every persistent connection counts toward the energy budget.
+
+\indent \par WebRTC is therefore not a free lunch. It eliminates the server bandwidth cost for the audio bytes themselves, but it pays for it with a setup delay of a few hundred milliseconds and a persistent signaling connection. The next section explains how the setup delay is hidden behind a prefix cache; the persistent signaling connection is small enough that, even in the largest deployment that this prototype targets, the bandwidth it consumes is negligible compared to the saved audio egress.
 
 
 \section{Prefix Caching as a Bootstrap Strategy}
 \label{sec:prefix-theory}
 
-\indent \par Without a mitigation, a peer-assisted streaming system has a chicken-and-egg problem: a new client cannot receive data from peers until it has connected to them, and connecting to peers takes the few hundred milliseconds described above. During this window, the audio player has nothing to decode and the playback cannot start. This is exactly the situation that earlier proxy prefix caching schemes \cite{prefix_caching} were created to mitigate in the unicast world.
+\indent \par Without a mitigation, a peer-assisted streaming system has a chicken-and-egg problem: a new client cannot receive data from peers until it has connected to them, and connecting to peers takes the few hundred milliseconds described in the previous section. During this window, the audio player has nothing to decode and the playback cannot start. This section explains why a server-side prefix solves the problem with no measurable cost, and how the size of that prefix is derived from the network parameters above.
 
 \subsection{Decomposing the Startup Latency}
 \label{subsec:latency-decomp}
@@ -184,9 +202,11 @@ where $\epsilon$ is the per-client server overhead used for bootstrapping (the p
   \label{eq:latency}
 \end{equation}
 
-where $T_{\text{resolve}}$ is the time needed to acquire enough data for the audio decoder to begin, and $T_{\text{buffer}}$ is the time needed to buffer a sufficient lookahead so the decoder does not starve afterwards. In a peer-only model, $T_{\text{resolve}}$ is dominated by the WebRTC connection setup time ($T_{\text{ICE}} \approx 200$ to $500$ ms) plus the first chunk transfer latency. An unmitigated peer-first strategy would therefore introduce a mandatory 200 to 500 ms delay even for popular songs with many available peers, which is well known to drive listeners away \cite{quality_impact}.
+where $T_{\text{resolve}}$ is the time needed to acquire enough data for the audio decoder to begin, and $T_{\text{buffer}}$ is the time needed to buffer a sufficient lookahead so the decoder does not starve afterwards. The two terms are sequential from the user's perspective: $T_{\text{resolve}}$ is what the user perceives as the click-to-sound delay, while $T_{\text{buffer}}$ is what the system uses to avoid a stall a few seconds later.
 
-\par The prefix strategy eliminates this delay by decoupling the initial buffer fill from the peer discovery. The client simultaneously fetches a fixed prefix of the song from the origin server over HTTP, and initiates peer discovery via the signaling server. The playback begins as soon as the prefix arrives, and by the time the prefix is consumed, the peer connections are typically established and the rest of the song is served from peers.
+\par In a peer-only model, $T_{\text{resolve}}$ is dominated by the WebRTC connection setup time ($T_{\text{ICE}} \approx 200$ to $500$ ms) plus the first chunk transfer latency. An unmitigated peer-first strategy would therefore introduce a mandatory 200 to 500 ms delay even for popular songs with many available peers. This is well above the two-second abandonment threshold that Krishnan and Sitaraman measured for video streaming \cite{quality_impact}, but it is still well within the territory where users perceive the application as ``laggy''. For a music player, where a click on a song is expected to produce sound immediately, even a 300 ms delay is the kind of thing that gets reported in a review.
+
+\par The prefix strategy eliminates this delay by decoupling the initial buffer fill from the peer discovery. The client simultaneously fetches a fixed prefix of the song from the origin server over HTTP, and initiates peer discovery via the signaling server. Playback begins as soon as the prefix arrives, and by the time the prefix is consumed, the peer connections are typically established and the rest of the song is served from peers.
 
 \subsection{Choosing the Prefix Threshold}
 \label{subsec:prefix-threshold}
@@ -198,47 +218,41 @@ where $T_{\text{resolve}}$ is the time needed to acquire enough data for the aud
   \label{eq:prefix-condition}
 \end{equation}
 
-\par At $r = 40\,960$ bytes/s (320 kbps), $T_{\text{ICE}} = 500$ ms, and $T_{\text{p2p}} = 1\,000$ ms, equation \eqref{eq:prefix-condition} gives $P > 61\,440$ bytes, which is less than one chunk. The implementation goes beyond this minimum and uses a dynamic prefix that scales with the song length, providing a generous safety margin in slow NAT environments. The exact rule will be presented in Chapter \ref{chap:ch3}.
+\par At $r = 40\,960$ bytes/s (320 kbps), $T_{\text{ICE}} = 500$ ms and $T_{\text{p2p}} = 1\,000$ ms, equation \eqref{eq:prefix-condition} gives $P > 61\,440$ bytes, which is less than one 64 KiB chunk. A strict interpretation of the formula would therefore say that a one-chunk prefix is sufficient. In practice, however, the formula does not account for the variability of $T_{\text{ICE}}$ in adverse conditions: a slow STUN server, a phone on a flaky cellular link, or a NAT that takes longer than usual to respond to a binding request. The implementation goes beyond the minimum and uses a dynamic prefix sized at roughly 5\% of the song, with a floor of one chunk, which gives a comfortable safety margin in all the test conditions we have encountered.
+
+\par What matters at this level of analysis is only that the prefix is small in relative terms (a few percent of the total song size), so the offload ratio remains close to its theoretical maximum.
 
 \subsection{Predictive Pre-Fetching as a Companion}
 \label{subsec:proactive-theory}
 
-\indent \par A user that listens to a playlist will transition between songs with negligible delay only if the next song's startup sequence (prefix fetch and peer negotiation) completes before the current song ends. Predictive Pre-Fetching, which Chapter 1 introduced, fits naturally as a companion to prefix caching: it initiates prefix downloads for the next $k$ songs in the queue while the current song is still playing. The bandwidth overhead is bounded. The total proactive download is $k \cdot P$ bytes, which for a small $k$ and a sub-megabyte prefix amounts to a modest background cost compared to the elimination of any inter-song latency \cite{limits_prefetching}.
+\indent \par A user listening to a playlist transitions between songs with negligible delay only if the next song's startup sequence completes before the current one ends. The prefix mechanism above eliminates the startup delay for the first song, but not the inter-song one. Predictive Pre-Fetching, which Chapter \ref{intro} introduced as a separate strategy, fits naturally as a companion: instead of predicting the next entire song (which is wasteful when wrong \cite{limits_prefetching}), the system pre-fetches only the prefix of the next $k$ songs while the current song is still playing. The total overhead is $k \cdot P$ bytes, which for $k = 5$ and a few-hundred-kilobyte prefix is at most a couple of megabytes of background traffic per song, and the prefetched prefixes are valid peer-cache entries from the moment they land on disk.
 
 
 \section{A Bandwidth Cost Model}
 \label{sec:cost-model}
 
-\indent \par Having established the individual mechanisms, this section combines them in a formal cost model that quantifies the expected reduction in server egress and motivates the parameter choices made in the implementation.
+\indent \par Having established the individual mechanisms, this section combines them in a formal cost model that quantifies the expected reduction in server egress and motivates the parameter choices made in the implementation. The aim is to derive a single number, the offload ratio, that summarises how good the architecture is in the best case, and to enumerate the trade-offs that prevent the ideal value from being reached in practice.
 
 \subsection{Theoretical Offload Ratio}
 \label{subsec:offload-ratio}
 
-\indent \par I define the offload ratio $\rho$ as the fraction of total bytes served by peers rather than by the origin server. For a swarm of $N$ simultaneous listeners of a song of size $S$, every listener needs a prefix of size $P$ from the server. Assuming all non-prefix bytes are served by peers (the ideal case), the server egress is $N \cdot P$ and the total bytes consumed are $N \cdot S$, so
+\indent \par We define the offload ratio $\rho$ as the fraction of total bytes served by peers rather than by the origin server. For a swarm of $N$ simultaneous listeners of a song of size $S$, every listener needs a prefix of size $P$ from the server. Assuming all non-prefix bytes are served by peers (the ideal case), the server egress is $N \cdot P$ and the total bytes consumed are $N \cdot S$, so
 
 \begin{equation}
   \rho = 1 - \frac{P}{S}.
   \label{eq:offload-ratio}
 \end{equation}
 
-\par For a 4-minute song at 320 kbps, $S \approx 9.6$ MB. With a prefix of about half a megabyte, $\rho \approx 94.6\%$. Even a 1-minute track with $S \approx 2.4$ MB yields $\rho \approx 78.3\%$. These figures are upper bounds. In practice, the churn and the cold starts reduce the achievable ratio, but the asymptotic behaviour in equation \eqref{eq:server-cost} is converted from $O(N)$ to $O(1)$ in server egress per unit of time. The cost becomes effectively independent of the swarm size.
+\par For a 4-minute song at 320 kbps, $S \approx 9.6$ MB. With a prefix of about half a megabyte (5\% of the song), $\rho \approx 94.6\%$. Even a 1-minute track with $S \approx 2.4$ MB yields $\rho \approx 78.3\%$. These figures are upper bounds: in practice, the churn and the cold starts reduce the achievable ratio. The asymptotic behaviour of equation \eqref{eq:server-cost} is nevertheless converted from $O(N)$ to $O(1)$ in server egress per unit of time. The cost becomes effectively independent of the swarm size, which is the property the introduction set out to obtain.
+
+\par It is worth noting what equation \eqref{eq:offload-ratio} does not say. It does not say that the server is involved in only 5\% of the bytes of every individual session; it says that, across the swarm, only 5\% of the total bytes are served by the server. A single client whose peers are absent will still receive 100\% of its bytes from the server, and the integrity guarantees do not change. The offload ratio is a statistical property of the deployment, not a contract per individual session.
 
 \subsection{The Trade-offs the Model Exposes}
 \label{subsec:tradeoffs}
 
-\indent \par The model reveals several trade-offs that informed the implementation:
+\indent \par The model reveals several trade-offs that informed the implementation. A larger prefix reduces $\rho$ but increases the startup robustness in slow networks; the 5\% figure is the value at which both terms are acceptable. A longer P2P timeout gives slow peers more time to respond and increases the offload ratio, but risks audible stalls if the lookahead buffer empties before the server fallback returns. The chunk size is symmetric: halving it doubles the index size while reducing per-chunk latency, doubling it cuts overhead but coarsens the P2P scheduling granularity, and 64 KiB sits at the practical optimum. Finally, the model assumes at least one peer with a given chunk is reachable within the timeout; long-tail songs with very few listeners simply have no peers, and the system gracefully degrades to pure server delivery without any extra logic or user-visible penalty.
 
-\begin{itemize}
-  \item \textbf{Prefix size vs. offload ratio}: A larger prefix reduces $\rho$ (more server cost), but it increases the startup robustness in slow networks.
-
-  \item \textbf{P2P timeout vs. stall probability}: A longer timeout gives slow peers more time to respond, which increases the offload ratio. In the same time, it risks audible stalls if the audio player exhausts its lookahead buffer. A practical timeout combined with a multi-chunk lookahead ensures the buffer survives at least one failed peer request before the server fallback returns the data.
-
-  \item \textbf{Chunk size vs. overhead}: Halving $C$ to 32 KiB doubles the chunk count and the index size while reducing the per-chunk transfer latency. Doubling $C$ to 128 KiB reduces the overhead but coarsens the P2P scheduling granularity, making it harder for a peer to serve partial data when it has only a part of a large block. The 64 KiB value is a practical optimum for the target content (320 kbps MP3 and FLAC).
-
-  \item \textbf{Swarm size and peer density}: The model assumes that at least one peer with a given chunk is reachable within the P2P timeout. For long-tail songs with very few listeners, peers may simply be absent, and the system gracefully degrades to pure server delivery. No additional logic or user experience penalty is incurred. The server fallback is always available.
-\end{itemize}
-
-\par Table \ref{tab:param-summary} summarises the key parameters and the direction in which the theory pushes them. The concrete numbers chosen during the implementation are presented in Chapter \ref{chap:ch3}, together with a brief explanation of why those numbers and not others.
+\par Table \ref{tab:param-summary} summarises the key parameters and the direction in which the theory pushes them. The concrete numbers chosen during the implementation are presented in Chapter \ref{chap:ch3}.
 
 \begin{table}[htbp]
 \centering
@@ -263,51 +277,15 @@ Proactive prefetch & a few songs & Eliminates the inter-song latency at a small 
 \label{tab:param-summary}
 \end{table}
 
-
 \section{An Abstract View of the System}
 \label{sec:system-abstraction}
 
-\indent \par Before going to the concrete details of Chapter \ref{chap:ch3}, it is useful to describe the system at a level that hides the choice of framework, language, and database. This abstraction also makes it easier to argue why each role exists, independently of the technology used to realise it.
+\indent \par Before going into the concrete details of Chapter \ref{chap:ch3}, it is useful to describe the system at a level that hides the choice of framework, language and database. This abstraction makes it easier to argue why each role exists, independently of the technology used to realise it, and which parts of the architecture could be swapped out without changing the design as a whole.
 
-\subsection{The Five Logical Roles}
-\label{subsec:abstract-roles}
+\par The system is composed from five logical roles. A \textbf{catalogue and identity store} is the transactional source of truth for songs, albums, artists, playlists, users and per-user library state. A \textbf{chunk store} keeps the binary audio data, indexed by the SHA-256 of its content; two songs that share an identical 64 KiB block reference the same physical chunk. An \textbf{origin server} sits in front of the two stores and exposes the manifest endpoint, the individual chunk endpoints, and the catalogue REST API. A \textbf{coordination bus}, with an in-memory pub/sub system and a small key-value index, holds the ephemeral state of the connected peers and lets a peer on one origin server replica be reachable through any other replica. Finally, the \textbf{client} runs on the user's device and owns the audio player, the local chunk cache, the WebRTC connections and a small amount of UI state; it is the only component that produces audio output. The split between the catalogue store and the chunk store is the most consequential of the five: keeping the binary data out of the catalogue keeps the catalogue small enough to fit in memory on a modest database server, and lets the chunk store scale out independently.
 
-\indent \par The system is composed from five logical roles. They are independent of the technology used to realise them.
+\par The five roles are tied together by three interactions. In \textbf{discovery}, the client asks the origin server for the manifest of a song and the coordination bus for the peers that have already cached chunks of it, then uses the returned peer-to-chunk map to choose where to look first. In \textbf{transfer}, each chunk is fetched from one of three sources in order of preference: the local cache, the origin server (when the chunk index falls inside the prefix range), or the best-ranked peer with a server fallback if the peer fails to respond within a short timeout; every received chunk is verified against the manifest hash before reaching the decoder. In \textbf{coordination}, the client tells the bus whenever a chunk has been cached locally so future peers can find it, and the server publishes a small notification on the bus when something cross-device changes for the user.
 
-\begin{itemize}
-  \item \textbf{Catalogue and identity store}: a transactional store that keeps the metadata of songs, albums, artists and playlists, the registration of users, and the per-user library state. It is the only durable source of truth for who a user is, what they have, and which content exists in the system.
+\par The abstraction has three properties that the implementation in the next chapter has to preserve. \textbf{Replica symmetry}: every replica of the origin server is equivalent, and the coordination bus makes the cross-replica routing transparent. \textbf{Graceful degradation}: every part of the system has a well-defined fallback (server delivery when no peers are available, prefix fetch when the cache is cold, server retry when a peer returns a corrupted chunk), and the user sees no error in any of these cases. \textbf{No trusted peer}: a peer chunk is valid only if its SHA-256 matches the manifest hash, so a malicious peer cannot inject bad audio data without being detected.
 
-  \item \textbf{Chunk store}: a content-addressed store that keeps the binary audio data, indexed by the SHA-256 of its content. Every song is mapped to an ordered list of chunk references. Two songs that share an identical 64 KiB block reference the same physical chunk.
-
-  \item \textbf{Origin server}: a stateless service that sits in front of the two stores and exposes a manifest endpoint (which gives the ordered list of chunk hashes for a song), the individual chunk endpoints, and the catalogue REST API.
-
-  \item \textbf{Coordination bus}: an in-memory pub/sub system, plus a small key-value index, that holds the ephemeral state of the currently connected peers. This is what allows a peer on one origin server replica to learn about a peer on another replica, without the two replicas having to know each other directly.
-
-  \item \textbf{Client}: the application running on the user's device. The client owns the audio player, the local chunk cache, the WebRTC peer connections, and a small amount of UI state. It is the only component that produces audio output.
-\end{itemize}
-
-\subsection{The Three Abstract Interactions}
-\label{subsec:abstract-interactions}
-
-\indent \par The five roles are tied together by three abstract interactions.
-
-\par \textbf{Discovery.} When the client decides to play a song, it asks the origin server for the manifest of that song. In parallel, it asks the coordination bus which other peers have already cached chunks of the same song. The bus returns a peer-to-chunk map, and the client uses this map to choose where to look first.
-
-\par \textbf{Transfer.} Each chunk is fetched from one of three sources, in order of preference. The local cache is consulted first (zero network cost). If the chunk is not cached and its index falls inside a small prefix range, the origin server is used (predictable latency, bootstraps the playback). Otherwise the client tries the best-ranked peer first. If the peer fails to respond within a short timeout, the origin server is used as a fallback. Every chunk that arrives is verified against the hash from the manifest before being given to the audio decoder.
-
-\par \textbf{Coordination.} Whenever a chunk has been cached locally, the client tells the coordination bus, so future peers can find it. Whenever a server-side change happens that another device of the same user should know about (a library edit, a playback state change), the origin server publishes a small notification on the bus. The other devices, which are subscribed through their signaling connection, receive the notification and react.
-
-\subsection{Properties to Preserve}
-\label{subsec:abstract-properties}
-
-\indent \par The abstraction has three properties that the implementation in the next chapter has to preserve, regardless of the chosen technologies:
-
-\begin{itemize}
-  \item \textbf{Replica symmetry}: every replica of the origin server is equivalent. A client may connect to any of them, and the coordination bus is what makes the cross-replica routing transparent.
-
-  \item \textbf{Graceful degradation}: every part of the system has a well-defined fallback. If no peers are available, the server delivers everything. If the local cache is cold, the prefix is fetched from the server. If a peer responds with a corrupted chunk, the server is asked again. The user sees no error in any of these cases.
-
-  \item \textbf{No trusted peer}: peers are never authoritative. A peer chunk is valid only if its SHA-256 matches the manifest hash that was fetched from the origin server. A malicious peer cannot inject bad audio data without being detected.
-\end{itemize}
-
-\par With this abstraction in place, Chapter \ref{chap:ch3} can be read as a long answer to a single question: how do these five roles, three interactions and three properties translate into actual code?
+\indent \par With this abstraction in place, Chapter \ref{chap:ch3} can be read as a long answer to a single question: how do these five roles, three interactions and three properties translate into actual code?

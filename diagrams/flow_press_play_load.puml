@@ -2,8 +2,6 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title Press Play — Song Load
-
 actor User
 participant "AudioProvider" as audioProv
 participant "AppAudioService" as audioSvc

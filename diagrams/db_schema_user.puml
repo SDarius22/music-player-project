@@ -4,8 +4,6 @@ hide circle
 skinparam linetype ortho
 skinparam defaultFontName monospaced
 
-title Database Schema — Users, Library, Playback State and Playlists
-
 entity "users" as users {
   * id : BIGINT <<PK>>
   --
@@ -35,6 +33,8 @@ entity "user_playback_state" as user_playback_state {
   * position_seconds : BIGINT
   * shuffle : BOOLEAN
   * repeat : BOOLEAN
+  * auto_play : BOOLEAN
+  * auto_play_recommendations_page : BIGINT
   * updated_at : TIMESTAMPTZ
 }
 

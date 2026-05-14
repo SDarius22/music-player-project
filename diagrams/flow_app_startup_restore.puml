@@ -2,8 +2,6 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title App Startup — Playback State Restore
-
 participant "LoadingScreen" as loading
 participant "SettingsService" as settingsSvc
 participant "PlaybackRestClient" as playbackRest
@@ -13,8 +11,8 @@ participant "Backend" as backend
 loading -> settingsSvc: getAudioSettings()
 settingsSvc -> playbackRest: getPlaybackState()
 playbackRest -> backend: GET /playback
-backend --> playbackRest: PlaybackStateDto\n(positionSeconds, shuffle, repeat)
-settingsSvc --> audioSvc: apply (position, shuffle, repeat)
+backend --> playbackRest: PlaybackStateDto\n(positionSeconds, shuffle, repeat,\nautoPlay, autoPlayRecommendationsPage)
+settingsSvc --> audioSvc: apply (position, shuffle, repeat,\nautoPlay, autoPlayRecommendationsPage)
 
 loading -> loading: navigate -> MainScaffold
 

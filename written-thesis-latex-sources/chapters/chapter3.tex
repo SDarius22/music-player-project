@@ -4,85 +4,40 @@
 \tolerance=9999
 \emergencystretch=3em
 
-\indent \par Up to this point, the discussion has been theoretical. Chapter \ref{intro} motivated the problem and surveyed the design space, while Chapter \ref{chap:ch2} turned the chosen ingredients into formal models and ended with an abstract view of the system in terms of five logical roles. The current chapter is the part of the thesis where the keyboard meets the screen. It walks through the actual application that I have built, from the database that holds the music up to the moment when the audio comes out of the speakers.
-
-\par The chapter follows roughly the same path that data follows when a user opens the application, presses play, and at some point closes the window. Before getting to that path, it lists the requirements that the system has to satisfy, and the hardware/software setup on which the prototype was developed and is intended to be deployed.
+\indent \par Up to this point, the discussion has been theoretical. Chapter \ref{intro} motivated the problem and surveyed the design space, while Chapter \ref{chap:ch2} turned the chosen ingredients into formal models and ended with an abstract view of the system. The current chapter is the part of the thesis where the keyboard meets the screen. It walks through the actual application, from the database that holds the music up to the moment the audio comes out of the speakers, and ends with a tour of the graphical interface and a short user manual.
 
 
 \section{System Requirements}
 \label{sec:requirements}
 
-\indent \par The requirements were not written down at the beginning and frozen there. They evolved as the implementation forced me to make decisions, and as some assumptions from Chapter \ref{intro} turned out to be either too optimistic or too pessimistic in practice. The list below captures the state of the requirements at the moment of writing, separated in functional and non-functional.
+\indent \par The requirements were not written down at the beginning and frozen there. They evolved as the implementation forced us to make decisions, and as some assumptions from Chapter \ref{intro} turned out to be either too optimistic or too pessimistic in practice. The paragraphs below capture the state of the requirements at the moment of writing, separated in functional and non-functional.
 
 \subsection{Functional Requirements}
 \label{subsec:func-req}
 
-\begin{itemize}
-  \item \textbf{Account management.} A user can register with an email, receive a verification code, and log in afterwards. The authentication is based on a short-lived access token together with a long-lived refresh token, the latter being exchanged for a new access token whenever the previous one expires.
-
-  \item \textbf{Catalogue browsing.} A user can browse, search and order artists, albums and songs. The catalogue is shared between all the users for the streamable content, and is private for the content that the user has uploaded himself.
-
-  \item \textbf{Playback.} A user can play any song from the catalogue or from his own library. The playback supports the typical controls (play, pause, seek, next, previous), shuffle, repeat, and an editable queue.
-
-  \item \textbf{Library management.} A user can like a song, see the play count, and remove a song from his library. Library changes are propagated across all the user's devices.
-
-  \item \textbf{Playlists.} A user can create, rename, reorder and delete playlists. A built-in ``Liked Songs'' playlist is marked as indestructible and cannot be deleted, no matter what.
-
-  \item \textbf{Upload.} A user can upload audio files from disk. The backend deduplicates the audio at the level of 64 KiB chunks, so uploads of files that share content do not transfer the duplicated bytes again.
-
-  \item \textbf{Peer-assisted streaming.} The application uses other currently-listening clients as peers when possible, falling back to the server when no peer is available or when a peer fails to respond in time.
-
-  \item \textbf{Cross-device state.} A user that listens on one device and then opens the application on another device finds the playback position, shuffle and repeat values restored.
-\end{itemize}
+\indent \par The functional requirements set the user-facing baseline. A user must be able to register and log in with an email through a verification code, with short-lived access tokens and a long-lived refresh token handling the re-authentication afterwards. The catalogue must be browsable, searchable and sortable across artists, albums and songs, with streamable content shared between all users and uploaded content private to the uploader. Playback must cover the full set of controls (play, pause, seek, next, previous), together with shuffle, repeat and an editable queue, while library management must let the user like a song, see its play count, and remove the song from the library, with the changes propagating across devices. Playlists must be creatable, renameable, reorderable and deletable, except for the built-in ``Liked Songs'' playlist which is marked indestructible. Audio files must be uploadable from disk, with chunk-level deduplication so files that share content do not transfer the duplicated bytes again. Peer-assisted streaming must use other currently-listening clients when possible, falling back to the server when no peer is available, and the playback position together with the shuffle, repeat, auto-play and auto-play recommendation page values must be restored when the user opens the application on another device.
 
 \subsection{Non-Functional Requirements}
 \label{subsec:nonfunc-req}
 
-\begin{itemize}
-  \item \textbf{Server cost.} The system has to reduce the per-listener cost compared to a pure client-server delivery, in line with the cost model from Chapter \ref{chap:ch2}.
-
-  \item \textbf{Cross-platform.} The client must run on Linux, macOS, Windows, Android, iOS and the web browser, with a single source tree.
-
-  \item \textbf{Horizontal scalability.} The backend must support several replicas that share a database and a Redis instance. A user may connect to any replica, and the system has to make sure that events from one replica reach the user's other devices, even when those devices are connected to a different replica.
-
-  \item \textbf{Integrity.} A peer is not trusted. Every chunk that arrives must be verified before it is given to the audio decoder.
-
-  \item \textbf{Graceful degradation.} The system never fails the user when peers are absent or slow. The origin server is always a valid fallback.
-
-  \item \textbf{Testability.} Both the backend and the frontend should be testable in isolation, with as few moving parts as possible during the test runs.
-\end{itemize}
+\indent \par The non-functional requirements describe how well the application has to do what the previous paragraph says. The system has to reduce the per-listener egress compared to a pure client-server delivery, in line with the cost model from Chapter \ref{chap:ch2}, and a single source tree must run on Linux, macOS, Windows, Android, iOS and the web browser. The backend must support several replicas sharing a database and a Redis instance, with the cross-replica routing transparent to the client. Peers are not trusted, so every chunk is verified before reaching the audio decoder, and the server fallback is always available so that the user never sees an error when peers are absent or slow. Finally, both the backend and the frontend must be testable in isolation, with as few moving parts as possible during the test runs.
 
 
 \section{Specification}
 \label{sec:specification}
 
-\subsection{Development Environment}
-\label{subsec:dev-env}
-
-\indent \par The prototype was developed on a single machine, an Apple MacBook Pro with the M2 Pro chip, 16 GB of unified memory, and macOS as the operating system. All the cross-platform builds run on the same machine. The toolchain used during development is summarised below:
-
-\begin{itemize}
-  \item Java 25 and Maven for the backend, with Spring Boot 4 for the application framework and Liquibase for the schema migrations.
-  \item Flutter for the client, with the \texttt{provider} package for dependency injection, ObjectBox on desktop and mobile for local storage, and an in-memory implementation for the browser.
-  \item Docker and Docker Compose for the local backend stack (PostgreSQL and Redis).
-  \item PlantUML for the diagrams that appear later in this chapter.
-\end{itemize}
-
-\subsection{Deployment Specification}
-\label{subsec:deploy-spec}
-
-\indent \par The intended production deployment uses two server machines, the exact specification of which is not yet finalised. The first server will run two Spring Boot replicas of the backend behind a reverse proxy, sharing the same PostgreSQL instance and the same Redis instance. The second server will run a third replica, mostly for verifying that the cross-instance signaling presented in Section \ref{sec:multi-instance} works correctly when the replicas are not on the same host. The chunks live on a shared filesystem mounted by all the replicas, under \texttt{\textasciitilde/music-server/chunks}. The exact CPU, RAM and storage of the two servers will be filled in once the deployment is set up.
+\indent \par The prototype was developed on an Apple MacBook Pro with the M2 Pro chip, 16 GB of unified memory and macOS. The toolchain is Java 25 with Maven and Spring Boot 4.0.3 on the backend, Liquibase for the schema migrations, Flutter on the client with the \texttt{provider} package for DI, ObjectBox on desktop and mobile, and an in-memory implementation on the web. Docker and Docker Compose host the local PostgreSQL 18 and Redis Alpine. The intended production deployment uses two server machines: the first runs two Spring Boot replicas behind a reverse proxy, sharing the same PostgreSQL and Redis, and the second runs a third replica used to verify that the cross-instance signaling in Section \ref{sec:multi-instance} works when the replicas are not on the same host. The chunks live on a shared filesystem mounted by all replicas.
 
 
 \section{Database Schema}
 \label{sec:db-schema}
 
-\indent \par The persistence layer is built on PostgreSQL, inside a dedicated \texttt{music\_library} schema, and is managed through Liquibase changesets. This keeps the schema under version control and decoupled from the JPA entity definitions. JPA itself is configured in \texttt{validate}-only mode, so any structural change must be expressed as a new changeset, otherwise the application refuses to start. Three groups of tables form the schema, each with its own subsection below.
+\indent \par The persistence layer is built on PostgreSQL, inside a dedicated \texttt{music\_library} schema, and is managed through eight Liquibase changesets at the moment of writing. JPA is configured in \texttt{validate}-only mode, so any structural change must come through a new changeset.
 
 \subsection{Media Catalogue and Chunk Storage}
 \label{subsec:schema-media}
 
-\indent \par Figure \ref{fig:db-schema-media} shows the tables that hold the media catalogue and the chunked audio data. Artists and albums share a many-to-many relation through the \texttt{album\_artists} join table, while \texttt{songs} also keeps a legacy single \texttt{artist\_id} column for cases where a track has only one author. Every song has a unique \texttt{file\_hash}, which is the SHA-256 of the original audio file and serves as the stable identifier from the moment of upload up to the moment of playback.
+\indent \par Figure \ref{fig:db-schema-media} shows the tables that hold the media catalogue and the chunked audio data. Artists and albums share a many-to-many relation through the \texttt{album\_artists} join table, while \texttt{songs} keeps a legacy single \texttt{artist\_id} column for tracks with one author. Every song has a unique \texttt{file\_hash} (SHA-256 of the original file) that is the stable identifier from upload to playback.
 
 \begin{figure}[htbp]
 \centering
@@ -91,15 +46,12 @@
 \label{fig:db-schema-media}
 \end{figure}
 
-\par The chunk store is implemented in two tables. The \texttt{chunks} table holds one row per distinct 64 KiB block, identified by its \texttt{content\_hash} (SHA-256 of the block bytes) together with its size and the location on the shared filesystem. The \texttt{song\_chunks} join table maps a song to its ordered list of chunks, with an \texttt{order\_index} that preserves the audio sequence. This separation is what enables deduplication: two songs that share an identical 64 KiB block reference the same row in \texttt{chunks} and the physical file is not duplicated.
-
-\par The chunks themselves are stored on a flat filesystem, not inside the database, because storing large binary blobs in PostgreSQL causes significant memory pressure both on read and on backup. Each chunk file is named after its \texttt{content\_hash}, so two clients that compute the same hash for the same 64 KiB block end up writing to the same path, which is handled idempotently by the upload pipeline.
+\par The chunk store is split in two tables. \texttt{chunks} holds one row per distinct 64 KiB block, keyed by \texttt{content\_hash}, with its size and filesystem path. \texttt{song\_chunks} maps a song to its ordered list of chunks. This separation is what enables deduplication: two songs that share a 64 KiB block reference the same row in \texttt{chunks}, and the physical file lives on disk only once. The chunks themselves are kept on the filesystem rather than as PostgreSQL blobs, because large binary columns cause memory pressure on both reads and backups.
 
 \subsection{Users, Library and Playlists}
 \label{subsec:schema-user}
 
-\indent \par The user-side tables, drawn in Figure \ref{fig:db-schema-user}, keep the per-user state. The \texttt{users} table holds the email and the role (USER or ADMIN), plus the authentication provider (LOCAL or GOOGLE). The \texttt{user\_library} table, with a composite primary key of (user\_id, song\_id), records the user's relation to a song: liked flag, play count, total play duration in seconds, the timestamps of last played and added at, a soft-deletion flag, and a \texttt{last\_updated} timestamp recording when the row was last modified.
-
+\indent \par The user-side tables, drawn in Figure \ref{fig:db-schema-user}, keep the per-user state. \texttt{users} holds the email, the role (USER or ADMIN) and the provider (LOCAL or GOOGLE; the latter is reserved for a future OAuth integration). \texttt{user\_library} records the user's relation to a song (liked flag, play count, total play duration, timestamps).
 
 \begin{figure}[htbp]
 \centering
@@ -108,14 +60,14 @@
 \label{fig:db-schema-user}
 \end{figure}
 
-\par The \texttt{user\_playback\_state} table is intentionally minimal. After several iterations, the queue and the current song were removed from the server-side state. What remains is only the position in seconds, the shuffle and repeat flags, and an \texttt{updated\_at} timestamp. The queue is reconstructed locally on each device from the last played history and from the user's current selection. This kept the multi-device handoff simple, because the only state that has to agree across devices is ``where in the song the user was'', rather than ``which exact list of songs is the queue''.
+\par \texttt{user\_playback\_state} is intentionally minimal. After several iterations the queue and the current song were removed from the server-side state, because keeping a shared queue across devices proved more trouble than it was worth. What remains is the position in seconds, shuffle and repeat flags, the auto-play preference and the position in the auto-play recommendation feed. The queue is reconstructed locally from the last played history and the user's current selection.
 
-\par Playlists are stored in two tables. The \texttt{playlists} table keeps the playlist metadata and the \texttt{indestructible} flag, which the backend uses to protect built-in playlists like ``Liked Songs'' from deletion. The \texttt{playlist\_songs} table has a composite primary key (\texttt{playlist\_id}, \texttt{position}) and references the song by \texttt{song\_file\_hash} rather than by song id. This was a deliberate choice, that makes the playlist content portable across re-imports and re-uploads of the same audio file.
+\par Playlists live in two tables. \texttt{playlists} keeps the metadata and the \texttt{indestructible} flag used to protect ``Liked Songs'' from deletion. \texttt{playlist\_songs} references songs by \texttt{song\_file\_hash} rather than by id, which makes the playlist content portable across re-imports of the same audio file.
 
 \subsection{Auxiliary Tables}
 \label{subsec:schema-aux}
 
-\indent \par Figure \ref{fig:db-schema-auxiliary} shows the two remaining tables. The \texttt{verification\_codes} table holds short-lived email verification codes. The \texttt{chunk\_stats} table holds per-session delivery telemetry: how many chunks the client served from local sources (cache or local disk), how many came from peers, and how many came from the origin server. The \texttt{p2p\_percentage} column is denormalised and stored together with the counts, which makes the analysis queries simpler.
+\indent \par Two auxiliary tables complete the schema (Figure \ref{fig:db-schema-auxiliary}). \texttt{verification\_codes} holds the short-lived email codes consumed by the authentication endpoints, and \texttt{chunk\_stats} holds the per-session delivery telemetry used by the evaluation in Chapter \ref{chap:ch4}.
 
 \begin{figure}[htbp]
 \centering
@@ -128,7 +80,7 @@
 \section{Backend Service Architecture}
 \label{sec:backend-arch}
 
-\indent \par Figure \ref{fig:backend-architecture} shows the architecture of a single Spring Boot replica together with its external dependencies. The application is API-first: the source of truth for the REST surface is the \texttt{api.yml} OpenAPI document, from which the controllers and the DTO classes are generated. The hand-written code lives in the service layer, kept thin where possible.
+\indent \par Figure \ref{fig:backend-architecture} shows the architecture of a single Spring Boot replica together with its external dependencies. The application is API-first: the source of truth for the REST surface is the \texttt{api.yml} OpenAPI document, from which the controllers and the DTO classes are generated at compile time. The hand-written code lives in the service layer.
 
 \begin{figure}[htbp]
 \centering
@@ -140,130 +92,54 @@
 \subsection{Security and Authentication}
 \label{subsec:auth}
 
-\indent \par The security stack is built around Spring Security and a custom JWT filter. The filter extracts the bearer token from the \texttt{Authorization} header, validates it against the JWT service, and populates the \texttt{SecurityContext} with the corresponding user. Endpoints that require authentication are declared in the security configuration; the open ones (registration, login, refresh) are explicitly listed as \texttt{permitAll}.
-
-\par The authentication is fully passwordless and code-based. The client first calls \texttt{POST /auth/send-code} with an email address; the backend creates a row in \texttt{verification\_codes} with a 6-digit code and an expiry, and dispatches an email through SMTP. The client then calls \texttt{POST /auth/verify} with the email and the code; the row is consumed, the user record is created on first sign-in or looked up on subsequent ones, and the access/refresh pair is returned. The same two endpoints are therefore used for both registration and login. The \texttt{users.provider} column accepts \texttt{LOCAL} and \texttt{GOOGLE} as values; only the \texttt{LOCAL} provider is currently in use, with \texttt{GOOGLE} reserved for a future OAuth integration.
-
-\par The refresh tokens have a long lifetime (several days), and the access tokens have a short one (several minutes). On the client, a periodic timer asks the backend for a new access token every ten minutes, well before the actual expiry, so that requests in flight do not have to deal with a 401 in the middle of an action.
+\indent \par The security stack is built around Spring Security and a custom JWT filter that extracts the bearer token, validates it against the JWT service, and populates the \texttt{SecurityContext}. The authentication itself is passwordless and code-based: the client calls \texttt{POST /auth/send-code} with an email, the backend stores a 6-digit code in \texttt{verification\_codes} and dispatches it through SMTP, then \texttt{POST /auth/verify} consumes the code and returns an access/refresh pair. Access tokens are short-lived (minutes), refresh tokens are long-lived (days), and the client refreshes well before expiry through a periodic timer.
 
 \subsection{Catalogue and Library}
 \label{subsec:catalogue}
 
-\indent \par The catalogue services expose CRUD-style operations on top of the JPA repositories, plus search and ordering. They are also the part of the backend that enforces the small set of invariants that the database schema cannot enforce by itself: the \texttt{indestructible} flag on the ``Liked Songs'' playlist (the service refuses to delete it), the per-user uniqueness of the playlist name (it returns a clear error message rather than letting the database raise a constraint violation), and the visibility rules for user-uploaded content (a user cannot see another user's uploaded songs).
-
-\par Search is implemented with simple SQL \texttt{LIKE} queries on the song, album and artist names, joined to make sure that a hit on the album name does not return songs of an unrelated album that happens to share part of the name. Ordering is parametric: the controllers accept a sort key and a direction, mapped through MapStruct to a JPA \texttt{Sort} object.
+\indent \par The catalogue services (\texttt{AlbumService}, \texttt{ArtistService}, \texttt{SongService}, \texttt{PlaylistService}) expose CRUD operations on top of JPA repositories, plus search and ordering. They also enforce a small set of invariants that the schema cannot enforce on its own: the indestructible flag on ``Liked Songs'', the per-user uniqueness of playlist names, and the visibility rules for user-uploaded content. Search is implemented with SQL \texttt{LIKE} on names, joined to keep unrelated hits out. The smaller \texttt{RecommendationService} returns a page of recommended songs based on the listening history; the implementation is deliberately simple, but the interface allows a smarter ranking to be plugged in later.
 
 \subsection{Negotiated Upload Pipeline}
 \label{subsec:upload}
 
-\indent \par Uploading a song is a two-step protocol. The first call (\texttt{POST /songs/negotiate}) sends the file metadata together with the manifest of chunk hashes that the client computed locally. The backend looks up each hash in the \texttt{chunks} table and replies with the list of indices that it does not have yet. The second call, or a series of them, sends only the missing chunks, one by one, through \texttt{POST /songs/\{fileHash\}/chunks/\{chunkIndex\}}. Once all the missing chunks are uploaded, the song row is created together with its \texttt{song\_chunks} entries.
-
-\par This protocol gives two benefits. The first one is the obvious bandwidth saving when the same file, or a file that shares blocks with an existing one, is uploaded again. The second one is resilience to interrupted uploads: if the user loses the connection halfway through, only the chunks that did not yet land on the server need to be retried on the next attempt. The chunks that already arrived stay in \texttt{chunks} and are simply skipped during the retry.
+\indent \par Uploading a song is a two-step protocol. \texttt{POST /songs/negotiate} sends the file metadata and the manifest of chunk hashes computed locally; the backend replies with the indices it does not have yet. \texttt{POST /songs/\{fileHash\}/chunks/\{chunkIndex\}} then transfers only the missing chunks. Once all of them arrive, the song row is created together with its \texttt{song\_chunks} entries, and \texttt{SongEnrichmentService} runs a small post-processing pass that fills in missing metadata from the audio tags. The protocol gives two benefits: bandwidth savings when files share blocks, and resilience to interrupted uploads, since only the chunks that did not yet arrive need to be retried.
 
 \subsection{Streaming Service}
 \label{subsec:streaming-svc}
 
-\indent \par The streaming service exposes four endpoints. The manifest endpoint returns the chunk count, the chunk size, and the ordered list of SHA-256 hashes for a given \texttt{file\_hash}. The prefix endpoint returns the first $N$ bytes of the song as a single binary response. The per-chunk endpoint returns the bytes of a single chunk, identified by \texttt{(file\_hash, chunkIndex)}. The full-stream endpoint stitches all the chunk files together using a \texttt{SequenceInputStream} and returns the full song as a single response, mainly as a fallback for clients that cannot use the chunked protocol.
+\indent \par The streaming service exposes two endpoints. \texttt{GET /stream/\{fileHash\}/manifest} returns the chunk count, the chunk size (64 KiB), the total byte length and the ordered list of SHA-256 hashes. \texttt{GET /stream/\{fileHash\}/chunk/\{chunkIndex\}} returns the raw bytes of a single chunk. The prefix and the server fallback are both expressed as a sequence of per-chunk calls, so there is no separate ``prefix'' endpoint. Access control is enforced at the query level: a wrong user gets a 404 rather than a 403, which avoids leaking the existence of someone else's private uploads.
 
-\par All four endpoints share the same access control. A request for a streamable song is allowed for any authenticated user. A request for a user-uploaded song is allowed only if the authenticated user is the owner. The check is performed at the query level, by adding the owner condition to the \texttt{WHERE} clause, so that a wrong user gets a 404 instead of a 403, which avoids leaking the existence of someone else's private uploads.
-
-\subsection{Playback State and Telemetry}
+\subsection{Playback State}
 \label{subsec:state-sync}
 
-\indent \par The playback state service reads and writes the simplified \texttt{user\_playback\_state} row through \texttt{GET /playback} and \texttt{PUT /playback}. After a successful save, it publishes a small notification on Redis so that the user's other devices can refetch the new state. The telemetry service receives the per-session chunk delivery counts via \texttt{POST /statistics} and writes them to \texttt{chunk\_stats}.
-
-\par Library mutations (likes, play count, last played) take a different path. Each one is sent as a \texttt{PATCH /songs/\{fileHash\}} call with an \texttt{UpdateUserSongDto} body that carries only the fields that changed. The backend updates the corresponding \texttt{user\_library} row in place. There is no batched delta protocol and no dedicated synchronisation endpoint anymore. The other devices of the same user see the new state when they navigate to a list that re-fetches it, because lists like \texttt{/songs/recently-played}, \texttt{/songs/favourites} or \texttt{/songs/most-played} read directly from the user library table at request time.
-
+\indent \par \texttt{PlaybackStateService} reads and writes the \texttt{user\_playback\_state} row through \texttt{GET /playback} and \texttt{PUT /playback}. The DTO carries five values: \texttt{positionSeconds}, \texttt{shuffle}, \texttt{repeat}, \texttt{autoPlay} and \texttt{autoPlayRecommendationsPage}. Other devices pick up the new state by re-fetching it on the next bootstrap or list refresh; a cross-replica push was considered but left out because pull-on-demand was enough for the multi-device experience. Library mutations (likes, play count, last played) take a different path: each one is a \texttt{PATCH /songs/\{fileHash\}} call with only the changed fields.
 
 \subsection{Realtime Signaling and Peer Tracking}
 \label{subsec:signaling-arch}
 
-\indent \par The signaling component extends Spring's \texttt{TextWebSocketHandler} and processes the WebSocket messages that the client sends to \texttt{/ws/signaling}. It maintains three in-memory concurrent maps: a registry of session id to session metadata, a user index mapping a user id to the set of sessions of that user (so server events can fan out to all the user's connected devices), and a peer index mapping a peer id to a session id (which allows direct routing when the target peer is on this replica).
-
-\par The peer-tracking service is a thin layer in front of Redis. For every \texttt{(songId, peerId)} pair, it keeps a hash that maps the peer id to a JSON array of cached chunk indices. For every peer, it keeps a set of song ids that the peer has registered chunks for. The double indexing makes it cheap both to find peers for a given song (a single hash lookup) and to clean up everything when a peer disconnects (one set lookup followed by per-song hash deletions).
-
-\par Five categories of messages are handled by the signaling component:
-
-\begin{itemize}
-  \item \texttt{REGISTER\_CACHE}, sent by a peer that announces it has just cached a set of chunks. The handler delegates to the peer-tracking service, which merges the new indices with the existing ones rather than replacing them, so the client does not have to retransmit its full cache state on every update.
-
-  \item \texttt{DISCOVER\_PEERS}, asking for the chunk maps of all the other peers that have data for a given song. The service queries Redis, removes the requesting peer's own entry, and replies with a buffer map.
-
-  \item \texttt{OFFER}, \texttt{ANSWER}, \texttt{ICE\_CANDIDATE}, the WebRTC signaling messages, all carrying a \texttt{targetId}. If the target peer is on this replica, the message is forwarded directly. Otherwise, the message is published to a Redis channel so that another replica can deliver it.
-
-  \item \texttt{SYNC\_TRIGGER} and \texttt{PLAYBACK\_STATE\_CHANGED}, server-initiated messages, generated when the catalogue or the playback state changes for a user. These are also published on Redis and delivered to all the user's sessions, no matter on which replica they are connected.
-
-    \item \texttt{PLAYBACK\_STATE\_CHANGED}, a server-initiated message, generated when the playback state changes for a user. It is also published on Redis and delivered to all the user's sessions, no matter on which replica they are connected.
-
-
-  \item \texttt{PING}, a lightweight keepalive that prevents intermediate boxes from dropping the WebSocket as idle.
-\end{itemize}
+\indent \par The signaling component extends Spring's \texttt{TextWebSocketHandler} and processes the messages sent to \texttt{/ws/signaling}. It maintains three in-memory concurrent maps (a session registry, a user index for fan-out, and a peer index for direct routing), and uses \texttt{PeerTrackingService} on top of Redis to track which chunks each peer currently has cached. The peers are indexed both by song and by peer id, which makes peer discovery and disconnect cleanup both $O(1)$. Four client-initiated messages are handled: \texttt{REGISTER\_CACHE} merges newly cached chunks into the peer's existing entry; \texttt{DISCOVER\_PEERS} returns a \texttt{PEER\_BUFFER\_MAP} of all other peers with chunks for the requested song; \texttt{OFFER}, \texttt{ANSWER} and \texttt{ICE\_CANDIDATE} are forwarded to their \texttt{targetId} either directly (target on this replica) or through Redis (target on another); and \texttt{PING} is a keepalive that prevents intermediate boxes from dropping the WebSocket as idle.
 
 
 \section{Client Architecture}
 \label{sec:client-arch}
 
-\subsection{Dependency Injection}
-\label{subsec:di}
-
-\indent \par State management and dependency injection on the client are handled by the \texttt{provider} package, which implements an InheritedWidget-based service locator pattern. All the major services (the audio service, the WebRTC service, the chunk service factory, and the various REST clients) are registered at the root of the widget tree inside the \texttt{AbstractApp} base class. Child widgets and other services retrieve their dependencies through \texttt{context.read<T>()}, which walks up the widget tree and returns the nearest registered instance.
-
-\par The dependency graph is constructed once at startup, and the services are long-lived for the duration of the application session. The single exception is the chunk service, which is instantiated per song because its state (manifest, RAM cache, active request deduplication map, peer completers) is specific to a single audio file. The audio service holds a factory function \texttt{createChunkManager(fileHash)} that creates a new chunk service instance on demand. This factory is injected at startup, so the audio service never has a compile-time dependency on any particular chunk service implementation, which also makes the unit tests straightforward to write.
+\indent \par State management and dependency injection on the client rely on the \texttt{provider} package, with all major services (audio, WebRTC, REST clients, chunk service factory) registered at the root of the widget tree inside \texttt{AbstractApp} and retrieved by descendants through \texttt{context.read<T>()}. The chunk service is the one exception, instantiated per song because its state (manifest, RAM cache, dedup map, peer completers) is specific to a single audio file, with the audio service receiving a factory function rather than a compile-time dependency. The remaining client decisions worth discussing in their own right are the platform-specific repository split and the audio library choice.
 
 \subsection{Platform-Specific Repository Split}
 \label{subsec:repo-split}
 
-\indent \par The application targets platforms with fundamentally different storage capabilities. Desktop and mobile operating systems expose a persistent filesystem and support native database libraries such as ObjectBox. Web browsers, on the other hand, do not expose a filesystem to web applications and cannot run native binary libraries.
-
-\par To handle this difference, the application defines a set of abstract repository interfaces (for example for songs, the chunk cache, and the settings) and provides two implementations for each. The ObjectBox-backed implementations are used on Linux, macOS, Windows, Android and iOS. ObjectBox is a high-performance embedded NoSQL database that maps Dart objects directly to binary storage with no SQL layer in between. It was chosen over SQLite because it requires no schema migrations at the application level, and its Dart code generation tooling integrates cleanly with Flutter's build pipeline. The chunk cache itself is stored as raw binary files on disk rather than inside ObjectBox, because storing large binary blobs in a database can cause memory pressure during reads.
-
-\par The in-memory implementations are used on the web. They store all data in \texttt{Map} and \texttt{List} structures that live for the duration of the browser session. Because browser tab memory is limited and there is no persistent storage permission needed, the in-memory approach is the simplest safe choice. The trade-off is that the web platform cannot act as a strong P2P seeder between sessions, because locally cached chunks are lost when the tab is closed.
-
-\par The platform-specific app classes (such as the Linux app and the web app) extend a shared \texttt{AbstractApp} base class and override \texttt{platformProviders()} to inject the correct repository implementations before the common providers are registered. This means the rest of the application code never needs a platform check to decide which repository to use; it always receives the correct one through the provider tree.
+\indent \par Desktop and mobile expose a persistent filesystem and support native libraries; the browser does neither. The application defines abstract repository interfaces (songs, chunk cache, settings) with two implementations each. The ObjectBox-backed ones are used on Linux, macOS, Windows, Android and iOS; ObjectBox was chosen over SQLite because it requires no application-level migrations and its Dart codegen tooling fits cleanly into Flutter. The chunk cache itself sits on disk as raw binary files rather than inside ObjectBox, again because of memory pressure during reads. The web platform uses in-memory \texttt{Map} and \texttt{List} structures, accepting that locally cached chunks are lost when the tab closes and the browser is therefore a weaker seeder than a desktop client.
 
 \subsection{Audio Library Choice}
 \label{subsec:audio-library}
 
-\indent \par The first decision to make when building a Flutter music player is which audio playback library to use. The most popular option in the Flutter ecosystem is \texttt{just\_audio}, a package that wraps the native audio APIs of each platform behind a unified Dart interface. It also exposes a \texttt{StreamAudioSource} abstract class that lets the application provide audio bytes on demand, byte range by byte range. This interface is exactly what the chunk-by-chunk retrieval pipeline needs, so \texttt{just\_audio} was the natural starting point.
-
-\par On Linux and Windows, however, the underlying decoders (GStreamer on Linux, Windows Media Foundation on Windows) have only partial support for a custom \texttt{StreamAudioSource}. They expect a seekable, sequential data source, not a dynamic on-demand stream. Seeking inside a song often caused the player to stall until the source was reloaded. The workaround was to switch to the \texttt{media\_kit} package on Linux, macOS and Windows. It wraps \texttt{libmpv} and its FFmpeg-based demuxer is comfortable with random access. The client now uses \texttt{just\_audio} on Android, iOS and the web, and \texttt{media\_kit} on the three desktop platforms. The audio service abstracts both behind the same interface, so the UI layer and the chunk pipeline do not have to know which backend is in use.
-
-\par On the web, the situation is different again. The browser audio element expects a URL and issues HTTP range requests against it, which leaves no hook at the Dart level to intercept those requests. The solution was to register a Service Worker that intercepts requests under a known URL scheme, asks the Flutter side via \texttt{postMessage}, and assembles the response from the chunk cache. The chunk retrieval logic on the web reuses the same chunk service as on native; only the delivery mechanism at the boundary with the audio element is different.
+\indent \par The natural Flutter choice is \texttt{just\_audio}, which exposes a \texttt{StreamAudioSource} abstract class that lets the application provide bytes on demand by range. On Linux and Windows, however, the underlying decoders (GStreamer and Windows Media Foundation) expect a seekable sequential source and stall when seeking through a dynamic stream. The workaround was to switch to \texttt{media\_kit} on Linux, macOS and Windows; it wraps \texttt{libmpv} with an FFmpeg demuxer that is comfortable with random access. The client now uses \texttt{just\_audio} on Android, iOS and the web, and \texttt{media\_kit} on the three desktops; both sit behind the same interface so the UI and chunk pipeline do not have to know which is in use. On the web, the browser audio element issues HTTP range requests, which leaves no Dart-level hook to serve them; the solution is a Service Worker that intercepts requests under a known URL scheme and assembles the response from the chunk cache.
 
 
 \section{Application Bootstrap}
 \label{sec:bootstrap}
 
-\indent \par The bootstrap of the client is broken in three smaller flows: the boot, the auto-login, and the playback state restore. Each one is shown in its own figure below, so the reader can follow them one at a time.
-
-\subsection{Boot}
-\label{subsec:boot}
-
-\indent \par Figure \ref{fig:flow-startup-boot} shows what happens between the moment the user opens the application and the moment the loading screen is visible. The Flutter \texttt{main.dart} entrypoint initialises the local database, the audio plugin and the platform specific bits, and then it builds the \texttt{MultiProvider} tree defined in \texttt{abstract\_app.dart}. The \texttt{WebRTCService} is the only provider that is created eagerly (\texttt{lazy: false}), because it has to open the WebSocket to the signaling endpoint as early as possible, so that by the time the user reaches the home screen and tries to play a song, the connection is already up.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figures/flow_app_startup_boot.png}
-\caption{Boot of the Flutter application and connection to the signaling WebSocket.}
-\label{fig:flow-startup-boot}
-\end{figure}
-
-\subsection{Auto-Login}
-\label{subsec:autologin}
-
-\indent \par The loading screen calls \texttt{tryAutoLogin()} on the \texttt{UserProvider}, which reads a refresh token from the secure storage. If the token is present, the application asks the backend for a new access token through \texttt{POST /auth/refresh}; on success, both the new access and the new refresh tokens are written back to storage and a periodic timer is started in \texttt{AuthService} that refreshes the access token every ten minutes. If no token is present, the loading screen navigates to the welcome screen instead. Figure \ref{fig:flow-startup-login} shows the two branches.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figures/flow_app_startup_login.png}
-\caption{Auto-login: refresh-token exchange and the start of the periodic token refresh timer.}
-\label{fig:flow-startup-login}
-\end{figure}
-
-\subsection{Playback State Restore}
-\label{subsec:restore}
-
-\indent \par Once the user is authenticated, the loading screen runs the last part of the bootstrap, depicted in Figure \ref{fig:flow-startup-restore}. The settings service is asked for the audio settings, and it in turn calls \texttt{GET /playback}. The DTO contains only \texttt{positionSeconds}, \texttt{shuffle} and \texttt{repeat}; these three values are then applied to the local audio settings. When this is done, the application navigates to the main scaffold. The library content itself (recently played, favourites, playlists, and so on) is not pre-fetched at this point; each list is loaded lazily when the user opens it, by reading from the corresponding endpoint that queries the \texttt{user\_library} table.
+\indent \par The bootstrap covers what happens between the moment the application opens and the moment the main scaffold is visible (Figure \ref{fig:flow-startup-restore}). \texttt{main.dart} initialises the local database, the audio plugin and the platform-specific bits, and builds the \texttt{MultiProvider} tree from \texttt{abstract\_app.dart}; the \texttt{WebRTCService} is the only eagerly created provider (\texttt{lazy: false}), so the signaling WebSocket is already open by the time the user can press play. An auto-login step follows: the loading screen calls \texttt{tryAutoLogin()} on the \texttt{UserProvider}, which reads a refresh token from secure storage and exchanges it through \texttt{POST /auth/refresh} for a new access token, with a periodic timer in \texttt{AuthService} refreshing every ten minutes afterwards. Finally, the settings service calls \texttt{GET /playback} and applies the five values from the DTO to the local audio settings before the application navigates to the main scaffold; library content (recently played, favourites, playlists) is loaded lazily as each list is opened.
 
 \begin{figure}[htbp]
 \centering
@@ -276,26 +152,12 @@
 \section{Streaming Pipeline}
 \label{sec:streaming-pipeline}
 
-\indent \par This section follows what happens when the user presses the play button on a song. The flow is split into three parts: the song load, the manifest fetch together with peer discovery, and the chunk-by-chunk streaming loop. The chunk loop is the part where the peer-assisted delivery actually happens.
-
-\subsection{Song Load}
-\label{subsec:song-load}
-
-\indent \par When the user taps Play, the call goes from the \texttt{AudioProvider} to \texttt{AppAudioService.play()}, which then invokes \texttt{\_loadIndex(idx)} for the current queue position. Before building the new audio source, the service flushes any pending chunk delivery statistics for the previous song. The audio source factory produces a different object depending on the platform. On native targets, a \texttt{P2PChunkedAudioSource} is created. On the web, the source is a URL of the form \texttt{/music-player/p2p-stream/\{fileHash\}} that will be intercepted by the Service Worker. The platform difference is handled inside the source factory; the rest of the pipeline does not need to know which mode is in use.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{figures/flow_press_play_load.png}
-\caption{Press Play: building the audio source on native and web.}
-\label{fig:flow-press-play-load}
-\end{figure}
+\indent \par This section follows what happens when the user presses play. \texttt{AppAudioService.play()} invokes \texttt{\_loadIndex(idx)} for the current queue position and calls the source factory: on native targets the factory builds a \texttt{P2PChunkedAudioSource}, while on the web the source is a URL of the form \texttt{/music-player/p2p-stream/\{fileHash\}} intercepted by the Service Worker. From there the flow continues with the manifest fetch and peer discovery, the chunk loop itself, and the caching, fan-out and prefetch machinery that the loop relies on.
 
 \subsection{Manifest Fetch and Peer Discovery}
 \label{subsec:manifest-discovery}
 
-\indent \par On the first byte-range request, the audio source asks the chunk service for the chunk that contains those bytes. The service has not yet loaded the manifest, so it triggers \texttt{loadManifest()}, which performs a \texttt{GET /stream/\{fileHash\}/manifest} call and receives the total chunk count, the chunk size and the ordered list of SHA-256 hashes. In parallel, the service asks \texttt{WebRTCService.discoverPeers(fileHash)}, which sends a \texttt{DISCOVER\_PEERS} message over the signaling WebSocket. The backend replies with a peer buffer map that lists every known peer for this file together with the indices that the peer has already cached.
-
-\par Right after the manifest is loaded, the service computes the list of chunk indices that the local cache already holds and sends them through \texttt{REGISTER\_CACHE}, so that other peers can find this client too. If the peer buffer map is non-empty, the WebRTC service starts the offer/answer/ICE handshake in parallel with the remaining steps, so that the chunk requests can begin using the data channels as soon as they open. Figure \ref{fig:flow-press-play-discovery} shows this combined phase.
+\indent \par On the first byte-range request, the audio source asks the chunk service for the chunk that contains those bytes. The service triggers \texttt{loadManifest()}, which calls \texttt{GET /stream/\{fileHash\}/manifest} and receives the chunk count, the chunk size and the SHA-256 hashes. In parallel it sends a \texttt{DISCOVER\_PEERS} message; the backend replies with the buffer map of every known peer for the file. The service then sends \texttt{REGISTER\_CACHE} with the indices the local cache already holds, and if the buffer map is non-empty the WebRTC service starts the offer/answer/ICE handshake in parallel with the rest (Figure \ref{fig:flow-press-play-discovery}).
 
 \begin{figure}[htbp]
 \centering
@@ -307,14 +169,14 @@
 \subsection{Chunk Streaming Loop}
 \label{subsec:chunk-loop}
 
-\indent \par For each chunk that the audio decoder needs, the chunk service runs a small decision tree, depicted in Figure \ref{fig:flow-press-play-chunk}. The local cache is consulted first. On a cache miss, the decision is based on the chunk index. The implementation defines
+\indent \par For each chunk the decoder needs, the chunk service runs the decision tree in Figure \ref{fig:flow-press-play-chunk}. The local cache is consulted first. On a miss, the implementation defines
 
 \begin{equation}
   N_{\text{prefix}} = \max\!\bigl(1,\ \text{round}(N_{\text{total}} \times 0.05)\bigr)
   \label{eq:prefix-impl}
 \end{equation}
 
-as the number of prefix chunks (5\% of the song, with a minimum of one). Chunks below this threshold are always fetched from the origin server, which guarantees that the playback can start before any peer connection is open.
+as the number of prefix chunks (5\% of the song, with a minimum of one). Chunks below this threshold always go to the server, guaranteeing that playback can start before any peer connection is open. Above the threshold, peers are tried first through the staggered fan-out described below, with a 1700 ms playback timeout (2500 ms for the look-ahead prefetcher). Every received chunk is verified by recomputing its SHA-256 against the manifest hash; a mismatch causes a server retry, a second mismatch is treated as a hard integrity error. After a successful fetch, the chunk is written to RAM and disk caches, and a \texttt{REGISTER\_CACHE} update goes back to the signaling server.
 
 \begin{figure}[htbp]
 \centering
@@ -323,166 +185,60 @@ as the number of prefix chunks (5\% of the song, with a minimum of one). Chunks 
 \label{fig:flow-press-play-chunk}
 \end{figure}
 
-\par For chunks above the threshold, peers are tried first. The service ranks peers by a score that combines the round-trip time and the throughput, takes the top three, and uses a staggered fan-out, described in detail in Section \ref{subsec:fanout}. If none of the peers responds within 1700 ms, the service falls back to the server.
+\par The \texttt{P2PChunkedAudioSource} that sits on top of this loop translates each audio-player range $[s, e)$ into the chunk indices $i_{\min} = \lfloor s / C \rfloor$ and $i_{\max} = \lfloor (e - 1) / C \rfloor$, iterates between them and yields the appropriate slice of each chunk to the output stream. The response declares range-request support and a precise \texttt{Content-Length}, without which some players disable the seek bar.
 
-\par Whatever the source of the chunk, the bytes are verified by recomputing their SHA-256 and comparing it against the manifest hash. A mismatch causes a server retry; a second mismatch is treated as a hard integrity error. After a successful fetch, the chunk is written to the disk cache and to the RAM cache, and the local cache state is sent back to the signaling server through another \texttt{REGISTER\_CACHE} message.
+\subsection{Caching, Fan-Out and Prefetch}
+\label{subsec:cache-fanout-prefetch}
 
-\subsection{Caching Architecture}
-\label{subsec:caching}
+\indent \par Three caching layers are stacked in order of access speed. The hot RAM cache holds at most 15 entries keyed by chunk index, with FIFO eviction; it absorbs the repeated reads from overlapping range requests, especially during seeks. The disk cache stores chunks as binary files in a per-song directory; writes are asynchronous, so the caller receives the data immediately while the disk write runs in the background. The third layer is an active-request deduplication map from chunk index to \texttt{Future<Uint8List>}: two concurrent callers requesting the same chunk attach to the same future, which prevents duplicate network or peer requests during seeking.
 
-\indent \par Three caching layers are stacked in order of access speed, all owned by the chunk service. The first one is a hot RAM cache, with at most 15 entries keyed by chunk index. The eviction policy is first-in first-out. This layer absorbs the repeated reads for the same chunk that occur when the audio player issues overlapping range requests, especially during seeks. The limit of 15 entries was chosen empirically: large enough to hold the forward-looking prefetch window for a typical seek, small enough to avoid memory pressure on mobile devices.
+\par When peers are available, the request method ranks them by score (Section \ref{subsec:peer-ranking}) and picks the top three. A request is sent to the best peer immediately; if the response has not arrived within 150 ms, the second peer is asked; another 150 ms later, the third one. The first peer to respond completes the shared completer and the other responses are dropped. This staggered fan-out keeps the common-case latency low while still triggering a fast recovery when the best peer is slow.
 
-\par The second layer is the disk cache, used on desktop and mobile. Chunks are stored as binary files under a per-song directory. Writes are asynchronous: the chunk is placed in the RAM cache first and persisted in the background, so that the caller receives the data immediately without waiting for disk I/O. On the web, the disk cache is replaced by an in-memory repository that lives only for the duration of the tab.
-
-\par The third layer is an active-request deduplication map, from chunk index to a \texttt{Future<Uint8List>}. If two callers concurrently request the same chunk, the second caller attaches to the existing future rather than issuing a duplicate network or peer request. This is particularly important during seeking, when the audio player may issue several overlapping range requests that all require the same chunk.
-
-\subsection{Staggered Peer Fan-Out}
-\label{subsec:fanout}
-
-\indent \par When peers are available, the request method does not simply ask one peer and wait. It ranks the available peers by score (see Section \ref{subsec:peer-ranking}) and picks the top three. A request is sent to the best peer immediately. If the first response has not arrived within 150 milliseconds, a request is also sent to the second peer. After another 150 milliseconds, if the chunk is still not resolved, a request is sent to the third peer. The first peer to respond completes the shared completer, and the other responses are simply ignored, because the completer is already resolved.
-
-\par This staggered fan-out reduces the latency of the common case (the best peer responds quickly) while still providing a fast recovery path when the best peer is slow or temporarily unavailable. The 150-millisecond step is short enough to trigger the backup quickly if the first peer is unavailable, but long enough to avoid generating unnecessary traffic when the first peer is just a little slow.
-
-\subsection{Look-Ahead Prefetching}
-\label{subsec:prefetch}
-
-\indent \par To prevent the audio decoder from starving, the chunk service maintains a constant lookahead of 16 chunks. After each call to \texttt{getChunk(i)}, the service asynchronously initiates fetches for chunks $i+1$ through $i+15$, subject to the deduplication map preventing re-issuance. These prefetch operations run concurrently, so the peer timeout limits only the latency of a single chunk fetch, not the aggregate prefetch window.
-
-\par Sixteen chunks correspond to about 1 MiB of audio, or roughly 25 seconds at 320 kbps. This is large enough that even a worst-case scenario of one peer timeout per chunk for all 16 prefetch chunks would still not exhaust the buffer before the last prefetch resolves through the server fallback. In practice, the buffer grows faster than it drains when most chunks come from peers that respond well within the timeout.
-
-\subsection{P2P Audio Source and Range Requests}
-\label{subsec:audio-source}
-
-\indent \par The Flutter audio player consumes audio through an abstract source interface that delivers bytes for arbitrary HTTP-style range requests. The \texttt{P2PChunkedAudioSource} is the implementation that translates each range request into one or more chunk fetches. When the audio player issues a range $[s, e)$, the source clamps the range to the total byte length, computes the first and last chunk indices
-
-\begin{equation}
-  i_{\min} = \lfloor s / C \rfloor,\qquad
-  i_{\max} = \lfloor (e - 1) / C \rfloor,
-\end{equation}
-
-iterates from $i_{\min}$ to $i_{\max}$, and for each chunk computes a slice $[\max(0, s - i \cdot C),\ \min(|\text{chunk}|, e - i \cdot C))$ that is yielded to the output stream. While iterating, the source also schedules a speculative fetch for the next chunk, so the network latency overlaps with the audio decoding.
-
-\par The response object declares that range requests are supported and sets the \texttt{Content-Length} header to $e - s$, so the audio player can issue fine-grained seeks without re-downloading the entire file. Setting this flag is important, because without it some audio players assume that the source is non-seekable and disable the seek bar in the UI.
+\par To prevent the decoder from starving, the chunk service maintains a constant 16-chunk lookahead. After each \texttt{getChunk(i)} call, fetches for $i+1$ through $i+15$ are initiated asynchronously, gated by the deduplication map. Sixteen chunks is about 1 MiB or 25 seconds at 320 kbps, large enough that even a worst case of one peer timeout per chunk for all 16 prefetches would not exhaust the buffer before the server fallback returns.
 
 
 \section{WebRTC Peer Management}
 \label{sec:webrtc-client}
 
-\indent \par The WebRTC service on the client side manages the lifecycle of all the peer-to-peer connections. It is constructed with a reference to the signaling WebSocket and two callbacks: one invoked when a binary chunk arrives over a data channel, and another invoked when a peer requests a chunk that this device may be able to serve.
+\indent \par The WebRTC service manages the lifecycle of every peer-to-peer connection. It is constructed with a reference to the signaling WebSocket and two callbacks: one for when a binary chunk arrives over a data channel, and one for when a peer requests a chunk this device may be able to serve.
 
-\subsection{Connection Establishment}
-\label{subsec:conn-establish}
+\subsection{Connection Establishment and Chunk Exchange}
+\label{subsec:conn-protocol}
 
-\indent \par Peer connections are established using the standard offer/answer handshake. When a peer buffer map response arrives from the signaling server, the service iterates the map and creates a new peer connection in initiator mode for each newly discovered peer. The connection is configured with two STUN servers (\texttt{stun.l.google.com:19302} and \texttt{stun1.l.google.com:19302}). Two servers are included so that, if one is temporarily unreachable, the ICE negotiation can still complete.
+\indent \par Peer connections use the standard offer/answer handshake. When the buffer map arrives, the service creates a new initiator-mode peer connection for each newly discovered peer, configured with two STUN servers (\texttt{stun.l.google.com:19302} and \texttt{stun1.l.google.com:19302}) so that ICE still completes if one is unreachable. An ordered reliable data channel labelled \texttt{chunk\_transfer} is opened on top; this mirrors TCP semantics, which is necessary because a partial 64 KiB block cannot be verified against the manifest hash. The offer carries an \texttt{offerId} that the remote echoes back in its answer, which is used to discard stale answers, and glare (both sides offering simultaneously) is resolved by keeping the offer of the peer with the lexicographically larger device id.
 
-\par An ordered, reliable data channel labelled \texttt{chunk\_transfer} is created on top of the connection. Ordered and reliable mirrors TCP semantics, which is important because audio chunks must arrive complete and uncorrupted. A partially delivered 64 KiB block cannot be verified against the SHA-256 hash and would be discarded, wasting both the transfer cost and the peer timeout budget.
-
-\par The service then generates an SDP offer, sets it as the local description, and transmits it through the signaling server as an \texttt{OFFER} message, including an \texttt{offerId} token that the remote peer echoes back in its answer. This token is used to detect stale answers that arrive after a connection has been re-established. Without it, an old answer could overwrite the state of a fresh connection.
-
-\par The remote peer creates a mirrored connection in non-initiator mode, sets the remote description, and replies with an \texttt{ANSWER}. Both sides then exchange ICE candidates until connectivity is established. ICE candidates that arrive before the remote description has been applied are queued and replayed once the description is available, because the WebRTC API requires the remote description to be in place before candidates can be added.
-
-\par A known edge case in the WebRTC negotiation is glare: both sides send an offer simultaneously, before either has had a chance to reply with an answer. This can happen when two clients discover each other at almost the same moment, for example when they both join a room listening to the same song. The implementation resolves glare deterministically: the peer with the lexicographically larger device identifier keeps its offer and ignores the incoming one; the other peer discards its local offer and processes the incoming one as the responder. This resolves the ambiguity without requiring a server-side arbitration step.
-
-\subsection{Chunk Exchange Protocol}
-\label{subsec:chunk-protocol}
-
-\indent \par Once the data channel is open, chunk requests and responses follow a custom binary protocol. A request is sent as a UTF-8 text message with the format
-
-\begin{center}
-  \texttt{REQUEST\_CHUNK:\{fileHash\}:\{chunkIndex\}}
-\end{center}
-
-A response is a binary message. If the chunk fits within the safe DataChannel message limit of about 16 KiB, a single packet is sent. The header is 68 bytes: the first 64 bytes are the UTF-8 encoding of the file hash (always a 64-character hexadecimal string), and bytes 64--67 are the chunk index encoded as a big-endian 32-bit unsigned integer. The remaining bytes are the raw audio data.
-
-\par If the chunk data exceeds the 16 KiB limit, it is split in fragments. Each fragment uses a 77-byte header: a 4-byte magic sequence \texttt{P2PF} that distinguishes fragments from single-packet messages, a 1-byte version number, the 64-byte file hash, a 4-byte chunk index, a 2-byte fragment index, and a 2-byte total fragment count. The receiving side buffers incoming fragments in a per-tuple assembly structure until all fragments for a given \texttt{(peerId, fileHash, chunkIndex)} tuple have arrived, and only then reassembles and delivers the complete chunk.
-
-\par The fragmentation protocol was added because some implementations of the WebRTC DataChannel API, in particular on Android, refuse to send messages larger than around 16 KiB. Without fragmentation, any chunk that happened to be slightly over that limit would fail silently on those platforms. The magic bytes allow the receiving side to distinguish fragmented packets from single-packet responses without breaking backward compatibility with peers that still send unfragmented messages.
-
-\par If a chunk request arrives while the data channel is still in the connecting state, the request is enqueued and flushed as soon as the channel transitions to open. This avoids race conditions during the brief window between peer discovery and channel readiness.
+\par Once the data channel is open, requests go through as the UTF-8 text message \texttt{REQUEST\_CHUNK:\{fileHash\}:\{chunkIndex\}} and the response is binary. If the chunk fits within the safe DataChannel limit of about 16 KiB, a single packet is sent with a 68-byte header (the 64-character file hash followed by a 4-byte big-endian chunk index) and the audio payload after it. Otherwise the chunk is fragmented; each fragment carries a 77-byte header starting with the magic sequence \texttt{P2PF} so the receiver can distinguish fragments from single-packet messages, and the pieces are reassembled per \texttt{(peerId, fileHash, chunkIndex)} tuple. Fragmentation was added because some WebRTC implementations (notably on Android) silently refuse messages larger than 16 KiB.
 
 \subsection{Peer Ranking and Scoring}
 \label{subsec:peer-ranking}
 
-\indent \par Not all peers are equal. A peer on the same local network typically delivers a chunk in under 10 milliseconds, while a peer on the other side of the world may take several hundred milliseconds. To exploit the fastest available peers, the service tracks each remote peer with a small statistics object that maintains two exponentially weighted moving averages: the round-trip time, updated every 30 seconds via a ping/pong exchange over the data channel, and the throughput, updated whenever a chunk is delivered, as the ratio of the chunk size to the elapsed time between request and response.
-
-\par The peer score is
+\indent \par Each remote peer is tracked with two exponentially weighted moving averages: the round-trip time (refreshed every 30 s through a ping/pong over the data channel) and the throughput (the chunk size divided by the request-to-response time, updated on every successful chunk). The score is
 
 \begin{equation}
   \text{score} = \frac{\text{successRate} \times \text{throughput} \times 1000}{\text{RTT} + 1},
   \label{eq:peer-score}
 \end{equation}
 
-where the success rate is the fraction of requests answered successfully (not timed out), the throughput is the exponentially averaged bytes per millisecond, and the round-trip time is the exponentially averaged value in milliseconds. The $+1$ in the denominator prevents division by zero for newly seen peers.
-
-\par The exponential smoothing factor $\alpha = 0.2$ gives recent measurements 20\% weight and the historical average 80\%. This makes the score stable enough to avoid frequent re-ranking due to transient fluctuations, while still reacting to sustained changes in peer performance within a few measurement intervals. When the chunk service asks for the sorted peer list for a song, the service returns the peers in descending order of score, filtered to those that have registered chunks for the requested file. The top three are then used in the staggered fan-out described above.
+with the $+1$ in the denominator avoiding a division by zero for new peers. The smoothing factor $\alpha = 0.2$ gives recent measurements 20\% weight and the history 80\%, which is stable against transient fluctuations but still reactive within a few measurement intervals. The chunk service uses the top three peers from this ranking in its staggered fan-out.
 
 \subsection{Upload Limits and Network Mode}
 \label{subsec:upload-limits}
 
-\indent \par On mobile platforms, acting as a peer seeder consumes the user's cellular or Wi-Fi data allowance. To give users control over this, the WebRTC service checks two settings before sending a chunk to another peer.
-
-\par The first one is the peer network mode. The user can configure the application to participate in P2P only on Wi-Fi, only on cellular, or on both. The current connection type is queried through the connectivity plugin. If the current connection does not match the configured mode, the chunk send is silently skipped, and the requesting peer falls back to the server.
-
-\par The second setting is a monthly upload cap, configurable separately for Wi-Fi and cellular. The service accumulates the total bytes sent per calendar month, and refuses to send further chunks once the cap is reached. The counters reset at the start of each calendar month. The month boundary is stored as a \texttt{year * 100 + month} integer, so it survives application restarts. On desktop and on the web these checks are bypassed, because desktop machines are typically on unmetered connections, and the web platform cannot reliably distinguish cellular from Wi-Fi traffic.
+\indent \par On mobile, acting as a seeder consumes the user's data allowance. The WebRTC service checks two settings before sending a chunk: the peer network mode (Wi-Fi only, cellular only, or both), checked through the connectivity plugin, and a monthly upload cap configurable separately for Wi-Fi and cellular and stored with a \texttt{year * 100 + month} integer so it survives restarts. A mismatch on either silently skips the send and the requester falls back to the server. On desktop and on the web these checks are bypassed.
 
 
 \section{Audio Service and Playback State}
 \label{sec:audio-service}
 
-\indent \par The audio service is the top-level coordinator for playback on the client. It owns the audio player instance (either \texttt{just\_audio} or the \texttt{media\_kit} equivalent depending on the platform), manages the song queue, and bridges the playback events to the library mutation and peer registry subsystems.
+\indent \par \texttt{setQueueAndPlay} atomically replaces the queue and calls the source factory, which branches on three cases: a song with a local file path becomes a \texttt{Uri.file} source with no network I/O; on the web the source is the Service Worker URL; otherwise a \texttt{P2PChunkedAudioSource} triggers the manifest fetch on the first range request. Both the normal and the shuffled queues are kept in sync, and when shuffle is toggled the shuffled queue is rebuilt with the current song pinned to the front. A small watchdog runs in parallel and reloads the audio source if the playback position fails to advance for a second while the player is nominally playing, which forces fresh range requests and acts as a platform-independent safety net against the occasional silent stall.
 
-\subsection{Queue and Source Selection}
-\label{subsec:queue}
-
-\indent \par When the user starts a song, \texttt{setQueueAndPlay} atomically replaces the queue and calls the source factory. The factory branches on three cases. If the song has a local file path (for example, a file the user imported from disk on desktop), a \texttt{Uri.file} source is returned and no network I/O is needed at all. If the platform is web, the audio source is a URL under the \texttt{/music-player/p2p-stream/} scheme that the Service Worker intercepts. Otherwise, on native streaming, a \texttt{P2PChunkedAudioSource} is constructed, which triggers a chunk service instantiation and a manifest fetch on the first range request.
-
-\par Both queues, the normal one and the shuffled one, are kept in sync at all times. When shuffle is toggled, the shuffled queue is rebuilt from the normal queue, with the current song placed at the front, so that the user does not jump away from the currently playing song unexpectedly.
-
-\subsection{Stuck-Playback Detection}
-\label{subsec:stuck}
-
-\indent \par Network jitter or slow peer responses can occasionally stall the audio decoder without triggering a formal error state in the player library. The audio service runs a watchdog timer that samples the playback position every 500 milliseconds. If the position has not advanced after two consecutive samples (a 1 second window), while the player is nominally in the playing state, the service reloads the audio source from the current position. This forces the player to re-issue range requests, which in turn triggers fresh chunk fetches that may select a different peer or fall through to the server, resolving the stall.
-
-\par The watchdog is started each time \texttt{play()} is called and exits as soon as the position advances or the player leaves the playing state. It does not run on a periodic timer, to avoid accumulating concurrent watchdog coroutines in long sessions; each call to \texttt{play()} spawns exactly one watchdog that runs to completion. This is necessary because the two audio backends have different behaviour when the byte stream from the source stops producing data: on some platforms the player silently waits indefinitely, on others it emits a buffering state. The watchdog provides a platform-independent safety net.
-
-\subsection{Persistent Playback State}
-\label{subsec:playback-state}
-
-\indent \par Every 30 seconds while playback is active, the audio service serialises the current position in seconds together with the shuffle and repeat flags into a DTO and sends it to the playback REST endpoint. This frequency is a deliberate trade-off. Saving more often would reduce the worst-case data loss in the event of a crash, but would also generate more write traffic on the server. At 30 seconds, the worst-case position loss is 30 seconds of playback, which is acceptable for a music application where the user can skip back manually if needed.
-
-\par On the next launch on any device, the bootstrap sequence presented in Section \ref{sec:bootstrap} reads the same DTO and applies the values to the local audio settings. The queue is not part of this state. The user reconstructs it implicitly through the next selection.
-
-\subsection{Proactive Prefix Caching}
-\label{subsec:proactive-cache}
-
-\indent \par To reduce the latency of switching to the next song in the queue, the audio service runs a proactive prefix cache routine each time the 30-second timer fires while a song is playing. The routine inspects the next five songs in the queue and, for each one, issues a server prefix fetch. Because the prefix is a single HTTP call returning less than half a megabyte on average, it can be stored in the disk cache well before the user reaches that position in the queue. The subsequent peer-negotiation phase then overlaps with warm cache hits rather than cold fetches, which effectively hides the WebRTC connection setup latency from the user.
-
-\par Five songs cover approximately 2 MiB of background data. For longer queues, the assumption is that the user will not advance through them so fast that the prefetching cannot keep up. The 30-second timer provides ample time to warm the cache for upcoming songs.
+\par Every 30 seconds the audio service serialises position, shuffle, repeat, auto-play and auto-play page to the playback REST endpoint. The same 30-second timer also runs a proactive prefix cache routine that looks at the next five songs in the queue and the previous two (in case the user goes back), and for each one issues a server prefix fetch at a fraction of the playback that scales with the distance from the current song. Closer songs are prefetched earlier; the prefetched prefix lands in the disk cache before the user gets there, so the peer-negotiation phase overlaps with warm cache hits rather than cold fetches.
 
 
 \section{Multi-Instance Coordination}
 \label{sec:multi-instance}
 
-\indent \par The backend is designed to run as several replicas behind a load balancer. A user with two devices may therefore have one device connected to replica 1 and another one connected to replica 2. Without a coordination mechanism, the two replicas would not see each other's clients, and most of the cross-device features would simply break. The solution is to use Redis pub/sub on three dedicated channels, each one handling one type of cross-replica traffic. The next three subsections present each scenario.
-
-\subsection{Server-Initiated Events}
-\label{subsec:redis-push}
-
-\indent \par When a user changes their playback state on one device, the playback state service persists the change in the database and then publishes the new state on the playback channel together with the user id. Every replica runs a Redis listener, which subscribes to the three channels and dispatches incoming messages to the local signaling component. The signaling component looks up the user's other sessions in the user index and pushes a \texttt{PLAYBACK\_STATE\_CHANGED} message over the corresponding WebSocket connections.
-
-\par This is the only server-initiated push the system uses. Library mutations (likes, play counts, last played) do not trigger any cross-replica notification. The other devices of the same user observe them implicitly the next time they re-fetch a list. Figure \ref{fig:flow-redis-push} shows the playback push scenario.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figures/flow_redis_pubsub_push.png}
-\caption{Server-initiated cross-instance push: playback state change.}
-\label{fig:flow-redis-push}
-\end{figure}
-
-\subsection{WebRTC Signaling Across Replicas}
-\label{subsec:redis-webrtc}
-
-\indent \par WebRTC offer/answer/ICE messages contain a target id that identifies the peer they are aimed at. When such a message arrives at a replica, the handler first checks the peer index for a local session. If the target peer is on this replica, the message is forwarded immediately, and Redis is not involved at all. If not, the message is published on the WebRTC channel; every other replica's listener receives it, looks up its own peer index, and forwards the message to the local session when the target is found there. This is illustrated in Figure \ref{fig:flow-redis-webrtc}. The whole mechanism is transparent to the client: it sends and receives WebRTC messages on its own connection, and it never needs to know on which replica the target peer is.
+\indent \par The backend is designed to run as several replicas behind a load balancer; a user with two devices may have one connected to replica 1 and the other to replica 2. The coordination uses Redis pub/sub on the dedicated \texttt{signaling:webrtc} channel. WebRTC offer/answer/ICE messages carry a target id: the handler first checks the peer index for a local session, and if the target is on this replica the message is forwarded immediately, otherwise it is published on the signaling channel and every other replica's listener picks it up, looks up its own peer index, and forwards the message if the target is found there (Figure \ref{fig:flow-redis-webrtc}). The mechanism is transparent to the client.
 
 \begin{figure}[htbp]
 \centering
@@ -491,40 +247,13 @@ where the success rate is the fraction of requests answered successfully (not ti
 \label{fig:flow-redis-webrtc}
 \end{figure}
 
-\subsection{Replica Shutdown and Client Reconnect}
-\label{subsec:redis-shutdown}
-
-\indent \par When a replica goes down (intentional restart, deploy, or crash), Spring's WebSocket lifecycle calls \texttt{afterConnectionClosed} for every still-open session. The handler removes the session from the registry, the user index and the peer index, and asks the peer-tracking service to remove the peer's chunk registrations from Redis. This guarantees that, immediately after the replica is gone, no other replica will route P2P traffic to its former clients. The clients themselves are responsible for reconnecting; the implementation does not retry automatically by itself, the reconnection is triggered by the next user action that requires the WebSocket. When the client reconnects, presumably to a different replica, it sends a fresh \texttt{REGISTER\_CACHE} for every song it still has cached, and the peer index in Redis is repopulated. Figure \ref{fig:flow-instance-shutdown} shows this lifecycle.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figures/flow_instance_shutdown.png}
-\caption{Replica shutdown and client reconnection on a different replica.}
-\label{fig:flow-instance-shutdown}
-\end{figure}
+\par When a replica goes down, Spring's WebSocket lifecycle calls \texttt{afterConnectionClosed} for every still-open session. The handler removes the session from the three indices and asks \texttt{PeerTrackingService} to remove the peer's chunk registrations from Redis, so that no other replica will route P2P traffic to its former clients. The client reconnects when the next user action requires the WebSocket, presumably to a different replica, and sends a fresh \texttt{REGISTER\_CACHE} for every song it still has cached.
 
 
 \section{Application Shutdown}
 \label{sec:shutdown}
 
-\indent \par The shutdown of the client has two parallel concerns: releasing local audio and timer resources, and closing all the network connections cleanly so that the backend can reclaim the session state. They are split in two figures.
-
-\subsection{Local Teardown}
-\label{subsec:local-teardown}
-
-\indent \par Figure \ref{fig:flow-quit-local} shows the local part. The audio provider is disposed first, which cancels its event listeners and disposes the underlying audio player. Inside the audio service, the periodic timer that pushes the playback position to the server every 30 seconds is cancelled. The chunk service instances are not disposed explicitly; they are garbage-collected once the audio service drops its references. Independently, the periodic token refresh timer in the auth service is stopped.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figures/flow_app_quit_local.png}
-\caption{Local teardown of playback and authentication on app quit.}
-\label{fig:flow-quit-local}
-\end{figure}
-
-\subsection{P2P and Signaling Teardown}
-\label{subsec:p2p-teardown}
-
-\indent \par Figure \ref{fig:flow-quit-p2p} shows the network part. The WebRTC service closes every open data channel and peer connection, then closes the signaling WebSocket. On the server side, the WebSocket close event triggers \texttt{afterConnectionClosed}, which removes the session and deletes the corresponding entries from the Redis peer index. The result is that, almost immediately, no other peer will be told that this client holds any chunks, and any incoming P2P request that races with the close will be answered by the server fallback on the requester's side.
+\indent \par Shutdown releases the local audio and timer resources and closes the network connections cleanly so the backend can reclaim the session state. The audio provider is disposed first, which cancels its listeners and the audio player; the 30-second playback save timer is cancelled inside the audio service; the chunk service instances are garbage-collected as their references drop; the token refresh timer in \texttt{AuthService} is stopped. The WebRTC service then closes every data channel and peer connection and finally the signaling WebSocket, which triggers \texttt{afterConnectionClosed} server-side, removes the session and deletes the corresponding Redis entries, so almost immediately no other peer is told this client holds chunks; any in-flight P2P request that races with the close is answered by the server fallback on the requester's side (Figure \ref{fig:flow-quit-p2p}).
 
 \begin{figure}[htbp]
 \centering
@@ -534,62 +263,83 @@ where the success rate is the fraction of requests answered successfully (not ti
 \end{figure}
 
 
-\section{Delivery Statistics}
-\label{sec:stats}
+\section{Graphical Interface and User Manual}
+\label{sec:gui-manual}
 
-\indent \par To validate that the peer-assisted approach actually offloads traffic, the system records per-session delivery statistics. On native platforms, the chunk service accumulates counts of chunks served from the local cache, from peers, and from the origin server. It emits a stats object when the last chunk of the song has been delivered, and a periodic timer also emits intermediate statistics every 15 seconds, so that per-song data is not lost if the user skips away before the song ends.
+\indent \par This last section shows what the user actually sees while the system runs underneath. The screenshots are taken from the macOS build with a small library imported from disk and a single user signed in. All screens have a persistent navigation drawer on the left and a player bar at the bottom; the middle area is what changes between sections.
 
-\par On the web, the statistics are collected differently, because the chunk service does not know which byte ranges the browser audio element is actually requesting. The Service Worker counts how many byte-range responses it returns with the P2P flag set, and how many it returns from the server, and reports these counts back to the Flutter side at 15-second intervals. The bridge then forwards the counts to the same telemetry endpoint as on native.
+\subsection{Home and Catalogue}
+\label{subsec:gui-home-catalogue}
 
-\par These records allow an operator to observe, for a given deployment, what fraction of the total data volume is served by peers rather than by the origin server. Under favourable conditions, where several listeners are playing the same song at the same time, the peer offload ratio approaches the theoretical maximum of $(N - 1) / N$ for a swarm of $N$ simultaneous listeners, limited in practice by the prefix requirement and connection churn as discussed in Chapter \ref{chap:ch2}.
+\indent \par Figure \ref{fig:screen-home} shows the home screen, with the drawer entries listed on the left (Home, Albums, Artists, Music, Playlists, Upload songs, Statistics, and User Settings at the bottom). The middle area is composed of three rails: ``Jump back in'' with recently played albums, ``Recommended for you'' with history-based suggestions, and ``Rediscover'' with songs not listened to in a while. The player bar shows the current song, the lyrics line in the centre, and the standard playback controls on the right.
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/screenshots/home_screen.png}
+\caption{Home screen with the navigation drawer, the three home rails, and the persistent player bar.}
+\label{fig:screen-home}
+\end{figure}
 
-\section{Testing}
-\label{sec:testing}
+\par The Music, Albums, Artists and Playlists drawer entries open grid views over the corresponding concepts, with the same cover-and-title card layout in each. Selecting an album opens its detail page with the track listing; selecting an artist opens a page with both their albums and their songs. The built-in ``Liked Songs'' playlist is always present, protected at the database level by the indestructible flag from Section \ref{subsec:schema-user}.
 
-\indent \par Both sides of the application have a test suite. The numbers below are the actual count of test files at the moment of writing.
+\subsection{Now Playing, Upload and Settings}
+\label{subsec:gui-now-upload-settings}
 
-\subsection{Backend Tests}
-\label{subsec:backend-tests}
+\indent \par Tapping on the player bar expands it into the now playing screen (Figure \ref{fig:screen-now-playing}). The cover art is in the middle, the lyrics on the left, the upcoming queue on the right; the heart icon on the cover toggles the liked state, which fires a \texttt{PATCH /songs/\{fileHash\}}.
 
-\indent \par The backend has 45 test files split in four categories. The integration tests cover the controllers end-to-end and use Testcontainers to spin up a real PostgreSQL and a real Redis for every test class. Using a real database makes sure that the Liquibase changesets, the JPA mapping and the SQL behave as in production, instead of the silent differences a mocked database often hides. The component tests cover the pieces around the controllers, namely the WebSocket handler, the Redis listener, and the JWT authentication filter. The service tests are the unit tests for the business logic, with mocks substituting the JPA and Redis layers. The mapper tests verify the MapStruct-generated DTO mappers against representative inputs.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/screenshots/expanded_music_player_widget.png}
+\caption{Expanded now playing screen with the lyrics on the left, the cover in the centre, and the queue on the right.}
+\label{fig:screen-now-playing}
+\end{figure}
 
-\subsection{Frontend Tests}
-\label{subsec:frontend-tests}
+\par The Upload songs entry opens the upload screen, where the user picks audio files from disk and each one is shown with its parsed metadata; pressing Upload runs the negotiated protocol from Section \ref{subsec:upload}. The User Settings entry (Figure \ref{fig:screen-settings}) groups the account info, the Logout button, the playback speed slider, the Peer Network mode dropdown (Section \ref{subsec:upload-limits}) and the two monthly upload caps for Wi-Fi and cellular.
 
-\indent \par The Flutter side has 17 test files, also grouped in a few categories. The repository tests verify the in-memory implementation that is used on the web. The DTO and entity tests verify the JSON serialisation contracts that have to remain stable across versions. The service tests run the chunk pipeline, the audio service, the settings, and the catalogue services with Mockito-generated mocks for the layers underneath. There is also a signaling-validation test for the WebRTC client and a small test for the user provider that exercises the auto-login branches.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/screenshots/settings_screen.png}
+\caption{Settings screen, with the account, the playback speed, and the peer network options.}
+\label{fig:screen-settings}
+\end{figure}
 
-\par What the test suites do not cover is the end-to-end peer delivery itself, which would require running two clients side by side. This was left out, because the network and timing non-determinism would make the test brittle in CI; the integrity of the P2P protocol is instead verified through a signaling integration test on the server side and the signal-validation test on the client side. Testing two clients streaming to each other is the kind of test that works perfectly during the demo and fails exactly once during the public review.
+\subsection{Quick-Reference User Manual}
+\label{subsec:user-manual}
+
+\indent \par To go from a fresh install to a peer-assisted playback, the user signs in with their email by typing the verification code into the second screen and confirming with Continue, after which the home screen appears once the bootstrap completes. The catalogue is then browsable through the Music, Albums, Artists or Playlists drawer entries, and clicking on a song starts playback almost immediately because the first few chunks come from the origin server while the peer connections are still being negotiated; the rest of the chunks are pulled from peers when available, with the server taking over otherwise. Tapping on the player bar opens the now playing view, from which the user can pause, resume, skip, seek, toggle shuffle and repeat, and like the song through the heart icon. The Upload songs entry transfers only the chunks the server does not already have, and the User Settings entry controls how the application participates in P2P through the Peer Network dropdown and the two monthly upload caps for Wi-Fi and cellular.
 
 
 \section{Limitations}
 \label{sec:limitations}
 
-\indent \par The current prototype has several limitations that are worth to be mentioned. Some of them are inherent to the platforms targeted, some are due to choices that I made to keep the scope of the thesis manageable.
+\indent \par The current prototype has several limitations that are worth mentioning. Some are inherent to the platforms targeted, some are due to choices made to keep the scope of the thesis manageable. None of them invalidates the architecture, but each one is something a follow-up project would have to address before considering the system production-ready.
 
 \subsection{Audio Library on Desktop}
 \label{subsec:lim-desktop-audio}
 
-\indent \par As discussed in Section \ref{subsec:audio-library}, the \texttt{just\_audio} package does not handle the custom \texttt{StreamAudioSource} interface well on Linux and Windows, because the underlying decoders expect a seekable, sequential data source rather than the on-demand, range-based chunk stream that the application provides. The workaround was to switch to \texttt{media\_kit} on Linux, macOS and Windows. The client now uses two different audio libraries depending on platform, which has a maintenance cost. Every change in the audio service has to be tested on both backends, and any new feature has to be expressed in terms that both can support.
+\indent \par As described in Section \ref{subsec:audio-library}, the \texttt{just\_audio} package does not handle the custom \texttt{StreamAudioSource} interface well on Linux and Windows, because the underlying decoders expect a seekable, sequential data source rather than the on-demand range-based chunk stream that the application provides. The workaround was to switch to \texttt{media\_kit} on Linux, macOS and Windows. The client therefore uses two different audio libraries depending on the platform, which has a maintenance cost: every change in the audio service has to be tested on both backends, and any new feature has to be expressible in terms that both can support.
 
 \subsection{Web Platform}
 \label{subsec:lim-web}
 
-\indent \par The browser does not expose a hook for the Dart code to serve byte ranges to the audio element directly. The Service Worker workaround presented in Section \ref{subsec:audio-library} works, but it has two consequences. First, Service Workers can only be registered on secure origins, so the web build needs HTTPS in production (\texttt{localhost} is exempt during development). Second, the cache used on the web client is in-memory, so it is lost when the tab closes. A web client is therefore a weaker peer seeder than a desktop client, which persists its cache to disk.
+\indent \par The browser does not expose a hook for the Dart code to serve byte ranges to the audio element directly. The Service Worker workaround presented in Section \ref{subsec:audio-library} works, but it has two consequences. First, Service Workers can only be registered on secure origins, so the web build needs HTTPS in production (\texttt{localhost} is exempt during development). Second, the cache on the web client is in-memory, so it is lost when the tab closes, which makes a web client a weaker peer seeder than a desktop client. A subtler point is that the Service Worker caps each response at 512\,000 bytes even if the browser asks for a larger range, because some Chromium versions issue an initial range request that asks for the entire song and would otherwise defeat the chunked progressive model.
 
-\par A subtler point is that the Service Worker caps each response at 512\,000 bytes even if the browser asks for a larger range. This was added because some Chromium versions issue an initial range request that asks for the entire song, which would defeat the chunked progressive model. Capping the response forces the browser to fall back to smaller, well-aligned range requests.
+\subsection{Cross-Platform Peer Connectivity}
+\label{subsec:lim-connectivity}
+
+\indent \par While WebRTC is a standard, the various platform implementations do not always negotiate cleanly with each other. The browser stack and the native libwebrtc stack that Flutter wraps differ in how they emit and consume ICE candidates: modern browsers obfuscate the local addresses behind mDNS hostnames (the \texttt{.local} candidates), which the native peers cannot always resolve, especially across operating systems with different mDNS support. The practical consequence is that an Android peer and a web peer sitting on the same Wi-Fi can sometimes fail to open a direct data channel and end up falling back to the server, even though they are physically a few metres apart. Desktop-to-desktop and desktop-to-mobile pairings tend to be more reliable than browser-to-mobile ones, but no exhaustive cross-matrix testing has been performed; the system simply relies on the server fallback whenever the negotiation fails, which keeps the playback experience identical for the user at the cost of a lower peer offload ratio in mixed-platform deployments.
 
 \subsection{Mobile Data and Peer Network Mode}
 \label{subsec:lim-mobile}
 
-\indent \par On mobile, acting as a peer seeder consumes the user's data allowance. The application has a setting to choose whether P2P runs only on Wi-Fi, only on cellular, or on both, and a per-month upload cap that is checked before sending a chunk. When the cap is reached, the chunk send requests are silently skipped and the requesting peer falls back to the server. This is a reasonable default, but it is not enforced from the server side. A user could, in theory, configure other peers to think this client has chunks that it will then refuse to serve, which slightly degrades the global peer offload until the requesters time out.
+\indent \par On mobile, acting as a peer seeder consumes the user's data allowance. The application has a setting to choose whether P2P runs only on Wi-Fi, only on cellular, or on both, and a per-month upload cap that is checked before sending a chunk. When the cap is reached, the chunk send requests are silently skipped and the requesting peer falls back to the server. This is a reasonable default, but it is not enforced from the server side: a user could in theory configure other peers to think this client has chunks that it then refuses to serve, which slightly degrades the global peer offload until the requesters time out.
 
 \subsection{User-Driven Reconnection}
 \label{subsec:lim-reconnect}
 
-\indent \par The signaling WebSocket is not reconnected automatically. When the client loses the connection (network change, replica down, suspend/resume on a laptop), the next user action that needs the WebSocket triggers a reconnection. This keeps the implementation simple but it means that the device is invisible as a peer in the gap between the disconnect and the next user-driven reconnection. Adding a backoff-based reconnection loop is on the list of future improvements.
+\indent \par The signaling WebSocket is not reconnected automatically. When the client loses the connection (network change, replica down, suspend/resume on a laptop), the next user action that needs the WebSocket triggers a reconnection. This keeps the implementation simple but it means that the device is invisible as a peer in the gap between the disconnect and the next user-driven reconnection. A backoff-based reconnection loop is on the list of future improvements.
 
 \subsection{Long-Tail Content}
 \label{subsec:lim-long-tail}
 
-\indent \par The peer-assisted approach gives the largest cost reduction when many people listen to the same song around the same time. For long-tail content, where often only a single client is listening at any given moment, the offload ratio drops to zero and the system behaves like a normal client-server stream. This is by design, since the server fallback is always available and it never blocks playback, but it does mean that the cost reduction predicted by the model in Chapter \ref{chap:ch2} is reached only for the popular fraction of the catalogue.
+\indent \par The peer-assisted approach gives the largest cost reduction when many people listen to the same song around the same time. For long-tail content, where only a single client is listening at any given moment, the offload ratio drops to zero and the system behaves like a normal client-server stream. This is by design (the server fallback is always available and never blocks playback), but it does mean that the cost reduction predicted by the model in Chapter \ref{chap:ch2} is reached only for the popular fraction of the catalogue.

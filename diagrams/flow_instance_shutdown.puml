@@ -2,8 +2,6 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title Instance Shutdown and Client Reconnect
-
 participant "Client A" as clientA
 participant "Instance 1\nSignalingHandler" as inst1
 participant "Redis" as redis

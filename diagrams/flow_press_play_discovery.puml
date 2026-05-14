@@ -2,8 +2,6 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title Press Play — Manifest Fetch and Peer Discovery
-
 participant "ChunkService" as chunkSvc
 participant "Local cache" as cache
 participant "WebRTCService" as webrtc

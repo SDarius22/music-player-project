@@ -2,8 +2,6 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title Press Play — Chunk Streaming Loop and Statistics
-
 participant "P2PChunkedAudioSource\n/ WebP2PBridge" as chunkPath
 participant "ChunkService" as chunkSvc
 participant "Local cache" as cache

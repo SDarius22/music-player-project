@@ -2,8 +2,6 @@
 !theme plain
 skinparam defaultFontName monospaced
 
-title App Quit — P2P and Signaling Teardown
-
 actor User
 participant "OS / Flutter" as os
 participant "WebRTCService" as webrtc
