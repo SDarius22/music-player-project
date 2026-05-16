@@ -15,7 +15,7 @@
 \subsection{Functional Requirements}
 \label{subsec:func-req}
 
-\indent \par The functional requirements set the user-facing baseline. A user must be able to register and log in with an email through a verification code, with short-lived access tokens and a long-lived refresh token handling the re-authentication afterwards. The catalogue must be browsable, searchable and sortable across artists, albums and songs, with streamable content shared between all users and uploaded content private to the uploader. Playback must cover the full set of controls (play, pause, seek, next, previous), together with shuffle, repeat and an editable queue, while library management must let the user like a song, see its play count, and remove the song from the library, with the changes propagating across devices. Playlists must be creatable, renameable, reorderable and deletable, except for the built-in ``Liked Songs'' playlist which is marked indestructible. Audio files must be uploadable from disk, with chunk-level deduplication so files that share content do not transfer the duplicated bytes again. Peer-assisted streaming must use other currently-listening clients when possible, falling back to the server when no peer is available, and the playback position together with the shuffle, repeat, auto-play and auto-play recommendation page values must be restored when the user opens the application on another device.
+\indent \par The functional requirements set the user-facing baseline. A user must be able to register and log in with an email through a verification code, with short-lived access tokens and a long-lived refresh token handling the re-authentication afterwards. The catalogue must be browsable, searchable and sortable across artists, albums and songs, with streamable content shared between all users and uploaded content private to the uploader. Playback must cover the full set of controls (play, pause, seek, next, previous), together with shuffle, repeat and an editable queue, while library management must let the user like a song, with the changes propagating across devices. Playlists must be creatable, renameable, reorderable and deletable, except for the built-in playlists (such as the queue, most played, or recently played) which are marked indestructible. Audio files must be uploadable from disk, with chunk-level deduplication so files that share content do not transfer the duplicated bytes again. Peer-assisted streaming must use other currently-listening clients when possible, falling back to the server when no peers are available, and the playback position together with the shuffle, repeat, auto-play and auto-play recommendation page values must be restored when the user opens the application on another device.
 
 \subsection{Non-Functional Requirements}
 \label{subsec:nonfunc-req}
@@ -26,7 +26,7 @@
 \section{Specification}
 \label{sec:specification}
 
-\indent \par The prototype was developed on an Apple MacBook Pro with the M2 Pro chip, 16 GB of unified memory and macOS. The toolchain is Java 25 with Maven and Spring Boot 4.0.3 on the backend, Liquibase for the schema migrations, Flutter on the client with the \texttt{provider} package for DI, ObjectBox on desktop and mobile, and an in-memory implementation on the web. Docker and Docker Compose host the local PostgreSQL 18 and Redis Alpine. The intended production deployment uses two server machines: the first runs two Spring Boot replicas behind a reverse proxy, sharing the same PostgreSQL and Redis, and the second runs a third replica used to verify that the cross-instance signaling in Section \ref{sec:multi-instance} works when the replicas are not on the same host. The chunks live on a shared filesystem mounted by all replicas.
+\indent \par The prototype was developed on an Apple MacBook Pro with the M2 Pro chip, 16 GB RAM and macOS. The toolchain is Java 25 with Maven and Spring Boot 4.0.3 on the backend, Liquibase for the schema migrations, Flutter on the client with the \texttt{provider} package for DI, ObjectBox on desktop and mobile, and an in-memory implementation on the web. Docker and Docker Compose host the local PostgreSQL 18 and Redis Alpine. The production deployment uses two server machines: the first one (Intel I5-6500, 8GB RAM and Ubuntu Server 24.04) runs two Spring Boot replicas behind a reverse proxy, sharing the same PostgreSQL, Redis, and music data files on the file system, while the second server (AMD Athlon, 4GB RAM and Ubuntu Server 24.04) is running as a replica of the first server, with two more Spring Boot replicas, replicated PostgresSQL through the built in replica and replicated music data files through rsync. The two servers have a complicated manual failover system, designed to keep the first one as the main server, while the second one is an on-hold replica.
 
 
 \section{Database Schema}
@@ -60,9 +60,9 @@
 \label{fig:db-schema-user}
 \end{figure}
 
-\par \texttt{user\_playback\_state} is intentionally minimal. After several iterations the queue and the current song were removed from the server-side state, because keeping a shared queue across devices proved more trouble than it was worth. What remains is the position in seconds, shuffle and repeat flags, the auto-play preference and the position in the auto-play recommendation feed. The queue is reconstructed locally from the last played history and the user's current selection.
+\par \texttt{user\_playback\_state} is intentionally minimal. After several iterations the queue and the current song were removed from the server-side state, because keeping a shared queue across devices proved more trouble than it was worth. What remains is the position in seconds, shuffle and repeat flags, the auto-play preference and the position in the auto-play recommendation feed. The queue is reconstructed locally from the 'Queue' playlist and user's last played song.
 
-\par Playlists live in two tables. \texttt{playlists} keeps the metadata and the \texttt{indestructible} flag used to protect ``Liked Songs'' from deletion. \texttt{playlist\_songs} references songs by \texttt{song\_file\_hash} rather than by id, which makes the playlist content portable across re-imports of the same audio file.
+\par Playlists live in two tables. \texttt{playlists} keeps the metadata and the \texttt{indestructible} flag. \texttt{playlist\_songs} references songs by \texttt{song\_file\_hash} rather than by id, which makes the playlist content portable across re-imports of the same audio file.
 
 \subsection{Auxiliary Tables}
 \label{subsec:schema-aux}
@@ -97,7 +97,7 @@
 \subsection{Catalogue and Library}
 \label{subsec:catalogue}
 
-\indent \par The catalogue services (\texttt{AlbumService}, \texttt{ArtistService}, \texttt{SongService}, \texttt{PlaylistService}) expose CRUD operations on top of JPA repositories, plus search and ordering. They also enforce a small set of invariants that the schema cannot enforce on its own: the indestructible flag on ``Liked Songs'', the per-user uniqueness of playlist names, and the visibility rules for user-uploaded content. Search is implemented with SQL \texttt{LIKE} on names, joined to keep unrelated hits out. The smaller \texttt{RecommendationService} returns a page of recommended songs based on the listening history; the implementation is deliberately simple, but the interface allows a smarter ranking to be plugged in later.
+\indent \par The catalogue services (\texttt{AlbumService}, \texttt{ArtistService}, \texttt{SongService}, \texttt{PlaylistService}) expose CRUD operations on top of JPA repositories, plus search and ordering. They also enforce a small set of invariants that the schema cannot enforce on its own: the indestructible flag, the per-user uniqueness of playlist names, and the visibility rules for user-uploaded content. Search is implemented with SQL \texttt{LIKE} on names, joined to keep unrelated hits out. The smaller \texttt{RecommendationService} returns a page of recommended songs based on the listening history; the implementation is kept deliberately simple, but the interface allows a smarter ranking to be plugged in later.
 
 \subsection{Negotiated Upload Pipeline}
 \label{subsec:upload}
@@ -107,7 +107,7 @@
 \subsection{Streaming Service}
 \label{subsec:streaming-svc}
 
-\indent \par The streaming service exposes two endpoints. \texttt{GET /stream/\{fileHash\}/manifest} returns the chunk count, the chunk size (64 KiB), the total byte length and the ordered list of SHA-256 hashes. \texttt{GET /stream/\{fileHash\}/chunk/\{chunkIndex\}} returns the raw bytes of a single chunk. The prefix and the server fallback are both expressed as a sequence of per-chunk calls, so there is no separate ``prefix'' endpoint. Access control is enforced at the query level: a wrong user gets a 404 rather than a 403, which avoids leaking the existence of someone else's private uploads.
+\indent \par The streaming service exposes two endpoints. \texttt{GET /stream/\{fileHash\}/manifest} returns the chunk count, the chunk size (64 KiB), the total byte length and the ordered list of SHA-256 hashes. \texttt{GET /stream/\{fileHash\}/chunk/\{chunkIndex\}} returns the raw bytes of a single chunk. Access control is enforced at the query level: a wrong user gets a 404 rather than a 403, which avoids leaking the existence of someone else's private uploads.
 
 \subsection{Playback State}
 \label{subsec:state-sync}
@@ -207,7 +207,7 @@ as the number of prefix chunks (5\% of the song, with a minimum of one). Chunks 
 
 \indent \par Peer connections use the standard offer/answer handshake. When the buffer map arrives, the service creates a new initiator-mode peer connection for each newly discovered peer, configured with two STUN servers (\texttt{stun.l.google.com:19302} and \texttt{stun1.l.google.com:19302}) so that ICE still completes if one is unreachable. An ordered reliable data channel labelled \texttt{chunk\_transfer} is opened on top; this mirrors TCP semantics, which is necessary because a partial 64 KiB block cannot be verified against the manifest hash. The offer carries an \texttt{offerId} that the remote echoes back in its answer, which is used to discard stale answers, and glare (both sides offering simultaneously) is resolved by keeping the offer of the peer with the lexicographically larger device id.
 
-\par Once the data channel is open, requests go through as the UTF-8 text message \texttt{REQUEST\_CHUNK:\{fileHash\}:\{chunkIndex\}} and the response is binary. If the chunk fits within the safe DataChannel limit of about 16 KiB, a single packet is sent with a 68-byte header (the 64-character file hash followed by a 4-byte big-endian chunk index) and the audio payload after it. Otherwise the chunk is fragmented; each fragment carries a 77-byte header starting with the magic sequence \texttt{P2PF} so the receiver can distinguish fragments from single-packet messages, and the pieces are reassembled per \texttt{(peerId, fileHash, chunkIndex)} tuple. Fragmentation was added because some WebRTC implementations (notably on Android) silently refuse messages larger than 16 KiB.
+\par Once the data channel is open, requests go through as the UTF-8 text message \texttt{REQUEST\_CHUNK:\{fileHash\}:\{chunkIndex\}} and the response is binary. If the chunk fits within the safe DataChannel limit of about 16 KiB, a single packet is sent with a 68-byte header (the 64-character file hash followed by a 4-byte big-endian chunk index) and the audio payload after it. Otherwise the chunk is fragmented; each fragment carries a 77-byte header starting with the magic sequence \texttt{P2PF} so the receiver can distinguish fragments from single-packet messages, and the pieces are reassembled per \texttt{(peerId, fileHash, chunkIndex)} tuple. Fragmentation was added because some WebRTC implementations (notably on Android) silently refuse messages larger than 16 KiB (more limitations described in Section \ref{sec:limitations}).
 
 \subsection{Peer Ranking and Scoring}
 \label{subsec:peer-ranking}
@@ -266,7 +266,7 @@ with the $+1$ in the denominator avoiding a division by zero for new peers. The 
 \section{Graphical Interface and User Manual}
 \label{sec:gui-manual}
 
-\indent \par This last section shows what the user actually sees while the system runs underneath. The screenshots are taken from the macOS build with a small library imported from disk and a single user signed in. All screens have a persistent navigation drawer on the left and a player bar at the bottom; the middle area is what changes between sections.
+\indent \par This last section shows what the user actually sees while the system runs underneath. The screenshots are taken from the macOS, with an admin user signed in. All screens have a persistent navigation drawer on the left and a player bar at the bottom; the middle area is what changes between sections.
 
 \subsection{Home and Catalogue}
 \label{subsec:gui-home-catalogue}
@@ -280,12 +280,12 @@ with the $+1$ in the denominator avoiding a division by zero for new peers. The 
 \label{fig:screen-home}
 \end{figure}
 
-\par The Music, Albums, Artists and Playlists drawer entries open grid views over the corresponding concepts, with the same cover-and-title card layout in each. Selecting an album opens its detail page with the track listing; selecting an artist opens a page with both their albums and their songs. The built-in ``Liked Songs'' playlist is always present, protected at the database level by the indestructible flag from Section \ref{subsec:schema-user}.
+\par The Music, Albums, Artists and Playlists drawer entries open grid views over the corresponding concepts, with the same cover-and-title card layout in each. Selecting an album opens its detail page with the track listing; selecting an artist opens a page with both their albums and their songs. The built-in playlists are always present, protected at the UI level by the indestructible flag from Section \ref{subsec:schema-user} (the edit and delete buttons are not shown).
 
 \subsection{Now Playing, Upload and Settings}
 \label{subsec:gui-now-upload-settings}
 
-\indent \par Tapping on the player bar expands it into the now playing screen (Figure \ref{fig:screen-now-playing}). The cover art is in the middle, the lyrics on the left, the upcoming queue on the right; the heart icon on the cover toggles the liked state, which fires a \texttt{PATCH /songs/\{fileHash\}}.
+\indent \par Tapping on the player bar expands it into the now playing screen (Figure \ref{fig:screen-now-playing}). The cover art is in the middle, the lyrics on the left, the upcoming queue on the right; the heart icon on the cover toggles the liked state, which fires a \texttt{PATCH /songs/\{fileHash\}}. The lyrics on the left are using an external open-source API designed to retrieve synced song lyrics using the song name, artist and album.
 
 \begin{figure}[htbp]
 \centering
@@ -302,12 +302,6 @@ with the $+1$ in the denominator avoiding a division by zero for new peers. The 
 \caption{Settings screen, with the account, the playback speed, and the peer network options.}
 \label{fig:screen-settings}
 \end{figure}
-
-\subsection{Quick-Reference User Manual}
-\label{subsec:user-manual}
-
-\indent \par To go from a fresh install to a peer-assisted playback, the user signs in with their email by typing the verification code into the second screen and confirming with Continue, after which the home screen appears once the bootstrap completes. The catalogue is then browsable through the Music, Albums, Artists or Playlists drawer entries, and clicking on a song starts playback almost immediately because the first few chunks come from the origin server while the peer connections are still being negotiated; the rest of the chunks are pulled from peers when available, with the server taking over otherwise. Tapping on the player bar opens the now playing view, from which the user can pause, resume, skip, seek, toggle shuffle and repeat, and like the song through the heart icon. The Upload songs entry transfers only the chunks the server does not already have, and the User Settings entry controls how the application participates in P2P through the Peer Network dropdown and the two monthly upload caps for Wi-Fi and cellular.
-
 
 \section{Limitations}
 \label{sec:limitations}
