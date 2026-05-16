@@ -127,6 +127,21 @@ void main() {
 
       expect(provider.currentUser!.isAdmin, isTrue);
     });
+
+    test('trims email and code before delegating to auth service', () async {
+      when(
+        mockAuthService.verifyCode('user@example.com', '123456'),
+      ).thenAnswer((_) async => true);
+      when(mockAuthService.isAdmin).thenAnswer((_) async => false);
+
+      final result = await provider.verifyEmailCode(
+        email: '  user@example.com  ',
+        code: ' 123456 ',
+      );
+
+      expect(result, isTrue);
+      verify(mockAuthService.verifyCode('user@example.com', '123456')).called(1);
+    });
   });
 
   group('tryAutoLogin', () {
@@ -153,11 +168,21 @@ void main() {
       expect(provider.status, AuthStatus.unauthenticated);
       expect(provider.currentUser, isNull);
     });
+
+    test('uses fallback email when auto-login has no stored userEmail', () async {
+      when(mockAuthService.tryAutoLogin()).thenAnswer((_) async => true);
+      when(mockAuthService.userEmail).thenAnswer((_) async => null);
+      when(mockAuthService.isAdmin).thenAnswer((_) async => false);
+
+      final result = await provider.tryAutoLogin();
+
+      expect(result, isTrue);
+      expect(provider.currentUser?.email, 'unknown');
+    });
   });
 
   group('logout', () {
     test('clears user and sets status to unauthenticated', () async {
-      // Arrange: log in first
       when(mockAuthService.verifyCode(any, any)).thenAnswer((_) async => true);
       when(mockAuthService.isAdmin).thenAnswer((_) async => false);
       await provider.verifyEmailCode(email: 'user@example.com', code: '123');

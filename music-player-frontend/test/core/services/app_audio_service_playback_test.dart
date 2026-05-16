@@ -12,6 +12,7 @@ import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
+import 'package:music_player_frontend/core/services/chunk_service.dart';
 
 import 'app_audio_service_playback_test.mocks.dart';
 
@@ -86,5 +87,56 @@ void main() {
               as AudioSettings;
       expect(captured.autoPlay, isTrue);
     });
+
+    test('setRepeat persists settings and updates player loop mode', () async {
+      when(mockAudioPlayer.setLoopMode(any)).thenAnswer((_) async {});
+
+      await service.setRepeat(true);
+
+      final captured =
+          verify(
+                mockSettingsService.updateAudioSettings(captureAny),
+              ).captured.last
+              as AudioSettings;
+      expect(captured.repeat, isTrue);
+      verify(mockAudioPlayer.setLoopMode(LoopMode.one)).called(1);
+    });
+
+    test('setShuffle is no-op when value does not change', () async {
+      await service.setShuffle(false);
+
+      verifyNever(mockSettingsService.updateAudioSettings(any));
+    });
+
+    test('getCurrentSongPeerCount is zero for local song', () {
+      service.currentSong = Song('hash')..path = '/tmp/local.mp3';
+
+      expect(service.getCurrentSongPeerCount(), 0);
+    });
+
+    test('getCurrentSongPeerCount reads available peers for remote song', () {
+      final chunkManager = _FakeChunkService(availablePeers: 4);
+      final serviceWithChunkFactory = AppAudioService(
+        mockSongService,
+        mockSettingsService,
+        mockPlaylistService,
+        mockAuthService,
+        (_) => chunkManager,
+        mockPlaybackRestService,
+        audioPlayer: mockAudioPlayer,
+      );
+      serviceWithChunkFactory.currentSong = Song('remote-hash');
+
+      expect(serviceWithChunkFactory.getCurrentSongPeerCount(), 4);
+    });
   });
+}
+
+class _FakeChunkService extends Fake implements ChunkService {
+  _FakeChunkService({required this.availablePeers});
+
+  final int availablePeers;
+
+  @override
+  int get availablePeerCount => availablePeers;
 }

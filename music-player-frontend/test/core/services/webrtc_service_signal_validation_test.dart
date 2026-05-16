@@ -80,6 +80,12 @@ void main() {
       expect(normalized['b'], 2);
     });
 
+    test('normalizePayload returns null for non-map payload', () {
+      expect(WebRTCService.normalizePayload('x'), isNull);
+      expect(WebRTCService.normalizePayload(1), isNull);
+      expect(WebRTCService.normalizePayload(null), isNull);
+    });
+
     test('normalizePeerBufferMap keeps exact chunk indices per peer', () {
       final normalized = WebRTCService.normalizePeerBufferMap({
         'peer-1': [0, 2, '5'],
@@ -90,6 +96,34 @@ void main() {
       expect(normalized['peer-1'], {0, 2, 5});
       expect(normalized['peer-2'], {3, 4});
       expect(normalized.containsKey('peer-3'), isFalse);
+    });
+
+    test('normalizePeerBufferMap filters invalid and negative chunk values', () {
+      final normalized = WebRTCService.normalizePeerBufferMap({
+        'peer-a': [-1, '2', 'x', 4.9],
+        'peer-b': 'not-json',
+      });
+
+      expect(normalized['peer-a'], {2, 4});
+      expect(normalized.containsKey('peer-b'), isFalse);
+    });
+
+    test('parseSdpPayload accepts pranswer type and strips quoted sdp wrappers', () {
+      final parsed = WebRTCService.parseSdpPayload({
+        'sdp': '"v=0\\r\\no=- 1 2 IN IP4 127.0.0.1"',
+        'type': 'pranswer',
+      });
+
+      expect(parsed, isNotNull);
+      expect(parsed!.type, 'pranswer');
+      expect(parsed.sdp, startsWith('v=0'));
+      expect(parsed.sdp, endsWith('\r\n'));
+    });
+
+    test('nonEmptyString trims whitespace and rejects empty values', () {
+      expect(WebRTCService.nonEmptyString('  abc  '), 'abc');
+      expect(WebRTCService.nonEmptyString('   '), isNull);
+      expect(WebRTCService.nonEmptyString(10), isNull);
     });
   });
 }

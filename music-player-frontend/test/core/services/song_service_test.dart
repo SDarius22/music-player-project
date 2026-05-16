@@ -26,6 +26,28 @@ class FakeSongRestClient extends SongRestClient {
     totalPages: 0,
     totalElements: 0,
   );
+  SongPageDto favouritesPage = SongPageDto(
+    content: const [],
+    page: 0,
+    size: 50,
+    totalPages: 0,
+    totalElements: 0,
+  );
+  SongPageDto mostPlayedPage = SongPageDto(
+    content: const [],
+    page: 0,
+    size: 50,
+    totalPages: 0,
+    totalElements: 0,
+  );
+  SongPageDto recentlyPlayedPage = SongPageDto(
+    content: const [],
+    page: 0,
+    size: 50,
+    totalPages: 0,
+    totalElements: 0,
+  );
+  bool throwOnUpdate = false;
 
   @override
   Future<SongDto> getServerSong(String fileHash) async {
@@ -45,6 +67,34 @@ class FakeSongRestClient extends SongRestClient {
     String sort = 'name,asc',
   }) async {
     return songsPage;
+  }
+
+  @override
+  Future<SongPageDto> getFavourites({int page = 0, int size = 250}) async {
+    return favouritesPage;
+  }
+
+  @override
+  Future<SongPageDto> getMostPlayed({int page = 0, int size = 50}) async {
+    return mostPlayedPage;
+  }
+
+  @override
+  Future<SongPageDto> getRecentlyPlayed({int page = 0, int size = 50}) async {
+    return recentlyPlayedPage;
+  }
+
+  @override
+  Future<SongDto?> updateSongLibraryEntry(
+    String songFileHash,
+    bool likedByUser,
+    DateTime? lastPlayed,
+    int playCount,
+  ) async {
+    if (throwOnUpdate) {
+      throw Exception('update failed');
+    }
+    return byHash[songFileHash];
   }
 }
 
@@ -127,6 +177,94 @@ void main() {
       expect(page.content, hasLength(1));
       expect(page.content.first.getHash(), 'h1');
       expect(page.totalPages, 1);
+    });
+
+    test('getOrCreateSong throws on empty hash', () {
+      expect(() => service.getOrCreateSong(''), throwsArgumentError);
+    });
+
+    test('fullyFetchSong returns same song when already fully loaded', () async {
+      final song = Song('loaded')..fullyLoaded = true;
+
+      final result = await service.fullyFetchSong(song);
+
+      expect(result, same(song));
+    });
+
+    test('fullyFetchSong prefers fully loaded local cached version', () async {
+      final local = Song('cached')
+        ..name = 'Cached'
+        ..fullyLoaded = true;
+      songRepo.saveSong(local);
+
+      final result = await service.fullyFetchSong(Song('cached'));
+
+      expect(result, same(local));
+    });
+
+    test('fullyFetchSong returns input song when server fetch fails', () async {
+      final partial = Song('missing');
+
+      final result = await service.fullyFetchSong(partial);
+
+      expect(result, same(partial));
+    });
+
+    test('updateSong still persists local update when server update fails', () async {
+      final song = Song('h1')
+        ..likedByUser = true
+        ..playCount = 5;
+      restClient.throwOnUpdate = true;
+
+      await service.updateSong(song);
+
+      expect(songRepo.getSongByFileHash('h1')?.likedByUser, isTrue);
+      expect(songRepo.getSongByFileHash('h1')?.playCount, 5);
+    });
+
+    test('getFavoriteSongs falls back to server when local list is empty', () async {
+      restClient.favouritesPage = SongPageDto(
+        content: [buildSongDto('fav-1')],
+        page: 0,
+        size: 10,
+        totalPages: 1,
+        totalElements: 1,
+      );
+
+      final result = await service.getFavoriteSongs();
+
+      expect(result, hasLength(1));
+      expect(result.single.getHash(), 'fav-1');
+    });
+
+    test('getMostPlayedSongs prefers local values over server', () async {
+      final local = Song('local-most')..playCount = 99;
+      songRepo.saveSong(local);
+      restClient.mostPlayedPage = SongPageDto(
+        content: [buildSongDto('remote-most')],
+        page: 0,
+        size: 1,
+        totalPages: 1,
+        totalElements: 1,
+      );
+
+      final result = await service.getMostPlayedSongs(1);
+
+      expect(result.single.getHash(), 'local-most');
+    });
+
+    test('getRecentlyPlayedSongs falls back to server when local list is empty', () async {
+      restClient.recentlyPlayedPage = SongPageDto(
+        content: [buildSongDto('recent-1')],
+        page: 0,
+        size: 1,
+        totalPages: 1,
+        totalElements: 1,
+      );
+
+      final result = await service.getRecentlyPlayedSongs(1);
+
+      expect(result.single.getHash(), 'recent-1');
     });
   });
 }

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
+import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
@@ -228,5 +229,89 @@ void main() {
     await service.prefetchChunk(3);
 
     verify(mockCacheRepo.saveChunk('song-hash', 3, data)).called(1);
+  });
+
+  test('getChunk evicts corrupt cache entry and recovers from server', () async {
+    final cachedBad = Uint8List.fromList([1, 2, 3]);
+    final serverData = Uint8List.fromList([4, 5, 6]);
+    final hashes = List<String>.filled(12, hashOf(Uint8List.fromList([0])));
+    hashes[9] = hashOf(serverData);
+
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 12, hashes: hashes));
+    when(mockCacheRepo.readChunk('song-hash', 9)).thenAnswer((_) async => cachedBad);
+    when(
+      mockStreamingClient.downloadChunkFallback('song-hash', 9),
+    ).thenAnswer((_) async => serverData);
+    when(mockCacheRepo.deleteChunk('song-hash', 9)).thenAnswer((_) async {});
+
+    final service = ChunkService(
+      fileHash: 'song-hash',
+      cacheRepo: mockCacheRepo,
+      streamingClient: mockStreamingClient,
+      webrtcManager: mockWebRtc,
+    );
+
+    final result = await service.getChunk(9);
+
+    expect(result, equals(serverData));
+    verify(mockCacheRepo.deleteChunk('song-hash', 9)).called(1);
+    verify(mockStreamingClient.downloadChunkFallback('song-hash', 9)).called(1);
+  });
+
+  test('subsequent getChunk call reuses cached result without new server call', () async {
+    final serverData = Uint8List.fromList([7, 7, 7]);
+    final hashes = List<String>.filled(12, hashOf(Uint8List.fromList([0])));
+    hashes[10] = hashOf(serverData);
+
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 12, hashes: hashes));
+    when(
+      mockStreamingClient.downloadChunkFallback('song-hash', 10),
+    ).thenAnswer((_) async => serverData);
+
+    final service = ChunkService(
+      fileHash: 'song-hash',
+      cacheRepo: mockCacheRepo,
+      streamingClient: mockStreamingClient,
+      webrtcManager: mockWebRtc,
+    );
+
+    final a = await service.getChunk(10);
+    final b = await service.getChunk(10);
+
+    expect(a, equals(serverData));
+    expect(b, equals(serverData));
+    verify(mockStreamingClient.downloadChunkFallback('song-hash', 10)).called(1);
+  });
+
+  test('flushStats emits aggregated local cache delivery stats', () async {
+    final local = Uint8List.fromList([3, 3, 3]);
+    final hashes = [hashOf(local)];
+    final emitted = <ChunkDeliveryStats>[];
+
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 1, hashes: hashes));
+    when(mockCacheRepo.readChunk('song-hash', 0)).thenAnswer((_) async => local);
+
+    final service = ChunkService(
+      fileHash: 'song-hash',
+      cacheRepo: mockCacheRepo,
+      streamingClient: mockStreamingClient,
+      webrtcManager: mockWebRtc,
+    );
+    service.configureSongInfo('Song Name', emitted.add);
+
+    await service.getChunk(0);
+    service.flushStats();
+
+    expect(emitted, isNotEmpty);
+    expect(emitted.last.songName, 'Song Name');
+    expect(emitted.last.localCachedChunks, 1);
+    expect(emitted.last.p2pChunks, 0);
+    expect(emitted.last.serverChunks, 0);
   });
 }
