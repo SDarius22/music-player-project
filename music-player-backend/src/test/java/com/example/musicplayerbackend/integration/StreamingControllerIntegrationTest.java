@@ -73,10 +73,10 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void shouldReturn403WhenManifestPrivateSongOwnedByOther() throws Exception {
+    void shouldReturn404WhenManifestPrivateSongOwnedByOther() throws Exception {
         mockMvc.perform(get("/api/v1/stream/{fileHash}/manifest", privateSong.getFileHash())
                         .with(user(otherUser)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -137,10 +137,10 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void shouldReturn403WhenChunkAccessIsForbidden() throws Exception {
+    void shouldReturn404WhenChunkAccessIsForbidden() throws Exception {
         mockMvc.perform(get("/api/v1/stream/{fileHash}/chunk/0", privateSong.getFileHash())
                         .with(user(otherUser)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
