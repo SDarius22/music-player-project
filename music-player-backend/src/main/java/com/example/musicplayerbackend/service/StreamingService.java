@@ -27,7 +27,7 @@ public class StreamingService {
     public ChunkManifestDto getSongManifest(String fileHash, Long userId) {
         Song song = getSongOrThrow(fileHash);
         if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
         }
 
         List<String> hashes = new ArrayList<>();
@@ -53,7 +53,7 @@ public class StreamingService {
         Song song = getSongOrThrow(fileHash);
 
         if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this song");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
         }
 
         if (chunkIndex < 0 || chunkIndex >= song.getChunks().size()) {

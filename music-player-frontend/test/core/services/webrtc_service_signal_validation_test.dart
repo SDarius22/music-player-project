@@ -79,6 +79,17 @@ void main() {
       expect(normalized!['1'], 'a');
       expect(normalized['b'], 2);
     });
+
+    test('normalizePeerBufferMap keeps exact chunk indices per peer', () {
+      final normalized = WebRTCService.normalizePeerBufferMap({
+        'peer-1': [0, 2, '5'],
+        'peer-2': '[3,4]',
+        'peer-3': [],
+      });
+
+      expect(normalized['peer-1'], {0, 2, 5});
+      expect(normalized['peer-2'], {3, 4});
+      expect(normalized.containsKey('peer-3'), isFalse);
+    });
   });
 }
-

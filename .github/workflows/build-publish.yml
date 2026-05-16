@@ -56,6 +56,12 @@ jobs:
             artifact_name: music-player-macos
             artifact_path: music-player-frontend/music-player-macos.zip
 
+          - os: macos-latest
+            target: ios
+            build_cmd: flutter build ipa --release --no-codesign --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
+            artifact_name: music-player-ios
+            artifact_path: music-player-frontend/music-player.ipa
+
     steps:
       - uses: actions/checkout@v4
 
@@ -87,6 +93,12 @@ jobs:
         run: |
           cd build/macos/Build/Products/Release
           zip -r ../../../../../music-player-macos.zip *.app
+
+      - if: matrix.target == 'ios'
+        working-directory: ./music-player-frontend
+        run: |
+          ipa_path=$(ls build/ios/ipa/*.ipa | head -n 1)
+          cp "$ipa_path" music-player.ipa
 
       - uses: actions/upload-artifact@v4
         with:

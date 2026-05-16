@@ -73,14 +73,14 @@ class StreamingServiceTest {
     }
 
     @Test
-    void shouldThrow403WhenManifestPrivateSongOwnedByOther() {
+    void shouldThrow404WhenManifestPrivateSongOwnedByOther() {
         Song song = streamableSong(1L);
         song.setOwnerId(5L);
         when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> service.getSongManifest("hash-1", 99L));
-        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
     @Test
@@ -185,11 +185,13 @@ class StreamingServiceTest {
     }
 
     @Test
-    void shouldThrow403WhenChunkAccessIsForbidden() {
+    void shouldThrow404WhenChunkAccessIsForbidden() {
         Song song = streamableSong(1L);
         song.setOwnerId(5L);
         when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-        assertThrows(ResponseStatusException.class, () -> service.getSongChunk("hash-1", 0, 99L));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> service.getSongChunk("hash-1", 0, 99L));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }

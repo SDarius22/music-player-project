@@ -64,8 +64,7 @@ const _downloads = [
     subtitle: 'iOS 16+',
     icon: Icons.phone_iphone,
     color: Color(0xFF007AFF),
-    url: '',
-    // TODO: URL once builds are available
+    url: 'https://music.dariussala.com/downloads/music-player-ios/music-player.ipa',
     filename: 'music-player.ipa',
   ),
 ];

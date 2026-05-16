@@ -439,6 +439,15 @@ class MockWebRTCService extends _i1.Mock implements _i12.WebRTCService {
           as List<String>);
 
   @override
+  List<String> getSortedPeersForChunk(String? fileHash, int? chunkIndex) =>
+      (super.noSuchMethod(
+            Invocation.method(#getSortedPeersForChunk, [fileHash, chunkIndex]),
+            returnValue: <String>[],
+            returnValueForMissingStub: <String>[],
+          )
+          as List<String>);
+
+  @override
   void requestChunkFromPeer(
     String? peerId,
     String? fileHash,

@@ -171,7 +171,7 @@ class ChunkService {
       );
       data = await _streamingClient.downloadChunkFallback(fileHash, index);
     } else {
-      final peers = _webrtcManager.getSortedPeersForSong(fileHash);
+      final peers = _webrtcManager.getSortedPeersForChunk(fileHash, index);
       if (peers.isNotEmpty) {
         _logger.fine(
           '[P2P] Attempting peer fetch for file=$fileHash idx=$index peers=${peers.take(3).join(',')}',
@@ -308,7 +308,7 @@ class ChunkService {
 
     Uint8List data;
     _ChunkSource source = _ChunkSource.server;
-    final peers = _webrtcManager.getSortedPeersForSong(fileHash);
+    final peers = _webrtcManager.getSortedPeersForChunk(fileHash, index);
     if (peers.isNotEmpty) {
       _logger.fine(
         '[P2P] Prefetch attempting peer fetch for file=$fileHash idx=$index peers=${peers.take(3).join(',')}',
@@ -373,7 +373,7 @@ class ChunkService {
   }
 
   void _addToHotCache(int index, Uint8List data) {
-    if (_hotRamCache.length > 15) {
+    if (_hotRamCache.length >= 15) {
       _hotRamCache.remove(_hotRamCache.keys.first);
     }
     _hotRamCache[index] = data;

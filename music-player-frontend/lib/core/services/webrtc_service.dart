@@ -82,7 +82,7 @@ class WebRTCService {
   final Map<String, RTCPeerConnection> _peerConnections = {};
   final Map<String, RTCDataChannel> _dataChannels = {};
   final Map<String, List<RTCIceCandidate>> _iceQueues = {};
-  final Map<String, Set<String>> _peerLibraries = {};
+  final Map<String, Map<String, Set<int>>> _peerLibraries = {};
   final Map<String, List<({String fileHash, int chunkIndex})>>
   _pendingChunkRequests = {};
   final Map<String, _PeerStats> _peerStats = {};
@@ -180,14 +180,26 @@ class WebRTCService {
   List<String> getSortedPeersForSong(String fileHash) {
     final peers =
         _peerLibraries.entries
-            .where((e) => e.value.contains(fileHash))
+            .where((e) => e.value[fileHash]?.isNotEmpty ?? false)
             .map((e) => e.key)
-            .toList()
-          ..sort(
-            (a, b) => (_peerStats[b]?.score ?? 0).compareTo(
-              _peerStats[a]?.score ?? 0,
-            ),
-          );
+            .toList();
+    return _sortPeersByScore(peers);
+  }
+
+  List<String> getSortedPeersForChunk(String fileHash, int chunkIndex) {
+    final peers =
+        _peerLibraries.entries
+            .where((e) => e.value[fileHash]?.contains(chunkIndex) ?? false)
+            .map((e) => e.key)
+            .toList();
+    return _sortPeersByScore(peers);
+  }
+
+  List<String> _sortPeersByScore(List<String> peers) {
+    peers.sort(
+      (a, b) =>
+          (_peerStats[b]?.score ?? 0).compareTo(_peerStats[a]?.score ?? 0),
+    );
     return peers;
   }
 
@@ -266,6 +278,49 @@ class WebRTCService {
   static Map<String, dynamic>? normalizePayload(dynamic payload) {
     if (payload is! Map) return null;
     return payload.map((k, v) => MapEntry(k.toString(), v));
+  }
+
+  @visibleForTesting
+  static Map<String, Set<int>> normalizePeerBufferMap(dynamic payload) {
+    final map = _asStringMap(payload);
+    if (map == null) return const {};
+
+    final result = <String, Set<int>>{};
+    for (final entry in map.entries) {
+      final chunks = _normalizeChunkIndexSet(entry.value);
+      if (chunks.isNotEmpty) {
+        result[entry.key] = chunks;
+      }
+    }
+    return result;
+  }
+
+  static Set<int> _normalizeChunkIndexSet(dynamic value) {
+    if (value is String) {
+      try {
+        return _normalizeChunkIndexSet(jsonDecode(value));
+      } catch (_) {
+        return const {};
+      }
+    }
+
+    if (value is! Iterable) return const {};
+
+    final chunks = <int>{};
+    for (final raw in value) {
+      final chunk =
+          raw is int
+              ? raw
+              : raw is num
+              ? raw.toInt()
+              : raw is String
+              ? int.tryParse(raw)
+              : null;
+      if (chunk != null && chunk >= 0) {
+        chunks.add(chunk);
+      }
+    }
+    return chunks;
   }
 
   @visibleForTesting
@@ -888,16 +943,17 @@ class WebRTCService {
       switch (type) {
         case 'PEER_BUFFER_MAP':
           final hash = nonEmptyString(signal['fileHash']);
-          final map = normalizePayload(payload);
-          if (hash == null || map == null) {
+          final map = normalizePeerBufferMap(payload);
+          if (hash == null) {
             _logger.warning('[P2P] Ignoring malformed PEER_BUFFER_MAP');
             break;
           }
           _logger.fine(
             'Peer discovery for file=$hash returned peers=${map.keys.join(',')}',
           );
-          for (final peerId in map.keys) {
-            _peerLibraries.putIfAbsent(peerId, () => {}).add(hash);
+          for (final entry in map.entries) {
+            final peerId = entry.key;
+            _peerLibraries.putIfAbsent(peerId, () => {})[hash] = entry.value;
             if (!_peerConnections.containsKey(peerId)) {
               _createPeerConnection(peerId, true);
             }

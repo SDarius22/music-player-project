@@ -42,6 +42,7 @@ void main() {
     when(mockWebRtc.discoverPeers(any)).thenAnswer((_) async {});
     when(mockWebRtc.registerCache(any, any)).thenAnswer((_) async {});
     when(mockWebRtc.getSortedPeersForSong(any)).thenReturn(const []);
+    when(mockWebRtc.getSortedPeersForChunk(any, any)).thenReturn(const []);
     when(mockWebRtc.requestChunkFromPeer(any, any, any)).thenReturn(null);
 
     when(
@@ -132,7 +133,7 @@ void main() {
       mockStreamingClient.fetchManifest('song-hash'),
     ).thenAnswer((_) async => buildManifest(totalChunks: 3, hashes: hashes));
     when(
-      mockWebRtc.getSortedPeersForSong('song-hash'),
+      mockWebRtc.getSortedPeersForChunk('song-hash', 2),
     ).thenReturn(const ['peer-1']);
 
     final service = ChunkService(
@@ -165,7 +166,7 @@ void main() {
         mockStreamingClient.fetchManifest('song-hash'),
       ).thenAnswer((_) async => buildManifest(totalChunks: 12, hashes: hashes));
       when(
-        mockWebRtc.getSortedPeersForSong('song-hash'),
+        mockWebRtc.getSortedPeersForChunk('song-hash', 8),
       ).thenReturn(const ['peer-1']);
       when(
         mockStreamingClient.downloadChunkFallback('song-hash', 8),

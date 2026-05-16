@@ -9,6 +9,7 @@ import 'package:music_player_frontend/core/database/initialization/db_init.dart'
 import 'package:music_player_frontend/core/logging/app_logger.dart';
 import 'package:music_player_frontend/local_libs/just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:music_player_frontend/platforms/android/android_app.dart';
+import 'package:music_player_frontend/platforms/ios/ios_app.dart';
 import 'package:music_player_frontend/platforms/linux/linux_app.dart';
 import 'package:music_player_frontend/platforms/macos/macos_app.dart';
 import 'package:music_player_frontend/platforms/windows/windows_app.dart';
@@ -23,7 +24,11 @@ Future<void> main() async {
 
     JustAudioMediaKit.protocolWhitelist = ["http", "https", "file"];
     JustAudioMediaKit.title = 'Music Player';
-    JustAudioMediaKit.ensureInitialized(linux: true, windows: true, macOS: true);
+    JustAudioMediaKit.ensureInitialized(
+      linux: true,
+      windows: true,
+      macOS: true,
+    );
 
     await runOnTargetPlatform();
   });
@@ -40,6 +45,12 @@ Future<void> runOnTargetPlatform() async {
       await initializeDatabase();
       _logger.info('Running on Android');
       runApp(const AndroidApp());
+      break;
+    case 'ios':
+      await [Permission.mediaLibrary].request();
+      await initializeDatabase();
+      _logger.info('Running on iOS');
+      runApp(const IosApp());
       break;
     case 'windows':
       _logger.info('Running on Windows');
