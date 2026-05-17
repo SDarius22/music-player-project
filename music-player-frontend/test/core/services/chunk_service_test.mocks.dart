@@ -3,22 +3,23 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i7;
-import 'dart:io' as _i11;
-import 'dart:typed_data' as _i8;
+import 'dart:async' as _i8;
+import 'dart:io' as _i12;
+import 'dart:typed_data' as _i9;
 
+import 'package:flutter/foundation.dart' as _i6;
 import 'package:http/http.dart' as _i4;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i10;
+import 'package:mockito/src/dummies.dart' as _i11;
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart' as _i3;
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart'
-    as _i6;
+    as _i7;
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart'
     as _i2;
 import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart'
-    as _i9;
+    as _i10;
 import 'package:music_player_frontend/core/services/webrtc_service.dart'
-    as _i12;
+    as _i13;
 import 'package:web_socket_channel/web_socket_channel.dart' as _i5;
 
 // ignore_for_file: type=lint
@@ -58,66 +59,72 @@ class _FakeWebSocketChannel_3 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
+class _FakeValueNotifier_4<T> extends _i1.SmartFake
+    implements _i6.ValueNotifier<T> {
+  _FakeValueNotifier_4(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [ChunkCacheRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockChunkCacheRepository extends _i1.Mock
-    implements _i6.ChunkCacheRepository {
+    implements _i7.ChunkCacheRepository {
   @override
-  _i7.Future<_i8.Uint8List?> readChunk(String? fileHash, int? chunkIndex) =>
+  _i8.Future<_i9.Uint8List?> readChunk(String? fileHash, int? chunkIndex) =>
       (super.noSuchMethod(
             Invocation.method(#readChunk, [fileHash, chunkIndex]),
-            returnValue: _i7.Future<_i8.Uint8List?>.value(),
-            returnValueForMissingStub: _i7.Future<_i8.Uint8List?>.value(),
+            returnValue: _i8.Future<_i9.Uint8List?>.value(),
+            returnValueForMissingStub: _i8.Future<_i9.Uint8List?>.value(),
           )
-          as _i7.Future<_i8.Uint8List?>);
+          as _i8.Future<_i9.Uint8List?>);
 
   @override
-  _i7.Future<void> saveChunk(
+  _i8.Future<void> saveChunk(
     String? fileHash,
     int? chunkIndex,
-    _i8.Uint8List? data,
+    _i9.Uint8List? data,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#saveChunk, [fileHash, chunkIndex, data]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> deleteChunk(String? fileHash, int? chunkIndex) =>
+  _i8.Future<void> deleteChunk(String? fileHash, int? chunkIndex) =>
       (super.noSuchMethod(
             Invocation.method(#deleteChunk, [fileHash, chunkIndex]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<List<int>> getAvailableChunkIndices(String? fileHash) =>
+  _i8.Future<List<int>> getAvailableChunkIndices(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#getAvailableChunkIndices, [fileHash]),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i8.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i8.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i8.Future<List<int>>);
 }
 
 /// A class which mocks [StreamingRestClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockStreamingRestClient extends _i1.Mock
-    implements _i9.StreamingRestClient {
+    implements _i10.StreamingRestClient {
   @override
   String get baseUrl =>
       (super.noSuchMethod(
             Invocation.getter(#baseUrl),
-            returnValue: _i10.dummyValue<String>(
+            returnValue: _i11.dummyValue<String>(
               this,
               Invocation.getter(#baseUrl),
             ),
-            returnValueForMissingStub: _i10.dummyValue<String>(
+            returnValueForMissingStub: _i11.dummyValue<String>(
               this,
               Invocation.getter(#baseUrl),
             ),
@@ -152,123 +159,123 @@ class MockStreamingRestClient extends _i1.Mock
   );
 
   @override
-  _i7.Future<_i3.ChunkManifestDto> fetchManifest(String? fileHash) =>
+  _i8.Future<_i3.ChunkManifestDto> fetchManifest(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#fetchManifest, [fileHash]),
-            returnValue: _i7.Future<_i3.ChunkManifestDto>.value(
+            returnValue: _i8.Future<_i3.ChunkManifestDto>.value(
               _FakeChunkManifestDto_1(
                 this,
                 Invocation.method(#fetchManifest, [fileHash]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i3.ChunkManifestDto>.value(
+            returnValueForMissingStub: _i8.Future<_i3.ChunkManifestDto>.value(
               _FakeChunkManifestDto_1(
                 this,
                 Invocation.method(#fetchManifest, [fileHash]),
               ),
             ),
           )
-          as _i7.Future<_i3.ChunkManifestDto>);
+          as _i8.Future<_i3.ChunkManifestDto>);
 
   @override
-  _i7.Future<_i8.Uint8List> downloadChunkFallback(
+  _i8.Future<_i9.Uint8List> downloadChunkFallback(
     String? fileHash,
     int? chunkIndex,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#downloadChunkFallback, [fileHash, chunkIndex]),
-            returnValue: _i7.Future<_i8.Uint8List>.value(_i8.Uint8List(0)),
-            returnValueForMissingStub: _i7.Future<_i8.Uint8List>.value(
-              _i8.Uint8List(0),
+            returnValue: _i8.Future<_i9.Uint8List>.value(_i9.Uint8List(0)),
+            returnValueForMissingStub: _i8.Future<_i9.Uint8List>.value(
+              _i9.Uint8List(0),
             ),
           )
-          as _i7.Future<_i8.Uint8List>);
+          as _i8.Future<_i9.Uint8List>);
 
   @override
-  _i7.Future<_i4.Response> post(String? endpoint, Map<String, dynamic>? body) =>
+  _i8.Future<_i4.Response> post(String? endpoint, Map<String, dynamic>? body) =>
       (super.noSuchMethod(
             Invocation.method(#post, [endpoint, body]),
-            returnValue: _i7.Future<_i4.Response>.value(
+            returnValue: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(this, Invocation.method(#post, [endpoint, body])),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.Response>.value(
+            returnValueForMissingStub: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(this, Invocation.method(#post, [endpoint, body])),
             ),
           )
-          as _i7.Future<_i4.Response>);
+          as _i8.Future<_i4.Response>);
 
   @override
-  _i7.Future<_i4.Response> get(
+  _i8.Future<_i4.Response> get(
     String? endpoint, {
     Map<String, String>? headers = const {'Content-Type': 'application/json'},
   }) =>
       (super.noSuchMethod(
             Invocation.method(#get, [endpoint], {#headers: headers}),
-            returnValue: _i7.Future<_i4.Response>.value(
+            returnValue: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(
                 this,
                 Invocation.method(#get, [endpoint], {#headers: headers}),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.Response>.value(
+            returnValueForMissingStub: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(
                 this,
                 Invocation.method(#get, [endpoint], {#headers: headers}),
               ),
             ),
           )
-          as _i7.Future<_i4.Response>);
+          as _i8.Future<_i4.Response>);
 
   @override
-  _i7.Future<_i4.Response> patch(
+  _i8.Future<_i4.Response> patch(
     String? endpoint,
     Map<String, dynamic>? body,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#patch, [endpoint, body]),
-            returnValue: _i7.Future<_i4.Response>.value(
+            returnValue: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(
                 this,
                 Invocation.method(#patch, [endpoint, body]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.Response>.value(
+            returnValueForMissingStub: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(
                 this,
                 Invocation.method(#patch, [endpoint, body]),
               ),
             ),
           )
-          as _i7.Future<_i4.Response>);
+          as _i8.Future<_i4.Response>);
 
   @override
-  _i7.Future<_i4.Response> put(String? endpoint, Map<String, dynamic>? body) =>
+  _i8.Future<_i4.Response> put(String? endpoint, Map<String, dynamic>? body) =>
       (super.noSuchMethod(
             Invocation.method(#put, [endpoint, body]),
-            returnValue: _i7.Future<_i4.Response>.value(
+            returnValue: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(this, Invocation.method(#put, [endpoint, body])),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.Response>.value(
+            returnValueForMissingStub: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(this, Invocation.method(#put, [endpoint, body])),
             ),
           )
-          as _i7.Future<_i4.Response>);
+          as _i8.Future<_i4.Response>);
 
   @override
-  _i7.Future<_i4.Response> delete(String? endpoint) =>
+  _i8.Future<_i4.Response> delete(String? endpoint) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [endpoint]),
-            returnValue: _i7.Future<_i4.Response>.value(
+            returnValue: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(this, Invocation.method(#delete, [endpoint])),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.Response>.value(
+            returnValueForMissingStub: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(this, Invocation.method(#delete, [endpoint])),
             ),
           )
-          as _i7.Future<_i4.Response>);
+          as _i8.Future<_i4.Response>);
 
   @override
-  _i7.Future<_i4.Response> multipartRequest(
+  _i8.Future<_i4.Response> multipartRequest(
     String? method,
     String? endpoint, {
     Map<String, String>? fields,
@@ -280,7 +287,7 @@ class MockStreamingRestClient extends _i1.Mock
               [method, endpoint],
               {#fields: fields, #files: files},
             ),
-            returnValue: _i7.Future<_i4.Response>.value(
+            returnValue: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(
                 this,
                 Invocation.method(
@@ -290,7 +297,7 @@ class MockStreamingRestClient extends _i1.Mock
                 ),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.Response>.value(
+            returnValueForMissingStub: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(
                 this,
                 Invocation.method(
@@ -301,13 +308,13 @@ class MockStreamingRestClient extends _i1.Mock
               ),
             ),
           )
-          as _i7.Future<_i4.Response>);
+          as _i8.Future<_i4.Response>);
 
   @override
-  _i7.Future<_i4.Response> multipartRequestWithProgress(
+  _i8.Future<_i4.Response> multipartRequestWithProgress(
     String? method,
     String? endpoint,
-    _i11.File? file,
+    _i12.File? file,
     Map<String, String>? fields,
     void Function(int, int)? onProgress,
   ) =>
@@ -319,7 +326,7 @@ class MockStreamingRestClient extends _i1.Mock
               fields,
               onProgress,
             ]),
-            returnValue: _i7.Future<_i4.Response>.value(
+            returnValue: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(
                 this,
                 Invocation.method(#multipartRequestWithProgress, [
@@ -331,7 +338,7 @@ class MockStreamingRestClient extends _i1.Mock
                 ]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.Response>.value(
+            returnValueForMissingStub: _i8.Future<_i4.Response>.value(
               _FakeResponse_2(
                 this,
                 Invocation.method(#multipartRequestWithProgress, [
@@ -344,22 +351,22 @@ class MockStreamingRestClient extends _i1.Mock
               ),
             ),
           )
-          as _i7.Future<_i4.Response>);
+          as _i8.Future<_i4.Response>);
 }
 
 /// A class which mocks [WebRTCService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockWebRTCService extends _i1.Mock implements _i12.WebRTCService {
+class MockWebRTCService extends _i1.Mock implements _i13.WebRTCService {
   @override
   String get myDeviceId =>
       (super.noSuchMethod(
             Invocation.getter(#myDeviceId),
-            returnValue: _i10.dummyValue<String>(
+            returnValue: _i11.dummyValue<String>(
               this,
               Invocation.getter(#myDeviceId),
             ),
-            returnValueForMissingStub: _i10.dummyValue<String>(
+            returnValueForMissingStub: _i11.dummyValue<String>(
               this,
               Invocation.getter(#myDeviceId),
             ),
@@ -397,28 +404,43 @@ class MockWebRTCService extends _i1.Mock implements _i12.WebRTCService {
           as _i5.WebSocketChannel);
 
   @override
-  void Function(String, int, _i8.Uint8List) get onChunkReceived =>
+  void Function(String, int, _i9.Uint8List) get onChunkReceived =>
       (super.noSuchMethod(
             Invocation.getter(#onChunkReceived),
             returnValue:
-                (String fileHash, int chunkIndex, _i8.Uint8List data) {},
+                (String fileHash, int chunkIndex, _i9.Uint8List data) {},
             returnValueForMissingStub:
-                (String fileHash, int chunkIndex, _i8.Uint8List data) {},
+                (String fileHash, int chunkIndex, _i9.Uint8List data) {},
           )
-          as void Function(String, int, _i8.Uint8List));
+          as void Function(String, int, _i9.Uint8List));
 
   @override
-  _i7.Future<_i8.Uint8List?> Function(String, int) get onChunkRequested =>
+  _i8.Future<_i9.Uint8List?> Function(String, int) get onChunkRequested =>
       (super.noSuchMethod(
             Invocation.getter(#onChunkRequested),
             returnValue:
                 (String fileHash, int chunkIndex) =>
-                    _i7.Future<_i8.Uint8List?>.value(),
+                    _i8.Future<_i9.Uint8List?>.value(),
             returnValueForMissingStub:
                 (String fileHash, int chunkIndex) =>
-                    _i7.Future<_i8.Uint8List?>.value(),
+                    _i8.Future<_i9.Uint8List?>.value(),
           )
-          as _i7.Future<_i8.Uint8List?> Function(String, int));
+          as _i8.Future<_i9.Uint8List?> Function(String, int));
+
+  @override
+  _i6.ValueNotifier<int> get peerStateVersionNotifier =>
+      (super.noSuchMethod(
+            Invocation.getter(#peerStateVersionNotifier),
+            returnValue: _FakeValueNotifier_4<int>(
+              this,
+              Invocation.getter(#peerStateVersionNotifier),
+            ),
+            returnValueForMissingStub: _FakeValueNotifier_4<int>(
+              this,
+              Invocation.getter(#peerStateVersionNotifier),
+            ),
+          )
+          as _i6.ValueNotifier<int>);
 
   @override
   bool get isConnected =>
@@ -458,22 +480,22 @@ class MockWebRTCService extends _i1.Mock implements _i12.WebRTCService {
   );
 
   @override
-  _i7.Future<void> registerCache(String? fileHash, List<int>? chunkIndices) =>
+  _i8.Future<void> registerCache(String? fileHash, List<int>? chunkIndices) =>
       (super.noSuchMethod(
             Invocation.method(#registerCache, [fileHash, chunkIndices]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> discoverPeers(String? fileHash) =>
+  _i8.Future<void> discoverPeers(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#discoverPeers, [fileHash]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
   void dispose() => super.noSuchMethod(

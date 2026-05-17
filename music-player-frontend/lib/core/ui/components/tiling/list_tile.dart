@@ -275,7 +275,7 @@ class CustomListTile extends StatelessWidget {
                     );
                   },
                 ),
-              if (actions.length > 2) _buildDropdown(context),
+              if (actions.length > 1) _buildDropdown(context),
             ],
           ),
         ),

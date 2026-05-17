@@ -31,6 +31,19 @@ class QueueTab extends StatelessWidget {
             sliver: CustomTileComponent(
               tileType: TileType.list,
               items: Provider.of<AudioProvider>(context).normalQueue,
+              actions: [
+                (_) => const SizedBox.shrink(),
+                (_) => const SizedBox.shrink(),
+                (_) => const Text('Remove from queue'),
+              ],
+              onDropdownSelected: (entity, dropdownIndex) async {
+                if (dropdownIndex == 0 && entity is Song) {
+                  await Provider.of<AudioProvider>(
+                    context,
+                    listen: false,
+                  ).removeFromQueue(entity);
+                }
+              },
               itemExtent: height * 0.085,
               isSelected: (entity) {
                 return false;
