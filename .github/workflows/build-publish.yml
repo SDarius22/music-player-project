@@ -16,6 +16,13 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Install Linux integration test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libjsoncpp-dev libmpv-dev mpv libayatana-appindicator3-dev xvfb
+
+      - run: flutter config --enable-linux-desktop
+
       - working-directory: ./music-player-frontend
         run: flutter pub get
 
@@ -24,6 +31,15 @@ jobs:
 
       - working-directory: ./music-player-frontend
         run: flutter test
+
+      - name: Run Flutter integration tests
+        working-directory: ./music-player-frontend
+        run: |
+          flutter test test/core/integration/song_playlist_flow_test.dart
+          xvfb-run -a flutter test integration_test/song_provider_flow_test.dart -d linux
+          xvfb-run -a flutter test integration_test/album_provider_flow_test.dart -d linux
+          xvfb-run -a flutter test integration_test/playlist_provider_flow_test.dart -d linux
+          xvfb-run -a flutter test integration_test/artist_provider_flow_test.dart -d linux
 
   build:
     needs: test
@@ -162,4 +178,3 @@ jobs:
             echo "Cluj binary publish upload failed."
             exit 1
           fi
-
