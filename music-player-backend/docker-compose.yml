@@ -38,8 +38,6 @@ services:
     volumes:
       - /home/deployer/music-player/postgres_data:/var/lib/postgresql
     restart: unless-stopped
-    ports:
-      - "5432:5432"
     networks:
       - backend-net
 
