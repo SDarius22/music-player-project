@@ -43,38 +43,50 @@ jobs:
 
   build:
     needs: test
-    name: Build on ${{ matrix.os }} for ${{ matrix.target }}
+    name: Build ${{ matrix.target }} for ${{ matrix.site_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        site: [bt-app, dariussala]
+        target: [apk, linux, windows, macos, ios]
         include:
-          - os: ubuntu-latest
-            target: apk
-            build_cmd: flutter build apk --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
+          - site: bt-app
+            site_name: bt-app.com
+            api_base_url: https://api.bt-app.com/music-player
+            ws_base_url: wss://wss.bt-app.com/music-player/signaling
+
+          - site: dariussala
+            site_name: dariussala.com
+            api_base_url: https://api.dariussala.com/music-player
+            ws_base_url: wss://wss.dariussala.com/music-player/signaling
+
+          - target: apk
+            os: ubuntu-latest
+            build_cmd: flutter build apk --release
             artifact_name: music-player-android
             artifact_path: music-player-frontend/build/app/outputs/flutter-apk/app-release.apk
 
-          - os: ubuntu-latest
-            target: linux
-            build_cmd: flutter build linux --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
+          - target: linux
+            os: ubuntu-latest
+            build_cmd: flutter build linux --release
             artifact_name: music-player-linux
             artifact_path: music-player-frontend/music-player-linux.tar.gz
 
-          - os: windows-latest
-            target: windows
-            build_cmd: flutter build windows --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
+          - target: windows
+            os: windows-latest
+            build_cmd: flutter build windows --release
             artifact_name: music-player-windows
             artifact_path: music-player-frontend/music-player-windows.zip
 
-          - os: macos-latest
-            target: macos
-            build_cmd: flutter build macos --release --config-only --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling && xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Release -derivedDataPath build/macos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM=""
+          - target: macos
+            os: macos-latest
+            build_cmd: flutter build macos --release --config-only
             artifact_name: music-player-macos
             artifact_path: music-player-frontend/music-player-macos.zip
 
-          - os: macos-latest
-            target: ios
-            build_cmd: flutter build ipa --release --no-codesign --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling
+          - target: ios
+            os: macos-latest
+            build_cmd: flutter build ipa --release --no-codesign
             artifact_name: music-player-ios
             artifact_path: music-player-frontend/music-player.ipa
 
@@ -94,7 +106,11 @@ jobs:
         run: flutter pub get
 
       - working-directory: ./music-player-frontend
-        run: ${{ matrix.build_cmd }}
+        run: ${{ matrix.build_cmd }} --dart-define=API_BASE_URL=${{ matrix.api_base_url }} --dart-define=WS_BASE_URL=${{ matrix.ws_base_url }}
+
+      - if: matrix.target == 'macos'
+        working-directory: ./music-player-frontend
+        run: xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Release -derivedDataPath build/macos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM=""
 
       - if: matrix.target == 'linux'
         working-directory: ./music-player-frontend
@@ -118,7 +134,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
+          name: ${{ matrix.site }}-${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
 
   deploy-to-server-primary:
@@ -127,7 +143,28 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: bt-app-*
           path: ./downloads
+
+      - name: Prepare primary bt-app.com artifacts
+        run: |
+          rm -rf ./publish
+          mkdir -p ./publish
+
+          shopt -s nullglob
+          artifact_dirs=(./downloads/bt-app-*)
+
+          if [ ${#artifact_dirs[@]} -eq 0 ]; then
+            echo "No bt-app.com artifacts were downloaded."
+            exit 1
+          fi
+
+          for artifact_dir in "${artifact_dirs[@]}"; do
+            target_name="$(basename "$artifact_dir")"
+            target_name="${target_name#bt-app-}"
+            mkdir -p "./publish/$target_name"
+            cp -R "$artifact_dir/." "./publish/$target_name/"
+          done
 
       - id: scp_primary
         uses: appleboy/scp-action@v0.1.7
@@ -136,7 +173,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "./downloads/*"
+          source: "./publish/*"
           target: "/var/www/music-player-downloads/"
           strip_components: 1
 
@@ -156,7 +193,28 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: dariussala-*
           path: ./downloads
+
+      - name: Prepare Cluj dariussala.com artifacts
+        run: |
+          rm -rf ./publish
+          mkdir -p ./publish
+
+          shopt -s nullglob
+          artifact_dirs=(./downloads/dariussala-*)
+
+          if [ ${#artifact_dirs[@]} -eq 0 ]; then
+            echo "No dariussala.com artifacts were downloaded."
+            exit 1
+          fi
+
+          for artifact_dir in "${artifact_dirs[@]}"; do
+            target_name="$(basename "$artifact_dir")"
+            target_name="${target_name#dariussala-}"
+            mkdir -p "./publish/$target_name"
+            cp -R "$artifact_dir/." "./publish/$target_name/"
+          done
 
       - id: scp_cluj
         uses: appleboy/scp-action@v0.1.7
@@ -165,7 +223,7 @@ jobs:
           host: ${{ secrets.VPS_HOST_CLUJ }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "./downloads/*"
+          source: "./publish/*"
           target: "/var/www/music-player-downloads/"
           strip_components: 1
 
