@@ -54,11 +54,13 @@ jobs:
             site_name: bt-app.com
             api_base_url: https://api.bt-app.com/music-player
             ws_base_url: wss://wss.bt-app.com/music-player/signaling
+            download_base_url: https://music.bt-app.com/downloads
 
           - site: dariussala
             site_name: dariussala.com
             api_base_url: https://api.dariussala.com/music-player
             ws_base_url: wss://wss.dariussala.com/music-player/signaling
+            download_base_url: https://music.dariussala.com/downloads
 
           - target: apk
             os: ubuntu-latest
@@ -106,7 +108,7 @@ jobs:
         run: flutter pub get
 
       - working-directory: ./music-player-frontend
-        run: ${{ matrix.build_cmd }} --dart-define=API_BASE_URL=${{ matrix.api_base_url }} --dart-define=WS_BASE_URL=${{ matrix.ws_base_url }}
+        run: ${{ matrix.build_cmd }} --dart-define=API_BASE_URL=${{ matrix.api_base_url }} --dart-define=WS_BASE_URL=${{ matrix.ws_base_url }} --dart-define=DOWNLOAD_BASE_URL=${{ matrix.download_base_url }}
 
       - if: matrix.target == 'macos'
         working-directory: ./music-player-frontend

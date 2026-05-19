@@ -9,7 +9,7 @@ class _PlatformDownload {
   final String subtitle;
   final IconData icon;
   final Color color;
-  final String url;
+  final String path;
   final String filename;
 
   const _PlatformDownload({
@@ -17,10 +17,15 @@ class _PlatformDownload {
     required this.subtitle,
     required this.icon,
     required this.color,
-    required this.url,
+    required this.path,
     required this.filename,
   });
 }
+
+const _downloadBaseUrl = String.fromEnvironment(
+  'DOWNLOAD_BASE_URL',
+  defaultValue: 'https://music.dariussala.com/downloads',
+);
 
 const _downloads = [
   _PlatformDownload(
@@ -28,8 +33,7 @@ const _downloads = [
     subtitle: 'Android 8.0+',
     icon: Icons.android,
     color: Color(0xFF3DDC84),
-    url:
-        'https://music.dariussala.com/downloads/music-player-android/app-release.apk',
+    path: 'music-player-android/app-release.apk',
     filename: 'music-player.apk',
   ),
   _PlatformDownload(
@@ -37,8 +41,7 @@ const _downloads = [
     subtitle: 'x86_64 AppImage',
     icon: Icons.terminal,
     color: Color(0xFFF7941D),
-    url:
-        'https://music.dariussala.com/downloads/music-player-linux/music-player-linux.tar.gz',
+    path: 'music-player-linux/music-player-linux.tar.gz',
     filename: 'music-player.tar.gz',
   ),
   _PlatformDownload(
@@ -46,8 +49,7 @@ const _downloads = [
     subtitle: 'Windows 10+  •  x64',
     icon: Icons.laptop_windows,
     color: Color(0xFF0078D7),
-    url:
-        'https://music.dariussala.com/downloads/music-player-windows/music-player-windows.zip',
+    path: 'music-player-windows/music-player-windows.zip',
     filename: 'music-player.zip',
   ),
   _PlatformDownload(
@@ -55,8 +57,7 @@ const _downloads = [
     subtitle: 'macOS 12+  •  Universal',
     icon: Icons.laptop_mac,
     color: Color(0xFFAAAAAA),
-    url:
-        'https://music.dariussala.com/downloads/music-player-macos/music-player-macos.zip',
+    path: 'music-player-macos/music-player-macos.zip',
     filename: 'music-player.zip',
   ),
   _PlatformDownload(
@@ -64,13 +65,22 @@ const _downloads = [
     subtitle: 'iOS 16+',
     icon: Icons.phone_iphone,
     color: Color(0xFF007AFF),
-    url: 'https://music.dariussala.com/downloads/music-player-ios/music-player.ipa',
+    path: 'music-player-ios/music-player.ipa',
     filename: 'music-player.ipa',
   ),
 ];
 
 class EndDrawerWidget extends StatelessWidget {
   const EndDrawerWidget({super.key});
+
+  String _downloadUrl(String path) {
+    final base =
+        _downloadBaseUrl.endsWith('/')
+            ? _downloadBaseUrl.substring(0, _downloadBaseUrl.length - 1)
+            : _downloadBaseUrl;
+    final normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+    return '$base/$normalizedPath';
+  }
 
   void _triggerDownload(String url, String filename) {
     if (url.isEmpty) return;
@@ -114,9 +124,12 @@ class EndDrawerWidget extends StatelessWidget {
                 item: item,
                 size: size,
                 onTap:
-                    item.url.isEmpty
+                    item.path.isEmpty
                         ? null
-                        : () => _triggerDownload(item.url, item.filename),
+                        : () => _triggerDownload(
+                          _downloadUrl(item.path),
+                          item.filename,
+                        ),
               ),
             ),
           ],
