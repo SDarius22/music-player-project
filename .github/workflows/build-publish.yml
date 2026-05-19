@@ -131,8 +131,12 @@ jobs:
       - if: matrix.target == 'ios'
         working-directory: ./music-player-frontend
         run: |
-          ipa_path=$(ls build/ios/ipa/*.ipa | head -n 1)
-          cp "$ipa_path" music-player.ipa
+          # --no-codesign skips IPA generation, so build it manually from the xcarchive.
+          rm -rf Payload
+          mkdir Payload
+          cp -R build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app Payload/
+          zip -qry music-player.ipa Payload
+          rm -rf Payload
 
       - uses: actions/upload-artifact@v4
         with:
