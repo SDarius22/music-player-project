@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -23,7 +25,10 @@ import 'player_controls_queue_widget_test.mocks.dart';
 ])
 class _FakeCoverService extends Fake implements CoverService {
   @override
-  Widget getWidget(BaseEntity entity) => Container(color: Colors.black);
+  Widget getWidget(
+    BaseEntity entity, {
+    ValueChanged<Uint8List>? onBytesLoaded,
+  }) => Container(color: Colors.black);
 }
 
 Widget _wrapWithProviders({
@@ -79,7 +84,9 @@ void main() {
       when(audioProvider.removeFromQueue(songB)).thenAnswer((_) async {});
       when(songProvider.enrichSong(songA)).thenAnswer((_) async => songA);
       when(songProvider.enrichSong(songB)).thenAnswer((_) async => songB);
-      when(appStateProvider.shouldDisplayLocalOnly).thenReturn(localOnlyNotifier);
+      when(
+        appStateProvider.shouldDisplayLocalOnly,
+      ).thenReturn(localOnlyNotifier);
     });
 
     testWidgets('tracks main action shows play/pause based on provider state', (
@@ -111,7 +118,9 @@ void main() {
       expect(find.byIcon(FluentIcons.play), findsNothing);
     });
 
-    testWidgets('search header play all button invokes callback', (tester) async {
+    testWidgets('search header play all button invokes callback', (
+      tester,
+    ) async {
       var playTapped = 0;
 
       await tester.pumpWidget(
@@ -172,6 +181,49 @@ void main() {
 
       verify(audioProvider.removeFromQueue(songA)).called(1);
     });
+
+    testWidgets('queue tab renders enriched song metadata for placeholders', (
+      tester,
+    ) async {
+      final placeholder = Song('queued-placeholder');
+      final hydrated =
+          Song('queued-placeholder')
+            ..name = 'Hydrated Queue Song'
+            ..fullyLoaded = true;
+
+      when(audioProvider.normalQueue).thenReturn([placeholder]);
+      when(audioProvider.currentSong).thenReturn(null);
+      when(
+        songProvider.enrichSong(placeholder),
+      ).thenAnswer((_) async => hydrated);
+      when(audioProvider.setCurrentSongAndPlay(any)).thenAnswer((_) async {});
+
+      final scrollController = ScrollController();
+      addTearDown(scrollController.dispose);
+
+      await tester.pumpWidget(
+        _wrapWithProviders(
+          child: QueueTab(itemScrollController: scrollController),
+          audioProvider: audioProvider,
+          songProvider: songProvider,
+          coverService: coverService,
+          appStateProvider: appStateProvider,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hydrated Queue Song'), findsOneWidget);
+      expect(find.text('Unknown Song'), findsNothing);
+
+      await tester.tap(find.text('Hydrated Queue Song'));
+      await tester.pumpAndSettle();
+
+      final played =
+          verify(
+                audioProvider.setCurrentSongAndPlay(captureAny),
+              ).captured.single
+              as Song;
+      expect(identical(played, hydrated), isTrue);
+    });
   });
 }
-

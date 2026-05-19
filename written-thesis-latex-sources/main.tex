@@ -40,8 +40,13 @@ ABSTRACT
 \hrule
 \vspace{0.5cm}	
 %\cleardoublepage
+On-demand music streaming has become economically difficult to sustain. Cloud egress is billed per gigabyte and scales linearly with the number of concurrent listeners, and the rapid growth of AI workloads has pushed cloud prices even higher. This thesis designs, implements and evaluates a peer-assisted music streaming system that converts the per-listener server cost from $O(N)$ to a value bounded by $O(1)$ in the ideal case, without sacrificing the near-instant playback that users expect.
 
-Abstract: un rezumat în limba engleză cu prezentarea, pe scurt, a conținutului pe capitole, punând accent pe contribuțiile proprii și originalitate
+\par The first chapter surveys the five design domains that a peer-assisted streaming system has to address (latency, connectivity, storage, integrity and flow control) and picks, for each one, the candidate solution best suited to a music context: prefix caching, WebRTC, mobile edge caching, chunk-based synchronization and adaptive routing. The second chapter justifies those choices quantitatively, deriving a bandwidth cost model, the 64 KiB chunk size and the 5\% prefix threshold, and ending with an abstract view of the system that separates the logical roles from the technologies that realise them.
+
+\par The third chapter is the implementation. A cross-platform music player is built on Flutter and Java Spring Boot, with PostgreSQL and Redis as the persistence and coordination layer. Audio files are split into 64 KiB chunks identified by their SHA-256 hash, deduplicated on the server and verified on the client regardless of where they come from. A server-side prefix of about 5\% of the song masks the WebRTC connection setup time, while the remaining bytes flow directly between peers over reliable data channels, with the server always available as a fallback. The same code base runs unchanged on Linux, macOS, Windows, Android, iOS and the web browser.
+
+\par The original contribution lies in combining these five trade-offs into a single working system that uses no TURN relay (preserving the cost-saving property of the peer model), runs across the six target platforms from one source tree, and is small enough to be operated on commodity hardware while still demonstrating the egress reduction predicted by the cost model.
 
 
 

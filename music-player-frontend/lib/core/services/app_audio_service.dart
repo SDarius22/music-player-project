@@ -493,7 +493,7 @@ class AppAudioService {
         createChunkManager(outgoing.getHash()).flushStats();
       }
 
-      final song = _activeQueue[idx];
+      final song = await _fullyFetchQueueSong(_activeQueue[idx]);
       currentSong = song;
       if (!UniversalPlatform.isDesktop) {
         await audioPlayer.stop();
@@ -505,6 +505,48 @@ class AppAudioService {
       _onSongStarted(song);
     } finally {
       _isSwitchingSong = false;
+    }
+  }
+
+  Future<Song> _fullyFetchQueueSong(Song queuedSong) async {
+    try {
+      final fetched = await songService.fullyFetchSong(queuedSong);
+      if (fetched.getHash() != queuedSong.getHash()) {
+        _logger.warning(
+          'Ignoring fetched song with mismatched hash: expected ${queuedSong.getHash()}, got ${fetched.getHash()}',
+        );
+        return queuedSong;
+      }
+
+      _replaceQueuedSong(queuedSong, fetched);
+      return fetched;
+    } catch (e) {
+      _logger.warning(
+        'Failed to fully fetch queued song ${queuedSong.getHash()}',
+        e,
+      );
+      return queuedSong;
+    }
+  }
+
+  void _replaceQueuedSong(Song queuedSong, Song fetched) {
+    var replaced = false;
+
+    final normalIndex = _normalQueue.indexWhere((s) => s == queuedSong);
+    if (normalIndex >= 0 && !identical(_normalQueue[normalIndex], fetched)) {
+      _normalQueue[normalIndex] = fetched;
+      replaced = true;
+    }
+
+    final shuffledIndex = _shuffledQueue.indexWhere((s) => s == queuedSong);
+    if (shuffledIndex >= 0 &&
+        !identical(_shuffledQueue[shuffledIndex], fetched)) {
+      _shuffledQueue[shuffledIndex] = fetched;
+      replaced = true;
+    }
+
+    if (replaced) {
+      _notifyQueueMutation();
     }
   }
 

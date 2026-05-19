@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
@@ -85,7 +87,10 @@ class _FakeAudioProvider extends ChangeNotifier implements AudioProvider {
 
 class _FakeCoverService implements CoverService {
   @override
-  Widget getWidget(BaseEntity entity) {
+  Widget getWidget(
+    BaseEntity entity, {
+    ValueChanged<Uint8List>? onBytesLoaded,
+  }) {
     return Container(color: Colors.black);
   }
 

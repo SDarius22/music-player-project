@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/ui/components/triangle_clipper.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -85,7 +88,10 @@ class _ImageWidgetState extends State<ImageWidget> {
 
   Widget _getImageWidget(BuildContext context) {
     try {
-      return context.read<CoverService>().getWidget(widget.entity);
+      return context.read<CoverService>().getWidget(
+        widget.entity,
+        onBytesLoaded: _handleBytesLoaded,
+      );
     } catch (e) {
       debugPrint(
         'ImageWidget: failed to get image for entity ${widget.entity.getName()}: $e',
@@ -100,6 +106,22 @@ class _ImageWidgetState extends State<ImageWidget> {
         size: MediaQuery.of(context).size.width * 0.1,
       ),
     );
+  }
+
+  void _handleBytesLoaded(Uint8List bytes) {
+    if (!mounted) return;
+    try {
+      unawaited(
+        context.read<AudioProvider>().updateColorsFromCover(
+          widget.entity,
+          bytes,
+        ),
+      );
+    } catch (e) {
+      debugPrint(
+        'ImageWidget: failed to update colors for ${widget.entity.getName()}: $e',
+      );
+    }
   }
 
   Widget _buildImageLayer() {

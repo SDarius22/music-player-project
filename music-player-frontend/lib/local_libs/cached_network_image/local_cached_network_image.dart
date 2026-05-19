@@ -92,33 +92,43 @@ class _LocalCachedNetworkImageState extends State<LocalCachedNetworkImage> {
   Future<Uint8List?> _load() async {
     if (widget.imageUrl.isEmpty) return null;
 
+    AbstractFileService? fileService;
+    if (widget.path != null) {
+      try {
+        fileService = context.read<AbstractFileService>();
+      } catch (e) {
+        debugPrint(
+          'LocalCachedNetworkImage: file service unavailable for ${widget.path}: $e',
+        );
+      }
+    }
+
     final mem = _MemoryCache.get(widget.imageUrl);
-    if (mem != null) return mem;
+    if (mem != null) return _bytesLoaded(mem);
 
     final file = await _cacheFile(widget.imageUrl);
     if (file != null && file.existsSync()) {
       final bytes = await file.readAsBytes();
       if (bytes.isNotEmpty) {
         _MemoryCache.put(widget.imageUrl, bytes);
-        return bytes;
+        return _bytesLoaded(bytes);
       }
     }
 
-    try {
-      var fileService = context.read<AbstractFileService>();
-      if (widget.path != null) {
+    if (widget.path != null && fileService != null) {
+      try {
         final bytes = await fileService.getImage(widget.path!);
         if (bytes == null) {
           throw Exception('File service returned null for ${widget.path!}');
         }
         if (bytes.isNotEmpty) {
-          return bytes;
+          return _bytesLoaded(bytes);
         }
+      } catch (e) {
+        debugPrint(
+          'LocalCachedNetworkImage: error loading from file service ${widget.path}: $e',
+        );
       }
-    } catch (e) {
-      debugPrint(
-        'LocalCachedNetworkImage: error loading from file service ${widget.path}: $e',
-      );
     }
 
     try {
@@ -132,8 +142,7 @@ class _LocalCachedNetworkImageState extends State<LocalCachedNetworkImage> {
           _MemoryCache.put(widget.imageUrl, bytes);
           file?.writeAsBytes(bytes, flush: true).ignore();
         }
-        widget.onBytesLoaded?.call(bytes);
-        return bytes;
+        return _bytesLoaded(bytes);
       }
       throw HttpException(
         'Failed to load image: ${response.statusCode} ${response.reasonPhrase}',
@@ -144,6 +153,11 @@ class _LocalCachedNetworkImageState extends State<LocalCachedNetworkImage> {
       );
     }
     return null;
+  }
+
+  Uint8List _bytesLoaded(Uint8List bytes) {
+    widget.onBytesLoaded?.call(bytes);
+    return bytes;
   }
 
   @override

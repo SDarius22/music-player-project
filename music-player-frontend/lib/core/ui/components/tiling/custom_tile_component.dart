@@ -85,7 +85,8 @@ class CustomTileComponent extends StatelessWidget {
             ? CustomListTile.loading()
             : CustomGridTile.loading(isWide: tileType == TileType.wide);
       }
-      return _buildTile(entity);
+      final enriched = snapshot.data;
+      return _buildTile(enriched is BaseEntity ? enriched : entity);
     },
   );
 

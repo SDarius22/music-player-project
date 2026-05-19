@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logging/logging.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
@@ -53,6 +57,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   StreamSubscription<PlaybackEvent>? _playbackEventSub;
   VoidCallback? _playerVersionListener;
   VoidCallback? _queueMutationListener;
+  final Set<String> _colorExtractionInProgress = <String>{};
 
   AudioProvider(this._audioService, this._fileService) {
     repeatNotifier.value = _currentAudioSettings.repeat;
@@ -78,7 +83,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     };
     _audioService.queueMutationNotifier.addListener(_queueMutationListener!);
 
-    _setColors();
+    unawaited(_setColors());
     _changeMediaItem();
     notifyListeners();
   }
@@ -240,17 +245,70 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     }
   }
 
+  Future<void> updateColorsFromCover(BaseEntity entity, Uint8List bytes) async {
+    if (bytes.isEmpty) return;
+
+    final song = currentSong;
+    if (song == null || !_entityBelongsToCurrentSong(entity, song)) return;
+
+    await _extractColorsForSong(song, bytes);
+  }
+
+  bool _entityBelongsToCurrentSong(BaseEntity entity, Song song) {
+    if (entity is Song) return entity == song;
+    if (entity is Album) {
+      return song.album.target?.getHash() == entity.getHash();
+    }
+    if (entity is Artist) {
+      return song.artist.target?.getHash() == entity.getHash();
+    }
+    return false;
+  }
+
   Future<void> _setColors() async {
-    if (currentSong == null ||
-        currentSong?.getCoverArt() == null ||
-        currentSong!.getColors().isNotEmpty) {
+    final song = currentSong;
+    final coverArt = song?.getCoverArt();
+
+    if (song == null ||
+        coverArt == null ||
+        coverArt.isEmpty ||
+        song.getColors().length == 4) {
       _logger.fine('Skipping color extraction');
       return;
     }
 
-    currentSong!.album.target!.colors = await WorkerService.extractColors(
-      currentSong!.album.target!.getCoverArt(),
-    );
+    await _extractColorsForSong(song, coverArt);
+  }
+
+  Future<void> _extractColorsForSong(Song song, Uint8List coverArt) async {
+    final album = song.album.target;
+    if (album == null || coverArt.isEmpty || album.colors.length == 4) return;
+
+    final key = song.getHash();
+    if (!_colorExtractionInProgress.add(key)) return;
+
+    try {
+      final colors = await WorkerService.extractColors(coverArt);
+      if (colors.length != 4) {
+        _logger.warning(
+          'Color extraction for ${song.getName()} returned ${colors.length} colors',
+        );
+        return;
+      }
+
+      final current = currentSong;
+      if (current == null || current.getHash() != key) return;
+
+      final currentAlbum = current.album.target;
+      if (currentAlbum == null) return;
+
+      currentAlbum.colors = colors;
+      notifyListeners();
+    } catch (e) {
+      _logger.warning('Error extracting colors for ${song.getName()}', e);
+    } finally {
+      _colorExtractionInProgress.remove(key);
+    }
   }
 
   void _startListeners() {
@@ -261,7 +319,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       repeatNotifier.value = _audioService.currentAudioSettings.repeat;
       autoPlayNotifier.value = _audioService.currentAudioSettings.autoPlay;
       totalDurationNotifier.value = Duration(seconds: currentSongDuration);
-      _setColors();
+      unawaited(_setColors());
       _changeMediaItem();
       notifyListeners();
     });

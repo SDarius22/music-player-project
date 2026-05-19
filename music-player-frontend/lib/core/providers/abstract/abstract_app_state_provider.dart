@@ -43,6 +43,10 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
       child: CircularProgressIndicator(strokeWidth: 2.0, color: Colors.grey),
     ),
   );
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  VoidCallback? _audioProviderListener;
+  VoidCallback? _currentSongListener;
+  VoidCallback? _playingListener;
 
   AbstractAppStateProvider(
     this.audioProvider,
@@ -72,7 +76,7 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
     appSettings = settingsService.getAppSettings();
 
     if (!UniversalPlatform.isWeb) {
-      Connectivity().onConnectivityChanged.listen((
+      _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
         List<ConnectivityResult> result,
       ) {
         if (result.contains(ConnectivityResult.none)) {
@@ -119,17 +123,39 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
       });
     }
 
-    audioProvider.currentSongNotifier.addListener(() {
+    _currentSongListener = () {
       notifyListeners();
-    });
+    };
+    audioProvider.currentSongNotifier.addListener(_currentSongListener!);
 
-    audioProvider.playingNotifier.addListener(() {
+    _audioProviderListener = () {
+      notifyListeners();
+    };
+    audioProvider.addListener(_audioProviderListener!);
+
+    _playingListener = () {
       if (audioProvider.playingNotifier.value) {
         gradientController.start();
       } else {
         gradientController.stop();
       }
-    });
+    };
+    audioProvider.playingNotifier.addListener(_playingListener!);
+  }
+
+  @override
+  void dispose() {
+    if (_currentSongListener != null) {
+      audioProvider.currentSongNotifier.removeListener(_currentSongListener!);
+    }
+    if (_audioProviderListener != null) {
+      audioProvider.removeListener(_audioProviderListener!);
+    }
+    if (_playingListener != null) {
+      audioProvider.playingNotifier.removeListener(_playingListener!);
+    }
+    _connectivitySubscription?.cancel();
+    super.dispose();
   }
 
   void updateAppSettings() {

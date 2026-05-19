@@ -11,38 +11,51 @@ class DominantColors {
 
   DominantColors({required this.bytes, required this.dominantColorsCount});
 
-
-
   // Calculate Euclidean distance between two colors
   double distance(Color a, Color b) {
-    return sqrt(pow(a.r - b.r, 2) +
-        pow(a.g - b.g, 2) +
-        pow(a.b - b.b, 2));
+    return sqrt(pow(a.r - b.r, 2) + pow(a.g - b.g, 2) + pow(a.b - b.b, 2));
   }
 
   // Initialize centroids using K-means++
   List<Color> initializeCentroids(List<Color> colors) {
+    if (colors.isEmpty || dominantColorsCount <= 0) {
+      return [];
+    }
+
     final random = Random();
     List<Color> centroids = [];
-    centroids.add(colors[random.nextInt(10)]);
+    centroids.add(colors[random.nextInt(colors.length)]);
 
     for (int i = 1; i < dominantColorsCount; i++) {
-      List<double> distances = colors
-          .map((color) => centroids
-          .map((centroid) => distance(color, centroid))
-          .reduce(min))
-          .toList();
+      List<double> distances =
+          colors
+              .map(
+                (color) => centroids
+                    .map((centroid) => distance(color, centroid))
+                    .reduce(min),
+              )
+              .toList();
 
       double sum = distances.reduce((a, b) => a + b);
+      if (sum <= 0) {
+        centroids.add(colors[random.nextInt(colors.length)]);
+        continue;
+      }
+
       double r = random.nextDouble() * sum;
 
       double accumulatedDistance = 0.0;
+      var added = false;
       for (int j = 0; j < colors.length; j++) {
         accumulatedDistance += distances[j];
         if (accumulatedDistance >= r) {
           centroids.add(colors[j]);
+          added = true;
           break;
         }
+      }
+      if (!added) {
+        centroids.add(colors.last);
       }
     }
 
@@ -53,12 +66,16 @@ class DominantColors {
   List<Color> extractDominantColors() {
     List<Color> colors = _getPixelsColorsFromHalfImage();
     List<Color> centroids = initializeCentroids(colors);
+    if (centroids.isEmpty) return [];
+
     List<Color> oldCentroids = [];
 
     while (_isConverging(centroids, oldCentroids)) {
       oldCentroids = List.from(centroids);
-      List<List<Color>> clusters =
-      List.generate(dominantColorsCount, (index) => []);
+      List<List<Color>> clusters = List.generate(
+        dominantColorsCount,
+        (index) => [],
+      );
 
       for (var color in colors) {
         int closestIndex = _findClosestCentroid(color, centroids);
@@ -66,7 +83,9 @@ class DominantColors {
       }
 
       for (int i = 0; i < dominantColorsCount; i++) {
-        centroids[i] = _averageColor(clusters[i]);
+        if (clusters[i].isNotEmpty) {
+          centroids[i] = _averageColor(clusters[i]);
+        }
       }
     }
 
@@ -80,14 +99,15 @@ class DominantColors {
 
     if (image != null) {
       int sampling =
-      5; //sampling, Adjust as needed. 5 means every 5th pixel, etc.
+          5; //sampling, Adjust as needed. 5 means every 5th pixel, etc.
 
       var width = image.width;
       var height = image.height;
       if (width > 1300) {
         sampling = 10;
       }
-      var heightTakenForColors = height /
+      var heightTakenForColors =
+          height /
           2; //half of the image is always enough, compared to full image
       var widthTakenForColors = width / 2;
 
@@ -131,6 +151,8 @@ class DominantColors {
   }
 
   Color _averageColor(List<Color> colors) {
+    if (colors.isEmpty) return Colors.black;
+
     double r = 0, g = 0, b = 0;
     for (var color in colors) {
       r += color.r;

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
@@ -24,7 +26,10 @@ class _FakeAudioProvider extends Fake implements AudioProvider {
 
 class _FakeCoverService extends Fake implements CoverService {
   @override
-  Widget getWidget(BaseEntity entity) => Container(color: Colors.black);
+  Widget getWidget(
+    BaseEntity entity, {
+    ValueChanged<Uint8List>? onBytesLoaded,
+  }) => Container(color: Colors.black);
 }
 
 Widget _withProviders({
@@ -60,18 +65,18 @@ void main() {
       audioProvider.currentSongValue = null;
     });
 
-    testWidgets('shows empty message when first page has no content', (tester) async {
+    testWidgets('shows empty message when first page has no content', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _withProviders(
           audioProvider: audioProvider,
           coverService: coverService,
           child: PaginatedComponent(
             type: TileType.list,
-            fetchPage: (_, _) async => const PageResult<Song>(
-              content: [],
-              totalPages: 1,
-              page: 0,
-            ),
+            fetchPage:
+                (_, _) async =>
+                    const PageResult<Song>(content: [], totalPages: 1, page: 0),
             onTap: (_, _) async {},
             onLongPress: (_, _) {},
             isSelected: (_) => false,
@@ -86,7 +91,9 @@ void main() {
       expect(find.text('Nothing here'), findsOneWidget);
     });
 
-    testWidgets('loads first page and fetches next page on scroll', (tester) async {
+    testWidgets('loads first page and fetches next page on scroll', (
+      tester,
+    ) async {
       final calls = <int>[];
       final page0 = List.generate(20, (i) => _song('p0-$i', 'Track $i'));
       final page1 = [_song('p1-0', 'Track next')];
@@ -228,6 +235,44 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(selected, [0]);
+    });
+
+    testWidgets('tile renders enriched entity returned by enrichEntity', (
+      tester,
+    ) async {
+      final placeholder = Song('hydrated-song');
+      final enriched = _song('hydrated-song', 'Hydrated Track');
+      BaseEntity? tapped;
+
+      await tester.pumpWidget(
+        _withProviders(
+          audioProvider: audioProvider,
+          coverService: coverService,
+          child: CustomScrollView(
+            slivers: [
+              CustomTileComponent(
+                tileType: TileType.list,
+                items: [placeholder],
+                enrichEntity: (_) async => enriched,
+                onTap: (entity) {
+                  tapped = entity;
+                },
+                onLongPress: (_) {},
+                isSelected: (_) => false,
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hydrated Track'), findsOneWidget);
+      expect(find.text('Unknown Song'), findsNothing);
+
+      await tester.tap(find.text('Hydrated Track'));
+      await tester.pumpAndSettle();
+
+      expect(identical(tapped, enriched), isTrue);
     });
   });
 }

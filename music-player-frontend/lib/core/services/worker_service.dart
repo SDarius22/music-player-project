@@ -21,11 +21,24 @@ class WorkerService {
       return MusicPlayerTheme.primaryGradient.colors;
     }
 
-    _logger.fine('Extracting colors from image of size: ${image.length} bytes');
-    DominantColors extractor = DominantColors(
-      bytes: image,
-      dominantColorsCount: 4,
-    );
-    return extractor.extractDominantColors();
+    try {
+      _logger.fine(
+        'Extracting colors from image of size: ${image.length} bytes',
+      );
+      DominantColors extractor = DominantColors(
+        bytes: image,
+        dominantColorsCount: 4,
+      );
+      final colors = extractor.extractDominantColors();
+      if (colors.length == 4) return colors;
+
+      _logger.warning(
+        'Expected 4 dominant colors, got ${colors.length}; returning defaults',
+      );
+    } catch (e) {
+      _logger.warning('Color extraction failed, returning defaults', e);
+    }
+
+    return MusicPlayerTheme.primaryGradient.colors;
   }
 }

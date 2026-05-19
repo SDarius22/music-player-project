@@ -34,7 +34,10 @@ class CoverService {
   }) : _coverRestService = coverRestService,
        _authService = authService;
 
-  Widget getWidget(BaseEntity entity) {
+  Widget getWidget(
+    BaseEntity entity, {
+    ValueChanged<Uint8List>? onBytesLoaded,
+  }) {
     if (entity is Playlist &&
         entity.name == 'Create New Playlist' &&
         entity.indestructible) {
@@ -43,6 +46,7 @@ class CoverService {
 
     final localBytes = entity.getCoverArt();
     if (localBytes != null && localBytes.isNotEmpty) {
+      onBytesLoaded?.call(localBytes);
       return Image.memory(localBytes, fit: BoxFit.cover);
     }
 
@@ -51,10 +55,19 @@ class CoverService {
       return _placeholder();
     }
 
+    final persist = _persistCallback(entity);
+    final bytesLoaded =
+        persist == null && onBytesLoaded == null
+            ? null
+            : (Uint8List bytes) {
+              persist?.call(bytes);
+              onBytesLoaded?.call(bytes);
+            };
+
     return LocalCachedNetworkImage(
       imageUrl: '${_coverRestService.baseUrl}$relativeUrl',
       headers: {'Authorization': 'Bearer ${_authService.accessToken ?? ""}'},
-      onBytesLoaded: _persistCallback(entity),
+      onBytesLoaded: bytesLoaded,
       path: (entity is Song && entity.isLocal) ? entity.path : null,
     );
   }
@@ -62,15 +75,19 @@ class CoverService {
   void Function(Uint8List)? _persistCallback(BaseEntity entity) {
     if (entity is Album) {
       return (bytes) {
-        entity.imageBytes = bytes;
-        albumService.updateAlbum(entity);
+        if (entity.imageBytes == null || entity.imageBytes!.isEmpty) {
+          entity.imageBytes = bytes;
+          albumService.updateAlbum(entity);
+        }
       };
     }
 
     if (entity is Artist) {
       return (bytes) {
-        entity.imageBytes = bytes;
-        artistService.updateArtist(entity);
+        if (entity.imageBytes == null || entity.imageBytes!.isEmpty) {
+          entity.imageBytes = bytes;
+          artistService.updateArtist(entity);
+        }
       };
     }
 
@@ -78,8 +95,10 @@ class CoverService {
       final album = entity.album.target;
       if (album != null) {
         return (bytes) {
-          album.imageBytes = bytes;
-          albumService.updateAlbum(album);
+          if (album.imageBytes == null || album.imageBytes!.isEmpty) {
+            album.imageBytes = bytes;
+            albumService.updateAlbum(album);
+          }
         };
       }
       return null;
