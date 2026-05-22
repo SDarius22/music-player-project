@@ -1134,6 +1134,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid or expired verification code
 
   /auth/refresh:
     post:

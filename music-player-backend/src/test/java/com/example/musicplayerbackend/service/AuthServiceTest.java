@@ -21,8 +21,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -94,14 +96,17 @@ class AuthServiceTest {
   }
 
   @Test
-  void shouldThrowRuntimeExceptionWhenVerifyCodeEmailNotFound() {
+  void shouldThrowBadRequestWhenVerifyCodeEmailNotFound() {
     when(codeRepository.findByEmail("x@x.com")).thenReturn(Optional.empty());
-    assertThrows(
-        RuntimeException.class, () -> service.verifyCodeAndGenerateResponse("x@x.com", "111111"));
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.verifyCodeAndGenerateResponse("x@x.com", "111111"));
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
   }
 
   @Test
-  void shouldThrowRuntimeExceptionWhenVerifyCodeIsExpired() {
+  void shouldThrowBadRequestWhenVerifyCodeIsExpired() {
     VerificationCode vc =
         VerificationCode.builder()
             .email("a@b.com")
@@ -109,12 +114,15 @@ class AuthServiceTest {
             .expiryDate(Instant.now().minus(1, ChronoUnit.MINUTES))
             .build();
     when(codeRepository.findByEmail("a@b.com")).thenReturn(Optional.of(vc));
-    assertThrows(
-        RuntimeException.class, () -> service.verifyCodeAndGenerateResponse("a@b.com", "999999"));
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.verifyCodeAndGenerateResponse("a@b.com", "999999"));
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
   }
 
   @Test
-  void shouldThrowRuntimeExceptionWhenVerifyCodeIsWrong() {
+  void shouldThrowBadRequestWhenVerifyCodeIsWrong() {
     VerificationCode vc =
         VerificationCode.builder()
             .email("a@b.com")
@@ -122,8 +130,11 @@ class AuthServiceTest {
             .expiryDate(Instant.now().plus(10, ChronoUnit.MINUTES))
             .build();
     when(codeRepository.findByEmail("a@b.com")).thenReturn(Optional.of(vc));
-    assertThrows(
-        RuntimeException.class, () -> service.verifyCodeAndGenerateResponse("a@b.com", "000000"));
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.verifyCodeAndGenerateResponse("a@b.com", "000000"));
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
   }
 
   @Test
@@ -203,12 +214,16 @@ class AuthServiceTest {
     when(userRepository.findByEmail("a@b.com")).thenReturn(Optional.of(user));
     when(jwtService.isTokenValid("bad-token", user)).thenReturn(false);
 
-    assertThrows(RuntimeException.class, () -> service.refreshToken("bad-token"));
+    ResponseStatusException exception =
+        assertThrows(ResponseStatusException.class, () -> service.refreshToken("bad-token"));
+    assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
   }
 
   @Test
   void shouldThrowWhenRefreshTokenEmailIsNull() {
     when(jwtService.extractUsername("no-user")).thenReturn(null);
-    assertThrows(RuntimeException.class, () -> service.refreshToken("no-user"));
+    ResponseStatusException exception =
+        assertThrows(ResponseStatusException.class, () -> service.refreshToken("no-user"));
+    assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
   }
 }

@@ -14,9 +14,11 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -84,14 +86,17 @@ public class AuthService {
 
   public AuthResponse verifyCodeAndGenerateResponse(String email, String code) {
     VerificationCode vc =
-        codeRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Invalid email"));
+        codeRepository
+            .findByEmail(email)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email"));
 
     if (vc.getExpiryDate().isBefore(Instant.now())) {
-      throw new RuntimeException("Code expired");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Code expired");
     }
 
     if (!vc.getCode().equals(code)) {
-      throw new RuntimeException("Invalid code");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid code");
     }
 
     codeRepository.delete(vc);
@@ -120,13 +125,19 @@ public class AuthService {
   public AuthResponse refreshToken(String refreshToken) {
     String email = jwtService.extractUsername(refreshToken);
     if (email != null) {
-      User user = userRepository.findByEmail(email).orElseThrow();
+      User user =
+          userRepository
+              .findByEmail(email)
+              .orElseThrow(
+                  () ->
+                      new ResponseStatusException(
+                          HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
 
       if (jwtService.isTokenValid(refreshToken, user)) {
         String newAccessToken = jwtService.generateAccessToken(user);
         return codeMapper.toAuthResponse(newAccessToken, refreshToken);
       }
     }
-    throw new RuntimeException("Invalid Refresh Token");
+    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
   }
 }

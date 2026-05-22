@@ -108,7 +108,7 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
   }
 
   @Test
-  void shouldReturn500WhenCodeIsWrong() throws Exception {
+  void shouldReturn400WhenCodeIsWrong() throws Exception {
     EmailRequest emailReq = new EmailRequest();
     emailReq.setEmail("wrongcode@example.com");
     mockMvc
@@ -127,7 +127,8 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
             post("/api/v1/auth/verify")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(verifyReq)))
-        .andExpect(status().is5xxServerError());
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Invalid code"));
   }
 
   @Test
@@ -174,7 +175,7 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
   }
 
   @Test
-  void shouldReturn500WhenNoCodeExists() throws Exception {
+  void shouldReturn400WhenNoCodeExists() throws Exception {
     VerificationRequest verifyReq = new VerificationRequest();
     verifyReq.setEmail("nocode@example.com");
     verifyReq.setCode("123456");
@@ -184,11 +185,12 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
             post("/api/v1/auth/verify")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(verifyReq)))
-        .andExpect(status().is5xxServerError());
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Invalid email"));
   }
 
   @Test
-  void shouldReturn500WhenCodeIsExpired() throws Exception {
+  void shouldReturn400WhenCodeIsExpired() throws Exception {
     VerificationCode expired =
         VerificationCode.builder()
             .email("expired@example.com")
@@ -206,6 +208,7 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
             post("/api/v1/auth/verify")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(verifyReq)))
-        .andExpect(status().is5xxServerError());
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Code expired"));
   }
 }
