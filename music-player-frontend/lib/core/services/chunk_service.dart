@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
-import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
@@ -33,7 +33,7 @@ class ChunkService {
 
   final Map<int, _ChunkSource> _deliveredBy = {};
   String? _songName;
-  void Function(ChunkDeliveryStats)? _onFullyReceived;
+  void Function(ChunkStat)? _onFullyReceived;
   static const Duration _statsEmitInterval = Duration(seconds: 15);
   Timer? _statsEmitTimer;
   int _lastReportedDeliveredCount = 0;
@@ -64,7 +64,7 @@ class ChunkService {
 
   void configureSongInfo(
     String songName,
-    void Function(ChunkDeliveryStats)? onFullyReceived,
+    void Function(ChunkStat)? onFullyReceived,
   ) {
     _songName = songName;
     _onFullyReceived = onFullyReceived;
@@ -249,8 +249,8 @@ class ChunkService {
     _lastReportedDeliveredCount = deliveredCount;
 
     _onFullyReceived!(
-      ChunkDeliveryStats(
-        fileHash: fileHash,
+      ChunkStat(
+        songFileHash: fileHash,
         songName: _songName ?? 'Unknown',
         localCachedChunks:
             _deliveredBy.values

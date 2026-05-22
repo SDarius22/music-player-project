@@ -15,6 +15,7 @@ import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_stat_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
@@ -127,7 +128,10 @@ abstract class AbstractApp extends StatelessWidget {
             baseUrl: apiBaseUrl,
             authService: context.read<AuthService>(),
           );
-          ChunkStatsService.instance.configure(service);
+          ChunkStatsService.instance.configure(
+            service,
+            repository: context.read<ChunkStatRepository>(),
+          );
           return service;
         },
         lazy: false,

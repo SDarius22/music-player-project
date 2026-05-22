@@ -5,11 +5,13 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_stat_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/repository/objectbox/objectbox_album_repository.dart';
 import 'package:music_player_frontend/core/repository/objectbox/objectbox_artist_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_chunk_stat_repository.dart';
 import 'package:music_player_frontend/core/repository/objectbox/objectbox_playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/objectbox/objectbox_settings_repository.dart';
 import 'package:music_player_frontend/core/repository/objectbox/objectbox_song_repository.dart';
@@ -42,6 +44,9 @@ class MacosApplication extends AbstractApp {
       ),
       Provider<SongRepository>(create: (_) => ObjectBoxSongRepository()),
       Provider<ChunkCacheRepository>(create: (_) => IOChunkCacheRepository()),
+      Provider<ChunkStatRepository>(
+        create: (_) => ObjectBoxChunkStatRepository(),
+      ),
       Provider<SettingsRepository>(
         create: (_) => ObjectBoxSettingsRepository(),
       ),

@@ -18,6 +18,7 @@ import '../../core/entities/album.dart';
 import '../../core/entities/app_settings.dart';
 import '../../core/entities/artist.dart';
 import '../../core/entities/audio_settings.dart';
+import '../../core/entities/chunk_stat.dart';
 import '../../core/entities/playlist.dart';
 import '../../core/entities/song.dart';
 
@@ -483,6 +484,71 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(14, 6389059844630226255),
+    name: 'ChunkStat',
+    lastPropertyId: const obx_int.IdUid(9, 6314839383189530227),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 7100265336366700838),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 5493591450382517979),
+        name: 'timestamp',
+        type: 12,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 3698723410758093235),
+        name: 'songFileHash',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(30, 5322149114517963262),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 9162471534784448958),
+        name: 'songName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 3738562943863924974),
+        name: 'userId',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 6651389278938546041),
+        name: 'localChunks',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 3926192144258619810),
+        name: 'localCachedChunks',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 5937675740965428398),
+        name: 'p2pChunks',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 6314839383189530227),
+        name: 'serverChunks',
+        type: 6,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -528,8 +594,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(13, 9001332223065747901),
-    lastIndexId: const obx_int.IdUid(29, 9108164602987110845),
+    lastEntityId: const obx_int.IdUid(14, 6389059844630226255),
+    lastIndexId: const obx_int.IdUid(30, 5322149114517963262),
     lastRelationId: const obx_int.IdUid(10, 1976178507562192675),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -1201,6 +1267,86 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    ChunkStat: obx_int.EntityDefinition<ChunkStat>(
+      model: _entities[6],
+      toOneRelations: (ChunkStat object) => [],
+      toManyRelations: (ChunkStat object) => {},
+      getId: (ChunkStat object) => object.id,
+      setId: (ChunkStat object, int id) {
+        object.id = id;
+      },
+      objectToFB: (ChunkStat object, fb.Builder fbb) {
+        final songFileHashOffset = fbb.writeString(object.songFileHash);
+        final songNameOffset = fbb.writeString(object.songName);
+        fbb.startTable(10);
+        fbb.addInt64(0, object.id);
+        fbb.addInt64(1, object.timestamp.microsecondsSinceEpoch * 1000);
+        fbb.addOffset(2, songFileHashOffset);
+        fbb.addOffset(3, songNameOffset);
+        fbb.addInt64(4, object.userId);
+        fbb.addInt64(5, object.localChunks);
+        fbb.addInt64(6, object.localCachedChunks);
+        fbb.addInt64(7, object.p2pChunks);
+        fbb.addInt64(8, object.serverChunks);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final songFileHashParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final songNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final timestampParam = DateTime.fromMicrosecondsSinceEpoch(
+          (const fb.Int64Reader().vTableGet(buffer, rootOffset, 6, 0) / 1000)
+              .round(),
+        );
+        final userIdParam = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          12,
+        );
+        final localChunksParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          0,
+        );
+        final localCachedChunksParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          16,
+          0,
+        );
+        final p2pChunksParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          18,
+          0,
+        );
+        final serverChunksParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          20,
+          0,
+        );
+        final object = ChunkStat(
+          songFileHash: songFileHashParam,
+          songName: songNameParam,
+          timestamp: timestampParam,
+          userId: userIdParam,
+          localChunks: localChunksParam,
+          localCachedChunks: localCachedChunksParam,
+          p2pChunks: p2pChunksParam,
+          serverChunks: serverChunksParam,
+        )..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -1527,5 +1673,53 @@ class Song_ {
   /// See [Song.isLocal].
   static final isLocal = obx.QueryBooleanProperty<Song>(
     _entities[5].properties[14],
+  );
+}
+
+/// [ChunkStat] entity fields to define ObjectBox queries.
+class ChunkStat_ {
+  /// See [ChunkStat.id].
+  static final id = obx.QueryIntegerProperty<ChunkStat>(
+    _entities[6].properties[0],
+  );
+
+  /// See [ChunkStat.timestamp].
+  static final timestamp = obx.QueryDateNanoProperty<ChunkStat>(
+    _entities[6].properties[1],
+  );
+
+  /// See [ChunkStat.songFileHash].
+  static final songFileHash = obx.QueryStringProperty<ChunkStat>(
+    _entities[6].properties[2],
+  );
+
+  /// See [ChunkStat.songName].
+  static final songName = obx.QueryStringProperty<ChunkStat>(
+    _entities[6].properties[3],
+  );
+
+  /// See [ChunkStat.userId].
+  static final userId = obx.QueryIntegerProperty<ChunkStat>(
+    _entities[6].properties[4],
+  );
+
+  /// See [ChunkStat.localChunks].
+  static final localChunks = obx.QueryIntegerProperty<ChunkStat>(
+    _entities[6].properties[5],
+  );
+
+  /// See [ChunkStat.localCachedChunks].
+  static final localCachedChunks = obx.QueryIntegerProperty<ChunkStat>(
+    _entities[6].properties[6],
+  );
+
+  /// See [ChunkStat.p2pChunks].
+  static final p2pChunks = obx.QueryIntegerProperty<ChunkStat>(
+    _entities[6].properties[7],
+  );
+
+  /// See [ChunkStat.serverChunks].
+  static final serverChunks = obx.QueryIntegerProperty<ChunkStat>(
+    _entities[6].properties[8],
   );
 }

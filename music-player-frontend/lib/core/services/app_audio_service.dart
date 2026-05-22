@@ -7,7 +7,7 @@ import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
@@ -710,8 +710,8 @@ class AppAudioService {
 
     if (song.isLocal) {
       ChunkStatsService.instance.report(
-        ChunkDeliveryStats(
-          fileHash: song.getHash(),
+        ChunkStat(
+          songFileHash: song.getHash(),
           songName: song.getName(),
           localChunks: 1,
         ),

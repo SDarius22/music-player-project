@@ -3,7 +3,7 @@ import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:web/web.dart' as web;
@@ -168,8 +168,8 @@ class WebP2PBridge {
         data['songName'] as String? ?? _songNames[fileHash] ?? 'Unknown';
 
     ChunkStatsService.instance.reportSilently(
-      ChunkDeliveryStats(
-        fileHash: fileHash,
+      ChunkStat(
+        songFileHash: fileHash,
         songName: songName,
         p2pChunks: p2pRanges,
         serverChunks: serverRanges,

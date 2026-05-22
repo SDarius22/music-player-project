@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/models/chunk_stat_record.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
+import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
@@ -24,7 +24,7 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  late Future<List<ChunkStatRecord>> _future;
+  late Future<List<ChunkStat>> _future;
   late final AbstractAppStateProvider _appStateProvider;
 
   @override
@@ -32,7 +32,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     super.initState();
     _appStateProvider = context.read<AbstractAppStateProvider>();
     _appStateProvider.refreshRequestNotifier.addListener(_onGlobalRefresh);
-    _future = context.read<StatisticsRestClient>().getStatistics();
+    _future = ChunkStatsService.instance.getStatistics();
   }
 
   @override
@@ -48,7 +48,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Future<void> _refresh() async {
     setState(() {
-      _future = context.read<StatisticsRestClient>().getStatistics();
+      _future = ChunkStatsService.instance.getStatistics();
     });
   }
 
@@ -61,7 +61,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       body: RefreshIndicator(
         onRefresh: _refresh,
         color: Colors.white,
-        child: FutureBuilder<List<ChunkStatRecord>>(
+        child: FutureBuilder<List<ChunkStat>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -204,7 +204,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 }
 
 class _SummaryCard extends StatelessWidget {
-  final List<ChunkStatRecord> records;
+  final List<ChunkStat> records;
   final double width;
   final ThemeData theme;
 
@@ -305,7 +305,7 @@ class _StatBadge extends StatelessWidget {
 }
 
 class _StatRow extends StatelessWidget {
-  final ChunkStatRecord record;
+  final ChunkStat record;
   final ThemeData theme;
   final double width;
 
@@ -317,11 +317,7 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLocalFile =
-        record.localChunks > 0 &&
-        record.p2pChunks == 0 &&
-        record.serverChunks == 0 &&
-        record.localCachedChunks == 0;
+    final isLocalFile = record.isLocalFilePlayback;
 
     final ts = record.timestamp.toLocal();
     final dateStr =
@@ -347,7 +343,7 @@ class _StatRow extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  record.songName ?? 'Unknown song',
+                  record.songName.isEmpty ? 'Unknown song' : record.songName,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -421,7 +417,7 @@ class _StatRow extends StatelessWidget {
     return Colors.redAccent;
   }
 
-  String _chunkBreakdown(ChunkStatRecord r) {
+  String _chunkBreakdown(ChunkStat r) {
     final parts = <String>[];
     if (r.p2pChunks > 0) parts.add('${r.p2pChunks} P2P');
     if (r.serverChunks > 0) parts.add('${r.serverChunks} server');
@@ -433,7 +429,7 @@ class _StatRow extends StatelessWidget {
 }
 
 class _DeliveryBar extends StatelessWidget {
-  final ChunkStatRecord record;
+  final ChunkStat record;
   final double width;
 
   const _DeliveryBar({required this.record, required this.width});

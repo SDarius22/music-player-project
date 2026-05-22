@@ -1,6 +1,7 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_stat_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
 
 class ChunkStatsService {
@@ -11,25 +12,47 @@ class ChunkStatsService {
   ChunkStatsService._();
 
   StatisticsRestClient? _restService;
+  ChunkStatRepository? _repository;
 
-  void configure(StatisticsRestClient restService) {
+  void configure(
+    StatisticsRestClient restService, {
+    ChunkStatRepository? repository,
+  }) {
     _restService = restService;
+    _repository = repository;
   }
 
-  Future<void> report(ChunkDeliveryStats stats) async {
+  Future<void> report(ChunkStat stats) async {
     await _report(stats, showToast: true);
   }
 
-  Future<void> reportSilently(ChunkDeliveryStats stats) async {
+  Future<void> reportSilently(ChunkStat stats) async {
     await _report(stats, showToast: false);
   }
 
-  Future<void> _report(ChunkDeliveryStats stats, {required bool showToast}) async {
+  Future<List<ChunkStat>> getStatistics() async {
+    final local = _repository?.getAllStats() ?? <ChunkStat>[];
+    final remote = await _restService?.getStatistics() ?? <ChunkStat>[];
+
+    final merged = <String, ChunkStat>{};
+    for (final s in remote) {
+      merged[_dedupeKey(s)] = s;
+    }
+    for (final s in local) {
+      merged.putIfAbsent(_dedupeKey(s), () => s);
+    }
+
+    final result = merged.values.toList();
+    result.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return result;
+  }
+
+  String _dedupeKey(ChunkStat s) =>
+      '${s.songFileHash}|${s.timestamp.millisecondsSinceEpoch ~/ 1000}';
+
+  Future<void> _report(ChunkStat stats, {required bool showToast}) async {
     final String msg;
-    if (stats.localChunks > 0 &&
-        stats.p2pChunks == 0 &&
-        stats.serverChunks == 0 &&
-        stats.localCachedChunks == 0) {
+    if (stats.isLocalFilePlayback) {
       msg = '"${stats.songName}" played from local file';
     } else {
       final pct = stats.p2pPercentage.toStringAsFixed(1);
@@ -39,6 +62,12 @@ class ChunkStatsService {
 
     if (showToast) {
       BotToast.showText(text: msg, duration: const Duration(seconds: 5));
+    }
+
+    try {
+      _repository?.saveStat(stats);
+    } catch (e) {
+      _logger.warning('Failed to persist chunk stat locally', e);
     }
 
     await _restService?.submitStat(stats);

@@ -1,8 +1,7 @@
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
-import 'package:music_player_frontend/core/models/chunk_stat_record.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
@@ -17,14 +16,14 @@ class StatisticsRestClient extends AbstractRestClient {
     super.authService = authService;
   }
 
-  Future<List<ChunkStatRecord>> getStatistics() async {
+  Future<List<ChunkStat>> getStatistics() async {
     try {
       final response = await get('/statistics');
       if (response.statusCode == 200) {
         final List<dynamic> decoded = jsonDecode(response.body);
-        final List<ChunkStatRecord> records =
+        final List<ChunkStat> records =
             decoded
-                .map((e) => ChunkStatRecord.fromJson(e as Map<String, dynamic>))
+                .map((e) => ChunkStat.fromJson(e as Map<String, dynamic>))
                 .toList();
         records.sort((a, b) => b.timestamp.compareTo(a.timestamp));
         return records;
@@ -35,16 +34,9 @@ class StatisticsRestClient extends AbstractRestClient {
     return [];
   }
 
-  Future<void> submitStat(ChunkDeliveryStats stats) async {
+  Future<void> submitStat(ChunkStat stats) async {
     try {
-      final response = await post('/statistics', {
-        'songFileHash': stats.fileHash,
-        'songName': stats.songName,
-        'localChunks': stats.localChunks,
-        'localCachedChunks': stats.localCachedChunks,
-        'p2pChunks': stats.p2pChunks,
-        'serverChunks': stats.serverChunks,
-      });
+      final response = await post('/statistics', stats.toSubmissionJson());
 
       if (response.statusCode != 201) {
         _logger.warning(

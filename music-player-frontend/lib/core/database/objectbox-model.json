@@ -388,10 +388,66 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "14:6389059844630226255",
+      "lastPropertyId": "9:6314839383189530227",
+      "name": "ChunkStat",
+      "properties": [
+        {
+          "id": "1:7100265336366700838",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5493591450382517979",
+          "name": "timestamp",
+          "type": 12
+        },
+        {
+          "id": "3:3698723410758093235",
+          "name": "songFileHash",
+          "indexId": "30:5322149114517963262",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:9162471534784448958",
+          "name": "songName",
+          "type": 9
+        },
+        {
+          "id": "5:3738562943863924974",
+          "name": "userId",
+          "type": 6
+        },
+        {
+          "id": "6:6651389278938546041",
+          "name": "localChunks",
+          "type": 6
+        },
+        {
+          "id": "7:3926192144258619810",
+          "name": "localCachedChunks",
+          "type": 6
+        },
+        {
+          "id": "8:5937675740965428398",
+          "name": "p2pChunks",
+          "type": 6
+        },
+        {
+          "id": "9:6314839383189530227",
+          "name": "serverChunks",
+          "type": 6
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "13:9001332223065747901",
-  "lastIndexId": "29:9108164602987110845",
+  "lastEntityId": "14:6389059844630226255",
+  "lastIndexId": "30:5322149114517963262",
   "lastRelationId": "10:1976178507562192675",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

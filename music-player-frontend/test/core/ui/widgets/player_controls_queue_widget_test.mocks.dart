@@ -4,27 +4,28 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i15;
-import 'dart:ui' as _i16;
+import 'dart:typed_data' as _i16;
+import 'dart:ui' as _i17;
 
 import 'package:audio_service/audio_service.dart' as _i14;
 import 'package:flutter/cupertino.dart' as _i2;
-import 'package:flutter/material.dart' as _i20;
+import 'package:flutter/material.dart' as _i21;
 import 'package:just_audio/just_audio.dart' as _i13;
 import 'package:mesh_gradient/mesh_gradient.dart' as _i10;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i18;
+import 'package:mockito/src/dummies.dart' as _i19;
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart'
     as _i5;
 import 'package:music_player_frontend/core/entities/app_settings.dart' as _i12;
 import 'package:music_player_frontend/core/entities/song.dart' as _i4;
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart'
-    as _i19;
+    as _i20;
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart'
     as _i6;
 import 'package:music_player_frontend/core/providers/audio_provider.dart'
     as _i7;
 import 'package:music_player_frontend/core/providers/song_provider.dart'
-    as _i17;
+    as _i18;
 import 'package:music_player_frontend/core/services/health_service.dart' as _i8;
 import 'package:music_player_frontend/core/services/settings_service.dart'
     as _i9;
@@ -339,9 +340,36 @@ class MockAudioProvider extends _i1.Mock implements _i7.AudioProvider {
           as int);
 
   @override
+  int get currentIndexInPlaybackQueue =>
+      (super.noSuchMethod(
+            Invocation.getter(#currentIndexInPlaybackQueue),
+            returnValue: 0,
+            returnValueForMissingStub: 0,
+          )
+          as int);
+
+  @override
+  List<_i4.Song> get playbackQueue =>
+      (super.noSuchMethod(
+            Invocation.getter(#playbackQueue),
+            returnValue: <_i4.Song>[],
+            returnValueForMissingStub: <_i4.Song>[],
+          )
+          as List<_i4.Song>);
+
+  @override
   List<_i4.Song> get normalQueue =>
       (super.noSuchMethod(
             Invocation.getter(#normalQueue),
+            returnValue: <_i4.Song>[],
+            returnValueForMissingStub: <_i4.Song>[],
+          )
+          as List<_i4.Song>);
+
+  @override
+  List<_i4.Song> get originalQueue =>
+      (super.noSuchMethod(
+            Invocation.getter(#originalQueue),
             returnValue: <_i4.Song>[],
             returnValueForMissingStub: <_i4.Song>[],
           )
@@ -628,6 +656,15 @@ class MockAudioProvider extends _i1.Mock implements _i7.AudioProvider {
   );
 
   @override
+  _i15.Future<void> setShuffleAndWait(bool? shuffle) =>
+      (super.noSuchMethod(
+            Invocation.method(#setShuffleAndWait, [shuffle]),
+            returnValue: _i15.Future<void>.value(),
+            returnValueForMissingStub: _i15.Future<void>.value(),
+          )
+          as _i15.Future<void>);
+
+  @override
   void setAutoPlay(bool? autoPlay) => super.noSuchMethod(
     Invocation.method(#setAutoPlay, [autoPlay]),
     returnValueForMissingStub: null,
@@ -704,6 +741,18 @@ class MockAudioProvider extends _i1.Mock implements _i7.AudioProvider {
   _i15.Future<void> likeCurrentSong() =>
       (super.noSuchMethod(
             Invocation.method(#likeCurrentSong, []),
+            returnValue: _i15.Future<void>.value(),
+            returnValueForMissingStub: _i15.Future<void>.value(),
+          )
+          as _i15.Future<void>);
+
+  @override
+  _i15.Future<void> updateColorsFromCover(
+    _i5.BaseEntity? entity,
+    _i16.Uint8List? bytes,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateColorsFromCover, [entity, bytes]),
             returnValue: _i15.Future<void>.value(),
             returnValueForMissingStub: _i15.Future<void>.value(),
           )
@@ -1075,13 +1124,13 @@ class MockAudioProvider extends _i1.Mock implements _i7.AudioProvider {
           as _i15.Future<void>);
 
   @override
-  void addListener(_i16.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i17.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i16.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i17.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );
@@ -1096,7 +1145,7 @@ class MockAudioProvider extends _i1.Mock implements _i7.AudioProvider {
 /// A class which mocks [SongProvider].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSongProvider extends _i1.Mock implements _i17.SongProvider {
+class MockSongProvider extends _i1.Mock implements _i18.SongProvider {
   @override
   Map<String, dynamic> get sortFields =>
       (super.noSuchMethod(
@@ -1110,11 +1159,11 @@ class MockSongProvider extends _i1.Mock implements _i17.SongProvider {
   String get defaultSortField =>
       (super.noSuchMethod(
             Invocation.getter(#defaultSortField),
-            returnValue: _i18.dummyValue<String>(
+            returnValue: _i19.dummyValue<String>(
               this,
               Invocation.getter(#defaultSortField),
             ),
-            returnValueForMissingStub: _i18.dummyValue<String>(
+            returnValueForMissingStub: _i19.dummyValue<String>(
               this,
               Invocation.getter(#defaultSortField),
             ),
@@ -1316,13 +1365,13 @@ class MockSongProvider extends _i1.Mock implements _i17.SongProvider {
           as _i15.Future<_i6.PageResult<_i4.Song>>);
 
   @override
-  void addListener(_i16.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i17.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i16.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i17.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );
@@ -1344,7 +1393,7 @@ class MockSongProvider extends _i1.Mock implements _i17.SongProvider {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockAbstractAppStateProvider extends _i1.Mock
-    implements _i19.AbstractAppStateProvider {
+    implements _i20.AbstractAppStateProvider {
   @override
   _i7.AudioProvider get audioProvider =>
       (super.noSuchMethod(
@@ -1421,19 +1470,19 @@ class MockAbstractAppStateProvider extends _i1.Mock
           as _i2.GlobalKey<_i2.NavigatorState>);
 
   @override
-  _i2.GlobalKey<_i20.ScaffoldState> get scaffoldKey =>
+  _i2.GlobalKey<_i21.ScaffoldState> get scaffoldKey =>
       (super.noSuchMethod(
             Invocation.getter(#scaffoldKey),
-            returnValue: _FakeGlobalKey_10<_i20.ScaffoldState>(
+            returnValue: _FakeGlobalKey_10<_i21.ScaffoldState>(
               this,
               Invocation.getter(#scaffoldKey),
             ),
-            returnValueForMissingStub: _FakeGlobalKey_10<_i20.ScaffoldState>(
+            returnValueForMissingStub: _FakeGlobalKey_10<_i21.ScaffoldState>(
               this,
               Invocation.getter(#scaffoldKey),
             ),
           )
-          as _i2.GlobalKey<_i20.ScaffoldState>);
+          as _i2.GlobalKey<_i21.ScaffoldState>);
 
   @override
   _i10.AnimatedMeshGradientController get gradientController =>
@@ -1583,13 +1632,13 @@ class MockAbstractAppStateProvider extends _i1.Mock
           as _i2.ValueNotifier<_i2.Widget>);
 
   @override
-  List<_i16.Color> get colors =>
+  List<_i17.Color> get colors =>
       (super.noSuchMethod(
             Invocation.getter(#colors),
-            returnValue: <_i16.Color>[],
-            returnValueForMissingStub: <_i16.Color>[],
+            returnValue: <_i17.Color>[],
+            returnValueForMissingStub: <_i17.Color>[],
           )
-          as List<_i16.Color>);
+          as List<_i17.Color>);
 
   @override
   set appSettings(_i12.AppSettings? value) => super.noSuchMethod(
@@ -1664,6 +1713,12 @@ class MockAbstractAppStateProvider extends _i1.Mock
   );
 
   @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   void updateAppSettings() => super.noSuchMethod(
     Invocation.method(#updateAppSettings, []),
     returnValueForMissingStub: null,
@@ -1684,20 +1739,14 @@ class MockAbstractAppStateProvider extends _i1.Mock
           as _i2.Widget?);
 
   @override
-  void addListener(_i16.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i17.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i16.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i17.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
 

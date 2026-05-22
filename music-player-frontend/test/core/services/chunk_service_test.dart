@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
-import 'package:music_player_frontend/core/models/chunk_delivery_stats.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
@@ -290,7 +290,7 @@ void main() {
   test('flushStats emits aggregated local cache delivery stats', () async {
     final local = Uint8List.fromList([3, 3, 3]);
     final hashes = [hashOf(local)];
-    final emitted = <ChunkDeliveryStats>[];
+    final emitted = <ChunkStat>[];
 
     when(
       mockStreamingClient.fetchManifest('song-hash'),

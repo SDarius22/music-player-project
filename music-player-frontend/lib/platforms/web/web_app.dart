@@ -5,12 +5,14 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_stat_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_album_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_artist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_cache_repository.dart';
+import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_stat_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_song_repository.dart';
 import 'package:music_player_frontend/core/repository/storage/local_storage_settings_repository.dart';
@@ -44,6 +46,9 @@ class WebApp extends AbstractApp {
       Provider<SongRepository>(create: (_) => InMemorySongRepository()),
       Provider<ChunkCacheRepository>(
         create: (_) => InMemoryChunkCacheRepository(),
+      ),
+      Provider<ChunkStatRepository>(
+        create: (_) => InMemoryChunkStatRepository(),
       ),
       Provider<SettingsRepository>(
         create: (_) => LocalStorageSettingsRepository(),
