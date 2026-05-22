@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:bot_toast/bot_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -12,7 +11,7 @@ import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
 import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
@@ -21,15 +20,17 @@ import 'package:universal_platform/universal_platform.dart';
 
 import 'abstract/route_builder.dart';
 
-class CreateOrImportScreen extends StatefulWidget {
+class CreateOrImportScreen extends EntityScreen<SongProvider> {
   static Route<void> route({
     String playlistName = "",
     List<String> songFileHashes = const [],
     bool import = false,
   }) {
+    final draftPlaylist = Playlist(playlistName);
     return buildFadeRoute(
       (context, animation, secondaryAnimation) => CreateOrImportScreen(
-        playlistName: playlistName,
+        entity: draftPlaylist,
+        provider: context.read<SongProvider>(),
         songFileHashes: songFileHashes,
         import: import,
       ),
@@ -37,78 +38,61 @@ class CreateOrImportScreen extends StatefulWidget {
     );
   }
 
-  final String playlistName;
   final List<String> songFileHashes;
   final bool import;
 
-  const CreateOrImportScreen({
+  final ValueNotifier<List<Song>> selected = ValueNotifier<List<Song>>([]);
+  final ValueNotifier<Uint8List?> coverArt = ValueNotifier<Uint8List?>(null);
+  final ValueNotifier<int> reloadToken = ValueNotifier<int>(0);
+  final ValueNotifier<bool> _initialized = ValueNotifier<bool>(false);
+  final ValueNotifier<String> search = ValueNotifier<String>("");
+  final ValueNotifier<String> playlistName;
+
+  CreateOrImportScreen({
     super.key,
-    this.playlistName = "",
-    this.songFileHashes = const [],
-    this.import = false,
-  });
+    required Playlist super.entity,
+    required super.provider,
+    required this.songFileHashes,
+    required this.import,
+  }) : playlistName = ValueNotifier<String>(entity.name);
 
   @override
-  State<CreateOrImportScreen> createState() => _CreateOrImportScreenState();
-}
+  Future<BaseEntity> loadEntityData(BuildContext context) async {
+    if (_initialized.value) {
+      return entity;
+    }
+    _initialized.value = true;
 
-class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
-  late ValueNotifier<List<Song>> selected;
-  late String playlistName;
-  late String search;
-  late ValueNotifier<Uint8List?> coverArt;
-  late FocusNode searchNode;
-  late FocusNode nameNode;
-  int _reloadToken = 0;
+    if (songFileHashes.isEmpty) {
+      reloadToken.value++;
+      return entity;
+    }
 
-  @override
-  void initState() {
-    super.initState();
-    selected = ValueNotifier<List<Song>>([]);
-    playlistName = widget.playlistName;
-    search = "";
-    coverArt = ValueNotifier<Uint8List?>(null);
-    searchNode = FocusNode();
-    nameNode = FocusNode();
+    final songProvider = context.read<SongProvider>();
+    final songs = <Song>[];
 
-    initializeSelectedSongs();
-    nameNode.requestFocus();
-    _reloadToken++;
-  }
+    for (final hash in songFileHashes) {
+      final song = await songProvider.fetchEntity(Song(hash));
+      if (song != null) {
+        songs.add(song);
+      }
+    }
 
-  @override
-  void dispose() {
-    selected.dispose();
-    coverArt.dispose();
-    searchNode.dispose();
-    nameNode.dispose();
-    super.dispose();
-  }
+    selected.value = songs;
+    if (songs.isNotEmpty && coverArt.value == null) {
+      coverArt.value = songs.first.getCoverArt();
+    }
 
-  void _triggerReload() {
-    if (!mounted) return;
-    setState(() {
-      _reloadToken++;
-    });
-  }
-
-  void _onSearchChanged(String value) {
-    search = value;
-    _triggerReload();
+    reloadToken.value++;
+    return entity;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GlassScaffold(
-      appBar: buildAppBar(context),
-      body: Padding(padding: buildPadding(context), child: buildBody(context)),
-    );
-  }
-
-  PreferredSizeWidget buildAppBar(BuildContext context) {
+  PreferredSizeWidget buildAppBar(BuildContext context, BaseEntity entity) {
     final width = MediaQuery.of(context).size.width;
+
     return PreferredSize(
-      preferredSize: Size.fromHeight(kToolbarHeight),
+      preferredSize: const Size.fromHeight(kToolbarHeight),
       child: Container(
         height: kToolbarHeight,
         padding: EdgeInsets.symmetric(horizontal: width * 0.01),
@@ -117,57 +101,21 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             IconButton(
-              onPressed: () {
-                debugPrint("Back");
-                Navigator.pop(context);
-              },
-              icon: Icon(FluentIcons.back, size: 20, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(FluentIcons.back, size: 20, color: Colors.white),
             ),
             Text(
-              widget.import ? "Import a playlist" : "Create a new playlist",
+              import ? "Import a playlist" : "Create a new playlist",
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const Spacer(),
             SizedBox(
-              width: width * 0.06,
+              width: width * 0.08,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: width * 0.01),
                 ),
-                onPressed: () {
-                  if (playlistName.isEmpty) {
-                    BotToast.showText(
-                      text: "Playlist name cannot be empty",
-                      duration: const Duration(seconds: 3),
-                    );
-                    return;
-                  }
-                  if (selected.value.isEmpty) {
-                    BotToast.showText(
-                      text: "You must select at least one song",
-                      duration: const Duration(seconds: 3),
-                    );
-                    return;
-                  }
-                  debugPrint("Create new playlist");
-                  var playlistProvider = Provider.of<PlaylistProvider>(
-                    context,
-                    listen: false,
-                  );
-                  playlistProvider.addPlaylist(
-                    playlistName,
-                    selected.value,
-                    coverArt.value,
-                  );
-                  BotToast.showText(
-                    text:
-                        widget.import
-                            ? "Playlist imported successfully"
-                            : "Playlist created successfully",
-                    duration: const Duration(seconds: 3),
-                  );
-                  Navigator.pop(context);
-                },
+                onPressed: () => _handleCreatePlaylist(context),
                 child: Text(
                   "Done",
                   style: Theme.of(
@@ -182,304 +130,272 @@ class _CreateOrImportScreenState extends State<CreateOrImportScreen> {
     );
   }
 
-  void initializeSelectedSongs() {
-    if (widget.songFileHashes.isEmpty) return;
+  @override
+  Widget buildDetailsSection(
+    BuildContext context,
+    BaseEntity entity,
+    BoxConstraints constraints,
+  ) {
+    final imageSize = constraints.maxWidth * 0.35;
+    final borderRadius = BorderRadius.circular(constraints.maxHeight * 0.015);
 
-    if (widget.import) {
-      final songProvider = Provider.of<SongProvider>(context, listen: false);
-      selected.value =
-          widget.songFileHashes
-              .map((hash) => songProvider.fetchEntity(Song(hash)))
-              .whereType<Song>()
-              .toList();
-      if (selected.value.isNotEmpty) {
-        coverArt.value = selected.value.first.getCoverArt();
-      }
-    } else {
-      selected.value = List.from(widget.songFileHashes);
-    }
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: constraints.maxWidth * 0.05),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            height: imageSize,
+            width: imageSize,
+            padding: EdgeInsets.only(bottom: constraints.maxHeight * 0.01),
+            child: ClipRRect(
+              borderRadius: borderRadius,
+              child: MultiValueListenableBuilder(
+                valueListenables: [coverArt, selected],
+                builder: (context, values, child) {
+                  final selectedCover = values[0] as Uint8List?;
+                  final selectedSongs = values[1] as List<Song>;
+
+                  if (selectedCover != null) {
+                    final customCoverPlaylist = Playlist('');
+                    customCoverPlaylist.imageBytes = selectedCover;
+                    return ImageWidget(
+                      entity: customCoverPlaylist,
+                      hoveredChild: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            onPressed: () => _pickCoverArt(context),
+                            icon: const Icon(
+                              FluentIcons.camera,
+                              color: Colors.white,
+                              size: 48,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => coverArt.value = null,
+                            icon: const Icon(
+                              FluentIcons.trash,
+                              color: Colors.white,
+                              size: 48,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ImageWidget(
+                    entity:
+                        selectedSongs.isNotEmpty
+                            ? selectedSongs.first
+                            : Song(''),
+                    hoveredChild: IconButton(
+                      onPressed: () => _pickCoverArt(context),
+                      icon: const Icon(
+                        FluentIcons.camera,
+                        color: Colors.white,
+                        size: 48,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          TextFormField(
+            maxLength: 50,
+            initialValue: playlistName.value,
+            decoration: InputDecoration(
+              border: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+              ),
+              hintText: 'Playlist name',
+              counterText: "",
+              hintStyle: Theme.of(
+                context,
+              ).textTheme.bodySmall!.copyWith(color: Colors.grey),
+            ),
+            cursorColor: Colors.white,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium!.copyWith(color: Colors.white),
+            onChanged: (value) => playlistName.value = value,
+          ),
+        ],
+      ),
+    );
   }
 
-  void handleCreatePlaylist() {
-    if (playlistName.isEmpty) {
-      showToast("Playlist name cannot be empty");
+  @override
+  Widget buildContentSection(
+    BuildContext context,
+    BaseEntity entity,
+    BoxConstraints constraints,
+  ) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+
+    final margin = EdgeInsets.symmetric(
+      vertical: height * 0.01,
+      horizontal: width * 0.02,
+    );
+    final borderRadius = BorderRadius.circular(height * 0.015);
+
+    return GlassContainer(
+      margin: margin,
+      color: Colors.black.withValues(alpha: 0.4),
+      borderColor: Colors.transparent,
+      borderRadius: borderRadius,
+      blur: 45.0,
+      borderWidth: 0.0,
+      elevation: 3.0,
+      shadowColor: Colors.black.withValues(alpha: 0.20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.only(
+              top: height * 0.02,
+              left: width * 0.01,
+              right: width * 0.01,
+            ),
+            child: TextFormField(
+              onChanged: (value) {
+                search.value = value;
+                reloadToken.value++;
+              },
+              cursorColor: Colors.white,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium!.copyWith(color: Colors.white),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(height * 0.015),
+                  borderSide: const BorderSide(color: Colors.white),
+                ),
+                labelStyle: Theme.of(
+                  context,
+                ).textTheme.bodySmall!.copyWith(color: Colors.white),
+                labelText: 'Search',
+                suffixIcon: const Icon(
+                  FluentIcons.search,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ValueListenableBuilder<List<Song>>(
+              valueListenable: selected,
+              builder: (context, selectedSongs, child) {
+                return ValueListenableBuilder<int>(
+                  valueListenable: reloadToken,
+                  builder: (context, token, _) {
+                    return Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: height * 0.01,
+                        horizontal: width * 0.01,
+                      ),
+                      child: PaginatedComponent(
+                        type: TileType.list,
+                        reloadToken: token,
+                        pageSize: 30,
+                        itemExtent: height * 0.1,
+                        emptyText: 'No songs found',
+                        onRefresh: () {
+                          final songProvider = context.read<SongProvider>();
+                          return songProvider.refresh();
+                        },
+                        fetchPage: (page, size) {
+                          final songProvider = context.read<SongProvider>();
+                          return songProvider.fetchPage(
+                            search.value,
+                            'Title',
+                            true,
+                            false,
+                            page,
+                            size,
+                          );
+                        },
+                        isSelected:
+                            (songEntity) =>
+                                selectedSongs.contains(songEntity as Song),
+                        onTap: (songEntity, items) async {
+                          final song = songEntity as Song;
+                          if (selected.value.contains(song)) {
+                            selected.value = List.from(selected.value)
+                              ..remove(song);
+                          } else {
+                            selected.value = List.from(selected.value)
+                              ..add(song);
+                          }
+                        },
+                        onLongPress: (songEntity, items) {},
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleCreatePlaylist(BuildContext context) {
+    if (playlistName.value.trim().isEmpty) {
+      _showToast("Playlist name cannot be empty");
       return;
     }
     if (selected.value.isEmpty) {
-      showToast("You must select at least one song");
+      _showToast("You must select at least one song");
       return;
     }
 
-    final playlistProvider = Provider.of<PlaylistProvider>(
-      context,
-      listen: false,
+    final playlistProvider = context.read<PlaylistProvider>();
+    playlistProvider.addPlaylist(
+      playlistName.value.trim(),
+      selected.value,
+      coverArt.value,
     );
-    playlistProvider.addPlaylist(playlistName, selected.value, coverArt.value);
 
-    showToast(
-      widget.import
+    _showToast(
+      import
           ? "Playlist imported successfully"
           : "Playlist created successfully",
     );
     Navigator.pop(context);
   }
 
-  void toggleSongSelection(Song song) {
-    if (selected.value.contains(song)) {
-      selected.value = List.from(selected.value)..remove(song);
-    } else {
-      selected.value = List.from(selected.value)..add(song);
-    }
-  }
+  Future<void> _pickCoverArt(BuildContext context) async {
+    final appState = context.read<AbstractAppStateProvider>();
 
-  void showToast(String message, {int durationSeconds = 2}) {
-    BotToast.showText(
-      text: message,
-      duration: Duration(seconds: durationSeconds),
-    );
-  }
-
-  String encodeImage(Uint8List imageBytes) {
-    return base64Encode(imageBytes);
-  }
-
-  Future<void> _pickCoverArt() async {
-    var appStates = Provider.of<AbstractAppStateProvider>(
-      context,
-      listen: false,
-    );
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       initialDirectory:
-          UniversalPlatform.isWeb ? null : appStates.appSettings.mainSongPlace,
+          UniversalPlatform.isWeb ? null : appState.appSettings.mainSongPlace,
       type: FileType.image,
       allowMultiple: false,
       withData: true,
     );
-    if (result != null && result.files.isNotEmpty) {
-      final bytes = result.files.single.bytes;
-      if (bytes != null) {
-        coverArt.value = bytes;
-      }
+
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
+
+    final bytes = result.files.single.bytes;
+    if (bytes != null) {
+      coverArt.value = bytes;
     }
   }
 
-  EdgeInsetsGeometry buildPadding(BuildContext context) {
-    return EdgeInsets.zero;
-  }
-
-  Widget buildBody(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
-    var height = MediaQuery.of(context).size.height;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  height: height * 0.5,
-                  width: height * 0.5,
-                  padding: EdgeInsets.only(bottom: height * 0.01),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      MediaQuery.of(context).size.height * 0.015,
-                    ),
-                    child: MultiValueListenableBuilder(
-                      valueListenables: [coverArt, selected],
-                      builder: (context, values, child) {
-                        var cover = values[0] as Uint8List?;
-                        if (cover != null) {
-                          var playlist = Playlist('');
-                          playlist.imageBytes = cover;
-
-                          return ImageWidget(
-                            entity: playlist,
-                            hoveredChild: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  onPressed: _pickCoverArt,
-                                  icon: Icon(
-                                    FluentIcons.camera,
-                                    color: Colors.white,
-                                    size: 48,
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    coverArt.value = null;
-                                  },
-                                  icon: Icon(
-                                    FluentIcons.trash,
-                                    color: Colors.white,
-                                    size: 48,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        var selectedSongs = values[1] as List<Song>;
-                        return ImageWidget(
-                          entity:
-                              selectedSongs.isNotEmpty
-                                  ? selectedSongs.first
-                                  : Song(''),
-                          hoveredChild: IconButton(
-                            onPressed: _pickCoverArt,
-                            icon: Icon(
-                              FluentIcons.camera,
-                              color: Colors.white,
-                              size: 48,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                TextFormField(
-                  maxLength: 50,
-                  initialValue: playlistName,
-                  decoration: InputDecoration(
-                    border: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white),
-                    ),
-                    hintText: 'Playlist name',
-                    counterText: "",
-                    hintStyle: Theme.of(
-                      context,
-                    ).textTheme.bodySmall!.copyWith(color: Colors.grey),
-                  ),
-                  cursorColor: Colors.white,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                  onChanged: (value) {
-                    playlistName = value;
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-        Expanded(
-          child: GlassContainer(
-            margin: EdgeInsets.only(
-              top: height * 0.025,
-              bottom: height * 0.025,
-              right: width * 0.05,
-            ),
-            color: Colors.black.withValues(alpha: 0.4),
-            borderColor: Colors.transparent,
-            borderRadius: BorderRadius.circular(
-              MediaQuery.of(context).size.height * 0.015,
-            ),
-            blur: 45.0,
-            borderWidth: 0.0,
-            elevation: 3.0,
-            shadowColor: Colors.black.withValues(alpha: 0.20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: EdgeInsets.only(
-                    top: height * 0.02,
-                    left: width * 0.01,
-                    right: width * 0.01,
-                  ),
-                  child: TextFormField(
-                    focusNode: searchNode,
-                    onChanged: (value) {
-                      _onSearchChanged(value);
-                    },
-                    cursorColor: Colors.white,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          MediaQuery.of(context).size.height * 0.015,
-                        ),
-                        borderSide: const BorderSide(color: Colors.white),
-                      ),
-                      labelStyle: Theme.of(
-                        context,
-                      ).textTheme.bodySmall!.copyWith(color: Colors.white),
-                      labelText: 'Search',
-                      suffixIcon: Icon(
-                        FluentIcons.search,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ValueListenableBuilder<List<Song>>(
-                    valueListenable: selected,
-                    builder: (context, selectedSongs, child) {
-                      return Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: height * 0.01,
-                          horizontal: width * 0.01,
-                        ),
-                        child: PaginatedComponent(
-                          type: TileType.list,
-                          reloadToken: _reloadToken,
-                          pageSize: 30,
-                          itemExtent: height * 0.1,
-                          emptyText: 'No songs found',
-                          onRefresh: () {
-                            final songProvider = Provider.of<SongProvider>(
-                              context,
-                              listen: false,
-                            );
-                            return songProvider.refresh();
-                          },
-                          fetchPage: (page, size) {
-                            final songProvider = Provider.of<SongProvider>(
-                              context,
-                              listen: false,
-                            );
-                            return songProvider.fetchPage(
-                              search,
-                              'Title',
-                              true,
-                              false,
-                              page,
-                              size,
-                            );
-                          },
-                          isSelected:
-                              (entity) =>
-                                  selectedSongs.contains(entity as Song),
-                          onTap: (entity, items) async {
-                            final song = entity as Song;
-                            if (selected.value.contains(song)) {
-                              selected.value = List.from(selected.value)
-                                ..remove(song);
-                            } else {
-                              selected.value = List.from(selected.value)
-                                ..add(song);
-                            }
-                          },
-                          onLongPress: (entity, items) {},
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+  void _showToast(String message, {int durationSeconds = 3}) {
+    BotToast.showText(
+      text: message,
+      duration: Duration(seconds: durationSeconds),
     );
   }
 }
