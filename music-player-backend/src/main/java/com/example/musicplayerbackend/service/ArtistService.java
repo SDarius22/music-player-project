@@ -3,10 +3,17 @@ package com.example.musicplayerbackend.service;
 import com.example.musicplayerbackend.data.ArtistRepository;
 import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.specification.SongSpecification;
-import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.domain.Album;
+import com.example.musicplayerbackend.domain.Artist;
+import com.example.musicplayerbackend.domain.ArtistExpandedDto;
+import com.example.musicplayerbackend.domain.ArtistPageDto;
+import com.example.musicplayerbackend.domain.Song;
+import com.example.musicplayerbackend.domain.SongPageDto;
 import com.example.musicplayerbackend.helpers.CoverDecoder;
 import com.example.musicplayerbackend.mapper.ArtistMapper;
 import com.example.musicplayerbackend.mapper.SortMapper;
+import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,92 +24,101 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 public class ArtistService {
 
-    private final ArtistRepository artistRepository;
-    private final SongRepository songRepository;
-    private final ArtistMapper artistMapper;
-    private final SortMapper sortMapper;
-    private final SongEnrichmentService songEnrichmentService;
+  private final ArtistRepository artistRepository;
+  private final SongRepository songRepository;
+  private final ArtistMapper artistMapper;
+  private final SortMapper sortMapper;
+  private final SongEnrichmentService songEnrichmentService;
 
-    @Transactional(readOnly = true)
-    public ArtistPageDto getArtists(String query, Integer page, Integer size, String sort) {
-        int safePage = page == null ? 0 : Math.max(page, 0);
-        int safeSize = size == null ? 50 : Math.clamp(size, 1, 200);
-        query = (query == null || query.isBlank()) ? "" : query;
-        Pageable pageable = PageRequest.of(safePage, safeSize, sortMapper.toSort(sort));
+  @Transactional(readOnly = true)
+  public ArtistPageDto getArtists(String query, Integer page, Integer size, String sort) {
+    int safePage = page == null ? 0 : Math.max(page, 0);
+    int safeSize = size == null ? 50 : Math.clamp(size, 1, 200);
+    query = (query == null || query.isBlank()) ? "" : query;
+    Pageable pageable = PageRequest.of(safePage, safeSize, sortMapper.toSort(sort));
 
-        var result = artistRepository.findAllByNameContainingIgnoreCase(query, pageable);
+    var result = artistRepository.findAllByNameContainingIgnoreCase(query, pageable);
 
-        var content = result.getContent()
-                .stream().map(artistMapper::toExpandedDto)
-                .toList();
+    var content = result.getContent()
+        .stream().map(artistMapper::toExpandedDto)
+        .toList();
 
-        return new ArtistPageDto(
-                content,
-                result.getNumber(),
-                result.getSize(),
-                result.getTotalElements(),
-                result.getTotalPages()
-        );
+    return new ArtistPageDto(
+        content,
+        result.getNumber(),
+        result.getSize(),
+        result.getTotalElements(),
+        result.getTotalPages()
+    );
+  }
+
+  @Transactional(readOnly = true)
+  public ArtistExpandedDto getArtistByHash(String artistHash, Long userId) {
+    Artist artist = artistRepository.findByHash(artistHash)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
+
+    ArtistExpandedDto dto = artistMapper.toExpandedDto(artist);
+    List<Song> artistSongs = artist.getSongs() == null ? List.of() : artist.getSongs();
+    List<Song> filteredSongs = artistSongs.stream()
+        .filter(
+            song -> Objects.isNull(song.getOwnerId()) || Objects.equals(song.getOwnerId(), userId))
+        .toList();
+    dto.setSongFileHashes(filteredSongs.stream()
+        .map(Song::getFileHash)
+        .toList());
+    return dto;
+  }
+
+  @Transactional(readOnly = true)
+  public byte[] getArtistCover(String artistHash, Long userId) {
+    Artist artist = artistRepository.findByHash(artistHash)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
+
+    if (artist.getAlbums() == null || artist.getAlbums().isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No albums found for artist");
     }
 
-    @Transactional(readOnly = true)
-    public ArtistExpandedDto getArtistByHash(String artistHash, Long userId) {
-        Artist artist = artistRepository.findByHash(artistHash)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
+    Pageable pageable = PageRequest.of(0, 10,
+        Sort.by(Sort.Order.asc("name"), Sort.Order.asc("fileHash")));
 
-        ArtistExpandedDto dto = artistMapper.toExpandedDto(artist);
-        List<Song> artistSongs = artist.getSongs() == null ? List.of() : artist.getSongs();
-        List<Song> filteredSongs = artistSongs.stream()
-                .filter(song -> Objects.isNull(song.getOwnerId()) || Objects.equals(song.getOwnerId(), userId))
-                .toList();
-        dto.setSongFileHashes(filteredSongs.stream()
-                .map(Song::getFileHash)
-                .toList());
-        return dto;
-    }
+    Specification<Song> spec = SongSpecification.visibleToUser(userId)
+        .and(SongSpecification.hasArtistHash(artist.getHash()));
 
-    @Transactional(readOnly = true)
-    public byte[] getArtistCover(String artistHash) {
-        Artist artist = artistRepository.findByHash(artistHash)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
+    var result = songRepository.findAll(spec, pageable);
 
-        if (artist.getAlbums() == null || artist.getAlbums().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No albums found for artist");
-        }
+    String coverImage = result.stream()
+        .map(Song::getAlbum)
+        .filter(Objects::nonNull)
+        .map(Album::getCoverImage)
+        .filter(Objects::nonNull)
+        .filter(cover -> !cover.isBlank())
+        .findFirst()
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cover not found"));
 
-        String coverImage = artist.getAlbums().stream()
-                .map(Album::getCoverImage)
-                .filter(c -> c != null && !c.isBlank())
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cover not found"));
+    return CoverDecoder.decodeCoverImage(coverImage);
+  }
 
-        return CoverDecoder.decodeCoverImage(coverImage);
-    }
+  @Transactional(readOnly = true)
+  public SongPageDto getArtistSongs(String artistHash, Long userId, Integer page, Integer size) {
+    Artist artist = artistRepository.findByHash(artistHash)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
 
-    @Transactional(readOnly = true)
-    public SongPageDto getArtistSongs(String artistHash, Long userId, Integer page, Integer size) {
-        Artist artist = artistRepository.findByHash(artistHash)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artist not found"));
+    int safePage = page == null ? 0 : Math.max(page, 0);
+    int safeSize = size == null ? 50 : Math.clamp(size, 1, 200);
+    Pageable pageable = PageRequest.of(safePage, safeSize,
+        Sort.by(Sort.Order.asc("name"), Sort.Order.asc("fileHash")));
 
-        int safePage = page == null ? 0 : Math.max(page, 0);
-        int safeSize = size == null ? 50 : Math.clamp(size, 1, 200);
-        Pageable pageable = PageRequest.of(safePage, safeSize,
-                Sort.by(Sort.Order.asc("name"), Sort.Order.asc("fileHash")));
+    Specification<Song> spec = SongSpecification.visibleToUser(userId)
+        .and(SongSpecification.hasArtistHash(artist.getHash()));
 
-        Specification<Song> spec = SongSpecification.visibleToUser(userId)
-                .and(SongSpecification.hasArtistHash(artist.getHash()));
+    var result = songRepository.findAll(spec, pageable);
+    var content = songEnrichmentService.enrich(result.getContent(), userId);
 
-        var result = songRepository.findAll(spec, pageable);
-        var content = songEnrichmentService.enrich(result.getContent(), userId);
-
-        return new SongPageDto(content, result.getNumber(), result.getSize(),
-                result.getTotalElements(), result.getTotalPages());
-    }
+    return new SongPageDto(content, result.getNumber(), result.getSize(),
+        result.getTotalElements(), result.getTotalPages());
+  }
 }

@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -205,15 +206,20 @@ class ArtistServiceTest {
     void shouldThrow404WhenArtistCoverHasNoAlbums() {
         Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of()).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash"));
+        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
     }
 
     @Test
-    void shouldThrow404WhenAllArtistAlbumsHaveNoImage() {
+    void shouldThrow404WhenVisibleArtistSongsHaveNoAlbumCover() {
         Album album = Album.builder().id(1L).name("No Cover").coverImage(null).build();
+        Song song = Song.builder().id(10L).name("Track").fileHash("hash-1")
+                .songType(ContentType.STREAMABLE).album(album).build();
         Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of(album)).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash"));
+        when(songRepository.findAll(any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(song)));
+
+        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
     }
 
     @Test
@@ -222,26 +228,36 @@ class ArtistServiceTest {
         Album album1 = Album.builder().id(1L).coverImage(null).build();
         Album album2 = Album.builder().id(2L)
                 .coverImage(Base64.getEncoder().encodeToString(img)).build();
+        Song song1 = Song.builder().id(11L).name("A Track").fileHash("hash-1")
+                .songType(ContentType.STREAMABLE).album(album1).build();
+        Song song2 = Song.builder().id(12L).name("B Track").fileHash("hash-2")
+                .songType(ContentType.STREAMABLE).album(album2).build();
         Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist")
                 .albums(Set.of(album1, album2)).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+        when(songRepository.findAll(any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(song1, song2)));
 
-        assertArrayEquals(img, service.getArtistCover("artist-hash"));
+        assertArrayEquals(img, service.getArtistCover("artist-hash", 1L));
     }
 
     @Test
     void shouldThrow404WhenArtistCoverArtistNotFound() {
         when(artistRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("missing-hash"));
+        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("missing-hash", 1L));
     }
 
     @Test
-    void shouldThrow404WhenAllArtistAlbumsHaveBlankImage() {
+    void shouldThrow404WhenVisibleArtistSongsHaveOnlyBlankAlbumCover() {
         Album album = Album.builder().id(1L).name("Album").coverImage("   ").build();
+        Song song = Song.builder().id(10L).name("Track").fileHash("hash-1")
+                .songType(ContentType.STREAMABLE).album(album).build();
         Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of(album)).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+        when(songRepository.findAll(any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(song)));
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getArtistCover("artist-hash"));
+                () -> service.getArtistCover("artist-hash", 1L));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
@@ -249,6 +265,6 @@ class ArtistServiceTest {
     void shouldThrow404WhenArtistAlbumsAreNull() {
         Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(null).build();
         when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash"));
+        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
     }
 }
