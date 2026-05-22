@@ -13,9 +13,12 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
 
   private final SignalingHandler signalingHandler;
+  private final CorsProperties corsProperties;
 
   @Override
   public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-    registry.addHandler(signalingHandler, "/ws/signaling").setAllowedOrigins("*");
+    registry
+        .addHandler(signalingHandler, "/ws/signaling")
+        .setAllowedOriginPatterns(corsProperties.allowedOrigins().toArray(String[]::new));
   }
 }

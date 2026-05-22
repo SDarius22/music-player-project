@@ -12,6 +12,7 @@ services:
       - MAIL_HOST=${MAIL_HOST}
       - MAIL_USER=${MAIL_USER}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
       - REDIS_HOST=redis
     volumes:
       - /home/deployer/music-player/music_data:/root/music-server

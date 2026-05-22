@@ -92,6 +92,7 @@ jobs:
             export MAIL_HOST="${{ secrets.MAIL_HOST }}"
             export MAIL_USER="${{ secrets.MAIL_USER }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+            export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
 
             docker stack deploy -c docker-compose.yml --with-registry-auth music-player
 
@@ -144,6 +145,7 @@ jobs:
             export MAIL_HOST="${{ secrets.MAIL_HOST_CLUJ }}"
             export MAIL_USER="${{ secrets.MAIL_USER_CLUJ }}"
             export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD_CLUJ }}"
+            export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
 
             docker stack deploy -c docker-compose.yml --with-registry-auth music-player
 

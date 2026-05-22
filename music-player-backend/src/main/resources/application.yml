@@ -59,6 +59,12 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 110MB
+
+application:
+  security:
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:[*],http://127.0.0.1:[*]}
+
 logging:
   level:
     root: INFO
