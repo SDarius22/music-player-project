@@ -367,15 +367,6 @@ class MockAudioProvider extends _i1.Mock implements _i7.AudioProvider {
           as List<_i4.Song>);
 
   @override
-  List<_i4.Song> get originalQueue =>
-      (super.noSuchMethod(
-            Invocation.getter(#originalQueue),
-            returnValue: <_i4.Song>[],
-            returnValueForMissingStub: <_i4.Song>[],
-          )
-          as List<_i4.Song>);
-
-  @override
   set processingState(_i2.ValueNotifier<_i13.ProcessingState>? value) =>
       super.noSuchMethod(
         Invocation.setter(#processingState, value),

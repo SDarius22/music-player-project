@@ -77,7 +77,6 @@ void main() {
 
       when(audioProvider.playingNotifier).thenReturn(playingNotifier);
       when(audioProvider.normalQueue).thenReturn([songA, songB]);
-      when(audioProvider.originalQueue).thenReturn([songA, songB]);
       when(audioProvider.currentSong).thenAnswer((_) => currentSong);
       when(audioProvider.setCurrentSongAndPlay(songA)).thenAnswer((_) async {});
       when(audioProvider.setCurrentSongAndPlay(songB)).thenAnswer((_) async {});
@@ -191,7 +190,6 @@ void main() {
             ..fullyLoaded = true;
 
       when(audioProvider.normalQueue).thenReturn([placeholder]);
-      when(audioProvider.originalQueue).thenReturn([placeholder]);
       when(audioProvider.currentSong).thenReturn(null);
       when(
         songProvider.enrichSong(placeholder),
