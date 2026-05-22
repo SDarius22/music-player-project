@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.example.musicplayerbackend.service.JWTService;
 import com.example.musicplayerbackend.service.PeerTrackingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
@@ -16,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -26,6 +29,8 @@ class SignalingHandlerTest {
 
   @Mock PeerTrackingService peerTrackingService;
   @Mock RedisTemplate<String, String> redisTemplate;
+  @Mock JWTService jwtService;
+  @Mock UserDetailsService userDetailsService;
   @Mock WebSocketSession session;
   @Mock WebSocketSession session2;
 
@@ -34,7 +39,9 @@ class SignalingHandlerTest {
 
   @BeforeEach
   void setUp() {
-    handler = new SignalingHandler(objectMapper, peerTrackingService, redisTemplate);
+    handler =
+        new SignalingHandler(
+            objectMapper, peerTrackingService, redisTemplate, jwtService, userDetailsService);
     when(session.getId()).thenReturn("session-1");
     when(session2.getId()).thenReturn("session-2");
   }
@@ -43,13 +50,13 @@ class SignalingHandlerTest {
   void shouldCallRegisterPeerChunksForRegisterCacheMessage() throws Exception {
     when(peerTrackingService.getPeerBufferMapsForSong(anyString()))
         .thenReturn(java.util.Collections.emptyMap());
+    authenticate(session, "peer-A", "tok-A", 1L);
 
     String payload =
         objectMapper.writeValueAsString(
             Map.of(
                 "type", "REGISTER_CACHE",
                 "senderId", "peer-A",
-                "userId", 1,
                 "fileHash", "hash-42",
                 "payload", Set.of(0, 1, 2)));
 
@@ -59,17 +66,35 @@ class SignalingHandlerTest {
   }
 
   @Test
-  void shouldSkipRegistrationWhenRegisterCacheSenderIdIsNull() throws Exception {
+  void shouldCloseSessionWhenMessageArrivesBeforeAuth() throws Exception {
     String payload =
         objectMapper.writeValueAsString(
             Map.of(
                 "type", "REGISTER_CACHE",
+                "senderId", "peer-A",
                 "fileHash", "hash-42",
                 "payload", Set.of(0, 1)));
 
     handler.handleTextMessage(session, new TextMessage(payload));
 
+    verify(session).close(any(CloseStatus.class));
     verify(peerTrackingService, never()).registerPeerChunks(anyString(), any(), any());
+  }
+
+  @Test
+  void shouldCloseSessionWhenAuthTokenIsInvalid() throws Exception {
+    when(jwtService.extractUsername("bad")).thenReturn("user@example.com");
+    UserDetails details = mock(UserDetails.class);
+    when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(details);
+    when(jwtService.isTokenValid("bad", details)).thenReturn(false);
+
+    String payload =
+        objectMapper.writeValueAsString(
+            Map.of("type", "AUTH", "token", "bad", "senderId", "peer-A"));
+
+    handler.handleTextMessage(session, new TextMessage(payload));
+
+    verify(session).close(any(CloseStatus.class));
   }
 
   @Test
@@ -77,13 +102,11 @@ class SignalingHandlerTest {
     when(peerTrackingService.getPeerBufferMapsForSong("hash-10"))
         .thenReturn(Map.of("peer-X", Set.of(0)));
     when(session.isOpen()).thenReturn(true);
+    authenticate(session, "requester", "tok", 7L);
 
     String payload =
         objectMapper.writeValueAsString(
-            Map.of(
-                "type", "DISCOVER_PEERS",
-                "senderId", "requester",
-                "fileHash", "hash-10"));
+            Map.of("type", "DISCOVER_PEERS", "senderId", "requester", "fileHash", "hash-10"));
 
     handler.handleTextMessage(session, new TextMessage(payload));
 
@@ -92,13 +115,8 @@ class SignalingHandlerTest {
 
   @Test
   void shouldRouteOfferMessageToTargetSession() throws Exception {
-    String registerPayload =
-        objectMapper.writeValueAsString(
-            Map.of(
-                "type", "PING",
-                "senderId", "peer-B",
-                "userId", 2));
-    handler.handleTextMessage(session2, new TextMessage(registerPayload));
+    authenticate(session, "peer-A", "tok-A", 1L);
+    authenticate(session2, "peer-B", "tok-B", 2L);
     when(session2.isOpen()).thenReturn(true);
 
     String offerPayload =
@@ -117,14 +135,9 @@ class SignalingHandlerTest {
 
   @Test
   void shouldRouteAnswerMessageToTargetSession() throws Exception {
+    authenticate(session, "peer-A", "tok-A", 1L);
+    authenticate(session2, "peer-B", "tok-B", 2L);
     when(session2.isOpen()).thenReturn(true);
-    String registerPayload =
-        objectMapper.writeValueAsString(
-            Map.of(
-                "type", "PING",
-                "senderId", "peer-B",
-                "userId", 2));
-    handler.handleTextMessage(session2, new TextMessage(registerPayload));
 
     String answerPayload =
         objectMapper.writeValueAsString(
@@ -142,14 +155,9 @@ class SignalingHandlerTest {
 
   @Test
   void shouldRouteIceCandidateMessageToTargetSession() throws Exception {
+    authenticate(session, "peer-A", "tok-A", 1L);
+    authenticate(session2, "peer-B", "tok-B", 2L);
     when(session2.isOpen()).thenReturn(true);
-    String registerPayload =
-        objectMapper.writeValueAsString(
-            Map.of(
-                "type", "PING",
-                "senderId", "peer-B",
-                "userId", 2));
-    handler.handleTextMessage(session2, new TextMessage(registerPayload));
 
     String icePayload =
         objectMapper.writeValueAsString(
@@ -166,13 +174,44 @@ class SignalingHandlerTest {
   }
 
   @Test
-  void shouldCloseSessionWhenMessageTypeIsUnknown() throws Exception {
-    String payload =
+  void shouldCloseSessionWhenOfferSenderIdDoesNotMatchBinding() throws Exception {
+    authenticate(session, "peer-A", "tok-A", 1L);
+
+    String offerPayload =
         objectMapper.writeValueAsString(
             Map.of(
-                "type", "TOTALLY_UNKNOWN",
-                "senderId", "peer-A",
-                "userId", 1));
+                "type", "OFFER",
+                "senderId", "peer-IMPOSTER",
+                "targetId", "peer-B",
+                "fileHash", "hash-1",
+                "payload", "sdp-offer"));
+
+    handler.handleTextMessage(session, new TextMessage(offerPayload));
+
+    verify(session).close(any(CloseStatus.class));
+    verify(redisTemplate, never()).convertAndSend(anyString(), anyString());
+  }
+
+  @Test
+  void shouldCloseSessionWhenTopLevelSenderIdDoesNotMatchBinding() throws Exception {
+    authenticate(session, "peer-A", "tok-A", 1L);
+
+    String payload =
+        objectMapper.writeValueAsString(
+            Map.of("type", "DISCOVER_PEERS", "senderId", "peer-OTHER", "fileHash", "hash"));
+
+    handler.handleTextMessage(session, new TextMessage(payload));
+
+    verify(session).close(any(CloseStatus.class));
+  }
+
+  @Test
+  void shouldCloseSessionWhenMessageTypeIsUnknown() throws Exception {
+    authenticate(session, "peer-A", "tok-A", 1L);
+
+    String payload =
+        objectMapper.writeValueAsString(
+            Map.of("type", "TOTALLY_UNKNOWN", "senderId", "peer-A"));
 
     handler.handleTextMessage(session, new TextMessage(payload));
 
@@ -187,14 +226,8 @@ class SignalingHandlerTest {
   }
 
   @Test
-  void shouldUnregisterPeerWhenRegisteredSessionWithPeerIdCloses() throws Exception {
-    String registerPayload =
-        objectMapper.writeValueAsString(
-            Map.of(
-                "type", "PING",
-                "senderId", "peer-to-remove",
-                "userId", 5));
-    handler.handleTextMessage(session, new TextMessage(registerPayload));
+  void shouldUnregisterPeerWhenAuthenticatedSessionCloses() throws Exception {
+    authenticate(session, "peer-to-remove", "tok", 5L);
 
     handler.afterConnectionClosed(session, CloseStatus.NORMAL);
 
@@ -202,28 +235,12 @@ class SignalingHandlerTest {
   }
 
   @Test
-  void shouldNotUnregisterPeerWhenRegisteredSessionHasNoPeerId() throws Exception {
-    String registerPayload = objectMapper.writeValueAsString(Map.of("type", "PING", "userId", 5));
-    handler.handleTextMessage(session, new TextMessage(registerPayload));
+  void shouldSkipRegisterPeerChunksWhenFileHashIsNull() throws Exception {
+    authenticate(session, "peer-A", "tok-A", 1L);
 
-    handler.afterConnectionClosed(session, CloseStatus.NORMAL);
-
-    verify(peerTrackingService, never()).unregisterPeer(any());
-  }
-
-  @Test
-  void shouldSkipRegisterPeerChunksWhenRegisterCacheFileHashIsNull() throws Exception {
     String payload =
         objectMapper.writeValueAsString(
-            Map.of(
-                "type",
-                "REGISTER_CACHE",
-                "senderId",
-                "peer-A",
-                "userId",
-                1,
-                "payload",
-                Set.of(0, 1, 2)));
+            Map.of("type", "REGISTER_CACHE", "senderId", "peer-A", "payload", Set.of(0, 1, 2)));
 
     handler.handleTextMessage(session, new TextMessage(payload));
 
@@ -232,6 +249,8 @@ class SignalingHandlerTest {
 
   @Test
   void shouldPublishToRedisWhenOfferTargetIsNotInLocalPeerIndex() throws Exception {
+    authenticate(session, "peer-A", "tok-A", 1L);
+
     String payload =
         objectMapper.writeValueAsString(
             Map.of(
@@ -242,19 +261,13 @@ class SignalingHandlerTest {
                 "payload", "sdp"));
 
     assertDoesNotThrow(() -> handler.handleTextMessage(session, new TextMessage(payload)));
-    verify(session, never()).sendMessage(any(TextMessage.class));
     verify(redisTemplate).convertAndSend(eq("signaling:webrtc"), anyString());
   }
 
   @Test
   void shouldPublishToRedisWhenOfferTargetSessionIsClosed() throws Exception {
-    String registerPayload =
-        objectMapper.writeValueAsString(
-            Map.of(
-                "type", "PING",
-                "senderId", "peer-C",
-                "userId", 2));
-    handler.handleTextMessage(session2, new TextMessage(registerPayload));
+    authenticate(session, "peer-A", "tok-A", 1L);
+    authenticate(session2, "peer-C", "tok-C", 2L);
     when(session2.isOpen()).thenReturn(false);
 
     String offerPayload =
@@ -273,21 +286,22 @@ class SignalingHandlerTest {
   }
 
   @Test
-  void shouldSkipUserIndexCleanupWhenClientHasNullUserId() throws Exception {
-    String payload =
-        objectMapper.writeValueAsString(
-            Map.of(
-                "type", "PING",
-                "senderId", "peer-no-user"));
-    handler.handleTextMessage(session, new TextMessage(payload));
-
-    handler.afterConnectionClosed(session, CloseStatus.NORMAL);
-
-    verify(peerTrackingService).unregisterPeer("peer-no-user");
-  }
-
-  @Test
   void shouldLogWhenConnectionEstablished() {
     assertDoesNotThrow(() -> handler.afterConnectionEstablished(session));
+  }
+
+  private void authenticate(WebSocketSession s, String senderId, String token, Long userId)
+      throws Exception {
+    String username = senderId + "@example.com";
+    UserDetails details = mock(UserDetails.class);
+    when(jwtService.extractUsername(token)).thenReturn(username);
+    when(userDetailsService.loadUserByUsername(username)).thenReturn(details);
+    when(jwtService.isTokenValid(token, details)).thenReturn(true);
+    when(jwtService.extractClaim(eq(token), any())).thenReturn(userId);
+
+    String payload =
+        objectMapper.writeValueAsString(
+            Map.of("type", "AUTH", "token", token, "senderId", senderId));
+    handler.handleTextMessage(s, new TextMessage(payload));
   }
 }

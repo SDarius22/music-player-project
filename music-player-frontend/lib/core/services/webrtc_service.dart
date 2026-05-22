@@ -97,7 +97,20 @@ class WebRTCService {
     this.settingsService,
   }) {
     _listenToSignaling();
+    _sendAuth();
     _startKeepalive();
+  }
+
+  void _sendAuth() {
+    final token = authService.accessToken;
+    if (token == null) return;
+    signalingSocket.sink.add(
+      jsonEncode({
+        'type': 'AUTH',
+        'token': token,
+        'senderId': myDeviceId,
+      }),
+    );
   }
 
   bool get isConnected => _dataChannels.isNotEmpty;
@@ -170,7 +183,6 @@ class WebRTCService {
         'targetId': 'SERVER',
         'fileHash': fileHash,
         'payload': chunkIndices,
-        'userId': authService.userId,
       }),
     );
   }
@@ -187,7 +199,6 @@ class WebRTCService {
         'targetId': 'SERVER',
         'fileHash': fileHash,
         'payload': {},
-        'userId': authService.userId,
       }),
     );
   }
@@ -238,7 +249,6 @@ class WebRTCService {
         'senderId': myDeviceId,
         'targetId': targetId,
         'payload': payload,
-        'userId': authService.userId,
       }),
     );
   }
@@ -665,7 +675,6 @@ class WebRTCService {
           jsonEncode({
             'type': 'PING',
             'senderId': myDeviceId,
-            'userId': authService.userId,
           }),
         );
       } catch (_) {}
