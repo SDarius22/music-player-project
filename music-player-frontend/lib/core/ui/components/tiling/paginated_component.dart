@@ -26,6 +26,10 @@ class PaginatedComponent extends StatefulWidget {
   final Widget Function()? buildExtraTile; // grid/wide only
   final double? itemExtent; // list only
 
+  // Delay before kicking off the first page fetch. Lets the host screen
+  // paint before any synchronous DB work on the main isolate blocks the UI.
+  final Duration initialLoadDelay;
+
   const PaginatedComponent({
     super.key,
     required this.type,
@@ -42,6 +46,7 @@ class PaginatedComponent extends StatefulWidget {
     this.onDropdownSelected,
     this.buildExtraTile,
     this.itemExtent,
+    this.initialLoadDelay = Duration.zero,
   });
 
   @override
@@ -59,7 +64,15 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
     _controller = _PaginationController(
       fetchPage: widget.fetchPage,
       pageSize: widget.pageSize,
-    )..loadPage(0, reset: true);
+    );
+    if (widget.initialLoadDelay == Duration.zero) {
+      _controller.loadPage(0, reset: true);
+    } else {
+      Future.delayed(widget.initialLoadDelay, () {
+        if (!mounted) return;
+        _controller.loadPage(0, reset: true);
+      });
+    }
   }
 
   @override

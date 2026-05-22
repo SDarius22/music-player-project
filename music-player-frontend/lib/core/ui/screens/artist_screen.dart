@@ -148,13 +148,9 @@ class ArtistScreen extends EntityScreen<ArtistProvider> {
       child: PaginatedComponent(
         type: TileType.list,
         itemExtent: height * 0.1,
-        fetchPage: (page, size) {
-          return provider.getSongsPage(
-            artist.getHash(),
-            page: page,
-            size: size,
-          );
-        },
+        fetchPage:
+            (page, size) =>
+                provider.getSongsPage(artist.getHash(), page: page, size: size),
         onTap:
             (BaseEntity entity, List<dynamic> items) =>
                 _playSong(context, artist, entity as Song),

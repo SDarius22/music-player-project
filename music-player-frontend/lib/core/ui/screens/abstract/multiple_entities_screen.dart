@@ -158,6 +158,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
           type: TileType.grid,
           reloadToken: _reloadToken,
           onRefresh: widget.provider.refresh,
+          initialLoadDelay: const Duration(milliseconds: 400),
           fetchPage:
               (page, size) => widget.provider.fetchPage(
                 _query,

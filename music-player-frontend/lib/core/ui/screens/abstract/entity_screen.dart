@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
-import 'package:music_player_frontend/core/ui/screens/abstract/responsive_entity_screen.dart';
+import 'package:music_player_frontend/core/ui/screens/abstract/responsive_screen.dart';
 import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
 
 abstract class EntityScreen<T extends QueryableProvider>
@@ -17,7 +17,10 @@ abstract class EntityScreen<T extends QueryableProvider>
     return GlassScaffold(
       appBar: buildAppBar(context, entity),
       body: FutureBuilder(
-        future: loadEntityData(context),
+        future: Future.delayed(
+          const Duration(milliseconds: 500),
+          () => loadEntityData(context),
+        ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

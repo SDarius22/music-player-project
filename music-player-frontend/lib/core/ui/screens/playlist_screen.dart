@@ -462,13 +462,9 @@ class PlaylistScreen extends EntityScreen<PlaylistProvider> {
       child: PaginatedComponent(
         type: TileType.list,
         itemExtent: height * 0.1,
-        fetchPage: (page, size) {
-          return provider.getPlaylistSongsPage(
-            playlist,
-            page: page,
-            size: size,
-          );
-        },
+        fetchPage:
+            (page, size) =>
+                provider.getPlaylistSongsPage(playlist, page: page, size: size),
         onTap: (BaseEntity selected, List<dynamic> items) async {
           final audioProvider = context.read<AudioProvider>();
           final queue = items.whereType<Song>().toList(growable: false);
