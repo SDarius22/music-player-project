@@ -83,19 +83,20 @@ class WebP2PBridge {
 
     _currentFileHash = fileHash;
 
-    if (!_managers.containsKey(fileHash)) {
-      _managers[fileHash] = chunkManagerFactory(fileHash);
-      await _managers[fileHash]!.loadManifest();
+    final manager = _managers.putIfAbsent(
+      fileHash,
+      () => chunkManagerFactory(fileHash),
+    );
+    if (!manager.isReady) {
+      await manager.loadManifest();
       if (_songNames.containsKey(fileHash)) {
-        _managers[fileHash]!.configureSongInfo(
+        manager.configureSongInfo(
           _songNames[fileHash]!,
           ChunkStatsService.instance.reportSilently,
         );
       }
     }
     if (_currentFileHash != fileHash) return;
-
-    final manager = _managers[fileHash]!;
 
     int requestedStart = 0;
     int requestedEnd = manager.totalBytes - 1;

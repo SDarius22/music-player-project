@@ -124,6 +124,9 @@ class ChunkService {
       await cacheRepo.deleteChunk(fileHash, index);
     }
 
+    final future = _fetchChunkLogic(index);
+    _activeRequests[index] = future;
+
     for (
       var i = index + 1;
       i <= index + _preloadAhead && i < totalChunks;
@@ -131,9 +134,6 @@ class ChunkService {
     ) {
       _preloadChunk(i);
     }
-
-    final future = _fetchChunkLogic(index);
-    _activeRequests[index] = future;
 
     try {
       final data = await future;
