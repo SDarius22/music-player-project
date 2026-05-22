@@ -4,6 +4,7 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/custom_tile_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
+import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class QueueTab extends StatelessWidget {
@@ -33,21 +34,26 @@ class QueueTab extends StatelessWidget {
               tileType: TileType.list,
               items: audioProvider.normalQueue,
               actions: [
-                (_) => const SizedBox.shrink(),
-                (_) => const SizedBox.shrink(),
-                (_) => const Text('Remove from queue'),
+                (entity) => IconButton(
+                  tooltip: 'Remove from queue',
+                  icon: const Icon(
+                    FluentIcons.trash,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  onPressed: () async {
+                    if (entity is Song) {
+                      await Provider.of<AudioProvider>(
+                        context,
+                        listen: false,
+                      ).removeFromQueue(entity);
+                    }
+                  },
+                ),
               ],
-              onDropdownSelected: (entity, dropdownIndex) async {
-                if (dropdownIndex == 0 && entity is Song) {
-                  await Provider.of<AudioProvider>(
-                    context,
-                    listen: false,
-                  ).removeFromQueue(entity);
-                }
-              },
               itemExtent: height * 0.085,
               isSelected: (entity) {
-                return entity == audioProvider.currentSong;
+                return false;
               },
               onTap: (entity) async {
                 debugPrint("Tapped on: ${entity.getName()}");

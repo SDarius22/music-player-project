@@ -45,16 +45,19 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   Song? get currentSong => currentSongNotifier.value;
 
-  int get currentIndexInNonShuffled => playbackQueue.indexOf(currentSong!);
+  int get currentIndexInNonShuffled {
+    final current = currentSong;
+    if (current == null) return -1;
+    return _audioService.normalQueue.indexWhere(
+      (s) => s.fileHash == current.fileHash,
+    );
+  }
 
   int get currentIndexInPlaybackQueue => playbackQueue.indexOf(currentSong!);
 
   List<Song> get playbackQueue => _audioService.queue;
 
-  // Backwards-compatible alias used by existing tests/widgets.
-  List<Song> get normalQueue => playbackQueue;
-
-  List<Song> get originalQueue => _audioService.normalQueue;
+  List<Song> get normalQueue => _audioService.normalQueue;
 
   AudioSettings get _currentAudioSettings => _audioService.currentAudioSettings;
 

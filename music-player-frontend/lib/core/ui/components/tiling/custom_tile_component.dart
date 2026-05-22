@@ -48,18 +48,12 @@ class CustomTileComponent extends StatelessWidget {
             : null;
 
     if (tileType == TileType.list) {
-      // Remap: list tile uses [0]=hover overlay, [1+]=dropdown.
-      // Shared list uses [0]=main (unused in list), [1]=secondary, [2+]=extras.
-      final listActions = [
-        if (builtActions.length > 1) builtActions[1],
-        ...builtActions.skip(2),
-      ];
       return CustomListTile(
         entity: entity,
         isSelected: isSelected(entity),
         onTap: () => onTap(entity),
         onLongPress: () => onLongPress(entity),
-        actions: listActions,
+        actions: builtActions,
         onDropdownSelected: drop,
       );
     }

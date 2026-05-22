@@ -77,6 +77,7 @@ void main() {
 
       when(audioProvider.playingNotifier).thenReturn(playingNotifier);
       when(audioProvider.normalQueue).thenReturn([songA, songB]);
+      when(audioProvider.originalQueue).thenReturn([songA, songB]);
       when(audioProvider.currentSong).thenAnswer((_) => currentSong);
       when(audioProvider.setCurrentSongAndPlay(songA)).thenAnswer((_) async {});
       when(audioProvider.setCurrentSongAndPlay(songB)).thenAnswer((_) async {});
@@ -152,7 +153,7 @@ void main() {
       expect(playTapped, 1);
     });
 
-    testWidgets('queue tab tap plays selected item and dropdown removes item', (
+    testWidgets('queue tab tap plays selected item and button removes item', (
       tester,
     ) async {
       final scrollController = ScrollController();
@@ -174,9 +175,7 @@ void main() {
 
       verify(audioProvider.setCurrentSongAndPlay(songA)).called(1);
 
-      await tester.tap(find.byIcon(FluentIcons.moreVertical).first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Remove from queue').first);
+      await tester.tap(find.byIcon(FluentIcons.trash).first);
       await tester.pumpAndSettle();
 
       verify(audioProvider.removeFromQueue(songA)).called(1);
@@ -192,6 +191,7 @@ void main() {
             ..fullyLoaded = true;
 
       when(audioProvider.normalQueue).thenReturn([placeholder]);
+      when(audioProvider.originalQueue).thenReturn([placeholder]);
       when(audioProvider.currentSong).thenReturn(null);
       when(
         songProvider.enrichSong(placeholder),
