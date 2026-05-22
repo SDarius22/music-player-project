@@ -168,6 +168,11 @@ Finder _tileForText(String text) {
       .first;
 }
 
+Future<void> _pumpInitialTrackLoad(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 401));
+  await tester.pumpAndSettle();
+}
+
 Widget _wrapTracks({
   required _FakeAppStateProvider appStateProvider,
   required _FakeSongProvider songProvider,
@@ -229,7 +234,7 @@ void main() {
           selectionProvider: SelectionProvider(),
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpInitialTrackLoad(tester);
 
       expect(find.text('Alpha Remote'), findsWidgets);
       expect(find.text('Beta Local'), findsWidgets);
@@ -274,7 +279,7 @@ void main() {
           selectionProvider: SelectionProvider(),
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpInitialTrackLoad(tester);
 
       await tester.tap(_tileForText('Beta Track'));
       await tester.pumpAndSettle();
@@ -310,7 +315,7 @@ void main() {
           selectionProvider: selectionProvider,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpInitialTrackLoad(tester);
 
       await tester.longPress(_tileForText('Alpha Track'));
       await tester.pumpAndSettle();

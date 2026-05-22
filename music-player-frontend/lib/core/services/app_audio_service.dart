@@ -262,10 +262,11 @@ class AppAudioService {
       );
       return;
     }
+    final resumeSeconds = (prevPosition ?? audioPlayer.position).inSeconds;
     _logger.fine(
-      '[AppAudioService] Playback stuck for ${maxStuckMs}ms, retrying',
+      '[AppAudioService] Playback stuck for ${maxStuckMs}ms, retrying from ${resumeSeconds}s',
     );
-    await _loadIndex(_currentIndex);
+    await _loadIndex(_currentIndex, position: resumeSeconds);
     await play();
   }
 
@@ -416,6 +417,12 @@ class AppAudioService {
   Future<void> removeFromQueue(Song song) async {
     final activeIdx = _activeQueue.indexWhere((s) => s == song);
     if (activeIdx == -1) return;
+    if (_normalQueue.length <= 1) {
+      _logger.fine(
+        '[AppAudioService] Refusing to remove last queue entry to keep queue non-empty',
+      );
+      return;
+    }
 
     final wasCurrentSong = song == currentSong;
     _normalQueue.remove(song);
@@ -423,16 +430,10 @@ class AppAudioService {
     await playlistService.deleteFromPlaylist(song, _queuePlaylist);
     _notifyQueueMutation();
 
-    if (_normalQueue.isEmpty) {
-      _resetAutoPlayQueueSession();
-    }
-
     if (wasCurrentSong) {
-      if (_activeQueue.isNotEmpty) {
-        _currentIndex = _currentIndex.clamp(0, _activeQueue.length - 1);
-        await _loadIndex(_currentIndex);
-        await play();
-      }
+      _currentIndex = _currentIndex.clamp(0, _activeQueue.length - 1);
+      await _loadIndex(_currentIndex);
+      await play();
     } else if (activeIdx < _currentIndex) {
       _currentIndex--;
     }
@@ -717,12 +718,6 @@ class AppAudioService {
         ),
       );
     }
-  }
-
-  void _resetAutoPlayQueueSession() {
-    _currentAudioSettings.autoPlayRecommendationsPage = 0;
-    _autoPlayTailFetchArmed = true;
-    unawaited(settingsService.updateAudioSettings(_currentAudioSettings));
   }
 
   Future<void> _maybeExtendQueueForAutoPlay() async {
