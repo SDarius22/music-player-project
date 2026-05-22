@@ -15,22 +15,37 @@ class WebP2PBridge {
   final Map<String, ChunkService> _managers = {};
   final Map<String, String> _songNames = {};
   String? _currentFileHash;
-  late final Future<void> _serviceWorkerReady;
+  late final Future<bool> _serviceWorkerReady;
 
   WebP2PBridge(this.chunkManagerFactory) {
     _serviceWorkerReady = _waitForServiceWorkerReady();
     _listenToServiceWorker();
   }
 
-  Future<void> ensureServiceWorkerReady() => _serviceWorkerReady;
+  Future<bool> ensureServiceWorkerReady() => _serviceWorkerReady;
 
-  Future<void> _waitForServiceWorkerReady() async {
+  Future<bool> _waitForServiceWorkerReady() async {
+    final scopeUrl = Uri.base.resolve('p2p-stream/').toString();
     try {
       await web.window.navigator.serviceWorker.ready.toDart.timeout(
         const Duration(seconds: 8),
       );
+
+      final registration =
+          await web.window.navigator.serviceWorker
+              .getRegistration(scopeUrl)
+              .toDart;
+      final activeScript = registration?.active?.scriptURL ?? '';
+      final isP2PRegistration = activeScript.contains('p2p-worker.js');
+      if (!isP2PRegistration) {
+        _logger.warning(
+          'P2P worker is not active for scope $scopeUrl (active=$activeScript)',
+        );
+      }
+      return isP2PRegistration;
     } catch (e) {
       _logger.warning('Service worker readiness wait timed out or failed', e);
+      return false;
     }
   }
 

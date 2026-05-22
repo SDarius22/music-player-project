@@ -43,8 +43,11 @@
 <script async src="flutter_bootstrap.js"></script>
 <script>
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/p2p-worker.js', {
-            scope: '/music-player/'
+        const appBaseUrl = new URL('./', document.baseURI);
+        const workerUrl = new URL('p2p-worker.js', appBaseUrl);
+        const p2pScope = `${appBaseUrl.pathname}p2p-stream/`;
+        navigator.serviceWorker.register(workerUrl.href, {
+            scope: p2pScope
         }).then(function () {
             console.log('P2P ServiceWorker registered');
         }).catch(function (err) {

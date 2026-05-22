@@ -39,7 +39,8 @@ class AppAudioService {
   final ValueNotifier<int> songPeerCountNotifier = ValueNotifier<int>(0);
 
   void Function(String fileHash, String songName)? _onWebSongChange;
-  Future<void> Function()? _onBeforeWebPlayback;
+  Future<bool> Function()? _onBeforeWebPlayback;
+  bool _useWebServiceWorkerStream = true;
 
   void setWebSongChangeCallback(
     void Function(String fileHash, String songName) callback,
@@ -47,7 +48,7 @@ class AppAudioService {
     _onWebSongChange = callback;
   }
 
-  void setWebPlaybackReadyCallback(Future<void> Function() callback) {
+  void setWebPlaybackReadyCallback(Future<bool> Function() callback) {
     _onBeforeWebPlayback = callback;
   }
 
@@ -528,10 +529,12 @@ class AppAudioService {
 
       final song = await _fullyFetchQueueSong(_activeQueue[idx]);
       currentSong = song;
-      if (UniversalPlatform.isWeb &&
-          !song.isLocal &&
-          _onBeforeWebPlayback != null) {
-        await _onBeforeWebPlayback!.call();
+      if (UniversalPlatform.isWeb && !song.isLocal) {
+        if (_onBeforeWebPlayback == null) {
+          _useWebServiceWorkerStream = false;
+        } else {
+          _useWebServiceWorkerStream = await _onBeforeWebPlayback!.call();
+        }
       }
       if (!UniversalPlatform.isDesktop) {
         await audioPlayer.stop();
@@ -592,10 +595,12 @@ class AppAudioService {
     final bool isServerTrack = !song.isLocal;
 
     if (isServerTrack) {
-      if (UniversalPlatform.isWeb) {
+      if (UniversalPlatform.isWeb && _useWebServiceWorkerStream) {
         _onWebSongChange?.call(song.getHash(), song.getName());
         return AudioSource.uri(
-          Uri.parse('/music-player/p2p-stream/${song.getHash()}'),
+          Uri.parse(
+            '${Uri.base.resolve('p2p-stream/').toString()}${song.getHash()}',
+          ),
           tag: Map<String, dynamic>.from({
             "path": song.path,
             "fileHash": song.getHash(),

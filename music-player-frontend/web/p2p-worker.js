@@ -44,9 +44,10 @@ setInterval(() => {
 
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
+    const p2pMarker = '/p2p-stream/';
 
-    if (url.pathname.startsWith('/music-player/p2p-stream/')) {
-        const fileHash = url.pathname.split('/').pop();
+    if (url.pathname.includes(p2pMarker)) {
+        const fileHash = url.pathname.split(p2pMarker).pop();
         const rangeHeader = event.request.headers.get('Range') || 'bytes=0-';
         const clientId = event.clientId;
 
