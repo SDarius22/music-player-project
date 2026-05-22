@@ -7,65 +7,13 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
+import 'package:music_player_frontend/core/services/webrtc/chunk_assembly.dart';
+import 'package:music_player_frontend/core/services/webrtc/data_channel_chunk_codec.dart';
+import 'package:music_player_frontend/core/services/webrtc/peer_stats.dart';
+import 'package:music_player_frontend/core/services/webrtc/sdp_summary.dart';
+import 'package:music_player_frontend/core/services/webrtc/signaling_payload_parser.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
-class _PeerStats {
-  static const double _alpha = 0.2;
-
-  double rttMs = 500.0;
-  double throughputBytesPerMs = 0.001;
-  int successes = 0;
-  int failures = 0;
-
-  double get successRate {
-    final total = successes + failures;
-    return total == 0 ? 0.5 : successes / total;
-  }
-
-  double get score => successRate * throughputBytesPerMs * 1000 / (rttMs + 1);
-
-  void recordRtt(double ms) => rttMs = _alpha * ms + (1 - _alpha) * rttMs;
-
-  void recordDelivery(int bytes, double elapsedMs) {
-    successes++;
-    final tput = bytes / elapsedMs.clamp(1, double.infinity);
-    throughputBytesPerMs = _alpha * tput + (1 - _alpha) * throughputBytesPerMs;
-  }
-
-  void recordFailure() => failures++;
-}
-
-class _ChunkAssembly {
-  final int fragmentCount;
-  final Map<int, Uint8List> fragments = {};
-  int totalBytes = 0;
-
-  _ChunkAssembly(this.fragmentCount);
-}
-
-class _SdpSummary {
-  final String type;
-  final int length;
-  final int mediaSections;
-  final bool hasDataChannel;
-  final bool hasIceUfrag;
-  final bool hasFingerprint;
-
-  const _SdpSummary({
-    required this.type,
-    required this.length,
-    required this.mediaSections,
-    required this.hasDataChannel,
-    required this.hasIceUfrag,
-    required this.hasFingerprint,
-  });
-
-  @override
-  String toString() =>
-      'type=$type len=$length m=$mediaSections '
-      'data=$hasDataChannel ufrag=$hasIceUfrag fp=$hasFingerprint';
-}
 
 class WebRTCService {
   static final _logger = Logger('WebRTCService');
@@ -85,7 +33,7 @@ class WebRTCService {
   final Map<String, Map<String, Set<int>>> _peerLibraries = {};
   final Map<String, List<({String fileHash, int chunkIndex})>>
   _pendingChunkRequests = {};
-  final Map<String, _PeerStats> _peerStats = {};
+  final Map<String, PeerStats> _peerStats = {};
   final Map<String, ({String peerId, DateTime sentAt})>
   _outstandingChunkRequests = {};
 
@@ -93,18 +41,10 @@ class WebRTCService {
   final Map<String, String> _pendingOfferId = {};
   int _offerSeq = 0;
 
-  final Map<String, _ChunkAssembly> _assemblies = {};
+  final Map<String, ChunkAssembly> _assemblies = {};
 
   Timer? _keepaliveTimer;
   final ValueNotifier<int> peerStateVersionNotifier = ValueNotifier<int>(0);
-
-  //    DataChannel binary protocol constants
-  //    Legacy packet:   [hash:64][chunkIdx:4][data…]
-  //    Fragment packet: [magic:4][ver:1][hash:64][chunkIdx:4][fragIdx:2][fragCount:2][data…]
-  static const int _hdrBytes = 68; // legacy header size
-  static const int _fragHdrBytes = 77; // fragment header size
-  static const int _maxMsgBytes = 16 * 1024; // safe DataChannel send limit
-  static const List<int> _magic = [80, 50, 80, 70]; // "P2PF"
 
   static const Map<String, dynamic> _iceServers = {
     'iceServers': [
@@ -113,19 +53,8 @@ class WebRTCService {
     ],
   };
 
-  _SdpSummary _summarizeSdp(String type, String sdp) {
-    final mediaSections =
-        RegExp(r'(^|\r\n)m=', multiLine: true).allMatches(sdp).length;
-    return _SdpSummary(
-      type: type,
-      length: sdp.length,
-      mediaSections: mediaSections,
-      hasDataChannel:
-          sdp.contains('sctp-port') || sdp.contains('webrtc-datachannel'),
-      hasIceUfrag: sdp.contains('a=ice-ufrag:'),
-      hasFingerprint: sdp.contains('a=fingerprint:'),
-    );
-  }
+  SdpSummary _summarizeSdp(String type, String sdp) =>
+      SdpSummary.fromSdp(type: type, sdp: sdp);
 
   String _candidateType(String candidate) {
     final match = RegExp(r'typ\s+([a-zA-Z0-9_-]+)').firstMatch(candidate);
@@ -275,120 +204,21 @@ class WebRTCService {
   }
 
   @visibleForTesting
-  static Map<String, dynamic>? normalizePayload(dynamic payload) {
-    if (payload is! Map) return null;
-    return payload.map((k, v) => MapEntry(k.toString(), v));
-  }
+  static Map<String, dynamic>? normalizePayload(dynamic payload) =>
+      SignalingPayloadParser.normalizePayload(payload);
 
   @visibleForTesting
-  static Map<String, Set<int>> normalizePeerBufferMap(dynamic payload) {
-    final map = _asStringMap(payload);
-    if (map == null) return const {};
-
-    final result = <String, Set<int>>{};
-    for (final entry in map.entries) {
-      final chunks = _normalizeChunkIndexSet(entry.value);
-      if (chunks.isNotEmpty) {
-        result[entry.key] = chunks;
-      }
-    }
-    return result;
-  }
-
-  static Set<int> _normalizeChunkIndexSet(dynamic value) {
-    if (value is String) {
-      try {
-        return _normalizeChunkIndexSet(jsonDecode(value));
-      } catch (_) {
-        return const {};
-      }
-    }
-
-    if (value is! Iterable) return const {};
-
-    final chunks = <int>{};
-    for (final raw in value) {
-      final chunk =
-          raw is int
-              ? raw
-              : raw is num
-              ? raw.toInt()
-              : raw is String
-              ? int.tryParse(raw)
-              : null;
-      if (chunk != null && chunk >= 0) {
-        chunks.add(chunk);
-      }
-    }
-    return chunks;
-  }
+  static Map<String, Set<int>> normalizePeerBufferMap(dynamic payload) =>
+      SignalingPayloadParser.normalizePeerBufferMap(payload);
 
   @visibleForTesting
-  static String? nonEmptyString(dynamic value) {
-    if (value is! String) return null;
-    final s = value.trim();
-    return s.isEmpty ? null : s;
-  }
+  static String? nonEmptyString(dynamic value) =>
+      SignalingPayloadParser.nonEmptyString(value);
 
   @visibleForTesting
   static ({String sdp, String type, String? offerId})? parseSdpPayload(
     dynamic payload,
-  ) {
-    final map = _asStringMap(payload);
-    if (map == null) return null;
-
-    final sdp = _canonicalizeSdp(map['sdp']);
-    final type = nonEmptyString(map['type'])?.toLowerCase();
-    if (sdp == null || type == null) return null;
-
-    const valid = {'offer', 'answer', 'pranswer', 'rollback'};
-    if (!valid.contains(type) || !sdp.startsWith('v=')) return null;
-
-    return (sdp: sdp, type: type, offerId: nonEmptyString(map['offerId']));
-  }
-
-  static Map<String, dynamic>? _asStringMap(dynamic payload) {
-    if (payload is Map) {
-      return payload.map((k, v) => MapEntry(k.toString(), v));
-    }
-    final s = nonEmptyString(payload);
-    if (s == null) return null;
-    try {
-      final decoded = jsonDecode(s);
-      if (decoded is Map) {
-        return decoded.map((k, v) => MapEntry(k.toString(), v));
-      }
-    } catch (_) {}
-    return null;
-  }
-
-  static String? _canonicalizeSdp(dynamic value) {
-    var sdp = nonEmptyString(value);
-    if (sdp == null) return null;
-
-    if (sdp.startsWith('"') && sdp.endsWith('"') && sdp.length >= 2) {
-      sdp = sdp.substring(1, sdp.length - 1);
-    }
-
-    sdp =
-        sdp
-            .replaceAll(r'\r\n', '\n')
-            .replaceAll(r'\n', '\n')
-            .replaceAll('\r\n', '\n')
-            .replaceAll('\r', '\n')
-            .replaceAll('\u0000', '')
-            .trim();
-
-    if (sdp.isEmpty) return null;
-
-    final lines =
-        sdp
-            .split('\n')
-            .map((l) => l.trimRight())
-            .where((l) => l.isNotEmpty)
-            .toList();
-    return lines.isEmpty ? null : '${lines.join('\r\n')}\r\n';
-  }
+  ) => SignalingPayloadParser.parseSdpPayload(payload);
 
   String _nextOfferId() =>
       '$myDeviceId-${DateTime.now().microsecondsSinceEpoch}-${_offerSeq++}';
@@ -621,7 +451,7 @@ class WebRTCService {
 
     _outstandingChunkRequests.removeWhere((_, v) {
       if (v.peerId == peerId) {
-        _peerStats.putIfAbsent(peerId, _PeerStats.new).recordFailure();
+        _peerStats.putIfAbsent(peerId, PeerStats.new).recordFailure();
         return true;
       }
       return false;
@@ -707,132 +537,72 @@ class WebRTCService {
       return;
     }
 
-    final hashBytes = Uint8List.fromList(fileHash.codeUnits);
+    final packets = DataChannelChunkCodec.encode(
+      fileHash: fileHash,
+      chunkIndex: chunkIndex,
+      data: data,
+    );
+    if (packets.isEmpty) return;
 
-    if (_hdrBytes + data.length <= _maxMsgBytes) {
-      _logger.fine(
-        'Sending chunk peer=$peerId file=$fileHash idx=$chunkIndex bytes=${data.length} mode=single',
-      );
-      final pkt = Uint8List(_hdrBytes + data.length);
-      pkt.setAll(0, hashBytes);
-      ByteData.sublistView(pkt, 64, 68).setUint32(0, chunkIndex, Endian.big);
-      pkt.setAll(_hdrBytes, data);
-      channel!.send(RTCDataChannelMessage.fromBinary(pkt));
-      return;
-    }
-
-    final maxPayload = _maxMsgBytes - _fragHdrBytes;
-    final count = (data.length / maxPayload).ceil();
-    if (count > 65535) return;
     _logger.fine(
       'Sending chunk peer=$peerId file=$fileHash idx=$chunkIndex bytes=${data.length} '
-      'mode=fragmented fragments=$count',
+      'mode=${packets.length == 1 ? 'single' : 'fragmented'} fragments=${packets.length}',
     );
 
-    for (var i = 0; i < count; i++) {
-      final start = i * maxPayload;
-      final slice = data.sublist(
-        start,
-        (start + maxPayload).clamp(0, data.length),
-      );
-      final pkt = Uint8List(_fragHdrBytes + slice.length);
-
-      pkt.setAll(0, _magic);
-      pkt[4] = 1; // version
-      pkt.setAll(5, hashBytes);
-      ByteData.sublistView(pkt, 69, 73).setUint32(0, chunkIndex, Endian.big);
-      ByteData.sublistView(pkt, 73, 75).setUint16(0, i, Endian.big);
-      ByteData.sublistView(pkt, 75, 77).setUint16(0, count, Endian.big);
-      pkt.setAll(_fragHdrBytes, slice);
-
-      channel!.send(RTCDataChannelMessage.fromBinary(pkt));
+    for (final packet in packets) {
+      channel!.send(RTCDataChannelMessage.fromBinary(packet));
     }
   }
 
   void _handleBinaryMessage(String peerId, Uint8List binary) {
     try {
-      if (_isFragment(binary)) {
-        _assembleFragment(peerId, binary);
-      } else if (binary.length >= _hdrBytes) {
-        final fileHash = String.fromCharCodes(binary.sublist(0, 64));
-        final chunkIndex = ByteData.sublistView(
-          binary,
-          64,
-          68,
-        ).getUint32(0, Endian.big);
-        _deliverChunk(peerId, fileHash, chunkIndex, binary.sublist(_hdrBytes));
-      } else {
-        _logger.warning(
-          '[P2P] Binary message too short: ${binary.length} bytes',
-        );
+      switch (DataChannelChunkCodec.decode(binary)) {
+        case DecodedChunkFragment fragment:
+          _assembleFragment(peerId, fragment);
+        case DecodedChunkPacket packet:
+          _deliverChunk(
+            peerId,
+            packet.fileHash,
+            packet.chunkIndex,
+            packet.data,
+          );
+        case null:
+          _logger.warning(
+            '[P2P] Binary message too short: ${binary.length} bytes',
+          );
       }
     } catch (e) {
       _logger.warning('[P2P] Error parsing binary message', e);
     }
   }
 
-  bool _isFragment(Uint8List b) =>
-      b.length >= _fragHdrBytes &&
-      b[0] == _magic[0] &&
-      b[1] == _magic[1] &&
-      b[2] == _magic[2] &&
-      b[3] == _magic[3] &&
-      b[4] == 1;
+  void _assembleFragment(String peerId, DecodedChunkFragment fragment) {
+    if (fragment.fragmentCount == 0 ||
+        fragment.fragmentIndex >= fragment.fragmentCount) {
+      return;
+    }
 
-  void _assembleFragment(String peerId, Uint8List binary) {
-    final fileHash = String.fromCharCodes(binary.sublist(5, 69));
-    final chunkIndex = ByteData.sublistView(
-      binary,
-      69,
-      73,
-    ).getUint32(0, Endian.big);
-    final fragIndex = ByteData.sublistView(
-      binary,
-      73,
-      75,
-    ).getUint16(0, Endian.big);
-    final fragCount = ByteData.sublistView(
-      binary,
-      75,
-      77,
-    ).getUint16(0, Endian.big);
-    final payload = binary.sublist(_fragHdrBytes);
-
-    if (fragCount == 0 || fragIndex >= fragCount) return;
-
-    final key = '$peerId:$fileHash:$chunkIndex';
+    final key = '$peerId:${fragment.fileHash}:${fragment.chunkIndex}';
     final assembly = _assemblies.putIfAbsent(
       key,
-      () => _ChunkAssembly(fragCount),
+      () => ChunkAssembly(fragment.fragmentCount),
     );
     _logger.fine(
-      'peer=$peerId fragment file=$fileHash idx=$chunkIndex part=${fragIndex + 1}/$fragCount '
-      'bytes=${payload.length}',
+      'peer=$peerId fragment file=${fragment.fileHash} idx=${fragment.chunkIndex} '
+      'part=${fragment.fragmentIndex + 1}/${fragment.fragmentCount} bytes=${fragment.payload.length}',
     );
 
-    if (assembly.fragmentCount != fragCount) {
+    if (assembly.fragmentCount != fragment.fragmentCount) {
       _assemblies.remove(key);
       return;
     }
-    if (!assembly.fragments.containsKey(fragIndex)) {
-      assembly.fragments[fragIndex] = payload;
-      assembly.totalBytes += payload.length;
-    }
-    if (assembly.fragments.length < fragCount) return;
+    assembly.addFragment(fragment.fragmentIndex, fragment.payload);
+    if (!assembly.isComplete) return;
 
-    final data = Uint8List(assembly.totalBytes);
-    var offset = 0;
-    for (var i = 0; i < fragCount; i++) {
-      final part = assembly.fragments[i];
-      if (part == null) {
-        _assemblies.remove(key);
-        return;
-      }
-      data.setAll(offset, part);
-      offset += part.length;
-    }
+    final data = assembly.assemble();
     _assemblies.remove(key);
-    _deliverChunk(peerId, fileHash, chunkIndex, data);
+    if (data == null) return;
+    _deliverChunk(peerId, fragment.fileHash, fragment.chunkIndex, data);
   }
 
   void _deliverChunk(
@@ -846,7 +616,7 @@ class WebRTCService {
     if (req != null) {
       final ms = DateTime.now().difference(req.sentAt).inMicroseconds / 1000.0;
       _peerStats
-          .putIfAbsent(peerId, _PeerStats.new)
+          .putIfAbsent(peerId, PeerStats.new)
           .recordDelivery(data.length, ms);
       _logger.fine(
         '[P2P] chunk from peer=$peerId song=$fileHash idx=$chunkIndex '
@@ -870,9 +640,7 @@ class WebRTCService {
       final sent = int.tryParse(text.substring('DC_PONG:'.length));
       if (sent != null) {
         final rtt = DateTime.now().millisecondsSinceEpoch - sent;
-        _peerStats
-            .putIfAbsent(peerId, _PeerStats.new)
-            .recordRtt(rtt.toDouble());
+        _peerStats.putIfAbsent(peerId, PeerStats.new).recordRtt(rtt.toDouble());
         _logger.fine(
           '[P2P] RTT to $peerId: ${rtt}ms score=${_peerStats[peerId]!.score.toStringAsFixed(4)}',
         );
@@ -921,7 +689,7 @@ class WebRTCService {
         _logger.fine(
           'Marking request as stale key=$key peer=${v.peerId} ageMs=${DateTime.now().difference(v.sentAt).inMilliseconds}',
         );
-        _peerStats.putIfAbsent(v.peerId, _PeerStats.new).recordFailure();
+        _peerStats.putIfAbsent(v.peerId, PeerStats.new).recordFailure();
         return true;
       }
       return false;
@@ -942,138 +710,156 @@ class WebRTCService {
 
       switch (type) {
         case 'PEER_BUFFER_MAP':
-          final hash = nonEmptyString(signal['fileHash']);
-          final map = normalizePeerBufferMap(payload);
-          if (hash == null) {
-            _logger.warning('[P2P] Ignoring malformed PEER_BUFFER_MAP');
-            break;
-          }
-          _logger.fine(
-            'Peer discovery for file=$hash returned peers=${map.keys.join(',')}',
-          );
-          for (final entry in map.entries) {
-            final peerId = entry.key;
-            _peerLibraries.putIfAbsent(peerId, () => {})[hash] = entry.value;
-            if (!_peerConnections.containsKey(peerId)) {
-              _createPeerConnection(peerId, true);
-            }
-          }
-          _notifyPeerStateChanged();
+          _handlePeerBufferMapSignal(signal, payload);
 
         case 'OFFER':
-          // Glare: both sides sent an offer simultaneously.
-          // Resolve deterministically: higher deviceId keeps its offer.
-          if (_awaitingAnswer.contains(senderId)) {
-            if (myDeviceId.compareTo(senderId) > 0) {
-              _logger.warning(
-                '[P2P] Glare with $senderId — keeping local offer',
-              );
-              break;
-            }
-            _logger.warning(
-              '[P2P] Glare with $senderId — dropping local offer',
-            );
-            _awaitingAnswer.remove(senderId);
-            _pendingOfferId.remove(senderId);
-            _closePeer(senderId);
-          }
-
-          await _createPeerConnection(senderId, false);
-          final offerPc = _peerConnections[senderId];
-          if (offerPc == null) break;
-
-          final offerRemote = parseSdpPayload(payload);
-          if (offerRemote == null) {
-            _logger.warning('[P2P] Ignoring malformed OFFER from $senderId');
-            break;
-          }
-          if (!await _applyRemoteDescription(senderId, offerPc, offerRemote)) {
-            break;
-          }
-          _drainIceQueue(senderId, offerPc);
-
-          final answer = await offerPc.createAnswer();
-          final answerSdp = nonEmptyString(answer.sdp);
-          final answerType = nonEmptyString(answer.type);
-          if (answerSdp == null || answerType == null) {
-            _logger.warning('[P2P] Skipping ANSWER to $senderId — empty SDP');
-            break;
-          }
-          _logger.fine(
-            'Created local ANSWER for peer=$senderId ${_summarizeSdp(answerType, answerSdp)}',
-          );
-          await offerPc.setLocalDescription(answer);
-          final local = await offerPc.getLocalDescription();
-          if (local?.sdp case final localSdp? when local?.type != null) {
-            _logger.fine(
-              'Local description set for peer=$senderId '
-              '${_summarizeSdp(local!.type!, localSdp)}',
-            );
-          }
-          _sendSignal(
-            type: 'ANSWER',
-            targetId: senderId,
-            payload: {
-              'sdp': answerSdp,
-              'type': answerType,
-              if (offerRemote.offerId != null) 'offerId': offerRemote.offerId,
-            },
-          );
+          await _handleOfferSignal(senderId, payload);
 
         case 'ANSWER':
-          final answerPc = _peerConnections[senderId];
-          if (answerPc == null) break;
-
-          final answerRemote = parseSdpPayload(payload);
-          if (answerRemote == null) {
-            _logger.warning('[P2P] Ignoring malformed ANSWER from $senderId');
-            break;
-          }
-          if (await _shouldRejectAnswer(
-            senderId,
-            answerPc,
-            answerRemote.offerId,
-          )) {
-            _logger.warning(
-              '[P2P] Ignoring stale/unexpected ANSWER from $senderId',
-            );
-            break;
-          }
-          if (!await _applyRemoteDescription(
-            senderId,
-            answerPc,
-            answerRemote,
-          )) {
-            break;
-          }
-          _drainIceQueue(senderId, answerPc);
+          await _handleAnswerSignal(senderId, payload);
 
         case 'ICE_CANDIDATE':
-          final icePc = _peerConnections[senderId];
-          final candidate = _parseIceCandidate(payload);
-          if (candidate == null) {
-            _logger.fine(
-              'Ignoring malformed ICE_CANDIDATE from peer=$senderId payload=$payload',
-            );
-            break;
-          }
-          _logger.fine(
-            'Received remote ICE candidate from peer=$senderId ${_summarizeIceCandidate(candidate)}',
-          );
-          if (icePc != null && await icePc.getRemoteDescription() != null) {
-            await icePc.addCandidate(candidate);
-            _logger.fine(
-              'Added remote ICE candidate immediately for peer=$senderId',
-            );
-          } else {
-            final queue = _iceQueues.putIfAbsent(senderId, () => []);
-            queue.add(candidate);
-            _logger.fine(
-              'Queued remote ICE candidate for peer=$senderId pending remote description',
-            );
-          }
+          await _handleIceCandidateSignal(senderId, payload);
       }
     }, onError: (e) => _logger.warning('[P2P] signaling error', e));
+  }
+
+  void _handlePeerBufferMapSignal(
+    Map<dynamic, dynamic> signal,
+    dynamic payload,
+  ) {
+    final hash = nonEmptyString(signal['fileHash']);
+    final map = normalizePeerBufferMap(payload);
+    if (hash == null) {
+      _logger.warning('[P2P] Ignoring malformed PEER_BUFFER_MAP');
+      return;
+    }
+    _logger.fine(
+      'Peer discovery for file=$hash returned peers=${map.keys.join(',')}',
+    );
+    for (final entry in map.entries) {
+      final peerId = entry.key;
+      _peerLibraries.putIfAbsent(peerId, () => {})[hash] = entry.value;
+      if (!_peerConnections.containsKey(peerId)) {
+        _createPeerConnection(peerId, true);
+      }
+    }
+    _notifyPeerStateChanged();
+  }
+
+  Future<void> _handleOfferSignal(String senderId, dynamic payload) async {
+    if (!_resolveOfferGlare(senderId)) return;
+
+    await _createPeerConnection(senderId, false);
+    final offerPc = _peerConnections[senderId];
+    if (offerPc == null) return;
+
+    final offerRemote = parseSdpPayload(payload);
+    if (offerRemote == null) {
+      _logger.warning('[P2P] Ignoring malformed OFFER from $senderId');
+      return;
+    }
+    if (!await _applyRemoteDescription(senderId, offerPc, offerRemote)) {
+      return;
+    }
+    _drainIceQueue(senderId, offerPc);
+
+    await _createAndSendAnswer(senderId, offerPc, offerRemote.offerId);
+  }
+
+  bool _resolveOfferGlare(String senderId) {
+    if (!_awaitingAnswer.contains(senderId)) return true;
+
+    if (myDeviceId.compareTo(senderId) > 0) {
+      _logger.warning('[P2P] Glare with $senderId — keeping local offer');
+      return false;
+    }
+    _logger.warning('[P2P] Glare with $senderId — dropping local offer');
+    _awaitingAnswer.remove(senderId);
+    _pendingOfferId.remove(senderId);
+    _closePeer(senderId);
+    return true;
+  }
+
+  Future<void> _createAndSendAnswer(
+    String senderId,
+    RTCPeerConnection offerPc,
+    String? offerId,
+  ) async {
+    final answer = await offerPc.createAnswer();
+    final answerSdp = nonEmptyString(answer.sdp);
+    final answerType = nonEmptyString(answer.type);
+    if (answerSdp == null || answerType == null) {
+      _logger.warning('[P2P] Skipping ANSWER to $senderId — empty SDP');
+      return;
+    }
+    _logger.fine(
+      'Created local ANSWER for peer=$senderId ${_summarizeSdp(answerType, answerSdp)}',
+    );
+    await offerPc.setLocalDescription(answer);
+    final local = await offerPc.getLocalDescription();
+    if (local?.sdp case final localSdp? when local?.type != null) {
+      _logger.fine(
+        'Local description set for peer=$senderId '
+        '${_summarizeSdp(local!.type!, localSdp)}',
+      );
+    }
+    _sendSignal(
+      type: 'ANSWER',
+      targetId: senderId,
+      payload: {
+        'sdp': answerSdp,
+        'type': answerType,
+        if (offerId != null) 'offerId': offerId,
+      },
+    );
+  }
+
+  Future<void> _handleAnswerSignal(String senderId, dynamic payload) async {
+    final answerPc = _peerConnections[senderId];
+    if (answerPc == null) return;
+
+    final answerRemote = parseSdpPayload(payload);
+    if (answerRemote == null) {
+      _logger.warning('[P2P] Ignoring malformed ANSWER from $senderId');
+      return;
+    }
+    if (await _shouldRejectAnswer(senderId, answerPc, answerRemote.offerId)) {
+      _logger.warning('[P2P] Ignoring stale/unexpected ANSWER from $senderId');
+      return;
+    }
+    if (!await _applyRemoteDescription(senderId, answerPc, answerRemote)) {
+      return;
+    }
+    _drainIceQueue(senderId, answerPc);
+  }
+
+  Future<void> _handleIceCandidateSignal(
+    String senderId,
+    dynamic payload,
+  ) async {
+    final icePc = _peerConnections[senderId];
+    final candidate = _parseIceCandidate(payload);
+    if (candidate == null) {
+      _logger.fine(
+        'Ignoring malformed ICE_CANDIDATE from peer=$senderId payload=$payload',
+      );
+      return;
+    }
+    _logger.fine(
+      'Received remote ICE candidate from peer=$senderId ${_summarizeIceCandidate(candidate)}',
+    );
+    if (icePc != null && await icePc.getRemoteDescription() != null) {
+      await icePc.addCandidate(candidate);
+      _logger.fine('Added remote ICE candidate immediately for peer=$senderId');
+      return;
+    }
+
+    final queue = _iceQueues.putIfAbsent(senderId, () => []);
+    queue.add(candidate);
+    _logger.fine(
+      'Queued remote ICE candidate for peer=$senderId pending remote description',
+    );
   }
 
   Future<bool> _isP2PAllowed() async {
