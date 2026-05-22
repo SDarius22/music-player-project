@@ -158,13 +158,10 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
       context,
       listen: false,
     );
+    final audioProvider = Provider.of<AudioProvider>(context, listen: false);
 
     for (final playlist in selected.value) {
       if (playlist.indestructible && playlist.name == 'Queue') {
-        final audioProvider = Provider.of<AudioProvider>(
-          context,
-          listen: false,
-        );
         await audioProvider.addLastToQueue(widget.songs);
         continue;
       }

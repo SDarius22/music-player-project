@@ -34,8 +34,10 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
         if (entity is! Artist) return;
         final songs = entity.getSongs();
         if (songs.isEmpty) return;
-        await Provider.of<AudioProvider>(context, listen: false)
-            .setQueueAndPlay(songs, songs.first);
+        await Provider.of<AudioProvider>(
+          context,
+          listen: false,
+        ).setQueueAndPlay(songs, songs.first);
       },
     );
   }
@@ -66,8 +68,10 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
             .currentState!
             .push(AddOrExportScreen.route(songs: artist.getSongs()));
       case 1:
-        Provider.of<AudioProvider>(context, listen: false)
-            .addNextToQueue(artist.getSongs());
+        Provider.of<AudioProvider>(
+          context,
+          listen: false,
+        ).addNextToQueue(artist.getSongs());
       case 2:
         final sp = Provider.of<SelectionProvider>(context, listen: false);
         if (sp.selectedEntities.contains(entity)) {

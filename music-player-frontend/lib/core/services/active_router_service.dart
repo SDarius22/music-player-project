@@ -22,7 +22,9 @@ class ActiveChunkRouter {
     if (_activeManagers.containsKey(fileHash)) {
       _activeManagers[fileHash]!.resolvePeerRequest(chunkIndex, data);
     } else {
-      _logger.fine('Router: Dropped stray chunk $chunkIndex for song $fileHash');
+      _logger.fine(
+        'Router: Dropped stray chunk $chunkIndex for song $fileHash',
+      );
     }
   }
 

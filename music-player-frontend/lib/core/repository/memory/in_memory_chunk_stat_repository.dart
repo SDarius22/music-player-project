@@ -31,8 +31,7 @@ class InMemoryChunkStatRepository implements ChunkStatRepository {
 
   @override
   List<ChunkStat> getStatsForSong(String songFileHash) {
-    final list =
-        _stats.where((s) => s.songFileHash == songFileHash).toList();
+    final list = _stats.where((s) => s.songFileHash == songFileHash).toList();
     list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return list;
   }

@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_stat_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
@@ -71,27 +70,29 @@ void main() {
       expect(stored.single.id, greaterThan(0));
     });
 
-    test('getStatistics merges local and remote records by song+timestamp',
-        () async {
-      final localOnly = ChunkStat(
-        songFileHash: 'local-only',
-        songName: 'Local',
-        localChunks: 1,
-        timestamp: DateTime(2026, 1, 1, 12, 0, 0),
-      );
-      repo.saveStat(localOnly);
+    test(
+      'getStatistics merges local and remote records by song+timestamp',
+      () async {
+        final localOnly = ChunkStat(
+          songFileHash: 'local-only',
+          songName: 'Local',
+          localChunks: 1,
+          timestamp: DateTime(2026, 1, 1, 12, 0, 0),
+        );
+        repo.saveStat(localOnly);
 
-      final remoteOnly = ChunkStat(
-        songFileHash: 'remote-only',
-        songName: 'Remote',
-        p2pChunks: 5,
-        timestamp: DateTime(2026, 1, 2, 12, 0, 0),
-      );
-      restClient.remoteRecords.add(remoteOnly);
+        final remoteOnly = ChunkStat(
+          songFileHash: 'remote-only',
+          songName: 'Remote',
+          p2pChunks: 5,
+          timestamp: DateTime(2026, 1, 2, 12, 0, 0),
+        );
+        restClient.remoteRecords.add(remoteOnly);
 
-      final merged = await ChunkStatsService.instance.getStatistics();
+        final merged = await ChunkStatsService.instance.getStatistics();
 
-      expect(merged.map((s) => s.songName), ['Remote', 'Local']);
-    });
+        expect(merged.map((s) => s.songName), ['Remote', 'Local']);
+      },
+    );
   });
 }

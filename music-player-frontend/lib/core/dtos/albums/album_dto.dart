@@ -1,5 +1,3 @@
-
-
 class AlbumDto {
   final String hash;
   final String name;

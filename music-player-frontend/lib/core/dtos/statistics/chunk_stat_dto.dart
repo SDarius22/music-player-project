@@ -37,9 +37,10 @@ class ChunkStatDto {
   factory ChunkStatDto.fromJson(Map<String, dynamic> json) {
     return ChunkStatDto(
       id: (json['id'] as num?)?.toInt(),
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'] as String)
-          : null,
+      timestamp:
+          json['timestamp'] != null
+              ? DateTime.parse(json['timestamp'] as String)
+              : null,
       userId: (json['userId'] as num?)?.toInt(),
       songFileHash: json['songFileHash'] as String,
       songName: json['songName'] as String,

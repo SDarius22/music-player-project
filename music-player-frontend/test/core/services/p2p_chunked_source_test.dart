@@ -1,15 +1,11 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/p2p_chunked_source.dart';
 
 class _FakeChunkService extends Fake implements ChunkService {
-  _FakeChunkService({required ChunkManifestDto manifest, required this.chunks})
-    : manifest = manifest;
+  _FakeChunkService({required this.manifest, required this.chunks});
 
   @override
   ChunkManifestDto? manifest;
@@ -93,7 +89,9 @@ void main() {
     test('retries once when getChunk throws transiently', () async {
       final manager = _FakeChunkService(
         manifest: _manifest(4),
-        chunks: {0: Uint8List.fromList([10, 11, 12, 13])},
+        chunks: {
+          0: Uint8List.fromList([10, 11, 12, 13]),
+        },
       )..failOnceAt.add(0);
 
       final source = P2PChunkedAudioSource(
@@ -130,4 +128,3 @@ void main() {
     });
   });
 }
-

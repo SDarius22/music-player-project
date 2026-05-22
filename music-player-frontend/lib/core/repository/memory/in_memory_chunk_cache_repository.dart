@@ -13,7 +13,11 @@ class InMemoryChunkCacheRepository implements ChunkCacheRepository {
   }
 
   @override
-  Future<void> saveChunk(String fileHash, int chunkIndex, Uint8List data) async {
+  Future<void> saveChunk(
+    String fileHash,
+    int chunkIndex,
+    Uint8List data,
+  ) async {
     _cache[_key(fileHash, chunkIndex)] = data;
   }
 

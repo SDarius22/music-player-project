@@ -16,10 +16,10 @@ abstract class EntityScreen<T extends QueryableProvider>
   Widget build(BuildContext context) {
     return GlassScaffold(
       appBar: buildAppBar(context, entity),
-      body: FutureBuilder(
+      body: FutureBuilder<BaseEntity>(
         future: Future.delayed(
           const Duration(milliseconds: 500),
-          () => loadEntityData(context),
+          () => context.mounted ? loadEntityData(context) : entity,
         ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

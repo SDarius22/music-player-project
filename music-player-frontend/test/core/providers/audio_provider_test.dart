@@ -17,7 +17,10 @@ class _FakeFileService extends Fake implements AbstractFileService {
   List<String> get supportedAudioExtensions => const ['mp3'];
 
   @override
-  Future<Map<String, dynamic>> retrieveSong(String path, {bool withImage = false}) {
+  Future<Map<String, dynamic>> retrieveSong(
+    String path, {
+    bool withImage = false,
+  }) {
     throw UnimplementedError();
   }
 
@@ -155,14 +158,18 @@ void main() {
       mockPlaybackRestClient = MockPlaybackRestClient();
       mockAudioPlayer = MockAudioPlayer();
 
-      when(mockAudioPlayer.durationStream)
-          .thenAnswer((_) => const Stream<Duration?>.empty());
-      when(mockAudioPlayer.positionStream)
-          .thenAnswer((_) => const Stream<Duration>.empty());
-      when(mockAudioPlayer.bufferedPositionStream)
-          .thenAnswer((_) => const Stream<Duration>.empty());
-      when(mockAudioPlayer.playbackEventStream)
-          .thenAnswer((_) => const Stream<PlaybackEvent>.empty());
+      when(
+        mockAudioPlayer.durationStream,
+      ).thenAnswer((_) => const Stream<Duration?>.empty());
+      when(
+        mockAudioPlayer.positionStream,
+      ).thenAnswer((_) => const Stream<Duration>.empty());
+      when(
+        mockAudioPlayer.bufferedPositionStream,
+      ).thenAnswer((_) => const Stream<Duration>.empty());
+      when(
+        mockAudioPlayer.playbackEventStream,
+      ).thenAnswer((_) => const Stream<PlaybackEvent>.empty());
       when(mockAudioPlayer.playing).thenReturn(false);
       when(mockAudioPlayer.processingState).thenReturn(ProcessingState.idle);
       when(mockAudioPlayer.position).thenReturn(Duration.zero);
@@ -205,23 +212,29 @@ void main() {
       expect(service.pauseCalls, 1);
     });
 
-    test('skipToPrevious seeks to zero when slider is above threshold', () async {
-      provider.sliderNotifier.value = 3501;
+    test(
+      'skipToPrevious seeks to zero when slider is above threshold',
+      () async {
+        provider.sliderNotifier.value = 3501;
 
-      await provider.skipToPrevious();
+        await provider.skipToPrevious();
 
-      expect(service.seekCalls, [Duration.zero]);
-      expect(service.skipPreviousCalls, 0);
-    });
+        expect(service.seekCalls, [Duration.zero]);
+        expect(service.skipPreviousCalls, 0);
+      },
+    );
 
-    test('skipToPrevious delegates to service when slider is near start', () async {
-      provider.sliderNotifier.value = 500;
+    test(
+      'skipToPrevious delegates to service when slider is near start',
+      () async {
+        provider.sliderNotifier.value = 500;
 
-      await provider.skipToPrevious();
+        await provider.skipToPrevious();
 
-      expect(service.skipPreviousCalls, 1);
-      expect(service.seekCalls, isEmpty);
-    });
+        expect(service.skipPreviousCalls, 1);
+        expect(service.seekCalls, isEmpty);
+      },
+    );
 
     test('setters forward values to service and local notifiers', () {
       provider.setVolume(0.3);
@@ -243,6 +256,3 @@ void main() {
     });
   });
 }
-
-
-

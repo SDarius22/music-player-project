@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/rest_clients/lyrics_rest_client.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
@@ -59,9 +58,10 @@ void main() {
     });
 
     test('falls back to server when local lyrics are empty', () async {
-      final song = Song('hash')
-        ..name = 'Remote Song'
-        ..path = '/tmp/song.mp3';
+      final song =
+          Song('hash')
+            ..name = 'Remote Song'
+            ..path = '/tmp/song.mp3';
       fileService.lyricsToReturn = '';
       restClient.lyricsToReturn = 'server lyrics';
 
@@ -71,9 +71,10 @@ void main() {
     });
 
     test('falls back to server when local read throws', () async {
-      final song = Song('hash')
-        ..name = 'Remote Song'
-        ..path = '/tmp/song.mp3';
+      final song =
+          Song('hash')
+            ..name = 'Remote Song'
+            ..path = '/tmp/song.mp3';
       fileService.throwOnRead = Exception('read failed');
       restClient.lyricsToReturn = 'server lyrics';
 
@@ -92,4 +93,3 @@ void main() {
     });
   });
 }
-

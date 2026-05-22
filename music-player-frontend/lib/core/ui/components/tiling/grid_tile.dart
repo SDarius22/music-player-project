@@ -106,10 +106,7 @@ class CustomGridTile extends StatelessWidget {
         children: [
           Container(
             alignment: Alignment.topCenter,
-            padding: EdgeInsets.only(
-              left: height * 0.01,
-              right: height * 0.01,
-            ),
+            padding: EdgeInsets.only(left: height * 0.01, right: height * 0.01),
             child:
                 isWide || isExtraTile
                     ? null
@@ -127,9 +124,7 @@ class CustomGridTile extends StatelessWidget {
                 height: width * 0.035,
                 child: _secondaryAction,
               ),
-              Expanded(
-                child: FittedBox(fit: BoxFit.fill, child: _mainAction),
-              ),
+              Expanded(child: FittedBox(fit: BoxFit.fill, child: _mainAction)),
               SizedBox(
                 width: width * 0.035,
                 height: width * 0.035,
@@ -148,16 +143,14 @@ class CustomGridTile extends StatelessWidget {
                     ? null
                     : entity is Song
                     ? Selector<AudioProvider, Song?>(
-                      selector:
-                          (_, audioProvider) => audioProvider.currentSong,
+                      selector: (_, audioProvider) => audioProvider.currentSong,
                       builder: (_, song, _) {
                         return CustomTextScroll(
                           text: entity.getName(),
                           style: Theme.of(
                             context,
                           ).textTheme.titleSmall!.copyWith(
-                            color:
-                                song == entity ? Colors.blue : Colors.white,
+                            color: song == entity ? Colors.blue : Colors.white,
                           ),
                         );
                       },
@@ -219,9 +212,7 @@ class CustomGridTile extends StatelessWidget {
                                 context,
                               ).textTheme.titleSmall!.copyWith(
                                 color:
-                                    song == entity
-                                        ? Colors.blue
-                                        : Colors.white,
+                                    song == entity ? Colors.blue : Colors.white,
                               ),
                             );
                           },

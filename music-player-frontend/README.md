@@ -1,16 +1,21 @@
-# music_player_frontend
+# Music Player Frontend
 
-A new Flutter project.
+Flutter client for the peer-assisted music streaming system.
 
-## Getting Started
+## Development
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter run -d linux
+flutter run -d chrome -t lib/main_web.dart
+```
 
-A few resources to get you started if this is your first Flutter project:
+Use `--dart-define=API_BASE_URL=...` and `--dart-define=WS_BASE_URL=...` to point the app at a non-local backend.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Validation
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+dart format lib test integration_test
+dart analyze
+flutter test
+```

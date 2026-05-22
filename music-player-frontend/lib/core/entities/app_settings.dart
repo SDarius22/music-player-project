@@ -44,11 +44,16 @@ class AppSettings {
             .toList() ??
         [];
     appSettings.peerNetworkMode = (json['peerNetworkMode'] as int?) ?? 2;
-    appSettings.peerWifiDataLimitGB = (json['peerWifiDataLimitGB'] as int?) ?? -1;
-    appSettings.peerCellularDataLimitGB = (json['peerCellularDataLimitGB'] as int?) ?? -1;
-    appSettings.peerWifiUploadedBytesThisMonth = (json['peerWifiUploadedBytesThisMonth'] as int?) ?? 0;
-    appSettings.peerCellularUploadedBytesThisMonth = (json['peerCellularUploadedBytesThisMonth'] as int?) ?? 0;
-    appSettings.peerUploadResetMonth = (json['peerUploadResetMonth'] as int?) ?? 0;
+    appSettings.peerWifiDataLimitGB =
+        (json['peerWifiDataLimitGB'] as int?) ?? -1;
+    appSettings.peerCellularDataLimitGB =
+        (json['peerCellularDataLimitGB'] as int?) ?? -1;
+    appSettings.peerWifiUploadedBytesThisMonth =
+        (json['peerWifiUploadedBytesThisMonth'] as int?) ?? 0;
+    appSettings.peerCellularUploadedBytesThisMonth =
+        (json['peerCellularUploadedBytesThisMonth'] as int?) ?? 0;
+    appSettings.peerUploadResetMonth =
+        (json['peerUploadResetMonth'] as int?) ?? 0;
     return appSettings;
   }
 

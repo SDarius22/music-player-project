@@ -231,61 +231,73 @@ void main() {
     verify(mockCacheRepo.saveChunk('song-hash', 3, data)).called(1);
   });
 
-  test('getChunk evicts corrupt cache entry and recovers from server', () async {
-    final cachedBad = Uint8List.fromList([1, 2, 3]);
-    final serverData = Uint8List.fromList([4, 5, 6]);
-    final hashes = List<String>.filled(12, hashOf(Uint8List.fromList([0])));
-    hashes[9] = hashOf(serverData);
+  test(
+    'getChunk evicts corrupt cache entry and recovers from server',
+    () async {
+      final cachedBad = Uint8List.fromList([1, 2, 3]);
+      final serverData = Uint8List.fromList([4, 5, 6]);
+      final hashes = List<String>.filled(12, hashOf(Uint8List.fromList([0])));
+      hashes[9] = hashOf(serverData);
 
-    when(
-      mockStreamingClient.fetchManifest('song-hash'),
-    ).thenAnswer((_) async => buildManifest(totalChunks: 12, hashes: hashes));
-    when(mockCacheRepo.readChunk('song-hash', 9)).thenAnswer((_) async => cachedBad);
-    when(
-      mockStreamingClient.downloadChunkFallback('song-hash', 9),
-    ).thenAnswer((_) async => serverData);
-    when(mockCacheRepo.deleteChunk('song-hash', 9)).thenAnswer((_) async {});
+      when(
+        mockStreamingClient.fetchManifest('song-hash'),
+      ).thenAnswer((_) async => buildManifest(totalChunks: 12, hashes: hashes));
+      when(
+        mockCacheRepo.readChunk('song-hash', 9),
+      ).thenAnswer((_) async => cachedBad);
+      when(
+        mockStreamingClient.downloadChunkFallback('song-hash', 9),
+      ).thenAnswer((_) async => serverData);
+      when(mockCacheRepo.deleteChunk('song-hash', 9)).thenAnswer((_) async {});
 
-    final service = ChunkService(
-      fileHash: 'song-hash',
-      cacheRepo: mockCacheRepo,
-      streamingClient: mockStreamingClient,
-      webrtcManager: mockWebRtc,
-    );
+      final service = ChunkService(
+        fileHash: 'song-hash',
+        cacheRepo: mockCacheRepo,
+        streamingClient: mockStreamingClient,
+        webrtcManager: mockWebRtc,
+      );
 
-    final result = await service.getChunk(9);
+      final result = await service.getChunk(9);
 
-    expect(result, equals(serverData));
-    verify(mockCacheRepo.deleteChunk('song-hash', 9)).called(1);
-    verify(mockStreamingClient.downloadChunkFallback('song-hash', 9)).called(1);
-  });
+      expect(result, equals(serverData));
+      verify(mockCacheRepo.deleteChunk('song-hash', 9)).called(1);
+      verify(
+        mockStreamingClient.downloadChunkFallback('song-hash', 9),
+      ).called(1);
+    },
+  );
 
-  test('subsequent getChunk call reuses cached result without new server call', () async {
-    final serverData = Uint8List.fromList([7, 7, 7]);
-    final hashes = List<String>.filled(12, hashOf(Uint8List.fromList([0])));
-    hashes[10] = hashOf(serverData);
+  test(
+    'subsequent getChunk call reuses cached result without new server call',
+    () async {
+      final serverData = Uint8List.fromList([7, 7, 7]);
+      final hashes = List<String>.filled(12, hashOf(Uint8List.fromList([0])));
+      hashes[10] = hashOf(serverData);
 
-    when(
-      mockStreamingClient.fetchManifest('song-hash'),
-    ).thenAnswer((_) async => buildManifest(totalChunks: 12, hashes: hashes));
-    when(
-      mockStreamingClient.downloadChunkFallback('song-hash', 10),
-    ).thenAnswer((_) async => serverData);
+      when(
+        mockStreamingClient.fetchManifest('song-hash'),
+      ).thenAnswer((_) async => buildManifest(totalChunks: 12, hashes: hashes));
+      when(
+        mockStreamingClient.downloadChunkFallback('song-hash', 10),
+      ).thenAnswer((_) async => serverData);
 
-    final service = ChunkService(
-      fileHash: 'song-hash',
-      cacheRepo: mockCacheRepo,
-      streamingClient: mockStreamingClient,
-      webrtcManager: mockWebRtc,
-    );
+      final service = ChunkService(
+        fileHash: 'song-hash',
+        cacheRepo: mockCacheRepo,
+        streamingClient: mockStreamingClient,
+        webrtcManager: mockWebRtc,
+      );
 
-    final a = await service.getChunk(10);
-    final b = await service.getChunk(10);
+      final a = await service.getChunk(10);
+      final b = await service.getChunk(10);
 
-    expect(a, equals(serverData));
-    expect(b, equals(serverData));
-    verify(mockStreamingClient.downloadChunkFallback('song-hash', 10)).called(1);
-  });
+      expect(a, equals(serverData));
+      expect(b, equals(serverData));
+      verify(
+        mockStreamingClient.downloadChunkFallback('song-hash', 10),
+      ).called(1);
+    },
+  );
 
   test('flushStats emits aggregated local cache delivery stats', () async {
     final local = Uint8List.fromList([3, 3, 3]);
@@ -295,7 +307,9 @@ void main() {
     when(
       mockStreamingClient.fetchManifest('song-hash'),
     ).thenAnswer((_) async => buildManifest(totalChunks: 1, hashes: hashes));
-    when(mockCacheRepo.readChunk('song-hash', 0)).thenAnswer((_) async => local);
+    when(
+      mockCacheRepo.readChunk('song-hash', 0),
+    ).thenAnswer((_) async => local);
 
     final service = ChunkService(
       fileHash: 'song-hash',

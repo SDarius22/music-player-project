@@ -55,8 +55,10 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
         if (entity is! Playlist) return;
         final songs = entity.getSongs();
         if (songs.isEmpty) return;
-        await Provider.of<AudioProvider>(context, listen: false)
-            .setQueueAndPlay(songs, songs.first);
+        await Provider.of<AudioProvider>(
+          context,
+          listen: false,
+        ).setQueueAndPlay(songs, songs.first);
       },
     );
   }

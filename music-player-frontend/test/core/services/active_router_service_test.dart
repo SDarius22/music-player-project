@@ -1,8 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/services/active_router_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
@@ -75,4 +72,3 @@ void main() {
     });
   });
 }
-

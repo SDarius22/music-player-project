@@ -86,8 +86,10 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
             .currentState
             ?.push(AddOrExportScreen.route(songs: [song]));
       case 1:
-        Provider.of<AudioProvider>(context, listen: false)
-            .addNextToQueue([song]);
+        Provider.of<AudioProvider>(
+          context,
+          listen: false,
+        ).addNextToQueue([song]);
       case 2:
         final sp = Provider.of<SelectionProvider>(context, listen: false);
         if (sp.selectedEntities.contains(entity)) {
@@ -96,10 +98,10 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
           sp.selectEntity(entity);
         }
       case 3:
-        Provider.of<AbstractAppStateProvider>(context, listen: false)
-            .innerNavigatorKey
-            .currentState
-            ?.push(TrackScreen.route(song: song));
+        Provider.of<AbstractAppStateProvider>(
+          context,
+          listen: false,
+        ).innerNavigatorKey.currentState?.push(TrackScreen.route(song: song));
     }
   }
 

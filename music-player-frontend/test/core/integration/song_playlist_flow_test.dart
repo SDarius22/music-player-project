@@ -93,40 +93,53 @@ SongDto _songDto(String hash, String name) {
 
 void main() {
   group('Song + Playlist integration flow', () {
-    test('fetched songs can be queued into a playlist and paged by playlist hash', () async {
-      final songRepo = InMemorySongRepository();
-      final artistRepo = InMemoryArtistRepository();
-      final albumRepo = InMemoryAlbumRepository();
-      final playlistRepo = InMemoryPlaylistRepository();
-      final songClient = _FakeSongRestClient();
-      final playlistClient = _FakePlaylistRestClient();
+    test(
+      'fetched songs can be queued into a playlist and paged by playlist hash',
+      () async {
+        final songRepo = InMemorySongRepository();
+        final artistRepo = InMemoryArtistRepository();
+        final albumRepo = InMemoryAlbumRepository();
+        final playlistRepo = InMemoryPlaylistRepository();
+        final songClient = _FakeSongRestClient();
+        final playlistClient = _FakePlaylistRestClient();
 
-      songClient.songs['s1'] = _songDto('s1', 'One');
-      songClient.songs['s2'] = _songDto('s2', 'Two');
+        songClient.songs['s1'] = _songDto('s1', 'One');
+        songClient.songs['s2'] = _songDto('s2', 'Two');
 
-      final songService = SongService(songRepo, artistRepo, albumRepo, songClient);
-      final playlistService = PlaylistService(
-        playlistRepo,
-        playlistClient,
-        songRepo,
-        songService,
-      );
+        final songService = SongService(
+          songRepo,
+          artistRepo,
+          albumRepo,
+          songClient,
+        );
+        final playlistService = PlaylistService(
+          playlistRepo,
+          playlistClient,
+          songRepo,
+          songService,
+        );
 
-      final s1 = await songService.fetchSongByFileHash('s1');
-      final s2 = await songService.fetchSongByFileHash('s2');
-      expect(s1, isNotNull);
-      expect(s2, isNotNull);
+        final s1 = await songService.fetchSongByFileHash('s1');
+        final s2 = await songService.fetchSongByFileHash('s2');
+        expect(s1, isNotNull);
+        expect(s2, isNotNull);
 
-      final playlist = await playlistService.addPlaylist('Queue', [s2!, s1!], null);
-      final page = await playlistService.getPlaylistSongsPageByHash(
-        playlist.getHash(),
-        page: 0,
-        size: 10,
-      );
+        final playlist = await playlistService.addPlaylist('Queue', [
+          s2!,
+          s1!,
+        ], null);
+        final page = await playlistService.getPlaylistSongsPageByHash(
+          playlist.getHash(),
+          page: 0,
+          size: 10,
+        );
 
-      expect(page.content.map((Song s) => s.getHash()).toList(), ['s2', 's1']);
-      expect(page.totalPages, 1);
-    });
+        expect(page.content.map((Song s) => s.getHash()).toList(), [
+          's2',
+          's1',
+        ]);
+        expect(page.totalPages, 1);
+      },
+    );
   });
 }
-

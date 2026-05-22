@@ -140,7 +140,9 @@ void main() {
       );
 
       expect(result, isTrue);
-      verify(mockAuthService.verifyCode('user@example.com', '123456')).called(1);
+      verify(
+        mockAuthService.verifyCode('user@example.com', '123456'),
+      ).called(1);
     });
   });
 
@@ -169,16 +171,19 @@ void main() {
       expect(provider.currentUser, isNull);
     });
 
-    test('uses fallback email when auto-login has no stored userEmail', () async {
-      when(mockAuthService.tryAutoLogin()).thenAnswer((_) async => true);
-      when(mockAuthService.userEmail).thenAnswer((_) async => null);
-      when(mockAuthService.isAdmin).thenAnswer((_) async => false);
+    test(
+      'uses fallback email when auto-login has no stored userEmail',
+      () async {
+        when(mockAuthService.tryAutoLogin()).thenAnswer((_) async => true);
+        when(mockAuthService.userEmail).thenAnswer((_) async => null);
+        when(mockAuthService.isAdmin).thenAnswer((_) async => false);
 
-      final result = await provider.tryAutoLogin();
+        final result = await provider.tryAutoLogin();
 
-      expect(result, isTrue);
-      expect(provider.currentUser?.email, 'unknown');
-    });
+        expect(result, isTrue);
+        expect(provider.currentUser?.email, 'unknown');
+      },
+    );
   });
 
   group('logout', () {

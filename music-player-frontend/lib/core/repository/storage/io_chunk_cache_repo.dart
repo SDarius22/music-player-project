@@ -46,7 +46,11 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
   }
 
   @override
-  Future<void> saveChunk(String fileHash, int chunkIndex, Uint8List data) async {
+  Future<void> saveChunk(
+    String fileHash,
+    int chunkIndex,
+    Uint8List data,
+  ) async {
     final songDir = await _getSongDir(fileHash);
 
     if (!await songDir.exists()) {

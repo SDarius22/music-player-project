@@ -86,9 +86,10 @@ class P2PChunkedAudioSource extends StreamAudioSource {
     }
 
     for (int i = startChunk; i <= endChunk && remaining > 0; i++) {
-      final Uint8List chunkBytes = await (i == startChunk
-          ? _getChunkWithRetry(manager, i)
-          : nextChunkFuture!);
+      final Uint8List chunkBytes =
+          await (i == startChunk
+              ? _getChunkWithRetry(manager, i)
+              : nextChunkFuture!);
 
       if (i + 1 <= endChunk) {
         nextChunkFuture = _getChunkWithRetry(manager, i + 1);

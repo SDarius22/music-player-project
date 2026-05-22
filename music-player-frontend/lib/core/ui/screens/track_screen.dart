@@ -14,12 +14,11 @@ import 'abstract/route_builder.dart';
 class TrackScreen extends EntityScreen<SongProvider> {
   static Route<void> route({required Song song}) {
     return buildFadeRoute(
-      (context, animation, secondaryAnimation) =>
-          TrackScreen(
-            entity: song,
-            provider: context.read<SongProvider>(),
-            liked: song.likedByUser,
-          ),
+      (context, animation, secondaryAnimation) => TrackScreen(
+        entity: song,
+        provider: context.read<SongProvider>(),
+        liked: song.likedByUser,
+      ),
       settings: RouteSettings(name: "/track/${song.id}"),
     );
   }

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
@@ -42,8 +41,7 @@ class _FakeAlbumService extends Fake implements AlbumService {
     bool containLocalOnly,
     int page,
     int size,
-  ) async =>
-      pageResult;
+  ) async => pageResult;
 
   @override
   Future<PageResult<Song>> getAlbumSongsPage(
@@ -51,8 +49,7 @@ class _FakeAlbumService extends Fake implements AlbumService {
     bool localOnly = false,
     int page = 0,
     int size = 50,
-  }) async =>
-      songsPageResult;
+  }) async => songsPageResult;
 }
 
 class _FakeArtistService extends Fake implements ArtistService {
@@ -79,8 +76,7 @@ class _FakeArtistService extends Fake implements ArtistService {
     bool containLocalOnly,
     int page,
     int size,
-  ) async =>
-      pageResult;
+  ) async => pageResult;
 
   @override
   Future<PageResult<Song>> getArtistSongsPage(
@@ -88,8 +84,7 @@ class _FakeArtistService extends Fake implements ArtistService {
     bool localOnly = false,
     int page = 0,
     int size = 50,
-  }) async =>
-      songsPageResult;
+  }) async => songsPageResult;
 }
 
 class _FakePlaylistService extends Fake implements PlaylistService {
@@ -123,8 +118,7 @@ class _FakePlaylistService extends Fake implements PlaylistService {
     bool containLocalOnly,
     int page,
     int size,
-  ) async =>
-      pageResult;
+  ) async => pageResult;
 
   @override
   Future<PageResult<Song>> getPlaylistSongsPageByHash(
@@ -132,11 +126,11 @@ class _FakePlaylistService extends Fake implements PlaylistService {
     bool localOnly = false,
     int page = 0,
     int size = 50,
-  }) async =>
-      songsPageResult;
+  }) async => songsPageResult;
 
   @override
-  Future<Playlist> getPlaylistDetails(Playlist playlist) async => detailsToReturn!;
+  Future<Playlist> getPlaylistDetails(Playlist playlist) async =>
+      detailsToReturn!;
 
   @override
   Future<Playlist> addPlaylist(
@@ -157,15 +151,11 @@ class _FakePlaylistService extends Fake implements PlaylistService {
 
   @override
   Future<({List<Playlist> content, int totalPages, int page})>
-  getIndestructiblePlaylists(int page, int size) async =>
-      indestructibleResult;
+  getIndestructiblePlaylists(int page, int size) async => indestructibleResult;
 
   @override
-  Future<({List<Playlist> content, int totalPages, int page})> getNormalPlaylists(
-    int page,
-    int size,
-  ) async =>
-      normalResult;
+  Future<({List<Playlist> content, int totalPages, int page})>
+  getNormalPlaylists(int page, int size) async => normalResult;
 
   @override
   Future<PageResult<Song>> getPlaylistSongsPage(
@@ -173,8 +163,7 @@ class _FakePlaylistService extends Fake implements PlaylistService {
     bool localOnly = false,
     int page = 0,
     int size = 50,
-  }) async =>
-      songsPageResult;
+  }) async => songsPageResult;
 }
 
 class _FakeSongService extends Fake implements SongService {
@@ -214,8 +203,7 @@ class _FakeSongService extends Fake implements SongService {
     bool localOnly,
     int page,
     int pageSize,
-  ) async =>
-      pageResult;
+  ) async => pageResult;
 
   @override
   Future<PageResult<Song>> getRecommendations(int page, int size) async =>
@@ -261,7 +249,11 @@ void main() {
       final song = Song('s1');
       service.albumToReturn = album;
       service.pageResult = (content: [album], totalPages: 2, page: 1);
-      service.songsPageResult = PageResult(content: [song], totalPages: 3, page: 0);
+      service.songsPageResult = PageResult(
+        content: [song],
+        totalPages: 3,
+        page: 0,
+      );
 
       final page = await provider.fetchPage('', 'Name', true, false, 1, 10);
       final details = await provider.fetchEntity(album);
@@ -281,7 +273,11 @@ void main() {
       final song = Song('s1');
       service.artistToReturn = artist;
       service.pageResult = (content: [artist], totalPages: 2, page: 1);
-      service.songsPageResult = PageResult(content: [song], totalPages: 3, page: 0);
+      service.songsPageResult = PageResult(
+        content: [song],
+        totalPages: 3,
+        page: 0,
+      );
 
       final page = await provider.fetchPage('', 'Name', true, false, 1, 10);
       final details = await provider.fetchEntity(artist);
@@ -300,7 +296,11 @@ void main() {
       final playlist = Playlist('Queue')..serverId = 1;
       final song = Song('s1');
       service.pageResult = (content: [playlist], totalPages: 2, page: 1);
-      service.songsPageResult = PageResult(content: [song], totalPages: 3, page: 0);
+      service.songsPageResult = PageResult(
+        content: [song],
+        totalPages: 3,
+        page: 0,
+      );
       service.detailsToReturn = playlist;
       var notifyCount = 0;
       provider.addListener(() {
@@ -324,66 +324,77 @@ void main() {
       expect(notifyCount, 5);
     });
 
-    test('passes through indestructible and normal playlist page methods', () async {
-      final service = _FakePlaylistService();
-      final provider = PlaylistProvider(service);
-      final p1 = Playlist('A');
-      final p2 = Playlist('B');
-      service.indestructibleResult = (content: [p1], totalPages: 1, page: 0);
-      service.normalResult = (content: [p2], totalPages: 2, page: 1);
+    test(
+      'passes through indestructible and normal playlist page methods',
+      () async {
+        final service = _FakePlaylistService();
+        final provider = PlaylistProvider(service);
+        final p1 = Playlist('A');
+        final p2 = Playlist('B');
+        service.indestructibleResult = (content: [p1], totalPages: 1, page: 0);
+        service.normalResult = (content: [p2], totalPages: 2, page: 1);
 
-      final a = await provider.getIndestructiblePlaylists(0, 10);
-      final b = await provider.getNormalPlaylists(1, 10);
+        final a = await provider.getIndestructiblePlaylists(0, 10);
+        final b = await provider.getNormalPlaylists(1, 10);
 
-      expect(a.content, [p1]);
-      expect(b.content, [p2]);
-    });
+        expect(a.content, [p1]);
+        expect(b.content, [p2]);
+      },
+    );
   });
 
   group('SongProvider', () {
-    test('delegates fetch/enrich/list methods and notifies on refresh', () async {
-      final songService = _FakeSongService();
-      final scanner = _FakeScannerService();
-      addTearDown(scanner.dispose);
-      final provider = SongProvider(songService, scanner);
-      final song = Song('s1')..name = 'Song 1';
-      final enriched = Song('s1')
-        ..name = 'Song 1'
-        ..fullyLoaded = true;
-      songService.fetchedSong = song;
-      songService.enrichedSong = enriched;
-      songService.pageResult = PageResult(content: [song], totalPages: 2, page: 1);
-      songService.recommendationsResult = PageResult(
-        content: [song],
-        totalPages: 1,
-        page: 0,
-      );
-      songService.forgotten = [song];
-      songService.quickDial = [song];
-      var notifyCount = 0;
-      provider.addListener(() {
-        notifyCount++;
-      });
+    test(
+      'delegates fetch/enrich/list methods and notifies on refresh',
+      () async {
+        final songService = _FakeSongService();
+        final scanner = _FakeScannerService();
+        addTearDown(scanner.dispose);
+        final provider = SongProvider(songService, scanner);
+        final song = Song('s1')..name = 'Song 1';
+        final enriched =
+            Song('s1')
+              ..name = 'Song 1'
+              ..fullyLoaded = true;
+        songService.fetchedSong = song;
+        songService.enrichedSong = enriched;
+        songService.pageResult = PageResult(
+          content: [song],
+          totalPages: 2,
+          page: 1,
+        );
+        songService.recommendationsResult = PageResult(
+          content: [song],
+          totalPages: 1,
+          page: 0,
+        );
+        songService.forgotten = [song];
+        songService.quickDial = [song];
+        var notifyCount = 0;
+        provider.addListener(() {
+          notifyCount++;
+        });
 
-      final fetched = await provider.fetchEntity(song);
-      final full = await provider.enrichSong(song);
-      final page = await provider.fetchPage('', 'Title', true, false, 1, 10);
-      final recs = await provider.fetchRecommendedSongs();
-      final forgotten = await provider.fetchRediscoverSongs();
-      final jumpBack = await provider.fetchJumpBackSongs();
-      provider.removeSong(song);
-      await provider.updateSong(song);
-      await provider.refresh();
-      provider.refreshSongs();
+        final fetched = await provider.fetchEntity(song);
+        final full = await provider.enrichSong(song);
+        final page = await provider.fetchPage('', 'Title', true, false, 1, 10);
+        final recs = await provider.fetchRecommendedSongs();
+        final forgotten = await provider.fetchRediscoverSongs();
+        final jumpBack = await provider.fetchJumpBackSongs();
+        provider.removeSong(song);
+        await provider.updateSong(song);
+        await provider.refresh();
+        provider.refreshSongs();
 
-      expect(fetched, same(song));
-      expect(full, same(enriched));
-      expect(page.content, [song]);
-      expect(recs, [song]);
-      expect(forgotten, [song]);
-      expect(jumpBack, [song]);
-      expect(notifyCount, 4);
-    });
+        expect(fetched, same(song));
+        expect(full, same(enriched));
+        expect(page.content, [song]);
+        expect(recs, [song]);
+        expect(forgotten, [song]);
+        expect(jumpBack, [song]);
+        expect(notifyCount, 4);
+      },
+    );
 
     test('listens to scanner progress and notifies listeners', () async {
       final songService = _FakeSongService();
@@ -411,4 +422,3 @@ void main() {
     });
   });
 }
-

@@ -162,11 +162,11 @@ void main() {
         final pl = inv.positionalArguments[1] as Playlist;
         pl.removeSong(song);
       });
-      when(mockAudioPlayer.setVolume(any)).thenAnswer((_) async => null);
-      when(mockAudioPlayer.setSpeed(any)).thenAnswer((_) async => null);
-      when(mockAudioPlayer.setLoopMode(any)).thenAnswer((_) async => null);
-      when(mockAudioPlayer.stop()).thenAnswer((_) async => null);
-      when(mockAudioPlayer.play()).thenAnswer((_) async => null);
+      when(mockAudioPlayer.setVolume(any)).thenAnswer((_) async {});
+      when(mockAudioPlayer.setSpeed(any)).thenAnswer((_) async {});
+      when(mockAudioPlayer.setLoopMode(any)).thenAnswer((_) async {});
+      when(mockAudioPlayer.stop()).thenAnswer((_) async {});
+      when(mockAudioPlayer.play()).thenAnswer((_) async {});
       when(
         mockAudioPlayer.setAudioSource(
           any,
@@ -278,11 +278,11 @@ void main() {
             }
             return pl;
           });
-          when(mockAudioPlayer.setVolume(any)).thenAnswer((_) async => null);
-          when(mockAudioPlayer.setSpeed(any)).thenAnswer((_) async => null);
-          when(mockAudioPlayer.setLoopMode(any)).thenAnswer((_) async => null);
-          when(mockAudioPlayer.stop()).thenAnswer((_) async => null);
-          when(mockAudioPlayer.play()).thenAnswer((_) async => null);
+          when(mockAudioPlayer.setVolume(any)).thenAnswer((_) async {});
+          when(mockAudioPlayer.setSpeed(any)).thenAnswer((_) async {});
+          when(mockAudioPlayer.setLoopMode(any)).thenAnswer((_) async {});
+          when(mockAudioPlayer.stop()).thenAnswer((_) async {});
+          when(mockAudioPlayer.play()).thenAnswer((_) async {});
           when(
             mockAudioPlayer.setAudioSource(
               any,

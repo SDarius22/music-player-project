@@ -28,8 +28,7 @@ class ObjectBoxChunkStatRepository implements ChunkStatRepository {
   List<ChunkStat> getStatsForSong(String songFileHash) {
     final query =
         (_box.query(ChunkStat_.songFileHash.equals(songFileHash))
-              ..order(ChunkStat_.timestamp, flags: Order.descending))
-            .build();
+          ..order(ChunkStat_.timestamp, flags: Order.descending)).build();
     try {
       return query.find();
     } finally {

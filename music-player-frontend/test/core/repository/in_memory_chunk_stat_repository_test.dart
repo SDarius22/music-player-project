@@ -11,11 +11,7 @@ void main() {
     });
 
     test('saveStat assigns an id and stores the record', () {
-      final stat = ChunkStat(
-        songFileHash: 'h1',
-        songName: 'A',
-        p2pChunks: 3,
-      );
+      final stat = ChunkStat(songFileHash: 'h1', songName: 'A', p2pChunks: 3);
 
       final saved = repo.saveStat(stat);
 

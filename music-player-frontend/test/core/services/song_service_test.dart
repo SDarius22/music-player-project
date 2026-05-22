@@ -134,9 +134,10 @@ void main() {
     });
 
     test('fetchSongByFileHash returns local song when present', () async {
-      final local = Song('local-hash')
-        ..name = 'Local'
-        ..fullyLoaded = true;
+      final local =
+          Song('local-hash')
+            ..name = 'Local'
+            ..fullyLoaded = true;
       songRepo.saveSong(local);
 
       final result = await service.fetchSongByFileHash('local-hash');
@@ -157,9 +158,10 @@ void main() {
     });
 
     test('getSongsPage returns local results when localOnly is true', () async {
-      final local = Song('h1')
-        ..name = 'Track'
-        ..fullyLoaded = true;
+      final local =
+          Song('h1')
+            ..name = 'Track'
+            ..fullyLoaded = true;
       songRepo.saveSong(local);
 
       final page = await service.getSongsPage(
@@ -183,18 +185,22 @@ void main() {
       expect(() => service.getOrCreateSong(''), throwsArgumentError);
     });
 
-    test('fullyFetchSong returns same song when already fully loaded', () async {
-      final song = Song('loaded')..fullyLoaded = true;
+    test(
+      'fullyFetchSong returns same song when already fully loaded',
+      () async {
+        final song = Song('loaded')..fullyLoaded = true;
 
-      final result = await service.fullyFetchSong(song);
+        final result = await service.fullyFetchSong(song);
 
-      expect(result, same(song));
-    });
+        expect(result, same(song));
+      },
+    );
 
     test('fullyFetchSong prefers fully loaded local cached version', () async {
-      final local = Song('cached')
-        ..name = 'Cached'
-        ..fullyLoaded = true;
+      final local =
+          Song('cached')
+            ..name = 'Cached'
+            ..fullyLoaded = true;
       songRepo.saveSong(local);
 
       final result = await service.fullyFetchSong(Song('cached'));
@@ -210,32 +216,39 @@ void main() {
       expect(result, same(partial));
     });
 
-    test('updateSong still persists local update when server update fails', () async {
-      final song = Song('h1')
-        ..likedByUser = true
-        ..playCount = 5;
-      restClient.throwOnUpdate = true;
+    test(
+      'updateSong still persists local update when server update fails',
+      () async {
+        final song =
+            Song('h1')
+              ..likedByUser = true
+              ..playCount = 5;
+        restClient.throwOnUpdate = true;
 
-      await service.updateSong(song);
+        await service.updateSong(song);
 
-      expect(songRepo.getSongByFileHash('h1')?.likedByUser, isTrue);
-      expect(songRepo.getSongByFileHash('h1')?.playCount, 5);
-    });
+        expect(songRepo.getSongByFileHash('h1')?.likedByUser, isTrue);
+        expect(songRepo.getSongByFileHash('h1')?.playCount, 5);
+      },
+    );
 
-    test('getFavoriteSongs falls back to server when local list is empty', () async {
-      restClient.favouritesPage = SongPageDto(
-        content: [buildSongDto('fav-1')],
-        page: 0,
-        size: 10,
-        totalPages: 1,
-        totalElements: 1,
-      );
+    test(
+      'getFavoriteSongs falls back to server when local list is empty',
+      () async {
+        restClient.favouritesPage = SongPageDto(
+          content: [buildSongDto('fav-1')],
+          page: 0,
+          size: 10,
+          totalPages: 1,
+          totalElements: 1,
+        );
 
-      final result = await service.getFavoriteSongs();
+        final result = await service.getFavoriteSongs();
 
-      expect(result, hasLength(1));
-      expect(result.single.getHash(), 'fav-1');
-    });
+        expect(result, hasLength(1));
+        expect(result.single.getHash(), 'fav-1');
+      },
+    );
 
     test('getMostPlayedSongs prefers local values over server', () async {
       final local = Song('local-most')..playCount = 99;
@@ -253,18 +266,21 @@ void main() {
       expect(result.single.getHash(), 'local-most');
     });
 
-    test('getRecentlyPlayedSongs falls back to server when local list is empty', () async {
-      restClient.recentlyPlayedPage = SongPageDto(
-        content: [buildSongDto('recent-1')],
-        page: 0,
-        size: 1,
-        totalPages: 1,
-        totalElements: 1,
-      );
+    test(
+      'getRecentlyPlayedSongs falls back to server when local list is empty',
+      () async {
+        restClient.recentlyPlayedPage = SongPageDto(
+          content: [buildSongDto('recent-1')],
+          page: 0,
+          size: 1,
+          totalPages: 1,
+          totalElements: 1,
+        );
 
-      final result = await service.getRecentlyPlayedSongs(1);
+        final result = await service.getRecentlyPlayedSongs(1);
 
-      expect(result.single.getHash(), 'recent-1');
-    });
+        expect(result.single.getHash(), 'recent-1');
+      },
+    );
   });
 }
