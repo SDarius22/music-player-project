@@ -45,9 +45,8 @@
     if ('serviceWorker' in navigator) {
         const appBaseUrl = new URL('./', document.baseURI);
         const workerUrl = new URL('p2p-worker.js', appBaseUrl);
-        const p2pScope = `${appBaseUrl.pathname}p2p-stream/`;
         navigator.serviceWorker.register(workerUrl.href, {
-            scope: p2pScope
+            scope: appBaseUrl.pathname
         }).then(function () {
             console.log('P2P ServiceWorker registered');
         }).catch(function (err) {

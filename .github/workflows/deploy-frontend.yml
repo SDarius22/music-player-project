@@ -81,7 +81,7 @@ jobs:
         run: flutter pub get
 
       - working-directory: ./music-player-frontend
-        run: flutter build web -t lib/main_web.dart --base-href / --release --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling --dart-define=DOWNLOAD_BASE_URL=https://music.bt-app.com/downloads
+        run: flutter build web -t lib/main_web.dart --base-href / --pwa-strategy=none --release --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling --dart-define=DOWNLOAD_BASE_URL=https://music.bt-app.com/downloads
 
       - id: ssh_primary
         uses: appleboy/ssh-action@v1.0.0
@@ -130,7 +130,7 @@ jobs:
         run: flutter pub get
 
       - working-directory: ./music-player-frontend
-        run: flutter build web -t lib/main_web.dart --base-href / --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling --dart-define=DOWNLOAD_BASE_URL=https://music.dariussala.com/downloads
+        run: flutter build web -t lib/main_web.dart --base-href / --pwa-strategy=none --release --dart-define=API_BASE_URL=https://api.dariussala.com/music-player --dart-define=WS_BASE_URL=wss://wss.dariussala.com/music-player/signaling --dart-define=DOWNLOAD_BASE_URL=https://music.dariussala.com/downloads
 
       - id: ssh_cluj
         uses: appleboy/ssh-action@v1.0.0

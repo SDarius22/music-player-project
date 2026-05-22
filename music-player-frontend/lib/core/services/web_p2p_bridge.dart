@@ -25,24 +25,20 @@ class WebP2PBridge {
   Future<bool> ensureServiceWorkerReady() => _serviceWorkerReady;
 
   Future<bool> _waitForServiceWorkerReady() async {
-    final scopeUrl = Uri.base.resolve('p2p-stream/').toString();
     try {
       await web.window.navigator.serviceWorker.ready.toDart.timeout(
         const Duration(seconds: 8),
       );
 
-      final registration =
-          await web.window.navigator.serviceWorker
-              .getRegistration(scopeUrl)
-              .toDart;
-      final activeScript = registration?.active?.scriptURL ?? '';
-      final isP2PRegistration = activeScript.contains('p2p-worker.js');
-      if (!isP2PRegistration) {
+      final controller = web.window.navigator.serviceWorker.controller;
+      final controllerScript = controller?.scriptURL ?? '';
+      final isP2PController = controllerScript.contains('p2p-worker.js');
+      if (!isP2PController) {
         _logger.warning(
-          'P2P worker is not active for scope $scopeUrl (active=$activeScript)',
+          'P2P worker is not controlling this page (controller=$controllerScript)',
         );
       }
-      return isP2PRegistration;
+      return isP2PController;
     } catch (e) {
       _logger.warning('Service worker readiness wait timed out or failed', e);
       return false;
