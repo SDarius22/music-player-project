@@ -7,28 +7,27 @@ import java.util.HexFormat;
 
 public final class EntityHashHelper {
 
-    private EntityHashHelper() {
-    }
+  private EntityHashHelper() {}
 
-    public static String artistHash(String artistName) {
-        return sha256Hex(normalize(artistName));
-    }
+  public static String artistHash(String artistName) {
+    return sha256Hex(normalize(artistName));
+  }
 
-    public static String albumHash(String albumName) {
-        return sha256Hex(normalize(albumName));
-    }
+  public static String albumHash(String albumName) {
+    return sha256Hex(normalize(albumName));
+  }
 
-    private static String sha256Hex(String value) {
-        try {
-            return HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8))
-            );
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is not available", e);
-        }
+  private static String sha256Hex(String value) {
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 is not available", e);
     }
+  }
 
-    private static String normalize(String value) {
-        return value == null ? "" : value;
-    }
+  private static String normalize(String value) {
+    return value == null ? "" : value;
+  }
 }

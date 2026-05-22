@@ -1,7 +1,13 @@
 package com.example.musicplayerbackend.controller;
 
-import com.example.musicplayerbackend.domain.*;
+import com.example.musicplayerbackend.domain.CreatePlaylistDto;
+import com.example.musicplayerbackend.domain.PlaylistExpandedDto;
+import com.example.musicplayerbackend.domain.PlaylistPageDto;
+import com.example.musicplayerbackend.domain.SongPageDto;
+import com.example.musicplayerbackend.domain.UpdatePlaylistDto;
+import com.example.musicplayerbackend.domain.User;
 import com.example.musicplayerbackend.service.PlaylistService;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -13,73 +19,82 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Objects;
-
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class PlaylistController implements PlaylistsApi {
 
-    private final PlaylistService playlistService;
+  private final PlaylistService playlistService;
 
-    @Override
-    public ResponseEntity<PlaylistPageDto> getPlaylists(String q, String sort, Boolean filterIndestructible, Boolean includeQueue, Integer page, Integer size) {
-        User user = currentUser();
-        int safePage = page == null ? 0 : Math.max(page, 0);
-        int safeSize = size == null ? 50 : Math.min(Math.max(size, 1), 200);
-        return ResponseEntity.ok(playlistService.getPlaylists(user.getId(), q, sort, filterIndestructible, includeQueue, safePage, safeSize));
-    }
+  @Override
+  public ResponseEntity<PlaylistPageDto> getPlaylists(
+      String q,
+      String sort,
+      Boolean filterIndestructible,
+      Boolean includeQueue,
+      Integer page,
+      Integer size) {
+    User user = currentUser();
+    int safePage = page == null ? 0 : Math.max(page, 0);
+    int safeSize = size == null ? 50 : Math.min(Math.max(size, 1), 200);
+    return ResponseEntity.ok(
+        playlistService.getPlaylists(
+            user.getId(), q, sort, filterIndestructible, includeQueue, safePage, safeSize));
+  }
 
-    @Override
-    public ResponseEntity<PlaylistExpandedDto> getPlaylistByName(String name) {
-        User user = currentUser();
-        return ResponseEntity.ok(playlistService.getPlaylistByName(user.getId(), name));
-    }
+  @Override
+  public ResponseEntity<PlaylistExpandedDto> getPlaylistByName(String name) {
+    User user = currentUser();
+    return ResponseEntity.ok(playlistService.getPlaylistByName(user.getId(), name));
+  }
 
-    @Override
-    public ResponseEntity<PlaylistExpandedDto> createPlaylist(CreatePlaylistDto body) {
-        User user = currentUser();
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(playlistService.createPlaylist(user, body));
-    }
+  @Override
+  public ResponseEntity<PlaylistExpandedDto> createPlaylist(CreatePlaylistDto body) {
+    User user = currentUser();
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(playlistService.createPlaylist(user, body));
+  }
 
-    @Override
-    public ResponseEntity<PlaylistExpandedDto> getPlaylistById(Long playlistId) {
-        User user = currentUser();
-        return ResponseEntity.ok(playlistService.getPlaylistById(playlistId, user.getId()));
-    }
+  @Override
+  public ResponseEntity<PlaylistExpandedDto> getPlaylistById(Long playlistId) {
+    User user = currentUser();
+    return ResponseEntity.ok(playlistService.getPlaylistById(playlistId, user.getId()));
+  }
 
-    @Override
-    public ResponseEntity<PlaylistExpandedDto> updatePlaylist(Long playlistId, UpdatePlaylistDto body) {
-        User user = currentUser();
-        return ResponseEntity.ok(playlistService.updatePlaylist(playlistId, user.getId(), body));
-    }
+  @Override
+  public ResponseEntity<PlaylistExpandedDto> updatePlaylist(
+      Long playlistId, UpdatePlaylistDto body) {
+    User user = currentUser();
+    return ResponseEntity.ok(playlistService.updatePlaylist(playlistId, user.getId(), body));
+  }
 
-    @Override
-    public ResponseEntity<Void> deletePlaylist(Long playlistId) {
-        User user = currentUser();
-        playlistService.deletePlaylist(playlistId, user.getId());
-        return ResponseEntity.noContent().build();
-    }
+  @Override
+  public ResponseEntity<Void> deletePlaylist(Long playlistId) {
+    User user = currentUser();
+    playlistService.deletePlaylist(playlistId, user.getId());
+    return ResponseEntity.noContent().build();
+  }
 
-    @Override
-    public ResponseEntity<Resource> getPlaylistCover(Long playlistId) {
-        User user = currentUser();
-        byte[] bytes = playlistService.getPlaylistCover(playlistId, user.getId());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
-                .header(HttpHeaders.CACHE_CONTROL, "private, max-age=86400")
-                .body(new ByteArrayResource(bytes));
-    }
+  @Override
+  public ResponseEntity<Resource> getPlaylistCover(Long playlistId) {
+    User user = currentUser();
+    byte[] bytes = playlistService.getPlaylistCover(playlistId, user.getId());
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
+        .header(HttpHeaders.CACHE_CONTROL, "private, max-age=86400")
+        .body(new ByteArrayResource(bytes));
+  }
 
-    @Override
-    public ResponseEntity<SongPageDto> getPlaylistSongs(Long playlistId, Integer page, Integer size) {
-        User user = currentUser();
-        return ResponseEntity.ok(playlistService.getPlaylistSongs(playlistId, user.getId(), page, size));
-    }
+  @Override
+  public ResponseEntity<SongPageDto> getPlaylistSongs(Long playlistId, Integer page, Integer size) {
+    User user = currentUser();
+    return ResponseEntity.ok(
+        playlistService.getPlaylistSongs(playlistId, user.getId(), page, size));
+  }
 
-    private User currentUser() {
-        return (User) Objects.requireNonNull(
-                SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-    }
+  private User currentUser() {
+    return (User)
+        Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication())
+            .getPrincipal();
+  }
 }

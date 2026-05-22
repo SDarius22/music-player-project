@@ -1,9 +1,17 @@
 package com.example.musicplayerbackend.domain;
 
-import jakarta.persistence.*;
-import lombok.*;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.Instant;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "chunk_stats")
@@ -14,35 +22,35 @@ import java.time.Instant;
 @Builder
 public class ChunkStat {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false)
-    private Instant timestamp;
+  @Column(nullable = false)
+  private Instant timestamp;
 
-    private Long userId;
+  private Long userId;
 
-    @Column(length = 64)
-    private String songFileHash;
+  @Column(length = 64)
+  private String songFileHash;
 
-    private String songName;
+  private String songName;
 
-    @Column(nullable = false)
-    private Integer localChunks;
+  @Column(nullable = false)
+  private Integer localChunks;
 
-    @Column(nullable = false)
-    private Integer localCachedChunks;
+  @Column(nullable = false)
+  private Integer localCachedChunks;
 
-    @Column(nullable = false)
-    private Integer p2pChunks;
+  @Column(nullable = false)
+  private Integer p2pChunks;
 
-    @Column(nullable = false)
-    private Integer serverChunks;
+  @Column(nullable = false)
+  private Integer serverChunks;
 
-    @Column(nullable = false)
-    private Integer totalChunks;
+  @Column(nullable = false)
+  private Integer totalChunks;
 
-    @Column(nullable = false)
-    private Double p2pPercentage;
+  @Column(nullable = false)
+  private Double p2pPercentage;
 }

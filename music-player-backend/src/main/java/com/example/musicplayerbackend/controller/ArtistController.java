@@ -24,8 +24,8 @@ public class ArtistController implements ArtistsApi {
   private final ArtistService artistService;
 
   @Override
-  public ResponseEntity<ArtistPageDto> getArtists(String q, Integer page, Integer size,
-      String sort) {
+  public ResponseEntity<ArtistPageDto> getArtists(
+      String q, Integer page, Integer size, String sort) {
     return ResponseEntity.ok(artistService.getArtists(q, page, size, sort));
   }
 
@@ -35,9 +35,10 @@ public class ArtistController implements ArtistsApi {
   }
 
   private Long currentUserId() {
-    User user = (User) Objects.requireNonNull(
-        SecurityContextHolder.getContext().getAuthentication()
-    ).getPrincipal();
+    User user =
+        (User)
+            Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication())
+                .getPrincipal();
     return user.getId();
   }
 

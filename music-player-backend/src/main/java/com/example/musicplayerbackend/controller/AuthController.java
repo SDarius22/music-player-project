@@ -17,24 +17,28 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController implements AuthApi {
 
-    private final AuthService authService;
+  private final AuthService authService;
 
-    @Override
-    public ResponseEntity<Void> sendVerificationCode(EmailRequest emailRequest) {
-        log.info("[AUTH] Verification code requested for email={}", emailRequest.getEmail());
-        authService.sendVerificationCode(emailRequest.getEmail());
-        return ResponseEntity.ok().build();
-    }
+  @Override
+  public ResponseEntity<Void> sendVerificationCode(EmailRequest emailRequest) {
+    log.info("[AUTH] Verification code requested for email={}", emailRequest.getEmail());
+    authService.sendVerificationCode(emailRequest.getEmail());
+    return ResponseEntity.ok().build();
+  }
 
-    @Override
-    public ResponseEntity<AuthResponse> verifyAuthenticationCode(VerificationRequest verificationRequest) {
-        log.info("[AUTH] Code verification attempt for email={}", verificationRequest.getEmail());
-        return ResponseEntity.ok(authService.verifyCodeAndGenerateResponse(verificationRequest.getEmail(), verificationRequest.getCode()));
-    }
+  @Override
+  public ResponseEntity<AuthResponse> verifyAuthenticationCode(
+      VerificationRequest verificationRequest) {
+    log.info("[AUTH] Code verification attempt for email={}", verificationRequest.getEmail());
+    return ResponseEntity.ok(
+        authService.verifyCodeAndGenerateResponse(
+            verificationRequest.getEmail(), verificationRequest.getCode()));
+  }
 
-    @Override
-    public ResponseEntity<AuthResponse> refreshAccessToken(RefreshAccessTokenRequest refreshAccessTokenRequest) {
-        log.info("[AUTH] Token refresh requested");
-        return ResponseEntity.ok(authService.refreshToken(refreshAccessTokenRequest.getRefreshToken()));
-    }
+  @Override
+  public ResponseEntity<AuthResponse> refreshAccessToken(
+      RefreshAccessTokenRequest refreshAccessTokenRequest) {
+    log.info("[AUTH] Token refresh requested");
+    return ResponseEntity.ok(authService.refreshToken(refreshAccessTokenRequest.getRefreshToken()));
+  }
 }

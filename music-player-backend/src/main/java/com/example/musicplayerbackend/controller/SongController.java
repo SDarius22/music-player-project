@@ -37,8 +37,8 @@ public class SongController implements SongsApi {
   private final RecommendationService recommendationService;
 
   @Override
-  public ResponseEntity<SongPageDto> getAllSongs(@Nullable String q, Integer page, Integer size,
-      String sort) {
+  public ResponseEntity<SongPageDto> getAllSongs(
+      @Nullable String q, Integer page, Integer size, String sort) {
     int safePage = page == null ? 0 : Math.max(page, 0);
     int safeSize = size == null ? 50 : Math.max(size, 1);
     if (safeSize > 200) {
@@ -51,54 +51,61 @@ public class SongController implements SongsApi {
 
     Page<SongDto> result = songService.getSongsVisibleToUser(q, user, pageable);
 
-    return ResponseEntity.ok(new SongPageDto(
-        result.getContent(),
-        result.getNumber(),
-        result.getSize(),
-        result.getTotalElements(),
-        result.getTotalPages()
-    ));
+    return ResponseEntity.ok(
+        new SongPageDto(
+            result.getContent(),
+            result.getNumber(),
+            result.getSize(),
+            result.getTotalElements(),
+            result.getTotalPages()));
   }
 
   @Override
   public ResponseEntity<SongPageDto> getRecommendations(Integer page, Integer size) {
-    return ResponseEntity.ok(toPageDto(
-        recommendationService.getRecommendations(getCurrentUser().getId(),
-            libraryPageable(page, size))));
+    return ResponseEntity.ok(
+        toPageDto(
+            recommendationService.getRecommendations(
+                getCurrentUser().getId(), libraryPageable(page, size))));
   }
 
   @Override
   public ResponseEntity<SongPageDto> getForgottenFavourites(Integer page, Integer size) {
-    return ResponseEntity.ok(toPageDto(
-        recommendationService.getForgottenFavourites(getCurrentUser().getId(),
-            libraryPageable(page, size))));
+    return ResponseEntity.ok(
+        toPageDto(
+            recommendationService.getForgottenFavourites(
+                getCurrentUser().getId(), libraryPageable(page, size))));
   }
 
   @Override
   public ResponseEntity<SongPageDto> getQuickDial(Integer page, Integer size) {
-    return ResponseEntity.ok(toPageDto(
-        recommendationService.getQuickDial(getCurrentUser().getId(), libraryPageable(page, size))));
+    return ResponseEntity.ok(
+        toPageDto(
+            recommendationService.getQuickDial(
+                getCurrentUser().getId(), libraryPageable(page, size))));
   }
 
   @Override
   public ResponseEntity<SongPageDto> getFavourites(Integer page, Integer size) {
-    return ResponseEntity.ok(toPageDto(
-        recommendationService.getFavourites(getCurrentUser().getId(),
-            libraryPageable(page, size))));
+    return ResponseEntity.ok(
+        toPageDto(
+            recommendationService.getFavourites(
+                getCurrentUser().getId(), libraryPageable(page, size))));
   }
 
   @Override
   public ResponseEntity<SongPageDto> getMostPlayed(Integer page, Integer size) {
-    return ResponseEntity.ok(toPageDto(
-        recommendationService.getMostPlayed(getCurrentUser().getId(),
-            libraryPageable(page, size))));
+    return ResponseEntity.ok(
+        toPageDto(
+            recommendationService.getMostPlayed(
+                getCurrentUser().getId(), libraryPageable(page, size))));
   }
 
   @Override
   public ResponseEntity<SongPageDto> getRecentlyPlayed(Integer page, Integer size) {
-    return ResponseEntity.ok(toPageDto(
-        recommendationService.getRecentlyPlayed(getCurrentUser().getId(),
-            libraryPageable(page, size))));
+    return ResponseEntity.ok(
+        toPageDto(
+            recommendationService.getRecentlyPlayed(
+                getCurrentUser().getId(), libraryPageable(page, size))));
   }
 
   private Pageable libraryPageable(Integer page, Integer size) {
@@ -116,8 +123,7 @@ public class SongController implements SongsApi {
         page.getNumber(),
         page.getSize(),
         page.getTotalElements(),
-        page.getTotalPages()
-    );
+        page.getTotalPages());
   }
 
   @Override
@@ -145,42 +151,71 @@ public class SongController implements SongsApi {
       NegotiationRequestDto negotiationRequestDto) {
     User user = getCurrentUser();
     try {
-      var response = songService.initiateNegotiation(negotiationRequestDto,
-          Objects.requireNonNull(user).getId());
+      var response =
+          songService.initiateNegotiation(
+              negotiationRequestDto, Objects.requireNonNull(user).getId());
       return ResponseEntity.ok(response);
     } catch (Exception e) {
       log.error("[SONG] Negotiation failed for userId={}: {}", user.getId(), e.getMessage());
       return ResponseEntity.badRequest().build();
     }
-
   }
 
   @Override
-  public ResponseEntity<Void> uploadMissingChunk(String fileHash, Integer chunkIndex,
-      MultipartFile chunkData, String contentHash) {
+  public ResponseEntity<Void> uploadMissingChunk(
+      String fileHash, Integer chunkIndex, MultipartFile chunkData, String contentHash) {
     User user = getCurrentUser();
-    log.info("[SONG] Upload missing chunk: fileHash={}, chunkIndex={}, userId={}", fileHash,
-        chunkIndex, user.getId());
+    log.info(
+        "[SONG] Upload missing chunk: fileHash={}, chunkIndex={}, userId={}",
+        fileHash,
+        chunkIndex,
+        user.getId());
     try {
       songService.saveMissingChunk(user, fileHash, chunkIndex, contentHash, chunkData);
       return ResponseEntity.status(HttpStatus.CREATED).build();
     } catch (Exception e) {
-      log.error("[SONG] Failed to save chunk: fileHash={}, chunkIndex={}, userId={}: {}", fileHash,
-          chunkIndex, user.getId(), e.getMessage());
+      log.error(
+          "[SONG] Failed to save chunk: fileHash={}, chunkIndex={}, userId={}: {}",
+          fileHash,
+          chunkIndex,
+          user.getId(),
+          e.getMessage());
       return ResponseEntity.badRequest().build();
     }
   }
 
   @Override
-  public ResponseEntity<Void> uploadSong(MultipartFile file, String name, String artistName,
-      String albumName, Integer durationInSeconds, Integer trackNumber, Integer releaseYear,
-      Integer discNumber, String photo, String fileHash) {
+  public ResponseEntity<Void> uploadSong(
+      MultipartFile file,
+      String name,
+      String artistName,
+      String albumName,
+      Integer durationInSeconds,
+      Integer trackNumber,
+      Integer releaseYear,
+      Integer discNumber,
+      String photo,
+      String fileHash) {
     User user = getCurrentUser();
-    log.info("[SONG] Admin upload: name='{}', artist='{}', album='{}', userId={}", name, artistName,
-        albumName, user.getId());
+    log.info(
+        "[SONG] Admin upload: name='{}', artist='{}', album='{}', userId={}",
+        name,
+        artistName,
+        albumName,
+        user.getId());
     try {
-      songService.uploadSong(user, name, artistName, albumName, photo, durationInSeconds,
-          trackNumber, discNumber, releaseYear, file, fileHash);
+      songService.uploadSong(
+          user,
+          name,
+          artistName,
+          albumName,
+          photo,
+          durationInSeconds,
+          trackNumber,
+          discNumber,
+          releaseYear,
+          file,
+          fileHash);
       return ResponseEntity.status(HttpStatus.CREATED).build();
     } catch (Exception e) {
       log.error("[SONG] Upload failed for '{}': {}", name, e.getMessage());
@@ -196,14 +231,15 @@ public class SongController implements SongsApi {
     String property = parts[0].trim();
     String dir = parts.length > 1 ? parts[1].trim().toLowerCase() : "asc";
 
-    property = switch (property) {
-      case "name" -> "name";
-      case "year" -> "releaseYear";
-      case "durationInSeconds" -> "durationInSeconds";
-      case "trackNumber" -> "trackNumber";
-      case "discNumber" -> "discNumber";
-      default -> "name";
-    };
+    property =
+        switch (property) {
+          case "name" -> "name";
+          case "year" -> "releaseYear";
+          case "durationInSeconds" -> "durationInSeconds";
+          case "trackNumber" -> "trackNumber";
+          case "discNumber" -> "discNumber";
+          default -> "name";
+        };
 
     return "desc".equals(dir)
         ? Sort.by(Sort.Order.desc(property))
@@ -211,7 +247,8 @@ public class SongController implements SongsApi {
   }
 
   User getCurrentUser() {
-    return (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication())
-        .getPrincipal();
+    return (User)
+        Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication())
+            .getPrincipal();
   }
 }

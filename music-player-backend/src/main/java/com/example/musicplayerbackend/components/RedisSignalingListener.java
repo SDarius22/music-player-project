@@ -11,15 +11,15 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RedisSignalingListener {
 
-    private final SignalingHandler signalingHandler;
-    private final ObjectMapper objectMapper;
+  private final SignalingHandler signalingHandler;
+  private final ObjectMapper objectMapper;
 
-    public void onWebRTCSignal(String message) {
-        try {
-            WebRTCMessage signal = objectMapper.readValue(message, WebRTCMessage.class);
-            signalingHandler.routeToTargetLocally(signal);
-        } catch (Exception e) {
-            log.error("[REDIS_LISTENER] Failed to process WebRTC signal: {}", e.getMessage());
-        }
+  public void onWebRTCSignal(String message) {
+    try {
+      WebRTCMessage signal = objectMapper.readValue(message, WebRTCMessage.class);
+      signalingHandler.routeToTargetLocally(signal);
+    } catch (Exception e) {
+      log.error("[REDIS_LISTENER] Failed to process WebRTC signal", e);
     }
+  }
 }

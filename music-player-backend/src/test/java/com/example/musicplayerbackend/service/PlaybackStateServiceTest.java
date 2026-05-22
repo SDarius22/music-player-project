@@ -1,8 +1,15 @@
 package com.example.musicplayerbackend.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.example.musicplayerbackend.data.UserPlaybackStateRepository;
 import com.example.musicplayerbackend.domain.PlaybackStateDto;
 import com.example.musicplayerbackend.domain.UserPlaybackState;
+import java.time.Instant;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,202 +18,195 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class PlaybackStateServiceTest {
 
-    @Mock
-    private UserPlaybackStateRepository stateRepository;
+  @Mock private UserPlaybackStateRepository stateRepository;
 
-    @Captor
-    private ArgumentCaptor<UserPlaybackState> stateCaptor;
+  @Captor private ArgumentCaptor<UserPlaybackState> stateCaptor;
 
-    private PlaybackStateService service;
+  private PlaybackStateService service;
 
-    @BeforeEach
-    void setUp() {
-        service = new PlaybackStateService(stateRepository);
-    }
+  @BeforeEach
+  void setUp() {
+    service = new PlaybackStateService(stateRepository);
+  }
 
-    @Test
-    void shouldCreateNewRecordWhenNoPlaybackStateExists() {
-        when(stateRepository.findById(1L)).thenReturn(Optional.empty());
-        when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+  @Test
+  void shouldCreateNewRecordWhenNoPlaybackStateExists() {
+    when(stateRepository.findById(1L)).thenReturn(Optional.empty());
+    when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PlaybackStateDto req = new PlaybackStateDto();
-        req.setPositionSeconds(42L);
-        req.setShuffle(true);
-        req.setRepeat(false);
-        req.setAutoPlay(true);
-        req.setAutoPlayRecommendationsPage(3L);
+    PlaybackStateDto req = new PlaybackStateDto();
+    req.setPositionSeconds(42L);
+    req.setShuffle(true);
+    req.setRepeat(false);
+    req.setAutoPlay(true);
+    req.setAutoPlayRecommendationsPage(3L);
 
-        PlaybackStateDto result = service.saveState(1L, req);
+    PlaybackStateDto result = service.saveState(1L, req);
 
-        verify(stateRepository).save(stateCaptor.capture());
-        UserPlaybackState saved = stateCaptor.getValue();
+    verify(stateRepository).save(stateCaptor.capture());
+    UserPlaybackState saved = stateCaptor.getValue();
 
-        assertEquals(1L, saved.getUserId());
-        assertEquals(42L, saved.getPositionSeconds());
-        assertTrue(saved.getShuffle());
-        assertFalse(saved.getRepeat());
-        assertTrue(saved.getAutoPlay());
-        assertEquals(3L, saved.getAutoPlayRecommendationsPage());
+    assertEquals(1L, saved.getUserId());
+    assertEquals(42L, saved.getPositionSeconds());
+    assertTrue(saved.getShuffle());
+    assertFalse(saved.getRepeat());
+    assertTrue(saved.getAutoPlay());
+    assertEquals(3L, saved.getAutoPlayRecommendationsPage());
 
-        assertEquals(42L, result.getPositionSeconds());
-        assertTrue(result.getShuffle());
-        assertFalse(result.getRepeat());
-        assertTrue(result.getAutoPlay());
-        assertEquals(3L, result.getAutoPlayRecommendationsPage());
-        assertNotNull(result.getUpdatedAt());
-    }
+    assertEquals(42L, result.getPositionSeconds());
+    assertTrue(result.getShuffle());
+    assertFalse(result.getRepeat());
+    assertTrue(result.getAutoPlay());
+    assertEquals(3L, result.getAutoPlayRecommendationsPage());
+    assertNotNull(result.getUpdatedAt());
+  }
 
-    @Test
-    void shouldMutateExistingPlaybackStateRecordRatherThanCreatingNew() {
-        UserPlaybackState existing = UserPlaybackState.builder()
-                .userId(1L)
-                .positionSeconds(10L)
-                .shuffle(false)
-                .repeat(false)
-                .autoPlay(false)
-                .autoPlayRecommendationsPage(0L)
-                .updatedAt(Instant.now())
-                .build();
+  @Test
+  void shouldMutateExistingPlaybackStateRecordRatherThanCreatingNew() {
+    UserPlaybackState existing =
+        UserPlaybackState.builder()
+            .userId(1L)
+            .positionSeconds(10L)
+            .shuffle(false)
+            .repeat(false)
+            .autoPlay(false)
+            .autoPlayRecommendationsPage(0L)
+            .updatedAt(Instant.now())
+            .build();
 
-        when(stateRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(stateRepository.findById(1L)).thenReturn(Optional.of(existing));
+    when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PlaybackStateDto req = new PlaybackStateDto();
-        req.setPositionSeconds(99L);
-        req.setShuffle(true);
-        req.setRepeat(true);
-        req.setAutoPlay(true);
-        req.setAutoPlayRecommendationsPage(4L);
+    PlaybackStateDto req = new PlaybackStateDto();
+    req.setPositionSeconds(99L);
+    req.setShuffle(true);
+    req.setRepeat(true);
+    req.setAutoPlay(true);
+    req.setAutoPlayRecommendationsPage(4L);
 
-        service.saveState(1L, req);
+    service.saveState(1L, req);
 
-        verify(stateRepository).save(stateCaptor.capture());
-        UserPlaybackState saved = stateCaptor.getValue();
+    verify(stateRepository).save(stateCaptor.capture());
+    UserPlaybackState saved = stateCaptor.getValue();
 
-        assertSame(existing, saved);
-        assertEquals(99L, saved.getPositionSeconds());
-        assertTrue(saved.getShuffle());
-        assertTrue(saved.getRepeat());
-        assertTrue(saved.getAutoPlay());
-        assertEquals(4L, saved.getAutoPlayRecommendationsPage());
-    }
+    assertSame(existing, saved);
+    assertEquals(99L, saved.getPositionSeconds());
+    assertTrue(saved.getShuffle());
+    assertTrue(saved.getRepeat());
+    assertTrue(saved.getAutoPlay());
+    assertEquals(4L, saved.getAutoPlayRecommendationsPage());
+  }
 
-    @Test
-    void shouldDefaultNullShuffleAndRepeatToFalse() {
-        when(stateRepository.findById(1L)).thenReturn(Optional.empty());
-        when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+  @Test
+  void shouldDefaultNullShuffleAndRepeatToFalse() {
+    when(stateRepository.findById(1L)).thenReturn(Optional.empty());
+    when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PlaybackStateDto req = new PlaybackStateDto();
-        req.setShuffle(null);
-        req.setRepeat(null);
-        req.setAutoPlay(null);
-        req.setAutoPlayRecommendationsPage(null);
+    PlaybackStateDto req = new PlaybackStateDto();
+    req.setShuffle(null);
+    req.setRepeat(null);
+    req.setAutoPlay(null);
+    req.setAutoPlayRecommendationsPage(null);
 
-        service.saveState(1L, req);
+    service.saveState(1L, req);
 
-        verify(stateRepository).save(stateCaptor.capture());
-        assertFalse(stateCaptor.getValue().getShuffle());
-        assertFalse(stateCaptor.getValue().getRepeat());
-        assertFalse(stateCaptor.getValue().getAutoPlay());
-        assertEquals(0L, stateCaptor.getValue().getAutoPlayRecommendationsPage());
-    }
+    verify(stateRepository).save(stateCaptor.capture());
+    assertFalse(stateCaptor.getValue().getShuffle());
+    assertFalse(stateCaptor.getValue().getRepeat());
+    assertFalse(stateCaptor.getValue().getAutoPlay());
+    assertEquals(0L, stateCaptor.getValue().getAutoPlayRecommendationsPage());
+  }
 
-    @Test
-    void shouldClampNegativeAutoPlayRecommendationsPageToZero() {
-        when(stateRepository.findById(1L)).thenReturn(Optional.empty());
-        when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+  @Test
+  void shouldClampNegativeAutoPlayRecommendationsPageToZero() {
+    when(stateRepository.findById(1L)).thenReturn(Optional.empty());
+    when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PlaybackStateDto req = new PlaybackStateDto();
-        req.setAutoPlayRecommendationsPage(-10L);
+    PlaybackStateDto req = new PlaybackStateDto();
+    req.setAutoPlayRecommendationsPage(-10L);
 
-        service.saveState(1L, req);
+    service.saveState(1L, req);
 
-        verify(stateRepository).save(stateCaptor.capture());
-        assertEquals(0L, stateCaptor.getValue().getAutoPlayRecommendationsPage());
-    }
+    verify(stateRepository).save(stateCaptor.capture());
+    assertEquals(0L, stateCaptor.getValue().getAutoPlayRecommendationsPage());
+  }
 
-    @Test
-    void shouldPreserveExistingAutoPlayFieldsWhenRequestOmitsThem() {
-        UserPlaybackState existing = UserPlaybackState.builder()
-                .userId(1L)
-                .positionSeconds(20L)
-                .shuffle(false)
-                .repeat(false)
-                .autoPlay(true)
-                .autoPlayRecommendationsPage(9L)
-                .updatedAt(Instant.now())
-                .build();
+  @Test
+  void shouldPreserveExistingAutoPlayFieldsWhenRequestOmitsThem() {
+    UserPlaybackState existing =
+        UserPlaybackState.builder()
+            .userId(1L)
+            .positionSeconds(20L)
+            .shuffle(false)
+            .repeat(false)
+            .autoPlay(true)
+            .autoPlayRecommendationsPage(9L)
+            .updatedAt(Instant.now())
+            .build();
 
-        when(stateRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(stateRepository.findById(1L)).thenReturn(Optional.of(existing));
+    when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PlaybackStateDto req = new PlaybackStateDto();
-        req.setPositionSeconds(30L);
-        req.setShuffle(true);
-        req.setRepeat(true);
-        req.setAutoPlay(null);
-        req.setAutoPlayRecommendationsPage(null);
+    PlaybackStateDto req = new PlaybackStateDto();
+    req.setPositionSeconds(30L);
+    req.setShuffle(true);
+    req.setRepeat(true);
+    req.setAutoPlay(null);
+    req.setAutoPlayRecommendationsPage(null);
 
-        service.saveState(1L, req);
+    service.saveState(1L, req);
 
-        verify(stateRepository).save(stateCaptor.capture());
-        UserPlaybackState saved = stateCaptor.getValue();
-        assertTrue(saved.getAutoPlay());
-        assertEquals(9L, saved.getAutoPlayRecommendationsPage());
-    }
+    verify(stateRepository).save(stateCaptor.capture());
+    UserPlaybackState saved = stateCaptor.getValue();
+    assertTrue(saved.getAutoPlay());
+    assertEquals(9L, saved.getAutoPlayRecommendationsPage());
+  }
 
-    @Test
-    void shouldDefaultPositionSecondsToZeroWhenNull() {
-        when(stateRepository.findById(1L)).thenReturn(Optional.empty());
-        when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+  @Test
+  void shouldDefaultPositionSecondsToZeroWhenNull() {
+    when(stateRepository.findById(1L)).thenReturn(Optional.empty());
+    when(stateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PlaybackStateDto req = new PlaybackStateDto();
-        req.setPositionSeconds(null);
+    PlaybackStateDto req = new PlaybackStateDto();
+    req.setPositionSeconds(null);
 
-        service.saveState(1L, req);
+    service.saveState(1L, req);
 
-        verify(stateRepository).save(stateCaptor.capture());
-        assertEquals(0L, stateCaptor.getValue().getPositionSeconds());
-    }
+    verify(stateRepository).save(stateCaptor.capture());
+    assertEquals(0L, stateCaptor.getValue().getPositionSeconds());
+  }
 
-    @Test
-    void shouldReturnEmptyWhenNoPlaybackStateRecordExists() {
-        when(stateRepository.findById(99L)).thenReturn(Optional.empty());
-        assertTrue(service.getState(99L).isEmpty());
-    }
+  @Test
+  void shouldReturnEmptyWhenNoPlaybackStateRecordExists() {
+    when(stateRepository.findById(99L)).thenReturn(Optional.empty());
+    assertTrue(service.getState(99L).isEmpty());
+  }
 
-    @Test
-    void shouldMapAllFieldsIncludingShuffleAndRepeat() {
-        UserPlaybackState entity = UserPlaybackState.builder()
-                .userId(2L)
-                .positionSeconds(120L)
-                .shuffle(true)
-                .repeat(true)
-                .autoPlay(true)
-                .autoPlayRecommendationsPage(7L)
-                .updatedAt(Instant.now())
-                .build();
+  @Test
+  void shouldMapAllFieldsIncludingShuffleAndRepeat() {
+    UserPlaybackState entity =
+        UserPlaybackState.builder()
+            .userId(2L)
+            .positionSeconds(120L)
+            .shuffle(true)
+            .repeat(true)
+            .autoPlay(true)
+            .autoPlayRecommendationsPage(7L)
+            .updatedAt(Instant.now())
+            .build();
 
-        when(stateRepository.findById(2L)).thenReturn(Optional.of(entity));
+    when(stateRepository.findById(2L)).thenReturn(Optional.of(entity));
 
-        PlaybackStateDto dto = service.getState(2L).orElseThrow();
+    PlaybackStateDto dto = service.getState(2L).orElseThrow();
 
-        assertEquals(120L, dto.getPositionSeconds());
-        assertTrue(dto.getShuffle());
-        assertTrue(dto.getRepeat());
-        assertTrue(dto.getAutoPlay());
-        assertEquals(7L, dto.getAutoPlayRecommendationsPage());
-        assertNotNull(dto.getUpdatedAt());
-    }
+    assertEquals(120L, dto.getPositionSeconds());
+    assertTrue(dto.getShuffle());
+    assertTrue(dto.getRepeat());
+    assertTrue(dto.getAutoPlay());
+    assertEquals(7L, dto.getAutoPlayRecommendationsPage());
+    assertNotNull(dto.getUpdatedAt());
+  }
 }

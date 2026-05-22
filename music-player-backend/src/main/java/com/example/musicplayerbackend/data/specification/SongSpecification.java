@@ -9,15 +9,11 @@ import org.springframework.data.jpa.domain.Specification;
 
 public final class SongSpecification {
 
-  private SongSpecification() {
-  }
+  private SongSpecification() {}
 
   public static Specification<Song> visibleToUser(Long userId) {
     return (root, query, cb) ->
-        cb.or(
-            cb.equal(root.get("ownerId"), userId),
-            cb.isNull(root.get("ownerId"))
-        );
+        cb.or(cb.equal(root.get("ownerId"), userId), cb.isNull(root.get("ownerId")));
   }
 
   public static Specification<Song> matchesQuery(String q) {
@@ -34,8 +30,7 @@ public final class SongSpecification {
       return cb.or(
           cb.like(cb.lower(root.get("name")), like),
           cb.like(cb.lower(artist.get("name")), like),
-          cb.like(cb.lower(album.get("name")), like)
-      );
+          cb.like(cb.lower(album.get("name")), like));
     };
   }
 
@@ -73,8 +68,7 @@ public final class SongSpecification {
       sq.select(cb.literal(1L));
       sq.where(
           cb.equal(ps.get("playlist").get("id"), playlistId),
-          cb.equal(ps.get("song").get("fileHash"), root.get("fileHash"))
-      );
+          cb.equal(ps.get("song").get("fileHash"), root.get("fileHash")));
 
       return cb.exists(sq);
     };

@@ -64,3 +64,7 @@ logging:
     root: INFO
     org.springframework.web.socket: DEBUG
     com.example.musicplayerbackend: DEBUG
+
+music:
+  storage:
+    chunk-root: ${MUSIC_CHUNK_STORAGE_ROOT:${user.home}/music-server/chunks}

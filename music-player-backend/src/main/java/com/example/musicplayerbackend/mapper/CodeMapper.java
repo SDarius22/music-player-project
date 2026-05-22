@@ -6,9 +6,8 @@ import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(
-        componentModel = MappingConstants.ComponentModel.SPRING,
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
-)
+    componentModel = MappingConstants.ComponentModel.SPRING,
+    unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CodeMapper {
-    AuthResponse toAuthResponse(String accessToken, String refreshToken);
+  AuthResponse toAuthResponse(String accessToken, String refreshToken);
 }

@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1")
 public class HealthController implements HealthApi {
-    @Override
-    public ResponseEntity<Void> healthCheck() {
-        return ResponseEntity.ok().build();
-    }
+  @Override
+  public ResponseEntity<Void> healthCheck() {
+    return ResponseEntity.ok().build();
+  }
 }

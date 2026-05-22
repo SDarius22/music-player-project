@@ -22,16 +22,14 @@ import lombok.Setter;
 @Builder
 public class PlaylistSong {
 
-    @EmbeddedId
-    private PlaylistSongId id;
+  @EmbeddedId private PlaylistSongId id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("playlistId")
-    @JoinColumn(name = "playlist_id", nullable = false)
-    private Playlist playlist;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @MapsId("playlistId")
+  @JoinColumn(name = "playlist_id", nullable = false)
+  private Playlist playlist;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "song_file_hash", referencedColumnName = "file_hash", nullable = false)
-    private Song song;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "song_file_hash", referencedColumnName = "file_hash", nullable = false)
+  private Song song;
 }
-

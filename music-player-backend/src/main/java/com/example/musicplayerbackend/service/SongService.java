@@ -36,13 +36,17 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -60,8 +64,8 @@ public class SongService {
   private final NegotiationMapper negotiationMapper;
   private final DefaultPlaylistService defaultPlaylistService;
 
-  private final String STORAGE_ROOT = System.getProperty("user.home") + "/music-server/chunks";
-
+  @Value("${music.storage.chunk-root}")
+  private String storageRoot = System.getProperty("user.home") + "/music-server/chunks";
 
   @Transactional(readOnly = true)
   public Page<SongDto> getSongsVisibleToUser(String q, User user, Pageable pageable) {
@@ -76,29 +80,32 @@ public class SongService {
     return new PageImpl<>(enriched, pageable, songs.getTotalElements());
   }
 
-
   @Transactional(readOnly = true)
   public SongDto getSongByFileHash(String fileHash, Long userId) {
-    Song song = songRepository.findByFileHash(fileHash)
-        .orElseThrow(() -> new RuntimeException("Song not found with fileHash: " + fileHash));
+    Song song = findSongByFileHash(fileHash);
     return songEnrichmentService.enrich(song, userId);
   }
 
   @Transactional
   public SongDto updateUserSongLibrary(String fileHash, Long userId, UpdateUserSongDto patch) {
-    Song song = songRepository.findByFileHash(fileHash)
-        .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
-            org.springframework.http.HttpStatus.NOT_FOUND, "Song not found"));
+    Song song =
+        songRepository
+            .findByFileHash(fileHash)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
 
-    Instant now = java.time.Instant.now();
+    Instant now = Instant.now();
     UserLibraryID id = new UserLibraryID(userId, song.getId());
-    UserLibrary entry = userLibraryRepository.findById(id).orElseGet(() ->
-        UserLibrary.builder()
-            .id(id)
-            .song(song)
-            .user(User.builder().id(userId).build())
-            .addedAt(now)
-            .build());
+    UserLibrary entry =
+        userLibraryRepository
+            .findById(id)
+            .orElseGet(
+                () ->
+                    UserLibrary.builder()
+                        .id(id)
+                        .song(song)
+                        .user(User.builder().id(userId).build())
+                        .addedAt(now)
+                        .build());
 
     boolean likedChanged = false;
     boolean playCountChanged = false;
@@ -120,7 +127,7 @@ public class SongService {
       if (patch.getPlayCount() != null) {
         long newPlayCount = Math.max(0L, patch.getPlayCount());
         Long currentPlayCount = entry.getPlayCount();
-        if (currentPlayCount == null || currentPlayCount != newPlayCount) {
+        if (!Objects.equals(currentPlayCount, newPlayCount)) {
           entry.setPlayCount(newPlayCount);
           playCountChanged = true;
         }
@@ -148,31 +155,38 @@ public class SongService {
 
   @Transactional(readOnly = true)
   public byte[] getSongCover(String fileHash) {
-    Song song = songRepository.findByFileHash(fileHash)
-        .orElseThrow(() -> new RuntimeException("Song not found with fileHash: " + fileHash));
+    Song song = findSongByFileHash(fileHash);
 
     if (song.getAlbum() != null && song.getAlbum().getCoverImage() != null) {
       return CoverDecoder.decodeCoverImage(song.getAlbum().getCoverImage());
-    } else {
-      log.info("[SONG] No cover image found for fileHash={}", fileHash);
-      return new byte[0];
     }
+    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cover not found");
   }
 
-
   @Transactional
-  public void uploadSong(User user, String name, String artistName, String albumName, String photo,
-      Integer duration, Integer track, Integer disc, Integer year, MultipartFile file,
-      String fileHash) throws Exception {
+  public void uploadSong(
+      User user,
+      String name,
+      String artistName,
+      String albumName,
+      String photo,
+      Integer duration,
+      Integer track,
+      Integer disc,
+      Integer year,
+      MultipartFile file,
+      String fileHash)
+      throws Exception {
     if (user.getAuthorities().stream()
         .noneMatch(auth -> Objects.equals(auth.getAuthority(), "ROLE_ADMIN"))) {
-      throw new RuntimeException("Unauthorized: Only admins can upload songs.");
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can upload songs");
     }
     Song existingSong = songRepository.findByFileHash(fileHash).orElse(null);
     if (existingSong != null) {
       log.info(
-          "[SONG] Duplicate detected for fileHash={} — promoting existing song id={} to STREAMABLE",
-          fileHash, existingSong.getId());
+          "[SONG] Duplicate detected for fileHash={} - promoting existing song id={} to STREAMABLE",
+          fileHash,
+          existingSong.getId());
       existingSong.setOwnerId(null);
       existingSong.setSongType(ContentType.STREAMABLE);
       songRepository.save(existingSong);
@@ -182,46 +196,59 @@ public class SongService {
     var artistHash = EntityHashHelper.artistHash(artistName);
     var albumHash = EntityHashHelper.albumHash(albumName);
 
-    Artist artist = artistRepository.findByHash(artistHash)
-        .orElseGet(() -> artistRepository.save(
-            Artist.builder()
-                .hash(artistHash)
-                .name(artistName)
-                .artistType(ContentType.STREAMABLE)
-                .build()));
+    Artist artist =
+        artistRepository
+            .findByHash(artistHash)
+            .orElseGet(
+                () ->
+                    artistRepository.save(
+                        Artist.builder()
+                            .hash(artistHash)
+                            .name(artistName)
+                            .artistType(ContentType.STREAMABLE)
+                            .build()));
 
-    Album album = albumRepository.findByHash(albumHash)
-        .orElseGet(() -> albumRepository.save(
-            Album.builder()
-                .hash(albumHash)
-                .name(albumName)
-                .coverImage(photo)
-                .albumType(ContentType.STREAMABLE)
-                .build()));
+    Album album =
+        albumRepository
+            .findByHash(albumHash)
+            .orElseGet(
+                () ->
+                    albumRepository.save(
+                        Album.builder()
+                            .hash(albumHash)
+                            .name(albumName)
+                            .coverImage(photo)
+                            .albumType(ContentType.STREAMABLE)
+                            .build()));
 
-    boolean artistAlreadyLinked = album.getArtists().stream()
-        .anyMatch(existing -> existing.getId().equals(artist.getId()));
+    boolean artistAlreadyLinked =
+        album.getArtists().stream().anyMatch(existing -> existing.getId().equals(artist.getId()));
     if (!artistAlreadyLinked) {
       album.getArtists().add(artist);
       album = albumRepository.save(album);
     }
 
-    Song song = Song.builder()
-        .name(name)
-        .artist(artist)
-        .album(album)
-        .songType(ContentType.STREAMABLE)
-        .durationInSeconds(duration)
-        .ownerId(null)
-        .discNumber(disc)
-        .trackNumber(track)
-        .releaseYear(year)
-        .fileHash(fileHash)
-        .build();
+    Song song =
+        Song.builder()
+            .name(name)
+            .artist(artist)
+            .album(album)
+            .songType(ContentType.STREAMABLE)
+            .durationInSeconds(duration)
+            .ownerId(null)
+            .discNumber(disc)
+            .trackNumber(track)
+            .releaseYear(year)
+            .fileHash(fileHash)
+            .build();
 
     song = songRepository.save(song);
-    log.info("[SONG] Saved new song: id={}, name='{}', artist='{}', album='{}'", song.getId(), name,
-        artistName, albumName);
+    log.info(
+        "[SONG] Saved new song: id={}, name='{}', artist='{}', album='{}'",
+        song.getId(),
+        name,
+        artistName,
+        albumName);
 
     processFileIntoChunks(file, song);
   }
@@ -229,8 +256,11 @@ public class SongService {
   @Transactional
   public NegotiationResponseDto initiateNegotiation(NegotiationRequestDto request, Long userId)
       throws Exception {
-    log.info("[SONG] Negotiation initiated: name='{}', userId={}, totalChunks={}",
-        request.getName(), userId, request.getHashes().size());
+    log.info(
+        "[SONG] Negotiation initiated: name='{}', userId={}, totalChunks={}",
+        request.getName(),
+        userId,
+        request.getHashes().size());
     Optional<Song> existingSongOpt = songRepository.findByFileHash(request.getFileHash());
     Song song;
 
@@ -241,41 +271,53 @@ public class SongService {
       var artistHash = EntityHashHelper.artistHash(request.getArtistName());
       var albumHash = EntityHashHelper.albumHash(request.getAlbumName());
 
-      Artist artist = artistRepository.findByHash(artistHash)
-          .orElseGet(() -> artistRepository.save(
-              Artist.builder()
-                  .hash(artistHash)
-                  .name(request.getArtistName())
-                  .artistType(ContentType.USER_UPLOAD)
-                  .ownerId(userId).build()));
+      Artist artist =
+          artistRepository
+              .findByHash(artistHash)
+              .orElseGet(
+                  () ->
+                      artistRepository.save(
+                          Artist.builder()
+                              .hash(artistHash)
+                              .name(request.getArtistName())
+                              .artistType(ContentType.USER_UPLOAD)
+                              .ownerId(userId)
+                              .build()));
 
-      Album album = albumRepository.findByHash(albumHash)
-          .orElseGet(() -> albumRepository.save(
-              Album.builder()
-                  .hash(albumHash)
-                  .name(request.getAlbumName())
-                  .albumType(ContentType.USER_UPLOAD)
-                  .ownerId(userId).build()));
+      Album album =
+          albumRepository
+              .findByHash(albumHash)
+              .orElseGet(
+                  () ->
+                      albumRepository.save(
+                          Album.builder()
+                              .hash(albumHash)
+                              .name(request.getAlbumName())
+                              .albumType(ContentType.USER_UPLOAD)
+                              .ownerId(userId)
+                              .build()));
 
-      boolean artistAlreadyLinked = album.getArtists().stream()
-          .anyMatch(existing -> existing.getId().equals(artist.getId()));
+      boolean artistAlreadyLinked =
+          album.getArtists().stream().anyMatch(existing -> existing.getId().equals(artist.getId()));
       if (!artistAlreadyLinked) {
         album.getArtists().add(artist);
         album = albumRepository.save(album);
       }
 
-      song = songRepository.save(Song.builder()
-          .name(request.getName())
-          .artist(artist)
-          .album(album)
-          .fileHash(request.getFileHash())
-          .songType(ContentType.USER_UPLOAD)
-          .ownerId(userId)
-          .durationInSeconds(request.getDurationInSeconds())
-          .trackNumber(request.getTrackNumber())
-          .discNumber(request.getDiscNumber())
-          .releaseYear(request.getReleaseYear())
-          .build());
+      song =
+          songRepository.save(
+              Song.builder()
+                  .name(request.getName())
+                  .artist(artist)
+                  .album(album)
+                  .fileHash(request.getFileHash())
+                  .songType(ContentType.USER_UPLOAD)
+                  .ownerId(userId)
+                  .durationInSeconds(request.getDurationInSeconds())
+                  .trackNumber(request.getTrackNumber())
+                  .discNumber(request.getDiscNumber())
+                  .releaseYear(request.getReleaseYear())
+                  .build());
     }
 
     List<Integer> missingIndices = new ArrayList<>();
@@ -292,11 +334,8 @@ public class SongService {
       Optional<Chunk> existingChunk = chunkRepository.findByContentHash(hash);
 
       if (existingChunk.isPresent()) {
-        newLinks.add(SongChunk.builder()
-            .song(song)
-            .chunk(existingChunk.get())
-            .orderIndex(i)
-            .build());
+        newLinks.add(
+            SongChunk.builder().song(song).chunk(existingChunk.get()).orderIndex(i).build());
       } else {
         missingIndices.add(i);
       }
@@ -306,107 +345,117 @@ public class SongService {
       songChunkRepository.saveAll(newLinks);
     }
 
-    log.info("[SONG] Negotiation complete: fileHash={}, missingChunks={}, deduplicatedChunks={}",
-        song.getFileHash(), missingIndices.size(), newLinks.size());
+    log.info(
+        "[SONG] Negotiation complete: fileHash={}, missingChunks={}, deduplicatedChunks={}",
+        song.getFileHash(),
+        missingIndices.size(),
+        newLinks.size());
     return negotiationMapper.toNegotiationResponseDto(song.getFileHash(), missingIndices);
   }
 
-
   @Transactional
-  public void saveMissingChunk(User user, String fileHash, Integer chunkIndex, String contentHash,
-      MultipartFile chunkFile) throws Exception {
-    Song song = songRepository.findByFileHash(fileHash)
-        .orElseThrow(() -> new RuntimeException("Song not found"));
+  public void saveMissingChunk(
+      User user, String fileHash, Integer chunkIndex, String contentHash, MultipartFile chunkFile)
+      throws Exception {
+    Song song = findSongByFileHash(fileHash);
 
-    if (!song.getOwnerId().equals(user.getId())) {
-      throw new RuntimeException("Unauthorized: You do not own this song.");
+    if (!Objects.equals(song.getOwnerId(), user.getId())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this song");
     }
 
     byte[] bytes = chunkFile.getBytes();
 
     String calculatedHash = bytesToHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     if (!calculatedHash.equalsIgnoreCase(contentHash)) {
-      throw new RuntimeException("Integrity Error: Client hash does not match server calculation.");
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Client hash does not match server calculation");
     }
 
     Chunk chunk = chunkRepository.findByContentHash(calculatedHash).orElse(null);
 
     if (chunk == null) {
-      String path = STORAGE_ROOT + "/" + calculatedHash;
-      Files.createDirectories(Paths.get(STORAGE_ROOT));
+      String path = storageRoot + "/" + calculatedHash;
+      Files.createDirectories(Paths.get(storageRoot));
       try (FileOutputStream fos = new FileOutputStream(path)) {
         fos.write(bytes);
       } catch (Exception e) {
-        log.error("[SONG] Error writing chunk to disk: path={}, error={}", path, e.getMessage());
-        throw new RuntimeException("Failed to save chunk to disk");
+        log.error("[SONG] Error writing chunk to disk: path={}", path, e);
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save chunk");
       }
 
       try {
-        chunk = chunkRepository.save(Chunk.builder()
-            .contentHash(calculatedHash)
-            .size(bytes.length)
-            .storagePath(path)
-            .build());
-      } catch (org.springframework.dao.DataIntegrityViolationException e) {
-        chunk = chunkRepository.findByContentHash(calculatedHash)
-            .orElseThrow(() -> new RuntimeException("Concurrency recovery failed"));
+        chunk =
+            chunkRepository.save(
+                Chunk.builder()
+                    .contentHash(calculatedHash)
+                    .size(bytes.length)
+                    .storagePath(path)
+                    .build());
+      } catch (DataIntegrityViolationException e) {
+        chunk =
+            chunkRepository
+                .findByContentHash(calculatedHash)
+                .orElseThrow(
+                    () ->
+                        new ResponseStatusException(
+                            HttpStatus.CONFLICT, "Concurrent chunk save failed"));
       }
     }
 
-    log.info("[SONG] Chunk received and verified: fileHash={}, chunkIndex={}, size={} bytes",
-        fileHash, chunkIndex, bytes.length);
+    log.info(
+        "[SONG] Chunk received and verified: fileHash={}, chunkIndex={}, size={} bytes",
+        fileHash,
+        chunkIndex,
+        bytes.length);
 
     boolean linkExists = songChunkRepository.existsBySongAndOrderIndex(song, chunkIndex);
 
     if (!linkExists) {
-      SongChunk link = SongChunk.builder()
-          .song(song)
-          .chunk(chunk)
-          .orderIndex(chunkIndex)
-          .build();
+      SongChunk link = SongChunk.builder().song(song).chunk(chunk).orderIndex(chunkIndex).build();
       songChunkRepository.save(link);
     }
   }
 
   private void processFileIntoChunks(MultipartFile file, Song song) throws Exception {
-    InputStream is = file.getInputStream();
-    byte[] buffer = new byte[65536]; // 64KB
+    byte[] buffer = new byte[Chunk.MAX_SIZE_BYTES];
     int bytesRead;
     int orderIndex = 0;
 
     MessageDigest digest = MessageDigest.getInstance("SHA-256");
-    Files.createDirectories(Paths.get(STORAGE_ROOT));
+    Files.createDirectories(Paths.get(storageRoot));
     List<SongChunk> songChunks = new ArrayList<>();
 
-    while ((bytesRead = is.read(buffer)) != -1) {
-      digest.reset();
-      digest.update(buffer, 0, bytesRead);
-      String hash = bytesToHex(digest.digest());
+    try (InputStream is = file.getInputStream()) {
+      while ((bytesRead = is.read(buffer)) != -1) {
+        digest.reset();
+        digest.update(buffer, 0, bytesRead);
+        String hash = bytesToHex(digest.digest());
 
-      Chunk chunk = chunkRepository.findByContentHash(hash).orElse(null);
+        Chunk chunk = chunkRepository.findByContentHash(hash).orElse(null);
 
-      if (chunk == null) {
-        String storagePath = STORAGE_ROOT + "/" + hash;
-        try (FileOutputStream fos = new FileOutputStream(storagePath)) {
-          fos.write(buffer, 0, bytesRead);
+        if (chunk == null) {
+          String storagePath = storageRoot + "/" + hash;
+          try (FileOutputStream fos = new FileOutputStream(storagePath)) {
+            fos.write(buffer, 0, bytesRead);
+          }
+          chunk =
+              Chunk.builder().contentHash(hash).size(bytesRead).storagePath(storagePath).build();
+          chunk = chunkRepository.save(chunk);
         }
-        chunk = Chunk.builder()
-            .contentHash(hash)
-            .size(bytesRead)
-            .storagePath(storagePath)
-            .build();
-        chunk = chunkRepository.save(chunk);
-      }
 
-      SongChunk link = SongChunk.builder()
-          .song(song)
-          .chunk(chunk)
-          .orderIndex(orderIndex++)
-          .build();
-      songChunks.add(link);
+        SongChunk link =
+            SongChunk.builder().song(song).chunk(chunk).orderIndex(orderIndex++).build();
+        songChunks.add(link);
+      }
     }
     songChunkRepository.saveAll(songChunks);
-    log.info("[SONG] Processed {} chunk(s) for fileHash={}", orderIndex, song.getId());
+    log.info("[SONG] Processed {} chunk(s) for fileHash={}", orderIndex, song.getFileHash());
+  }
+
+  private Song findSongByFileHash(String fileHash) {
+    return songRepository
+        .findByFileHash(fileHash)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
   }
 
   private String bytesToHex(byte[] hash) {
@@ -421,4 +470,3 @@ public class SongService {
     return hex.toString();
   }
 }
-

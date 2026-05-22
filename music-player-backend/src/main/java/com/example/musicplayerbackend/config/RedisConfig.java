@@ -13,35 +13,35 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
-    @Bean
-    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
-        RedisTemplate<String, String> template = new RedisTemplate<>();
-        template.setConnectionFactory(factory);
-        StringRedisSerializer str = new StringRedisSerializer();
-        template.setKeySerializer(str);
-        template.setValueSerializer(str);
-        template.setHashKeySerializer(str);
-        template.setHashValueSerializer(str);
-        template.afterPropertiesSet();
-        return template;
-    }
+  @Bean
+  public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
+    RedisTemplate<String, String> template = new RedisTemplate<>();
+    template.setConnectionFactory(factory);
+    StringRedisSerializer str = new StringRedisSerializer();
+    template.setKeySerializer(str);
+    template.setValueSerializer(str);
+    template.setHashKeySerializer(str);
+    template.setHashValueSerializer(str);
+    template.afterPropertiesSet();
+    return template;
+  }
 
-    @Bean
-    public MessageListenerAdapter webrtcMessageListenerAdapter(RedisSignalingListener listener) {
-        MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onWebRTCSignal");
-        adapter.setSerializer(new StringRedisSerializer());
-        adapter.afterPropertiesSet();
-        return adapter;
-    }
+  @Bean
+  public MessageListenerAdapter webrtcMessageListenerAdapter(RedisSignalingListener listener) {
+    MessageListenerAdapter adapter = new MessageListenerAdapter(listener, "onWebRTCSignal");
+    adapter.setSerializer(new StringRedisSerializer());
+    adapter.afterPropertiesSet();
+    return adapter;
+  }
 
-    @Bean
-    public RedisMessageListenerContainer redisMessageListenerContainer(
-            RedisConnectionFactory factory,
-            MessageListenerAdapter webrtcMessageListenerAdapter) {
+  @Bean
+  public RedisMessageListenerContainer redisMessageListenerContainer(
+      RedisConnectionFactory factory, MessageListenerAdapter webrtcMessageListenerAdapter) {
 
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(factory);
-        container.addMessageListener(webrtcMessageListenerAdapter, new ChannelTopic("signaling:webrtc"));
-        return container;
-    }
+    RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+    container.setConnectionFactory(factory);
+    container.addMessageListener(
+        webrtcMessageListenerAdapter, new ChannelTopic("signaling:webrtc"));
+    return container;
+  }
 }

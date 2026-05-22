@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SongChunkRepository extends JpaRepository<SongChunk, Long> {
-    Boolean existsBySongAndOrderIndex(Song song, Integer chunkIndex);
+  Boolean existsBySongAndOrderIndex(Song song, Integer chunkIndex);
 }

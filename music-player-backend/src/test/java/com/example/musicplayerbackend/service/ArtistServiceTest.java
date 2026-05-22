@@ -1,10 +1,18 @@
 package com.example.musicplayerbackend.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import com.example.musicplayerbackend.data.ArtistRepository;
 import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.domain.*;
 import com.example.musicplayerbackend.mapper.ArtistMapper;
 import com.example.musicplayerbackend.mapper.SortMapper;
+import java.util.Base64;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,255 +24,321 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class ArtistServiceTest {
 
-    @Mock
-    ArtistRepository artistRepository;
+  @Mock ArtistRepository artistRepository;
 
-    @Mock
-    SortMapper sortMapper;
+  @Mock SortMapper sortMapper;
 
-    @Mock
-    ArtistMapper artistMapper;
+  @Mock ArtistMapper artistMapper;
 
-    @Mock
-    SongRepository songRepository;
+  @Mock SongRepository songRepository;
 
-    @Mock
-    SongEnrichmentService songEnrichmentService;
+  @Mock SongEnrichmentService songEnrichmentService;
 
-    ArtistService service;
+  ArtistService service;
 
-    @BeforeEach
-    void setUp() {
-        service = new ArtistService(artistRepository, songRepository, artistMapper, sortMapper,
-                songEnrichmentService);
-        org.mockito.Mockito.lenient().when(sortMapper.toSort(any())).thenReturn(org.springframework.data.domain.Sort.by("name"));
-        org.mockito.Mockito.lenient().when(songEnrichmentService.enrich(anyList(), any())).thenAnswer(inv -> {
-            List<Song> songs = inv.getArgument(0);
-            return songs.stream().map(s -> {
-                SongDto dto = new SongDto();
-                dto.setFileHash(s.getFileHash());
-                dto.setName(s.getName());
-                return dto;
-            }).toList();
-        });
+  @BeforeEach
+  void setUp() {
+    service =
+        new ArtistService(
+            artistRepository, songRepository, artistMapper, sortMapper, songEnrichmentService);
+    org.mockito.Mockito.lenient()
+        .when(sortMapper.toSort(any()))
+        .thenReturn(org.springframework.data.domain.Sort.by("name"));
+    org.mockito.Mockito.lenient()
+        .when(songEnrichmentService.enrich(anyList(), any()))
+        .thenAnswer(
+            inv -> {
+              List<Song> songs = inv.getArgument(0);
+              return songs.stream()
+                  .map(
+                      s -> {
+                        SongDto dto = new SongDto();
+                        dto.setFileHash(s.getFileHash());
+                        dto.setName(s.getName());
+                        return dto;
+                      })
+                  .toList();
+            });
 
-        org.mockito.Mockito.lenient().when(artistMapper.toExpandedDto(any())).thenAnswer(invocation -> {
-            Artist artist = invocation.getArgument(0);
-            ArtistExpandedDto dto = new ArtistExpandedDto();
-            dto.setHash(artist.getHash());
-            dto.setName(artist.getName());
-            var songs = artist.getSongs();
-            dto.setSongFileHashes(songs == null ? List.of() : songs.stream().map(Song::getFileHash).toList());
-            return dto;
-        });
-    }
+    org.mockito.Mockito.lenient()
+        .when(artistMapper.toExpandedDto(any()))
+        .thenAnswer(
+            invocation -> {
+              Artist artist = invocation.getArgument(0);
+              ArtistExpandedDto dto = new ArtistExpandedDto();
+              dto.setHash(artist.getHash());
+              dto.setName(artist.getName());
+              var songs = artist.getSongs();
+              dto.setSongFileHashes(
+                  songs == null ? List.of() : songs.stream().map(Song::getFileHash).toList());
+              return dto;
+            });
+  }
 
-    // ── getArtists ───────────────────────────────────────────────────────────
+  @Test
+  void shouldReturnPagedArtistResults() {
+    Song song =
+        Song.builder().name("Track 1").fileHash("h1").songType(ContentType.STREAMABLE).build();
+    Artist artist =
+        Artist.builder().id(1L).hash("artist-hash").name("Beatles").songs(List.of(song)).build();
+    when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any()))
+        .thenReturn(new PageImpl<>(List.of(artist)));
 
-    @Test
-    void shouldReturnPagedArtistResults() {
-        Song song = Song.builder().name("Track 1").fileHash("h1").songType(ContentType.STREAMABLE).build();
-        Artist artist = Artist.builder()
-                .id(1L)
-                .hash("artist-hash")
-                .name("Beatles")
-                .songs(List.of(song))
-                .build();
-        when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(artist)));
+    ArtistPageDto result = service.getArtists(null, 0, 20, null);
 
-        ArtistPageDto result = service.getArtists(null, 0, 20, null);
+    assertEquals(1, result.getContent().size());
+    assertEquals("artist-hash", result.getContent().getFirst().getHash());
+    assertEquals("Beatles", result.getContent().getFirst().getName());
+  }
 
-        assertEquals(1, result.getContent().size());
-        assertEquals("artist-hash", result.getContent().getFirst().getHash());
-        assertEquals("Beatles", result.getContent().getFirst().getName());
-    }
+  @Test
+  void shouldPassBlankArtistQueryAsEmpty() {
+    when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any()))
+        .thenReturn(Page.empty());
+    service.getArtists("  ", 0, 20, null);
+    verify(artistRepository).findAllByNameContainingIgnoreCase(eq(""), any());
+  }
 
-    @Test
-    void shouldPassBlankArtistQueryAsEmpty() {
-        when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(Page.empty());
-        service.getArtists("  ", 0, 20, null);
-        verify(artistRepository).findAllByNameContainingIgnoreCase(eq(""), any());
-    }
+  @Test
+  void shouldPassNonBlankArtistQueryThrough() {
+    when(artistRepository.findAllByNameContainingIgnoreCase(eq("rock"), any()))
+        .thenReturn(Page.empty());
+    service.getArtists("rock", 0, 20, null);
+    verify(artistRepository).findAllByNameContainingIgnoreCase(eq("rock"), any());
+  }
 
-    @Test
-    void shouldPassNonBlankArtistQueryThrough() {
-        when(artistRepository.findAllByNameContainingIgnoreCase(eq("rock"), any())).thenReturn(Page.empty());
-        service.getArtists("rock", 0, 20, null);
-        verify(artistRepository).findAllByNameContainingIgnoreCase(eq("rock"), any());
-    }
-
-    @Test
-    void shouldSortArtistsAscendingWhenExplicitAscProvided() {
-        when(sortMapper.toSort("name,asc")).thenReturn(
-                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name")));
-        when(artistRepository.findAllByNameContainingIgnoreCase(any(),
-                argThat(p -> p.getSort().getOrderFor("name") != null
+  @Test
+  void shouldSortArtistsAscendingWhenExplicitAscProvided() {
+    when(sortMapper.toSort("name,asc"))
+        .thenReturn(
+            org.springframework.data.domain.Sort.by(
+                org.springframework.data.domain.Sort.Order.asc("name")));
+    when(artistRepository.findAllByNameContainingIgnoreCase(
+            any(),
+            argThat(
+                p ->
+                    p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isAscending())))
-                .thenReturn(Page.empty());
-        service.getArtists(null, 0, 20, "name,asc");
-        verify(artistRepository).findAllByNameContainingIgnoreCase(any(),
-                argThat(p -> p.getSort().getOrderFor("name") != null
+        .thenReturn(Page.empty());
+    service.getArtists(null, 0, 20, "name,asc");
+    verify(artistRepository)
+        .findAllByNameContainingIgnoreCase(
+            any(),
+            argThat(
+                p ->
+                    p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isAscending()));
-    }
+  }
 
-    @Test
-    void shouldSortArtistsDescending() {
-        when(sortMapper.toSort("name,desc")).thenReturn(
-                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.desc("name")));
-        when(artistRepository.findAllByNameContainingIgnoreCase(any(),
-                argThat(p -> p.getSort().getOrderFor("name") != null
+  @Test
+  void shouldSortArtistsDescending() {
+    when(sortMapper.toSort("name,desc"))
+        .thenReturn(
+            org.springframework.data.domain.Sort.by(
+                org.springframework.data.domain.Sort.Order.desc("name")));
+    when(artistRepository.findAllByNameContainingIgnoreCase(
+            any(),
+            argThat(
+                p ->
+                    p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isDescending())))
-                .thenReturn(Page.empty());
-        service.getArtists(null, 0, 20, "name,desc");
-        verify(artistRepository).findAllByNameContainingIgnoreCase(any(),
-                argThat(p -> p.getSort().getOrderFor("name") != null
+        .thenReturn(Page.empty());
+    service.getArtists(null, 0, 20, "name,desc");
+    verify(artistRepository)
+        .findAllByNameContainingIgnoreCase(
+            any(),
+            argThat(
+                p ->
+                    p.getSort().getOrderFor("name") != null
                         && p.getSort().getOrderFor("name").isDescending()));
-    }
+  }
 
-    @Test
-    void shouldSplitHashesFromArtistSongs() {
-        Song song1 = Song.builder().name("Track 1").fileHash("h1").songType(ContentType.STREAMABLE).build();
-        Song song2 = Song.builder().name("Track 2").fileHash("h2").songType(ContentType.STREAMABLE).build();
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Beatles").songs(List.of(song1, song2)).build();
-        when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(artist)));
+  @Test
+  void shouldSplitHashesFromArtistSongs() {
+    Song song1 =
+        Song.builder().name("Track 1").fileHash("h1").songType(ContentType.STREAMABLE).build();
+    Song song2 =
+        Song.builder().name("Track 2").fileHash("h2").songType(ContentType.STREAMABLE).build();
+    Artist artist =
+        Artist.builder()
+            .id(1L)
+            .hash("artist-hash")
+            .name("Beatles")
+            .songs(List.of(song1, song2))
+            .build();
+    when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any()))
+        .thenReturn(new PageImpl<>(List.of(artist)));
 
-        ArtistPageDto result = service.getArtists(null, 0, 20, null);
+    ArtistPageDto result = service.getArtists(null, 0, 20, null);
 
-        assertEquals(List.of("h1", "h2"), result.getContent().getFirst().getSongFileHashes());
-    }
+    assertEquals(List.of("h1", "h2"), result.getContent().getFirst().getSongFileHashes());
+  }
 
-    @Test
-    void shouldReturnEmptyHashesWhenArtistSongsAreEmpty() {
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Beatles").songs(List.of()).build();
-        when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any())).thenReturn(new PageImpl<>(List.of(artist)));
+  @Test
+  void shouldReturnEmptyHashesWhenArtistSongsAreEmpty() {
+    Artist artist =
+        Artist.builder().id(1L).hash("artist-hash").name("Beatles").songs(List.of()).build();
+    when(artistRepository.findAllByNameContainingIgnoreCase(eq(""), any()))
+        .thenReturn(new PageImpl<>(List.of(artist)));
 
-        ArtistPageDto result = service.getArtists(null, 0, 20, null);
+    ArtistPageDto result = service.getArtists(null, 0, 20, null);
 
-        assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
-    }
+    assertTrue(result.getContent().getFirst().getSongFileHashes().isEmpty());
+  }
 
-    // ── getArtistByHash ──────────────────────────────────────────────────────
+  @Test
+  void shouldReturnArtistDetailDto() {
+    Artist artist =
+        Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of()).build();
+    when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
 
-    @Test
-    void shouldReturnArtistDetailDto() {
-        Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of()).build();
-        when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
+    ArtistExpandedDto result = service.getArtistByHash("beatles-hash", 1L);
 
-        ArtistExpandedDto result = service.getArtistByHash("beatles-hash", 1L);
+    assertEquals("beatles-hash", result.getHash());
+    assertEquals("Beatles", result.getName());
+    assertTrue(result.getSongFileHashes().isEmpty());
+  }
 
-        assertEquals("beatles-hash", result.getHash());
-        assertEquals("Beatles", result.getName());
-        assertTrue(result.getSongFileHashes().isEmpty());
-    }
+  @Test
+  void shouldThrow404WhenArtistByHashNotFound() {
+    when(artistRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class, () -> service.getArtistByHash("missing-hash", 1L));
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+  }
 
-    @Test
-    void shouldThrow404WhenArtistByHashNotFound() {
-        when(artistRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getArtistByHash("missing-hash", 1L));
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-    }
+  @Test
+  void shouldMapSongsWhenGettingArtistById() {
+    Song song =
+        Song.builder()
+            .id(10L)
+            .name("Come Together")
+            .fileHash("hash1")
+            .songType(ContentType.STREAMABLE)
+            .build();
+    Artist artist =
+        Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of(song)).build();
+    when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
 
-    @Test
-    void shouldMapSongsWhenGettingArtistById() {
-        Song song = Song.builder().id(10L).name("Come Together").fileHash("hash1")
-                .songType(ContentType.STREAMABLE).build();
-        Artist artist = Artist.builder().id(1L).hash("beatles-hash").name("Beatles").songs(List.of(song)).build();
-        when(artistRepository.findByHash("beatles-hash")).thenReturn(Optional.of(artist));
+    ArtistExpandedDto result = service.getArtistByHash("beatles-hash", 1L);
 
-        ArtistExpandedDto result = service.getArtistByHash("beatles-hash", 1L);
+    assertEquals(1, result.getSongFileHashes().size());
+    assertEquals("hash1", result.getSongFileHashes().getFirst());
+  }
 
-        assertEquals(1, result.getSongFileHashes().size());
-        assertEquals("hash1", result.getSongFileHashes().getFirst());
-    }
+  @Test
+  void shouldReturnEmptySongsWhenArtistSongsAreNull() {
+    Artist artist = Artist.builder().id(1L).hash("solo-hash").name("Solo").songs(null).build();
+    when(artistRepository.findByHash("solo-hash")).thenReturn(Optional.of(artist));
 
-    @Test
-    void shouldReturnEmptySongsWhenArtistSongsAreNull() {
-        Artist artist = Artist.builder().id(1L).hash("solo-hash").name("Solo").songs(null).build();
-        when(artistRepository.findByHash("solo-hash")).thenReturn(Optional.of(artist));
+    ArtistExpandedDto result = service.getArtistByHash("solo-hash", 1L);
 
-        ArtistExpandedDto result = service.getArtistByHash("solo-hash", 1L);
+    assertTrue(result.getSongFileHashes().isEmpty());
+  }
 
-        assertTrue(result.getSongFileHashes().isEmpty());
-    }
+  @Test
+  void shouldThrow404WhenArtistCoverHasNoAlbums() {
+    Artist artist =
+        Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of()).build();
+    when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+    assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
+  }
 
-    // ── getArtistCover ───────────────────────────────────────────────────────
+  @Test
+  void shouldThrow404WhenVisibleArtistSongsHaveNoAlbumCover() {
+    Album album = Album.builder().id(1L).name("No Cover").coverImage(null).build();
+    Song song =
+        Song.builder()
+            .id(10L)
+            .name("Track")
+            .fileHash("hash-1")
+            .songType(ContentType.STREAMABLE)
+            .album(album)
+            .build();
+    Artist artist =
+        Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of(album)).build();
+    when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+    when(songRepository.findAll(
+            any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(song)));
 
-    @Test
-    void shouldThrow404WhenArtistCoverHasNoAlbums() {
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of()).build();
-        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
-    }
+    assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
+  }
 
-    @Test
-    void shouldThrow404WhenVisibleArtistSongsHaveNoAlbumCover() {
-        Album album = Album.builder().id(1L).name("No Cover").coverImage(null).build();
-        Song song = Song.builder().id(10L).name("Track").fileHash("hash-1")
-                .songType(ContentType.STREAMABLE).album(album).build();
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of(album)).build();
-        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
-        when(songRepository.findAll(any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(song)));
+  @Test
+  void shouldReturnArtistCoverFromFirstAlbumWithImage() {
+    byte[] img = "coverdata".getBytes();
+    Album album1 = Album.builder().id(1L).coverImage(null).build();
+    Album album2 =
+        Album.builder().id(2L).coverImage(Base64.getEncoder().encodeToString(img)).build();
+    Song song1 =
+        Song.builder()
+            .id(11L)
+            .name("A Track")
+            .fileHash("hash-1")
+            .songType(ContentType.STREAMABLE)
+            .album(album1)
+            .build();
+    Song song2 =
+        Song.builder()
+            .id(12L)
+            .name("B Track")
+            .fileHash("hash-2")
+            .songType(ContentType.STREAMABLE)
+            .album(album2)
+            .build();
+    Artist artist =
+        Artist.builder()
+            .id(1L)
+            .hash("artist-hash")
+            .name("Artist")
+            .albums(Set.of(album1, album2))
+            .build();
+    when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+    when(songRepository.findAll(
+            any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(song1, song2)));
 
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
-    }
+    assertArrayEquals(img, service.getArtistCover("artist-hash", 1L));
+  }
 
-    @Test
-    void shouldReturnArtistCoverFromFirstAlbumWithImage() {
-        byte[] img = "coverdata".getBytes();
-        Album album1 = Album.builder().id(1L).coverImage(null).build();
-        Album album2 = Album.builder().id(2L)
-                .coverImage(Base64.getEncoder().encodeToString(img)).build();
-        Song song1 = Song.builder().id(11L).name("A Track").fileHash("hash-1")
-                .songType(ContentType.STREAMABLE).album(album1).build();
-        Song song2 = Song.builder().id(12L).name("B Track").fileHash("hash-2")
-                .songType(ContentType.STREAMABLE).album(album2).build();
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist")
-                .albums(Set.of(album1, album2)).build();
-        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
-        when(songRepository.findAll(any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(song1, song2)));
+  @Test
+  void shouldThrow404WhenArtistCoverArtistNotFound() {
+    when(artistRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
+    assertThrows(ResponseStatusException.class, () -> service.getArtistCover("missing-hash", 1L));
+  }
 
-        assertArrayEquals(img, service.getArtistCover("artist-hash", 1L));
-    }
+  @Test
+  void shouldThrow404WhenVisibleArtistSongsHaveOnlyBlankAlbumCover() {
+    Album album = Album.builder().id(1L).name("Album").coverImage("   ").build();
+    Song song =
+        Song.builder()
+            .id(10L)
+            .name("Track")
+            .fileHash("hash-1")
+            .songType(ContentType.STREAMABLE)
+            .album(album)
+            .build();
+    Artist artist =
+        Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of(album)).build();
+    when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+    when(songRepository.findAll(
+            any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(song)));
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+  }
 
-    @Test
-    void shouldThrow404WhenArtistCoverArtistNotFound() {
-        when(artistRepository.findByHash("missing-hash")).thenReturn(Optional.empty());
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("missing-hash", 1L));
-    }
-
-    @Test
-    void shouldThrow404WhenVisibleArtistSongsHaveOnlyBlankAlbumCover() {
-        Album album = Album.builder().id(1L).name("Album").coverImage("   ").build();
-        Song song = Song.builder().id(10L).name("Track").fileHash("hash-1")
-                .songType(ContentType.STREAMABLE).album(album).build();
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(Set.of(album)).build();
-        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
-        when(songRepository.findAll(any(Specification.class), any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(song)));
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> service.getArtistCover("artist-hash", 1L));
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-    }
-
-    @Test
-    void shouldThrow404WhenArtistAlbumsAreNull() {
-        Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(null).build();
-        when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
-        assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
-    }
+  @Test
+  void shouldThrow404WhenArtistAlbumsAreNull() {
+    Artist artist = Artist.builder().id(1L).hash("artist-hash").name("Artist").albums(null).build();
+    when(artistRepository.findByHash("artist-hash")).thenReturn(Optional.of(artist));
+    assertThrows(ResponseStatusException.class, () -> service.getArtistCover("artist-hash", 1L));
+  }
 }

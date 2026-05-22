@@ -1,15 +1,15 @@
 package com.example.musicplayerbackend.data.projection;
 
 public interface PlaylistListProjection {
-    Long getId();
+  Long getId();
 
-    String getName();
+  String getName();
 
-    String getType();
+  String getType();
 
-    Long getUserId();
+  Long getUserId();
 
-    Boolean getIndestructible();
+  Boolean getIndestructible();
 
-    String getSongFileHashesCsv();
+  String getSongFileHashesCsv();
 }
