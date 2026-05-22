@@ -19,6 +19,7 @@ class QueueTab extends StatelessWidget {
   Widget _buildQueueContent(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
+    final audioProvider = Provider.of<AudioProvider>(context);
 
     return Scrollbar(
       controller: itemScrollController,
@@ -30,7 +31,7 @@ class QueueTab extends StatelessWidget {
             padding: EdgeInsets.only(right: width * 0.01),
             sliver: CustomTileComponent(
               tileType: TileType.list,
-              items: Provider.of<AudioProvider>(context).normalQueue,
+              items: audioProvider.normalQueue,
               actions: [
                 (_) => const SizedBox.shrink(),
                 (_) => const SizedBox.shrink(),
@@ -46,7 +47,7 @@ class QueueTab extends StatelessWidget {
               },
               itemExtent: height * 0.085,
               isSelected: (entity) {
-                return false;
+                return entity == audioProvider.currentSong;
               },
               onTap: (entity) async {
                 debugPrint("Tapped on: ${entity.getName()}");

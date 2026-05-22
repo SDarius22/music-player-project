@@ -15,7 +15,6 @@ import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
 import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:universal_platform/universal_platform.dart';
 
 class SongPlayerWidget extends StatefulWidget {
   const SongPlayerWidget({super.key});
@@ -1032,9 +1031,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
 
         final bool showBufferingIndicator =
             processingState == ProcessingState.loading ||
-            (processingState == ProcessingState.buffering &&
-                // On web, just_audio may report buffering while playback is still advancing.
-                (!UniversalPlatform.isWeb || !isPlaying));
+            (processingState == ProcessingState.buffering && isPlaying);
 
         if (showBufferingIndicator) {
           debugPrint(

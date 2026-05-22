@@ -93,7 +93,10 @@ class ArtistScreen extends EntityScreen<ArtistProvider> {
             ),
             IconButton(
               tooltip: "Shuffle",
-              onPressed: () async {},
+              onPressed: () async {
+                debugPrint("Shuffle ${artist.name}");
+                await _shuffleArtist(context, artist);
+              },
               padding: EdgeInsets.all(height * 0.005),
               icon: Icon(FluentIcons.shuffleOn, color: Colors.white, size: 24),
             ),
@@ -106,6 +109,15 @@ class ArtistScreen extends EntityScreen<ArtistProvider> {
   Future<void> _playSong(BuildContext context, Artist artist, Song song) async {
     final audioProvider = context.read<AudioProvider>();
     await audioProvider.setQueueAndPlay(artist.getSongs(), song);
+  }
+
+  Future<void> _shuffleArtist(BuildContext context, Artist artist) async {
+    final songs = artist.getSongs();
+    if (songs.isEmpty) return;
+    final audioProvider = context.read<AudioProvider>();
+    await audioProvider.setShuffleAndWait(true);
+    final shuffled = List<Song>.from(songs)..shuffle();
+    await audioProvider.setQueueAndPlay(songs, shuffled.first);
   }
 
   @override

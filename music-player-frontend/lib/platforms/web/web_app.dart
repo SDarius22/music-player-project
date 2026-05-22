@@ -91,6 +91,9 @@ class WebApp extends AbstractApp {
           context.read<AppAudioService>().setWebSongChangeCallback(
             bridge.notifySong,
           );
+          context.read<AppAudioService>().setWebPlaybackReadyCallback(
+            bridge.ensureServiceWorkerReady,
+          );
           return bridge;
         },
         lazy: false,

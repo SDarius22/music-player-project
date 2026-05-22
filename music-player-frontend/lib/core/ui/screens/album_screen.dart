@@ -84,7 +84,10 @@ class AlbumScreen extends EntityScreen<AlbumProvider> {
             ),
             IconButton(
               tooltip: "Shuffle",
-              onPressed: () async {},
+              onPressed: () async {
+                debugPrint("Shuffle ${album.name}");
+                await _shuffleAlbum(context, album);
+              },
               padding: EdgeInsets.all(height * 0.005),
               icon: Icon(FluentIcons.shuffleOn, color: Colors.white, size: 24),
             ),
@@ -104,6 +107,15 @@ class AlbumScreen extends EntityScreen<AlbumProvider> {
       return;
     }
     await _playSong(context, album, album.getSongs().first);
+  }
+
+  Future<void> _shuffleAlbum(BuildContext context, Album album) async {
+    final songs = album.getSongs();
+    if (songs.isEmpty) return;
+    final audioProvider = context.read<AudioProvider>();
+    await audioProvider.setShuffleAndWait(true);
+    final shuffled = List<Song>.from(songs)..shuffle();
+    await audioProvider.setQueueAndPlay(songs, shuffled.first);
   }
 
   @override

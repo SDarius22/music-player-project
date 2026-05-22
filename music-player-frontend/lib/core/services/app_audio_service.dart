@@ -39,11 +39,16 @@ class AppAudioService {
   final ValueNotifier<int> songPeerCountNotifier = ValueNotifier<int>(0);
 
   void Function(String fileHash, String songName)? _onWebSongChange;
+  Future<void> Function()? _onBeforeWebPlayback;
 
   void setWebSongChangeCallback(
     void Function(String fileHash, String songName) callback,
   ) {
     _onWebSongChange = callback;
+  }
+
+  void setWebPlaybackReadyCallback(Future<void> Function() callback) {
+    _onBeforeWebPlayback = callback;
   }
 
   bool _initialized = false;
@@ -71,7 +76,9 @@ class AppAudioService {
   List<Song> get _activeQueue =>
       _currentAudioSettings.shuffle ? _shuffledQueue : _normalQueue;
 
-  List<Song> get queue => _normalQueue;
+  List<Song> get queue => List.unmodifiable(_activeQueue);
+
+  List<Song> get normalQueue => List.unmodifiable(_normalQueue);
 
   int get currentIndex => _currentIndex;
 
@@ -192,10 +199,17 @@ class AppAudioService {
     }
   }
 
-  Future<void> play() {
+  Future<void> play() async {
     _logger.fine(
       '[AppAudioService] play() called: playing=${audioPlayer.playing}, state=${audioPlayer.processingState}',
     );
+    if (audioPlayer.processingState == ProcessingState.idle &&
+        _activeQueue.isNotEmpty) {
+      await _loadIndex(
+        _currentIndex,
+        position: _currentAudioSettings.sliderInSeconds,
+      );
+    }
     _playStartTime ??= DateTime.now();
     final future = audioPlayer.play();
     unawaited(_retryIfStuck());
@@ -309,10 +323,11 @@ class AppAudioService {
     final current = currentSong;
     _currentAudioSettings.shuffle = shuffle;
     if (shuffle) {
-      _rebuildShuffledQueue();
+      _rebuildShuffledQueue(firstSong: current);
     }
     final idx = _activeQueue.indexWhere((s) => s == current);
     _currentIndex = idx < 0 ? 0 : idx;
+    _notifyQueueMutation();
     await settingsService.updateAudioSettings(_currentAudioSettings);
   }
 
@@ -331,8 +346,16 @@ class AppAudioService {
     return createChunkManager(song.getHash()).availablePeerCount;
   }
 
-  void _rebuildShuffledQueue() {
-    _shuffledQueue = List.from(_normalQueue)..shuffle();
+  void _rebuildShuffledQueue({Song? firstSong}) {
+    final shuffled = List<Song>.from(_normalQueue)..shuffle();
+    if (firstSong != null) {
+      final pinnedIndex = shuffled.indexWhere((s) => s == firstSong);
+      if (pinnedIndex >= 0) {
+        final pinnedSong = shuffled.removeAt(pinnedIndex);
+        shuffled.insert(0, pinnedSong);
+      }
+    }
+    _shuffledQueue = shuffled;
   }
 
   Future<Duration> getDuration() async {
@@ -428,7 +451,9 @@ class AppAudioService {
         _queuePlaylist,
         _normalQueue,
       );
-      _rebuildShuffledQueue();
+      _rebuildShuffledQueue(
+        firstSong: _currentAudioSettings.shuffle ? loadedSong : null,
+      );
       _notifyQueueMutation();
     }
 
@@ -439,8 +464,14 @@ class AppAudioService {
     currentSong = song;
     _bindSongPeerCountNotifier(song);
     try {
-      final idx = _activeQueue.indexWhere((s) => s == song);
-      _currentIndex = idx < 0 ? 0 : idx;
+      if (_currentAudioSettings.shuffle) {
+        _rebuildShuffledQueue(firstSong: song);
+        _currentIndex = 0;
+        _notifyQueueMutation();
+      } else {
+        final idx = _activeQueue.indexWhere((s) => s == song);
+        _currentIndex = idx < 0 ? 0 : idx;
+      }
       await _loadIndex(_currentIndex);
       await play();
     } catch (e) {
@@ -456,13 +487,15 @@ class AppAudioService {
     );
 
     if (_normalQueue.isNotEmpty) {
-      _rebuildShuffledQueue();
+      _rebuildShuffledQueue(firstSong: currentSong);
       final idx = _activeQueue.indexWhere((s) => s == currentSong);
       _currentIndex = idx < 0 ? 0 : idx;
-      await _loadIndex(
-        _currentIndex,
-        position: _currentAudioSettings.sliderInSeconds,
-      );
+      if (!UniversalPlatform.isWeb) {
+        await _loadIndex(
+          _currentIndex,
+          position: _currentAudioSettings.sliderInSeconds,
+        );
+      }
     }
   }
 
@@ -495,6 +528,11 @@ class AppAudioService {
 
       final song = await _fullyFetchQueueSong(_activeQueue[idx]);
       currentSong = song;
+      if (UniversalPlatform.isWeb &&
+          !song.isLocal &&
+          _onBeforeWebPlayback != null) {
+        await _onBeforeWebPlayback!.call();
+      }
       if (!UniversalPlatform.isDesktop) {
         await audioPlayer.stop();
       }

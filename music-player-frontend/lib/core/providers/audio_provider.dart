@@ -45,9 +45,16 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   Song? get currentSong => currentSongNotifier.value;
 
-  int get currentIndexInNonShuffled => normalQueue.indexOf(currentSong!);
+  int get currentIndexInNonShuffled => playbackQueue.indexOf(currentSong!);
 
-  List<Song> get normalQueue => _audioService.queue;
+  int get currentIndexInPlaybackQueue => playbackQueue.indexOf(currentSong!);
+
+  List<Song> get playbackQueue => _audioService.queue;
+
+  // Backwards-compatible alias used by existing tests/widgets.
+  List<Song> get normalQueue => playbackQueue;
+
+  List<Song> get originalQueue => _audioService.normalQueue;
 
   AudioSettings get _currentAudioSettings => _audioService.currentAudioSettings;
 
@@ -179,7 +186,12 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   void setShuffle(bool shuffle) {
     shuffleNotifier.value = shuffle;
-    _audioService.setShuffle(shuffle);
+    unawaited(_audioService.setShuffle(shuffle));
+  }
+
+  Future<void> setShuffleAndWait(bool shuffle) async {
+    shuffleNotifier.value = shuffle;
+    await _audioService.setShuffle(shuffle);
   }
 
   void setAutoPlay(bool autoPlay) {

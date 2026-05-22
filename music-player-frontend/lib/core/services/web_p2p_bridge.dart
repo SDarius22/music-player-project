@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
@@ -14,9 +15,23 @@ class WebP2PBridge {
   final Map<String, ChunkService> _managers = {};
   final Map<String, String> _songNames = {};
   String? _currentFileHash;
+  late final Future<void> _serviceWorkerReady;
 
   WebP2PBridge(this.chunkManagerFactory) {
+    _serviceWorkerReady = _waitForServiceWorkerReady();
     _listenToServiceWorker();
+  }
+
+  Future<void> ensureServiceWorkerReady() => _serviceWorkerReady;
+
+  Future<void> _waitForServiceWorkerReady() async {
+    try {
+      await web.window.navigator.serviceWorker.ready.toDart.timeout(
+        const Duration(seconds: 8),
+      );
+    } catch (e) {
+      _logger.warning('Service worker readiness wait timed out or failed', e);
+    }
   }
 
   void notifySong(String fileHash, String songName) {
@@ -120,6 +135,17 @@ class WebP2PBridge {
       }
     } catch (e) {
       _logger.warning('WebP2PBridge Error', e);
+      final source = msgEvent.source;
+      if (source != null) {
+        (source as web.Client).postMessage(
+          {
+            'type': 'P2P_CHUNK_ERROR',
+            'reqId': reqId,
+            'status': 504,
+            'error': e.toString(),
+          }.jsify(),
+        );
+      }
     }
   }
 
@@ -127,7 +153,8 @@ class WebP2PBridge {
     final String fileHash = data['fileHash'] as String;
     final int p2pRanges = (data['p2pRanges'] as num).toInt();
     final int serverRanges = (data['serverRanges'] as num).toInt();
-    final String songName = data['songName'] as String? ?? _songNames[fileHash] ?? 'Unknown';
+    final String songName =
+        data['songName'] as String? ?? _songNames[fileHash] ?? 'Unknown';
 
     ChunkStatsService.instance.reportSilently(
       ChunkDeliveryStats(

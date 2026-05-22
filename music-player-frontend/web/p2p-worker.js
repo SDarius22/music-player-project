@@ -7,10 +7,34 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
 const pendingRequests = new Map();
+const pendingRequestTimeouts = new Map();
 const songPendingReqIds = new Map();
 const reqIdToSongId = new Map();
 const songStats = new Map();
 const STATS_REPORT_INTERVAL_MS = 15000;
+const REQUEST_TIMEOUT_MS = 7000;
+
+function _cleanupRequest(reqId) {
+    const timeoutId = pendingRequestTimeouts.get(reqId);
+    if (timeoutId) {
+        clearTimeout(timeoutId);
+        pendingRequestTimeouts.delete(reqId);
+    }
+
+    const songId = reqIdToSongId.get(reqId);
+    if (songId) {
+        reqIdToSongId.delete(reqId);
+        const reqIds = songPendingReqIds.get(songId);
+        if (reqIds) {
+            reqIds.delete(reqId);
+            if (reqIds.size === 0) {
+                songPendingReqIds.delete(songId);
+            }
+        }
+    }
+
+    pendingRequests.delete(reqId);
+}
 
 setInterval(() => {
     for (const [fileHash, stats] of songStats.entries()) {
@@ -32,6 +56,13 @@ self.addEventListener('fetch', (event) => {
 
             const reqId = crypto.randomUUID();
             pendingRequests.set(reqId, {resolve});
+            const timeoutId = setTimeout(() => {
+                const pending = pendingRequests.get(reqId);
+                if (!pending) return;
+                pending.resolve(new Response('', {status: 504, statusText: 'P2P timeout'}));
+                _cleanupRequest(reqId);
+            }, REQUEST_TIMEOUT_MS);
+            pendingRequestTimeouts.set(reqId, timeoutId);
 
             for (const [otherSongId, reqIds] of songPendingReqIds.entries()) {
                 if (otherSongId !== fileHash) {
@@ -44,8 +75,7 @@ self.addEventListener('fetch', (event) => {
                         const stale = pendingRequests.get(staleReqId);
                         if (stale) {
                             stale.resolve(new Response('', {status: 410}));
-                            pendingRequests.delete(staleReqId);
-                            reqIdToSongId.delete(staleReqId);
+                            _cleanupRequest(staleReqId);
                         }
                     }
                     songPendingReqIds.delete(otherSongId);
@@ -65,6 +95,10 @@ self.addEventListener('fetch', (event) => {
 
         }).then((data) => {
             if (data instanceof Response) return data;
+
+            if (!data || !data.bytes || data.bytes.byteLength === 0) {
+                return new Response('', {status: 502, statusText: 'Invalid P2P payload'});
+            }
 
             _recordRangeDelivery(fileHash, data, clientId);
 
@@ -91,13 +125,19 @@ self.addEventListener('message', (event) => {
         const pending = pendingRequests.get(reqId);
         if (pending) {
             pending.resolve({bytes, start, end, total, isP2P, songName});
-            pendingRequests.delete(reqId);
-            const songId = reqIdToSongId.get(reqId);
-            if (songId) {
-                reqIdToSongId.delete(reqId);
-                const reqIds = songPendingReqIds.get(songId);
-                if (reqIds) reqIds.delete(reqId);
-            }
+            _cleanupRequest(reqId);
+        }
+    }
+
+    if (event.data && event.data.type === 'P2P_CHUNK_ERROR') {
+        const {reqId, status, error} = event.data;
+        const pending = pendingRequests.get(reqId);
+        if (pending) {
+            pending.resolve(new Response('', {
+                status: Number(status) || 502,
+                statusText: error || 'P2P chunk error'
+            }));
+            _cleanupRequest(reqId);
         }
     }
 });

@@ -107,7 +107,13 @@ class PlaylistScreen extends EntityScreen<PlaylistProvider> {
             ),
             IconButton(
               tooltip: "Shuffle",
-              onPressed: () async {},
+              onPressed: () async {
+                if (songs.isEmpty) return;
+                final audioProvider = context.read<AudioProvider>();
+                await audioProvider.setShuffleAndWait(true);
+                final shuffled = List<Song>.from(songs)..shuffle();
+                await audioProvider.setQueueAndPlay(songs, shuffled.first);
+              },
               padding: EdgeInsets.all(height * 0.005),
               icon: Icon(FluentIcons.shuffleOn, color: Colors.white, size: 24),
             ),
