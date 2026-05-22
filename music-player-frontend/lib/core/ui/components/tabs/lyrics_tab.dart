@@ -24,38 +24,11 @@ class LyricsTab extends StatelessWidget {
     var width = MediaQuery.of(context).size.width;
 
     UINetease lyricUI = UINetease(
-      defaultTextStyle: MusicPlayerTheme.getTheme().textTheme.titleLarge!
-          .copyWith(
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.75),
-                offset: const Offset(1, 2),
-                blurRadius: 4,
-              ),
-            ],
-          ),
+      defaultTextStyle: MusicPlayerTheme.getTheme().textTheme.titleLarge!,
       defaultExtTextStyle: MusicPlayerTheme.getTheme().textTheme.titleMedium!
-          .copyWith(
-            color: oneLine ? Colors.transparent : Colors.grey,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: oneLine ? 0.0 : 0.75),
-                offset: const Offset(1, 2),
-                blurRadius: 4,
-              ),
-            ],
-          ),
+          .copyWith(color: oneLine ? Colors.transparent : Colors.grey),
       otherMainTextStyle: MusicPlayerTheme.getTheme().textTheme.titleMedium!
-          .copyWith(
-            color: oneLine ? Colors.transparent : Colors.grey,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: oneLine ? 0.0 : 0.5),
-                offset: const Offset(1, 2),
-                blurRadius: 4,
-              ),
-            ],
-          ),
+          .copyWith(color: oneLine ? Colors.transparent : Colors.grey),
       bias: 0.5,
       lineGap: 10,
       inlineGap: 25,

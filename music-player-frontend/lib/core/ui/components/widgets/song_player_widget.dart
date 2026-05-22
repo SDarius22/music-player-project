@@ -250,31 +250,16 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     audioProvider.currentSong!.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.75),
-                          offset: const Offset(1, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
+                    style: Theme.of(context).textTheme.headlineMedium!,
                   ),
                   Text(
                     audioProvider.currentSong!.artist.target?.name ??
                         'Unknown Artist',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white70,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.75),
-                          offset: const Offset(1, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
                   ),
                 ],
               ),
@@ -385,31 +370,16 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                     audioProvider.currentSong!.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.75),
-                          offset: const Offset(1, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
+                    style: Theme.of(context).textTheme.headlineSmall!,
                   ),
                   Text(
                     audioProvider.currentSong!.artist.target?.name ??
                         'Unknown Artist',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white70,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.75),
-                          offset: const Offset(1, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.white70),
                   ),
                 ],
               ),
@@ -582,15 +552,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                                   ).textTheme.bodyMedium!.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.normal,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.75,
-                                        ),
-                                        offset: const Offset(1, 2),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
                                   ),
                                   timeLabelPadding: 5.0,
                                   onSeek: (duration) {
@@ -648,13 +609,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                       FluentIcons.minimize,
                       color: Colors.white,
                       size: 24,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          offset: const Offset(1, 2),
-                          blurRadius: 7,
-                        ),
-                      ],
                     ),
                   ),
                 ],
@@ -736,13 +690,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                             FluentIcons.down,
                             color: Colors.white,
                             size: 24,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                offset: const Offset(1, 2),
-                                blurRadius: 7,
-                              ),
-                            ],
                           ),
                         ),
                       ],
@@ -942,13 +889,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
                       percentage < 0.35 ? FluentIcons.up : FluentIcons.down,
                       color: Colors.white,
                       size: 18,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          offset: const Offset(1, 2),
-                          blurRadius: 7,
-                        ),
-                      ],
                     ),
                   ),
                 ),
@@ -1004,18 +944,7 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
           }
         });
       },
-      icon: Icon(
-        FluentIcons.listView,
-        color: Colors.white,
-        size: 20,
-        shadows: [
-          Shadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            offset: const Offset(1, 2),
-            blurRadius: 7,
-          ),
-        ],
-      ),
+      icon: Icon(FluentIcons.listView, color: Colors.white, size: 20),
     );
   }
 
@@ -1066,13 +995,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             showPause ? FluentIcons.pause : FluentIcons.play,
             color: Colors.white,
             size: 28,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                offset: const Offset(1, 2),
-                blurRadius: 7,
-              ),
-            ],
           ),
         );
       },
@@ -1085,36 +1007,14 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
         debugPrint("next");
         return await audioProvider.skipToNext();
       },
-      icon: Icon(
-        FluentIcons.next,
-        color: Colors.white,
-        size: 28,
-        shadows: [
-          Shadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            offset: const Offset(1, 2),
-            blurRadius: 7,
-          ),
-        ],
-      ),
+      icon: Icon(FluentIcons.next, color: Colors.white, size: 28),
     );
   }
 
   Widget buildPreviousButton(BuildContext context, {bool expanded = false}) {
     return IconButton(
       onPressed: () => audioProvider.skipToPrevious(),
-      icon: Icon(
-        FluentIcons.previous,
-        color: Colors.white,
-        size: 28,
-        shadows: [
-          Shadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            offset: const Offset(1, 2),
-            blurRadius: 7,
-          ),
-        ],
-      ),
+      icon: Icon(FluentIcons.previous, color: Colors.white, size: 28),
     );
   }
 
@@ -1130,13 +1030,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             shuffle == false ? FluentIcons.shuffleOff : FluentIcons.shuffleOn,
             size: 28,
             color: Colors.white,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                offset: const Offset(1, 2),
-                blurRadius: 7,
-              ),
-            ],
           ),
         );
       },
@@ -1155,13 +1048,6 @@ class _SongPlayerWidgetState extends State<SongPlayerWidget>
             value == false ? FluentIcons.repeatOff : FluentIcons.repeatOn,
             size: 24,
             color: Colors.white,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                offset: const Offset(1, 2),
-                blurRadius: 7,
-              ),
-            ],
           ),
         );
       },
