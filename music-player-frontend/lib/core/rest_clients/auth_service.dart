@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 
-class AuthService {
+class AuthService extends ChangeNotifier {
   static final _logger = Logger('AuthService');
 
   final String baseUrl;
@@ -91,10 +92,12 @@ class AuthService {
   }
 
   Future<void> saveTokens(String access, String refresh) async {
+    final wasNull = _cachedAccessToken == null;
     _cachedAccessToken = access;
     await _storage.write(key: 'access_token', value: access);
     await _storage.write(key: 'refresh_token', value: refresh);
     startTokenRefresh();
+    if (wasNull) notifyListeners();
   }
 
   Future<bool> sendLoginCode(String email) async {
@@ -176,6 +179,7 @@ class AuthService {
       );
       _cachedAccessToken = storedAccess;
       startTokenRefresh();
+      notifyListeners();
       return true;
     }
 
@@ -184,7 +188,9 @@ class AuthService {
 
   Future<void> logout() async {
     stopTokenRefresh();
+    final hadToken = _cachedAccessToken != null;
     _cachedAccessToken = null;
     await _storage.deleteAll();
+    if (hadToken) notifyListeners();
   }
 }

@@ -97,13 +97,18 @@ class WebRTCService {
     this.settingsService,
   }) {
     _listenToSignaling();
-    _sendAuth();
+    _attemptAuth();
+    authService.addListener(_attemptAuth);
     _startKeepalive();
   }
 
-  void _sendAuth() {
+  bool _authSent = false;
+
+  void _attemptAuth() {
+    if (_authSent) return;
     final token = authService.accessToken;
     if (token == null) return;
+    _authSent = true;
     signalingSocket.sink.add(
       jsonEncode({
         'type': 'AUTH',
@@ -205,6 +210,7 @@ class WebRTCService {
 
   void dispose() {
     _keepaliveTimer?.cancel();
+    authService.removeListener(_attemptAuth);
     for (final ch in _dataChannels.values) {
       ch.close();
     }
