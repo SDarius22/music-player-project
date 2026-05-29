@@ -1,0 +1,132 @@
+\chapter{Experimental Evaluation}
+\label{chap:ch4}
+
+\tolerance=9999
+\emergencystretch=3em
+
+\indent \par The previous three chapters built an argument and then a system. Chapter \ref{intro} framed the cost problem and chose, for each design domain, the mechanism best suited to a music context; Chapter \ref{chap:ch2} turned those choices into a cost model, derived the 64 KiB chunk and the 5\% prefix, and fixed an offload ceiling of $\rho = 1 - P/S$; Chapter \ref{chap:ch3} implemented the whole thing across six platforms. What is missing is a number. This chapter measures the prototype under controlled conditions and asks one question above all others: does the peer-assisted path actually move the origin-server egress away from the $N \cdot S$ line of pure client-server delivery, and does it do so without pushing the click-to-sound latency past what a listener will tolerate.
+
+\par The evaluation is deliberately modest about what it can claim. It does not reproduce Spotify's seven-million-user swarm, a commercial peer-assisted CDN, or a live mesh-streaming system at its original scale, and it does not pretend to. What it can do, and what the rest of the chapter does, is measure the prototype on the same variables those systems report: the split of delivered data between server, peers and local cache, the startup latency, and the way the server load grows as the audience grows. Where a published figure exists for a comparable system, it is placed next to the measured one with the scale difference stated plainly.
+
+\section{What the Evaluation Measures}
+\label{sec:eval-goals}
+
+\indent \par The headline quantity is the \emph{server share}: the fraction of all delivered chunks that came from the origin, $s = \text{serverChunks} / \text{totalChunks}$. Its complement, $1 - s$, is the \emph{egress saving}, and it is the number that maps directly onto the cloud bill from Chapter \ref{chap:ch2}, because only the chunks served by the origin are billed as egress. The egress saving is kept separate from the \emph{peer offload} $\rho_{\text{p2p}} = \text{p2pChunks}/\text{totalChunks}$, since a chunk read from the local disk cache also avoids origin egress without ever touching a peer; conflating the two would flatter the peer layer with savings that belong to the cache.
+
+\par Five hypotheses, each tied to a result in Chapter \ref{chap:ch2}, organise the measurements. The first is that peer-assisted delivery reduces the per-listener origin egress relative to pure client-server delivery, so that the summed server load grows along a much shallower line than $N \cdot S$. The second is that, in the favourable case, the measured offload approaches the derived ceiling $\rho = 1 - P/S$, with the gap between them accounted for by the chunks fetched from the server before the peer connection is ready. The third is that the 5\% server prefix hides the WebRTC connection setup, so that the click-to-sound latency stays low even though the data channel takes a few hundred milliseconds to open. The fourth is that the local cache and the peer layer both reduce server load but must be reported as distinct contributions. The fifth is that the server fallback preserves playback whenever peers are absent, slow, or fail to connect, so that the user never sees an error.
+
+\section{Experimental Setup}
+\label{sec:eval-setup}
+
+\indent \par All measurements were taken on the development machine described in Section \ref{sec:specification}: an Apple MacBook Pro with the M2 Pro chip running the backend (two were not needed, since a single replica exercises the full delivery path), PostgreSQL 18 and Redis in Docker, and the clients as separate operating-system processes. Running the clients on one machine means the network path between peers is the loopback interface, so the ICE negotiation completes through host candidates and the transfer latency is optimistic compared with a real wide-area deployment; the consequences of this are revisited in Section \ref{sec:eval-threats}.
+
+\par The client used for the measurements is not the graphical application but a headless evaluation entry point that wires exactly the same delivery pipeline (the authentication service, the streaming REST client, the per-song \texttt{ChunkService}, the \texttt{WebRTCService} and the statistics reporter) and drives it by fetching every chunk of a song in order, paced at the audio bitrate, the way the audio player would consume them. It emits the same per-session \texttt{chunk\_stats} rows and the same timing log lines as the real client, which lets a swarm of listeners be created from one source tree without a human pressing play on six devices. A client started in the \emph{seeder} role warms its cache and serves peers but does not report statistics, so that its own origin warming is excluded from the aggregate; a client in the \emph{listener} role reports normally. Each listener authenticates as a distinct user so that the per-session rows do not collapse into one another.
+
+\par The catalogue for the runs reported here is a single track of 240 seconds encoded as a 320 kbps MP3, which the upload splits into 147 chunks of 64 KiB (9.6 MB in total). With the implemented rule the server prefix is $\max(1, \lceil 0.05 \times 147 \rceil) = 7$ chunks, which sets the offload ceiling at $\rho = 1 - 7/147 = 95.2\%$. Every scenario was repeated ten times; the tables report the median together with the spread where it is informative, and single runs are used only for the per-chunk traces that illustrate behaviour rather than support a claim. Between repetitions the \texttt{chunk\_stats} table is cleared, and for a swarm run the server, peer and cache chunks are summed across the listener sessions before the shares are computed, rather than averaging per-session percentages, which would bias the result towards the shorter sessions.
+
+\section{The Server-Only Baseline}
+\label{sec:eval-baseline}
+
+\indent \par The baseline is a single listener with no peer available, which forces every chunk to come from the origin and establishes the cost and latency that the peer-assisted runs have to improve upon. Table \ref{tab:eval-baseline} reports it. The server share is, as expected, total: the prefix and every chunk after it are fetched from the server, because peer discovery returns an empty set and the fetch logic falls through to the server path without any user-visible penalty. This is the $N \cdot S$ behaviour of Chapter \ref{chap:ch2} reproduced exactly, and it is the row against which the offload is measured.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|r|r|r|r|r|}
+\hline
+\textbf{Scenario} & \textbf{Server} & \textbf{Peer} & \textbf{Cache} & \textbf{Total} & \textbf{Server share} \\
+\hline
+Server-only, one listener & 147 & 0 & 0 & 147 & 100.0\% \\
+\hline
+\end{tabular}
+\caption{Server-only baseline (median of ten runs). Every chunk is served by the origin; the peer and cache contributions are zero by construction.}
+\label{tab:eval-baseline}
+\end{table}
+
+\section{Peer-Assisted Offload}
+\label{sec:eval-offload}
+
+\indent \par The first interesting measurement is the favourable case: a single seeder that already holds the track, and one fresh listener that plays it from the start. Table \ref{tab:eval-offload} reports the split. Of the 147 chunks, only 17 came from the server and 130 from the peer, a server share of 11.6\% and a peer offload of 88.4\%, and this split was identical in every one of the ten repetitions. The seventeen server chunks decompose cleanly into the seven-chunk prefix, which is fetched from the origin by design, and ten further chunks fetched from the server in the short window before the data channel to the peer was open and the peer started answering requests.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|r|r|r|r|r|}
+\hline
+\textbf{Scenario} & \textbf{Server} & \textbf{Peer} & \textbf{Total} & \textbf{Server share} & \textbf{Peer offload} \\
+\hline
+Server-only (baseline) & 147 & 0 & 147 & 100.0\% & 0.0\% \\
+Warm seeder, one listener & 17 & 130 & 147 & 11.6\% & 88.4\% \\
+\hline
+\end{tabular}
+\caption{Peer-assisted offload for a warm seeder and a single listener (median of ten runs), against the baseline.}
+\label{tab:eval-offload}
+\end{table}
+
+\par The measured 88.4\% offload sits below the theoretical ceiling of 95.2\% by almost exactly the ten chunks that the server delivered while the peer connection was being set up. This is the gap the cost model anticipated: the ceiling assumes every non-prefix chunk is served by a peer, while in practice the first few requests after the prefix are answered by the server because the data channel is not yet open. The result is close enough to the ceiling to confirm that the offload ratio of Chapter \ref{chap:ch2} is not a paper figure.
+
+\par It is tempting to compare this directly with the 8.8\% server share that Kreitz and Niemel\"a measured for Spotify's peer-assisted system \cite{spotify_p2p}, and the proximity (11.6\% against 8.8\%) is encouraging, but the comparison has to be read with care. Spotify's figure is the steady-state of a production network with millions of users and a deep local cache that supplied a further 55.4\% of the bytes; the prototype's cache contribution here is zero, because the listener starts cold. What the two numbers share is the shape of the result: the origin is reduced to bootstrapping a small prefix while the bulk of the data flows between clients, which is exactly the regime the peer-assisted CDN literature describes \cite{pa_cdn_survey, hybrid_cdn_p2p}.
+
+\section{Scaling with the Swarm}
+\label{sec:eval-scaling}
+
+\indent \par The single-listener offload says nothing about what happens as the audience grows, which is the question the cost model actually cares about. The scaling experiment keeps one warmed seeder and adds fresh listeners, repeating each swarm size ten times, both with all listeners pressing play at the same instant and with their arrivals spread eight seconds apart. The first attempt at this measurement exposed a bug in the signaling layer rather than a property of the design, and the contrast between the broken and the fixed behaviour is instructive enough that both are reported here.
+
+\par In the first run the offload degraded sharply and erratically as soon as more than one listener joined at the same instant. The result was not even deterministic: at two simultaneous listeners the median server share was 55.8\% (one listener offloading fully while the other was served entirely by the origin), at three it was 70.5\%, and at five it ranged across the ten repetitions from 11.6\% all the way to 82.3\%. The per-listener traces showed the cause was bimodal, with a listener either opening a data channel and offloading almost everything or never connecting and falling back to the server for all 147 chunks, and the logs narrowed it down further: every listener discovered the seeder, every listener sent an \texttt{OFFER}, and the seeder created an \texttt{ANSWER} for each of them, yet only one of those answers ever reached a listener. The signals were being produced and then silently lost.
+
+\par The cause was in the signaling server, not in WebRTC. A peer's \texttt{WebSocketSession} is written to from the thread that handles each incoming signal, so when several listeners route an \texttt{OFFER} to the same seeder at once, several threads call \texttt{sendMessage} on that one session concurrently. The Tomcat WebSocket session does not allow overlapping writes: the second and later callers get an \texttt{IllegalStateException} reporting the endpoint ``in state \texttt{[TEXT\_PARTIAL\_WRITING]}'', and the message is discarded. The backend log for the first run held eighty of these exceptions. The remedy is the standard one, wrapping each session in a \texttt{ConcurrentWebSocketSessionDecorator} that serialises the writes to a session behind a small buffer, so concurrent routes queue instead of colliding.
+
+\par With that single change the degradation disappears. Table \ref{tab:eval-scaling} and Figure \ref{fig:eval-scaling} place the two runs side by side. After the fix the server share is a flat 11.6\% at every swarm size and under both arrival patterns, with no variance across the ten repetitions: every listener connects, every listener offloads, and the summed server load grows as exactly $17N$ chunks (the seven-chunk prefix plus the same ten bootstrap chunks per listener) against the $147N$ of pure client-server delivery. This is the $O(1)$ behaviour the cost model in Chapter \ref{chap:ch2} predicted, made concrete: the server's share of an individual stream does not grow with the size of the audience, and the egress saving stays at 88.4\% whether one client or five are listening at once.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|c|l|r|r|}
+\hline
+\textbf{Listeners} & \textbf{Arrival} & \textbf{Before fix} & \textbf{After fix} \\
+\hline
+1 & single peer    & 11.6\% & 11.6\% \\
+2 & simultaneous   & 55.8\% & 11.6\% \\
+3 & simultaneous   & 70.5\% & 11.6\% \\
+5 & simultaneous   & 55.8\% & 11.6\% \\
+5 & staggered 8\,s & 30.0\% & 11.6\% \\
+\hline
+\end{tabular}
+\caption{Median server share (ten repetitions) before and after serialising the signaling-socket writes. Before the fix the simultaneous rows varied widely between runs (the five-listener case spanned 11.6--82.3\%); after it, every row was 11.6\% with no variance.}
+\label{tab:eval-scaling}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  \begin{axis}[
+    width=12cm, height=7cm,
+    xlabel={Concurrent listeners $N$},
+    ylabel={Server share (\%)},
+    xmin=0, xmax=6, ymin=0, ymax=105,
+    grid=both, grid style={dashed, gray!30},
+    legend pos=south east, legend style={fill=white},
+    title={Server share against swarm size (one seeder)},
+  ]
+    \addplot[blue, thick] coordinates {(1,100)(2,100)(3,100)(5,100)};
+    \addlegendentry{Pure client-server}
+    \addplot[red, thick, mark=square*] coordinates {(1,11.56)(2,55.78)(3,70.52)(5,55.78)};
+    \addlegendentry{Before fix (median)}
+    \addplot[teal, thick, mark=*] coordinates {(1,11.56)(2,11.56)(3,11.56)(5,11.56)};
+    \addlegendentry{After fix}
+  \end{axis}
+\end{tikzpicture}
+\caption{Server share versus swarm size with one seeder. Pure client-server is 100\% by definition. Before serialising the signaling-socket writes the simultaneous-arrival median rose with the swarm and varied from run to run; after the fix it is a flat 11.6\% for every swarm size and both arrival patterns.}
+\label{fig:eval-scaling}
+\end{figure}
+
+\section{Startup Latency and the Prefix}
+\label{sec:eval-startup}
+
+\indent \par The whole point of the server prefix is to hide the WebRTC setup behind audio that is already playing, and the measurements support the design directly. The instrumentation records the time from the start of a peer connection to the moment its data channel opens; across the ten warm-seeder runs the median was 243 milliseconds (274 at the 95th percentile), which sits inside the 200 to 500 millisecond range that Chapter \ref{chap:ch2} assumed for the ICE negotiation and that the WebRTC measurement literature reports \cite{webrtc_testing}. The seven-chunk prefix corresponds to roughly eleven seconds of audio at 320 kbps, so the prefix outlasts the connection setup by almost two orders of magnitude, and the transition from the server prefix to the peer suffix happens long before the listener could run out of buffered audio. The prefix is, in other words, comfortably oversized for the setup latency it has to mask, which is consistent with the proxy-prefix-caching argument that a small, reliably-served initial segment is enough to absorb the start-up cost of a slower second source \cite{prefix_caching}.
+
+\par This matters because the alternative, a peer-first strategy with no prefix, would expose that quarter-second of setup (and the variability around it on a worse network) as click-to-sound delay on every play, which is exactly the kind of start-up stall that the quality-of-experience studies tie to user abandonment \cite{quality_impact}. The prefix converts a visible delay into background work, at the cost of the small, bounded server share that the offload measurements already accounted for.
+
+\section{Threats to Validity}
+\label{sec:eval-threats}
+
+\indent \par The results above are real measurements of the implemented system, but several things about how they were taken bound how far they generalise. The most important is that every client ran on a single machine over the loopback interface, so the peer transfer never crossed a real network and the ICE negotiation never had to deal with a non-trivial NAT; the 243-millisecond median setup and the high offload in the favourable case are therefore best-case figures, and a wide-area deployment with the cross-platform negotiation difficulties described in Section \ref{subsec:lim-connectivity} would see lower offload and higher, more variable setup times. The second is that the catalogue was a single synthetic tone track, so the absolute byte and cost figures are tiny and only the shares and the scaling slopes are meaningful; a realistic catalogue of varied music is needed before the saving can be quoted in currency. The third is that the cache contribution was zero by construction, because the listeners always started cold, whereas a real deployment would see the warm-cache share that dominates Spotify's measured split.
+
+\par A fourth point is about validity in the opposite direction: the scaling bug of Section \ref{sec:eval-scaling} shows how easily a single concurrency defect can masquerade as a design limit. Before it was traced, the erratic offload looked like an inherent weakness of serving a flash crowd from one seeder; it was in fact one missing session decorator. The lesson for the rest of these numbers is that they were taken on a single, small testbed where such defects surface one at a time and are easy to isolate, and a wide-area deployment with many simultaneous swarms could hide others that this evaluation had no opportunity to provoke. None of these caveats changes the central finding, which is that the prototype moves the origin-server egress off the pure client-server line and onto the peer-assisted floor while keeping playback immediate, and holds it there as the audience grows; they bound the conditions under which that finding has been demonstrated.

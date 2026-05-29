@@ -5,6 +5,7 @@ final class PeerStats {
   double throughputBytesPerMs = 0.001;
   int successes = 0;
   int failures = 0;
+  double? setupMs;
 
   double get successRate {
     final total = successes + failures;

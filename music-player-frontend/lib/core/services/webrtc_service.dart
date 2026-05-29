@@ -38,6 +38,8 @@ class WebRTCService {
   final Map<String, ({String peerId, DateTime sentAt})>
   _outstandingChunkRequests = {};
 
+  final Map<String, DateTime> _pcSetupStartedAt = {};
+
   final Set<String> _awaitingAnswer = {};
   final Map<String, String> _pendingOfferId = {};
   int _offerSeq = 0;
@@ -45,6 +47,7 @@ class WebRTCService {
   final Map<String, ChunkAssembly> _assemblies = {};
 
   Timer? _keepaliveTimer;
+  bool _disposed = false;
   final ValueNotifier<int> peerStateVersionNotifier = ValueNotifier<int>(0);
 
   static const Map<String, dynamic> _iceServers = {
@@ -117,9 +120,7 @@ class WebRTCService {
   void _sendAuth() {
     final token = authService.accessToken;
     if (token == null) return;
-    _signalingSocket?.sink.add(
-      jsonEncode({'type': 'AUTH', 'token': token, 'senderId': myDeviceId}),
-    );
+    _sendToSignaling({'type': 'AUTH', 'token': token, 'senderId': myDeviceId});
   }
 
   bool get isConnected => _dataChannels.isNotEmpty;
@@ -185,15 +186,13 @@ class WebRTCService {
       );
       return;
     }
-    _signalingSocket?.sink.add(
-      jsonEncode({
-        'type': 'REGISTER_CACHE',
-        'senderId': myDeviceId,
-        'targetId': 'SERVER',
-        'fileHash': fileHash,
-        'payload': chunkIndices,
-      }),
-    );
+    _sendToSignaling({
+      'type': 'REGISTER_CACHE',
+      'senderId': myDeviceId,
+      'targetId': 'SERVER',
+      'fileHash': fileHash,
+      'payload': chunkIndices,
+    });
   }
 
   Future<void> discoverPeers(String fileHash) async {
@@ -201,18 +200,17 @@ class WebRTCService {
     if (!authService.isLoggedIn || !allowed) {
       return;
     }
-    _signalingSocket?.sink.add(
-      jsonEncode({
-        'type': 'DISCOVER_PEERS',
-        'senderId': myDeviceId,
-        'targetId': 'SERVER',
-        'fileHash': fileHash,
-        'payload': {},
-      }),
-    );
+    _sendToSignaling({
+      'type': 'DISCOVER_PEERS',
+      'senderId': myDeviceId,
+      'targetId': 'SERVER',
+      'fileHash': fileHash,
+      'payload': {},
+    });
   }
 
   void dispose() {
+    _disposed = true;
     _keepaliveTimer?.cancel();
     authService.removeListener(_maybeConnect);
     for (final ch in _dataChannels.values) {
@@ -244,6 +242,20 @@ class WebRTCService {
   String _nextOfferId() =>
       '$myDeviceId-${DateTime.now().microsecondsSinceEpoch}-${_offerSeq++}';
 
+  /// Sends a JSON message on the signaling socket, guarding against a closed or
+  /// disposed socket (late async callbacks — e.g. a chunk cached during teardown
+  /// calling registerCache — otherwise throw "Cannot add event after closing").
+  void _sendToSignaling(Map<String, dynamic> message) {
+    if (_disposed) return;
+    final socket = _signalingSocket;
+    if (socket == null) return;
+    try {
+      socket.sink.add(jsonEncode(message));
+    } catch (e) {
+      _logger.fine('[P2P] Dropped signaling message (socket closing): $e');
+    }
+  }
+
   void _sendSignal({
     required String type,
     required String targetId,
@@ -253,14 +265,12 @@ class WebRTCService {
     _logger.fine(
       'Sending $type to peer=$targetId ${_summarizePayload(type, payload)}',
     );
-    _signalingSocket?.sink.add(
-      jsonEncode({
-        'type': type,
-        'senderId': myDeviceId,
-        'targetId': targetId,
-        'payload': payload,
-      }),
-    );
+    _sendToSignaling({
+      'type': type,
+      'senderId': myDeviceId,
+      'targetId': targetId,
+      'payload': payload,
+    });
   }
 
   Future<bool> _applyRemoteDescription(
@@ -356,6 +366,7 @@ class WebRTCService {
     }
 
     _iceQueues.putIfAbsent(remotePeerId, () => []);
+    _pcSetupStartedAt[remotePeerId] = DateTime.now();
     final pc = await createPeerConnection(_iceServers);
     _peerConnections[remotePeerId] = pc;
     _logger.fine(
@@ -467,6 +478,7 @@ class WebRTCService {
     _pendingChunkRequests.remove(peerId);
     _awaitingAnswer.remove(peerId);
     _pendingOfferId.remove(peerId);
+    _pcSetupStartedAt.remove(peerId);
     _notifyPeerStateChanged();
 
     _outstandingChunkRequests.removeWhere((_, v) {
@@ -505,10 +517,12 @@ class WebRTCService {
     channel.onDataChannelState = (state) {
       _logger.fine('peer=$peerId dataChannelState=$state');
       if (state == RTCDataChannelState.RTCDataChannelOpen) {
+        _recordIceSetup(peerId);
         _drainPendingRequests(peerId, channel);
       }
     };
     if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
+      _recordIceSetup(peerId);
       _drainPendingRequests(peerId, channel);
     }
     channel.onMessage = (msg) async {
@@ -522,6 +536,14 @@ class WebRTCService {
         await _handleTextMessage(peerId, msg.text);
       }
     };
+  }
+
+  void _recordIceSetup(String peerId) {
+    final start = _pcSetupStartedAt.remove(peerId);
+    if (start == null) return;
+    final ms = DateTime.now().difference(start).inMicroseconds / 1000.0;
+    _peerStats.putIfAbsent(peerId, PeerStats.new).setupMs = ms;
+    _logger.info('[METRIC] ice_setup_ms=${ms.toStringAsFixed(1)} peer=$peerId');
   }
 
   void _drainPendingRequests(String peerId, RTCDataChannel channel) {
@@ -680,11 +702,7 @@ class WebRTCService {
 
   void _startKeepalive() {
     _keepaliveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      try {
-        _signalingSocket?.sink.add(
-          jsonEncode({'type': 'PING', 'senderId': myDeviceId}),
-        );
-      } catch (_) {}
+      _sendToSignaling({'type': 'PING', 'senderId': myDeviceId});
 
       final now = DateTime.now().millisecondsSinceEpoch;
       for (final ch in _dataChannels.values) {

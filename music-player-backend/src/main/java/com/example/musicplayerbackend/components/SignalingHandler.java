@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Slf4j
@@ -34,6 +35,14 @@ public class SignalingHandler extends TextWebSocketHandler {
 
   @Value("${signaling.auth-timeout-ms:5000}")
   private long authTimeoutMs;
+
+  // Tomcat's WebSocketSession.sendMessage is not safe for concurrent writes: when
+  // several peers route signals to one session at once (a flash crowd connecting to
+  // a single seeder), overlapping writes throw IllegalStateException [TEXT_PARTIAL_WRITING]
+  // and the signal is dropped, so the WebRTC handshake never completes. Wrapping each
+  // session in a ConcurrentWebSocketSessionDecorator serialises the writes per session.
+  private static final int WS_SEND_TIME_LIMIT_MS = 10_000;
+  private static final int WS_SEND_BUFFER_BYTES = 512 * 1024;
 
   private final ObjectMapper objectMapper;
   private final PeerTrackingService peerTrackingService;
@@ -163,7 +172,7 @@ public class SignalingHandler extends TextWebSocketHandler {
         String fileHash = (String) payloadMap.get("fileHash");
         log.info(
             "[SIGNALING] DISCOVER_PEERS: requester={}, fileHash={}", client.peerId(), fileHash);
-        sendBufferMaps(session, fileHash, client.peerId());
+        sendBufferMaps(client.session(), fileHash, client.peerId());
       }
 
       case "OFFER", "ANSWER", "ICE_CANDIDATE" -> {
@@ -235,7 +244,10 @@ public class SignalingHandler extends TextWebSocketHandler {
       return;
     }
 
-    ClientConnection connection = new ClientConnection(session, senderId, userId);
+    WebSocketSession concurrentSession =
+        new ConcurrentWebSocketSessionDecorator(
+            session, WS_SEND_TIME_LIMIT_MS, WS_SEND_BUFFER_BYTES);
+    ClientConnection connection = new ClientConnection(concurrentSession, senderId, userId);
     registry.put(session.getId(), connection);
     userIndex.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet()).add(session.getId());
 

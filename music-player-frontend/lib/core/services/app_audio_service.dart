@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
@@ -59,6 +59,10 @@ class AppAudioService {
   int _currentIndex = 0;
   Timer? _positionSaveTimer;
   DateTime? _playStartTime;
+  DateTime? _ttfaRequestedAt;
+  bool _ttfaLoadingSeen = false;
+
+  double? lastTimeToFirstAudioMs;
   StreamSubscription<ProcessingState>? _processingStateSubscription;
   StreamSubscription<PlayerState>? _playerStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
@@ -125,6 +129,28 @@ class AppAudioService {
     ) {
       if (state == ProcessingState.completed) {
         _onSongCompleted();
+      }
+      if (_ttfaRequestedAt != null &&
+          (state == ProcessingState.loading ||
+              state == ProcessingState.buffering)) {
+        _ttfaLoadingSeen = true;
+      }
+    });
+
+    _playerStateSubscription = audioPlayer.playerStateStream.listen((state) {
+      final requestedAt = _ttfaRequestedAt;
+      if (requestedAt != null &&
+          _ttfaLoadingSeen &&
+          state.playing &&
+          state.processingState == ProcessingState.ready) {
+        final ms =
+            DateTime.now().difference(requestedAt).inMicroseconds / 1000.0;
+        _ttfaRequestedAt = null;
+        lastTimeToFirstAudioMs = ms;
+        _logger.info(
+          '[METRIC] ttfa_ms=${ms.toStringAsFixed(1)} '
+          'song=${currentSong?.getName()}',
+        );
       }
     });
 
@@ -442,6 +468,8 @@ class AppAudioService {
   Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
     if (songs.isEmpty) return;
 
+    _ttfaRequestedAt = DateTime.now();
+    _ttfaLoadingSeen = false;
     var loadedSong = await songService.fullyFetchSong(song);
 
     if (!songs.equals(_normalQueue)) {
@@ -463,6 +491,10 @@ class AppAudioService {
   }
 
   Future<void> setCurrentSongAndPlay(Song song) async {
+    if (_ttfaRequestedAt == null) {
+      _ttfaRequestedAt = DateTime.now();
+      _ttfaLoadingSeen = false;
+    }
     currentSong = song;
     _bindSongPeerCountNotifier(song);
     try {
