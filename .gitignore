@@ -301,3 +301,7 @@ music-player-frontend/lib/config/secrets.dart
 !**/assets/**
 # But ignore large generated assets
 **/assets/**/*.generated.*
+
+# AI related
+AGENTS.md
+CLAUDE.md

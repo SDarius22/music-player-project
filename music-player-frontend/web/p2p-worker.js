@@ -106,7 +106,7 @@ self.addEventListener('fetch', (event) => {
             return new Response(data.bytes, {
                 status: 206,
                 headers: {
-                    'Content-Type': 'audio/flac',
+                    'Content-Type': data.contentType || 'audio/mpeg',
                     'Content-Range': `bytes ${data.start}-${data.end}/${data.total}`,
                     'Content-Length': data.bytes.byteLength,
                     'Accept-Ranges': 'bytes'
@@ -122,10 +122,10 @@ self.addEventListener('message', (event) => {
         return;
     }
     if (event.data && event.data.type === 'P2P_CHUNK_RESPONSE') {
-        const {reqId, bytes, start, end, total, isP2P, songName} = event.data;
+        const {reqId, bytes, start, end, total, isP2P, songName, contentType} = event.data;
         const pending = pendingRequests.get(reqId);
         if (pending) {
-            pending.resolve({bytes, start, end, total, isP2P, songName});
+            pending.resolve({bytes, start, end, total, isP2P, songName, contentType});
             _cleanupRequest(reqId);
         }
     }

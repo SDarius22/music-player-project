@@ -14,6 +14,7 @@ class WebP2PBridge {
   final ChunkService Function(String) chunkManagerFactory;
   final Map<String, ChunkService> _managers = {};
   final Map<String, String> _songNames = {};
+  final Map<String, String> _mimeByHash = {};
   String? _currentFileHash;
   late final Future<bool> _serviceWorkerReady;
 
@@ -129,6 +130,8 @@ class WebP2PBridge {
         requestedEnd,
       );
 
+      final contentType = await _resolveContentType(manager, fileHash);
+
       final source = msgEvent.source;
       if (source != null) {
         final jsResponse =
@@ -141,6 +144,7 @@ class WebP2PBridge {
               'total': manager.totalBytes,
               'isP2P': isP2P,
               'songName': manager.songName ?? '',
+              'contentType': contentType,
             }.jsify();
 
         (source as web.Client).postMessage(jsResponse);
@@ -176,6 +180,62 @@ class WebP2PBridge {
         serverChunks: serverRanges,
       ),
     );
+  }
+
+  /// Determines the audio MIME type for [fileHash] by sniffing the magic bytes
+  /// of the first chunk. Uploads can be mp3/m4a/aac/flac/ogg/opus/wav, so the
+  /// service worker must report the real type rather than a hardcoded one — a
+  /// wrong Content-Type pushes the browser onto a slower format-probe path.
+  /// Resolved once per song and cached.
+  Future<String> _resolveContentType(
+    ChunkService manager,
+    String fileHash,
+  ) async {
+    final cached = _mimeByHash[fileHash];
+    if (cached != null) return cached;
+    try {
+      final head = await manager.getChunk(0);
+      final mime = _sniffAudioMime(head);
+      _mimeByHash[fileHash] = mime;
+      return mime;
+    } catch (e) {
+      _logger.fine('Content-Type sniff failed for $fileHash: $e');
+      return 'audio/mpeg';
+    }
+  }
+
+  String _sniffAudioMime(Uint8List b) {
+    if (b.length >= 4) {
+      // 'fLaC'
+      if (b[0] == 0x66 && b[1] == 0x4C && b[2] == 0x61 && b[3] == 0x43) {
+        return 'audio/flac';
+      }
+      // 'OggS' (Ogg Vorbis / Opus)
+      if (b[0] == 0x4F && b[1] == 0x67 && b[2] == 0x67 && b[3] == 0x53) {
+        return 'audio/ogg';
+      }
+      // 'RIFF' (WAV)
+      if (b[0] == 0x52 && b[1] == 0x49 && b[2] == 0x46 && b[3] == 0x46) {
+        return 'audio/wav';
+      }
+      // 'ID3' tag (MP3)
+      if (b[0] == 0x49 && b[1] == 0x44 && b[2] == 0x33) {
+        return 'audio/mpeg';
+      }
+      // MP3 frame sync: 0xFF 0xEx/0xFx
+      if (b[0] == 0xFF && (b[1] & 0xE0) == 0xE0) {
+        return 'audio/mpeg';
+      }
+    }
+    // ISO-BMFF (m4a/aac): 'ftyp' box at offset 4
+    if (b.length >= 12 &&
+        b[4] == 0x66 &&
+        b[5] == 0x74 &&
+        b[6] == 0x79 &&
+        b[7] == 0x70) {
+      return 'audio/mp4';
+    }
+    return 'audio/mpeg';
   }
 
   Future<(Uint8List, bool)> _compileBytesForRange(
