@@ -124,6 +124,44 @@ Warm seeder, one listener & 17 & 130 & 147 & 11.6\% & 88.4\% \\
 
 \par This matters because the alternative, a peer-first strategy with no prefix, would expose that quarter-second of setup (and the variability around it on a worse network) as click-to-sound delay on every play, which is exactly the kind of start-up stall that the quality-of-experience studies tie to user abandonment \cite{quality_impact}. The prefix converts a visible delay into background work, at the cost of the small, bounded server share that the offload measurements already accounted for.
 
+\section{Comparison with Prior Systems}
+\label{sec:eval-comparison}
+
+\indent \par The numbers above are most meaningful when placed next to the systems that Chapters \ref{intro} and \ref{chap:ch2} drew on. Three kinds of comparison are possible, and it is worth being explicit about which applies where. Against Spotify's measured peer-assisted service the comparison is numeric, because that work reports the same delivery-source split this chapter measures. Against the hybrid CDN-P2P and peer-assisted CDN literature it is about the shape of the offload curve as the audience grows. Against the live mesh-streaming, swarming and adaptive-bitrate systems it is architectural: the prototype borrows a mechanism, and the comparison is what it kept and what it changed. Table \ref{tab:eval-comparison} collects the reference points; the paragraphs below read them off.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|p{3.4cm}|p{4.4cm}|p{4.4cm}|}
+\hline
+\textbf{System} & \textbf{Reference point} & \textbf{This prototype} \\
+\hline
+Spotify P2P \cite{spotify_p2p} & 8.8\% server, 35.8\% peer, 55.4\% cache; 265 ms latency & 11.6\% server, 88.4\% peer, 0\% cache (cold); 243 ms setup \\
+\hline
+Hybrid CDN-P2P, PA-CDN \cite{hybrid_cdn_p2p,pa_cdn_survey} & offload improves as peers join & server share flat at 11.6\% for $N=1$ to $5$ \\
+\hline
+CoolStreaming \cite{coolstreaming} & buffer-map mesh-pull against a live deadline & buffer-map pull; prefix and timeout instead of a live deadline \\
+\hline
+BitTorrent \cite{bittorent} & hash-verified pieces, rarest-first & hash-verified 64 KiB chunks, in-order with look-ahead \\
+\hline
+DASH / HLS \cite{standards_streaming_http,hls_rfc8216} & switch bitrate to avoid stalls & fixed bitrate, switch source \\
+\hline
+TURN relay \cite{relays_turn} & guaranteed connectivity, relayed bytes billed & server fallback instead of relay \\
+\hline
+\end{tabular}
+\caption{Reference points from the systems Chapters \ref{intro}--\ref{chap:ch2} drew on, set against the measured prototype. The Spotify row is a numeric comparison; the others are curve-shape or architectural.}
+\label{tab:eval-comparison}
+\end{table}
+
+\par The closest comparison is Spotify's own peer-assisted music service, measured by Kreitz and Niemel\"a as serving 8.8\% of played bytes from servers, 35.8\% from peers and 55.4\% from local caches, at a 265 ms median playback latency \cite{spotify_p2p}. The warm-swarm result here, 11.6\% from the server and 88.4\% from peers with a 243 ms data-channel setup, lands in the same regime: the origin is reduced to bootstrapping a small prefix while the bulk flows between clients. The one structural difference is the cache column. Spotify's 55.4\% comes from a population that has played the catalogue before and kept it on disk, whereas the listeners measured here always started cold, so their cache share is zero and everything past the prefix had to come from a peer. A warm deployment would move much of the 88.4\% peer share into the cache column without changing the server share, which is the quantity the cost model cares about. The 11.6\% against 8.8\% gap is therefore not a seven-million-user network narrowly beating a prototype; it is the prefix-plus-bootstrap cost of a cold, two-to-five-client swarm, measured on the same axes.
+
+\par The hybrid CDN-P2P and peer-assisted CDN surveys describe the offload as something that improves as more peers join, with the provider serving the initial and the missing data \cite{hybrid_cdn_p2p,pa_cdn_survey}. The scaling measurement in Section \ref{sec:eval-scaling} is the prototype's version of that curve, and after the signaling fix it is flat rather than merely improving: the server share stays at 11.6\% from one listener to five, because each new listener is bootstrapped by the prefix and then served by the swarm. Flat is the strong form of the surveys' claim, since it means the per-listener server cost does not grow with the audience at all across this range, which is the $O(1)$ property Chapter \ref{chap:ch2} set out to obtain.
+
+\par The discovery and scheduling machinery is closest to the data-driven mesh of CoolStreaming \cite{coolstreaming}: peers advertise the chunks they hold through the \texttt{DISCOVER\_PEERS} buffer map, and a listener pulls the chunks it is missing from whichever neighbour has them. The staggered-arrival run is where this mesh actually formed, with each listener opening connections to several neighbours rather than only the seeder, which is the buffer-map-driven pull that live-streaming systems rely on to survive the churn measured by Stutzbach and Rejaie \cite{measurement_p2p}. The difference is the deadline: CoolStreaming schedules against a live playhead, whereas the prototype masks the scheduling slack with the server prefix and a short per-chunk timeout, falling back to the origin rather than risking a stall.
+
+\par At the chunk level the design is BitTorrent adapted to a deadline \cite{bittorent}: a file is split into fixed pieces, each identified and verified by a cryptographic hash (SHA-256, from the NIST standard \cite{secure_hash_standard}), so a piece is valid no matter which peer supplied it. What the prototype drops is rarest-first selection; a streaming client cannot fetch the rarest chunk first because it needs the next one in playback order, so chunks are requested in sequence behind a look-ahead window and the best available peer is tried first. The swarming and the integrity guarantee carry over; the piece-selection policy does not.
+
+\par Finally, two systems are deliberate contrasts rather than competitors. DASH and HLS keep every byte on provider infrastructure and adapt the bitrate to avoid stalls \cite{standards_streaming_http,hls_rfc8216}; the prototype keeps a single representation and adapts the source instead, trading the storage and manifest cost of multiple bitrates for the ability to deduplicate and verify one chunk across the whole swarm. A TURN relay would likewise guarantee connectivity, but every relayed byte traverses the operator's infrastructure and is billed like server egress \cite{relays_turn}, which is why the prototype treats a failed direct connection as a reason to fall back to the origin rather than to relay. The mobile dimension, where a seeding peer spends battery and metered data, was not exercised by these runs and remains the one axis where the prototype can only point at the prior work that characterised it \cite{spotify_mobile_p2p,d2d_survey}.
+
 \section{Threats to Validity}
 \label{sec:eval-threats}
 

@@ -33,28 +33,17 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 @RequiredArgsConstructor
 public class SignalingHandler extends TextWebSocketHandler {
 
-  @Value("${signaling.auth-timeout-ms:5000}")
-  private long authTimeoutMs;
-
-  // Tomcat's WebSocketSession.sendMessage is not safe for concurrent writes: when
-  // several peers route signals to one session at once (a flash crowd connecting to
-  // a single seeder), overlapping writes throw IllegalStateException [TEXT_PARTIAL_WRITING]
-  // and the signal is dropped, so the WebRTC handshake never completes. Wrapping each
-  // session in a ConcurrentWebSocketSessionDecorator serialises the writes per session.
   private static final int WS_SEND_TIME_LIMIT_MS = 10_000;
   private static final int WS_SEND_BUFFER_BYTES = 512 * 1024;
-
   private final ObjectMapper objectMapper;
   private final PeerTrackingService peerTrackingService;
   private final RedisTemplate<String, String> redisTemplate;
   private final JWTService jwtService;
   private final UserDetailsService userDetailsService;
-
   private final Map<String, ClientConnection> registry = new ConcurrentHashMap<>();
   private final Map<Long, Set<String>> userIndex = new ConcurrentHashMap<>();
   private final Map<String, String> peerIndex = new ConcurrentHashMap<>();
   private final Map<String, ScheduledFuture<?>> authTimeouts = new ConcurrentHashMap<>();
-
   private final ScheduledExecutorService authTimeoutScheduler =
       Executors.newSingleThreadScheduledExecutor(
           r -> {
@@ -62,6 +51,8 @@ public class SignalingHandler extends TextWebSocketHandler {
             t.setDaemon(true);
             return t;
           });
+  @Value("${signaling.auth-timeout-ms:5000}")
+  private long authTimeoutMs;
 
   @PreDestroy
   public void shutdown() {
@@ -123,7 +114,8 @@ public class SignalingHandler extends TextWebSocketHandler {
   @Override
   protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
     Map<String, Object> payloadMap =
-        objectMapper.readValue(message.getPayload(), new TypeReference<>() {});
+        objectMapper.readValue(message.getPayload(), new TypeReference<>() {
+        });
 
     String type = (String) payloadMap.get("type");
     ClientConnection client = registry.get(session.getId());
@@ -154,7 +146,8 @@ public class SignalingHandler extends TextWebSocketHandler {
     switch (type) {
       case "REGISTER_CACHE" -> {
         Object rawPayload = payloadMap.get("payload");
-        Set<Integer> chunkIndices = objectMapper.convertValue(rawPayload, new TypeReference<>() {});
+        Set<Integer> chunkIndices = objectMapper.convertValue(rawPayload, new TypeReference<>() {
+        });
 
         String fileHash = (String) payloadMap.get("fileHash");
 
@@ -190,7 +183,8 @@ public class SignalingHandler extends TextWebSocketHandler {
         routeToTarget(signal);
       }
 
-      case "PING" -> {}
+      case "PING" -> {
+      }
 
       default -> {
         log.warn("[SIGNALING] Unknown signal type '{}' from session={}", type, session.getId());
