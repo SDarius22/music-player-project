@@ -377,12 +377,11 @@ abstract class AbstractApp extends StatelessWidget {
 
   WebRTCService createWebRTCService(BuildContext context) {
     final router = context.read<ActiveChunkRouter>();
-    final socket = WebSocketChannel.connect(Uri.parse(wsBaseUrl));
 
     return WebRTCService(
       myDeviceId: _deviceId,
       authService: context.read<AuthService>(),
-      signalingSocket: socket,
+      connectSignaling: () => WebSocketChannel.connect(Uri.parse(wsBaseUrl)),
       settingsService: context.read<SettingsService>(),
       onChunkReceived: router.routeChunk,
       onChunkRequested: router.getLocalChunk,

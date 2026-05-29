@@ -4,16 +4,17 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i12;
-import 'dart:io' as _i22;
+import 'dart:io' as _i23;
 import 'dart:typed_data' as _i16;
+import 'dart:ui' as _i20;
 
-import 'package:audio_session/audio_session.dart' as _i23;
+import 'package:audio_session/audio_session.dart' as _i24;
 import 'package:http/http.dart' as _i9;
 import 'package:just_audio/just_audio.dart' as _i10;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i19;
 import 'package:music_player_frontend/core/dtos/playback_state_dto.dart'
-    as _i21;
+    as _i22;
 import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart'
     as _i18;
 import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart'
@@ -30,7 +31,7 @@ import 'package:music_player_frontend/core/providers/abstract/queryable_provider
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart'
     as _i8;
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart'
-    as _i20;
+    as _i21;
 import 'package:music_player_frontend/core/services/playlist_service.dart'
     as _i15;
 import 'package:music_player_frontend/core/services/settings_service.dart'
@@ -791,6 +792,15 @@ class MockAuthService extends _i1.Mock implements _i8.AuthService {
           as _i12.Future<bool>);
 
   @override
+  bool get hasListeners =>
+      (super.noSuchMethod(
+            Invocation.getter(#hasListeners),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
   void startTokenRefresh() => super.noSuchMethod(
     Invocation.method(#startTokenRefresh, []),
     returnValueForMissingStub: null,
@@ -855,13 +865,37 @@ class MockAuthService extends _i1.Mock implements _i8.AuthService {
             returnValueForMissingStub: _i12.Future<void>.value(),
           )
           as _i12.Future<void>);
+
+  @override
+  void addListener(_i20.VoidCallback? listener) => super.noSuchMethod(
+    Invocation.method(#addListener, [listener]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void removeListener(_i20.VoidCallback? listener) => super.noSuchMethod(
+    Invocation.method(#removeListener, [listener]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void notifyListeners() => super.noSuchMethod(
+    Invocation.method(#notifyListeners, []),
+    returnValueForMissingStub: null,
+  );
 }
 
 /// A class which mocks [PlaybackRestClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockPlaybackRestClient extends _i1.Mock
-    implements _i20.PlaybackRestClient {
+    implements _i21.PlaybackRestClient {
   @override
   String get baseUrl =>
       (super.noSuchMethod(
@@ -905,17 +939,17 @@ class MockPlaybackRestClient extends _i1.Mock
   );
 
   @override
-  _i12.Future<_i21.PlaybackStateDto?> getPlaybackState() =>
+  _i12.Future<_i22.PlaybackStateDto?> getPlaybackState() =>
       (super.noSuchMethod(
             Invocation.method(#getPlaybackState, []),
-            returnValue: _i12.Future<_i21.PlaybackStateDto?>.value(),
+            returnValue: _i12.Future<_i22.PlaybackStateDto?>.value(),
             returnValueForMissingStub:
-                _i12.Future<_i21.PlaybackStateDto?>.value(),
+                _i12.Future<_i22.PlaybackStateDto?>.value(),
           )
-          as _i12.Future<_i21.PlaybackStateDto?>);
+          as _i12.Future<_i22.PlaybackStateDto?>);
 
   @override
-  _i12.Future<void> savePlaybackState(_i21.PlaybackStateDto? state) =>
+  _i12.Future<void> savePlaybackState(_i22.PlaybackStateDto? state) =>
       (super.noSuchMethod(
             Invocation.method(#savePlaybackState, [state]),
             returnValue: _i12.Future<void>.value(),
@@ -1049,7 +1083,7 @@ class MockPlaybackRestClient extends _i1.Mock
   _i12.Future<_i9.Response> multipartRequestWithProgress(
     String? method,
     String? endpoint,
-    _i22.File? file,
+    _i23.File? file,
     Map<String, String>? fields,
     void Function(int, int)? onProgress,
   ) =>
@@ -1960,7 +1994,7 @@ class MockAudioPlayer extends _i1.Mock implements _i10.AudioPlayer {
 
   @override
   _i12.Future<void> setAndroidAudioAttributes(
-    _i23.AndroidAudioAttributes? audioAttributes,
+    _i24.AndroidAudioAttributes? audioAttributes,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#setAndroidAudioAttributes, [audioAttributes]),

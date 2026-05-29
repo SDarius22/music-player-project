@@ -20,7 +20,8 @@ class WebRTCService {
 
   final String myDeviceId;
   final AuthService authService;
-  final WebSocketChannel signalingSocket;
+  final WebSocketChannel Function() _connectSignaling;
+  WebSocketChannel? _signalingSocket;
   final SettingsService? settingsService;
   final void Function(String fileHash, int chunkIndex, Uint8List data)
   onChunkReceived;
@@ -91,30 +92,33 @@ class WebRTCService {
   WebRTCService({
     required this.myDeviceId,
     required this.authService,
-    required this.signalingSocket,
+    required WebSocketChannel Function() connectSignaling,
     required this.onChunkReceived,
     required this.onChunkRequested,
     this.settingsService,
-  }) {
+  }) : _connectSignaling = connectSignaling {
+    _maybeConnect();
+    authService.addListener(_maybeConnect);
+  }
+
+  void _maybeConnect() {
+    if (_signalingSocket != null) return;
+    if (authService.accessToken == null) return;
+    _connect();
+  }
+
+  void _connect() {
+    _signalingSocket = _connectSignaling();
     _listenToSignaling();
-    _attemptAuth();
-    authService.addListener(_attemptAuth);
+    _sendAuth();
     _startKeepalive();
   }
 
-  bool _authSent = false;
-
-  void _attemptAuth() {
-    if (_authSent) return;
+  void _sendAuth() {
     final token = authService.accessToken;
     if (token == null) return;
-    _authSent = true;
-    signalingSocket.sink.add(
-      jsonEncode({
-        'type': 'AUTH',
-        'token': token,
-        'senderId': myDeviceId,
-      }),
+    _signalingSocket?.sink.add(
+      jsonEncode({'type': 'AUTH', 'token': token, 'senderId': myDeviceId}),
     );
   }
 
@@ -181,7 +185,7 @@ class WebRTCService {
       );
       return;
     }
-    signalingSocket.sink.add(
+    _signalingSocket?.sink.add(
       jsonEncode({
         'type': 'REGISTER_CACHE',
         'senderId': myDeviceId,
@@ -197,7 +201,7 @@ class WebRTCService {
     if (!authService.isLoggedIn || !allowed) {
       return;
     }
-    signalingSocket.sink.add(
+    _signalingSocket?.sink.add(
       jsonEncode({
         'type': 'DISCOVER_PEERS',
         'senderId': myDeviceId,
@@ -210,14 +214,14 @@ class WebRTCService {
 
   void dispose() {
     _keepaliveTimer?.cancel();
-    authService.removeListener(_attemptAuth);
+    authService.removeListener(_maybeConnect);
     for (final ch in _dataChannels.values) {
       ch.close();
     }
     for (final pc in _peerConnections.values) {
       pc.close();
     }
-    signalingSocket.sink.close();
+    _signalingSocket?.sink.close();
   }
 
   @visibleForTesting
@@ -249,7 +253,7 @@ class WebRTCService {
     _logger.fine(
       'Sending $type to peer=$targetId ${_summarizePayload(type, payload)}',
     );
-    signalingSocket.sink.add(
+    _signalingSocket?.sink.add(
       jsonEncode({
         'type': type,
         'senderId': myDeviceId,
@@ -677,11 +681,8 @@ class WebRTCService {
   void _startKeepalive() {
     _keepaliveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       try {
-        signalingSocket.sink.add(
-          jsonEncode({
-            'type': 'PING',
-            'senderId': myDeviceId,
-          }),
+        _signalingSocket?.sink.add(
+          jsonEncode({'type': 'PING', 'senderId': myDeviceId}),
         );
       } catch (_) {}
 
@@ -712,7 +713,7 @@ class WebRTCService {
   }
 
   void _listenToSignaling() {
-    signalingSocket.stream.listen((message) async {
+    _signalingSocket!.stream.listen((message) async {
       final signal = jsonDecode(message);
       if (signal is! Map) return;
       final type = signal['type'];
