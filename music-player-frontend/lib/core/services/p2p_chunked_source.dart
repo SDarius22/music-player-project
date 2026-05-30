@@ -12,6 +12,8 @@ class P2PChunkedAudioSource extends StreamAudioSource {
   final ChunkService Function(String) chunkManagerFactory;
   ChunkService? _chunkManager;
 
+  static const int _maxResponseBytes = 2 * 1024 * 1024;
+
   P2PChunkedAudioSource({
     required this.fileHash,
     required this.chunkManagerFactory,
@@ -33,7 +35,10 @@ class P2PChunkedAudioSource extends StreamAudioSource {
     }
 
     final int reqStart = (start ?? 0).clamp(0, total);
-    final int reqEndEx = (end ?? total).clamp(reqStart, total);
+    int reqEndEx = (end ?? total).clamp(reqStart, total);
+    if (reqEndEx - reqStart > _maxResponseBytes) {
+      reqEndEx = reqStart + _maxResponseBytes;
+    }
     final int contentLen = reqEndEx - reqStart;
 
     if (contentLen == 0) {
@@ -117,14 +122,26 @@ class P2PChunkedAudioSource extends StreamAudioSource {
     }
   }
 
+  static const int _maxChunkAttempts = 4;
+
   Future<Uint8List> _getChunkWithRetry(ChunkService manager, int index) async {
-    try {
-      return await manager.getChunk(index);
-    } catch (e) {
-      _logger.warning(
-        'getChunk failed for file=$fileHash idx=$index: $e; retrying once',
-      );
-      return await manager.getChunk(index);
+    Object? lastError;
+    for (int attempt = 1; attempt <= _maxChunkAttempts; attempt++) {
+      try {
+        return await manager.getChunk(index);
+      } catch (e) {
+        lastError = e;
+        _logger.warning(
+          'getChunk failed for file=$fileHash idx=$index '
+          '(attempt $attempt/$_maxChunkAttempts): $e',
+        );
+        if (attempt < _maxChunkAttempts) {
+          await Future.delayed(Duration(milliseconds: 150 * attempt));
+        }
+      }
     }
+    // Exhausted retries: rethrow so the response surfaces the failure rather
+    // than silently delivering a short read.
+    throw Exception('getChunk exhausted retries for idx=$index: $lastError');
   }
 }
