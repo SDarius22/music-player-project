@@ -286,8 +286,6 @@ class Html5AudioPlayer extends JustAudioPlayer {
     return LoadResponse(duration: duration);
   }
 
-  /// Loads audio from [uri] and returns the duration of the loaded audio if
-  /// known.
   Future<Duration?> loadUri(
       final Uri uri, final Duration? initialPosition) async {
     transition(ProcessingStateMessage.loading);
@@ -296,18 +294,14 @@ class Html5AudioPlayer extends JustAudioPlayer {
       _durationCompleter = Completer<dynamic>();
       _audioElement.src = src;
       _audioElement.playbackRate = _speed;
-      // Vendored change: 'auto' tells the browser to eagerly download the whole
-      // resource up front. With the P2P service-worker stream that meant the
-      // entire song was fetched before playback could begin. 'metadata' fetches
-      // only enough to read the header, then streams the rest on demand once
-      // play() starts — i.e. start playing as soon as possible.
       _audioElement.preload = 'metadata';
       await _audioElementQueue.load();
       if (initialPosition != null) {
         _audioElement.currentTime = initialPosition.inMilliseconds / 1000.0;
       }
       try {
-        await _durationCompleter!.future;
+        await _durationCompleter!.future
+            .timeout(const Duration(milliseconds: 1500), onTimeout: () => null);
       } on MediaError catch (e) {
         throw PlatformException(
             code: "${e.code}", message: "Failed to load URL");
