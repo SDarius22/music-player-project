@@ -84,51 +84,65 @@ class WebP2PBridge {
 
     _currentFileHash = fileHash;
 
-    final manager = _managers.putIfAbsent(
-      fileHash,
-      () => chunkManagerFactory(fileHash),
-    );
-    if (!manager.isReady) {
-      await manager.loadManifest();
-      if (_songNames.containsKey(fileHash)) {
-        manager.configureSongInfo(
-          _songNames[fileHash]!,
-          ChunkStatsService.instance.reportSilently,
-        );
-      }
-    }
-    if (_currentFileHash != fileHash) return;
-
-    int requestedStart = 0;
-    int requestedEnd = manager.totalBytes - 1;
-
-    if (rangeStr.startsWith('bytes=')) {
-      final parts = rangeStr.substring(6).split('-');
-      if (parts[0].isNotEmpty) {
-        requestedStart = int.parse(parts[0]);
-      }
-      if (parts.length > 1 && parts[1].isNotEmpty) {
-        requestedEnd = int.parse(parts[1]);
-      }
-    }
-
-    const int maxContentLength = 512000;
-    if ((requestedEnd - requestedStart + 1) > maxContentLength) {
-      requestedEnd = requestedStart + maxContentLength - 1;
-    }
-
-    if (requestedEnd >= manager.totalBytes) {
-      requestedEnd = manager.totalBytes - 1;
-    }
-
-    if (_currentFileHash != fileHash) return;
-
+    // Every path below must post a response or an error back to the service
+    // worker. If it doesn't, the SW's pending request is never resolved and
+    // sits until its 7s timeout fires, returning a `504 P2P timeout` to the
+    // <audio> element (→ MediaError network failure). The two historic culprits
+    // were an uncaught `loadManifest()` failure and the silent early-return on
+    // a song switch — both now surface as an immediate error instead.
     try {
+      final manager = _managers.putIfAbsent(
+        fileHash,
+        () => chunkManagerFactory(fileHash),
+      );
+      if (!manager.isReady) {
+        await manager.loadManifest();
+        if (_songNames.containsKey(fileHash)) {
+          manager.configureSongInfo(
+            _songNames[fileHash]!,
+            ChunkStatsService.instance.reportSilently,
+          );
+        }
+      }
+      if (_currentFileHash != fileHash) {
+        // Song switched away while we were loading: abandon this stale request
+        // but tell the SW so it doesn't wait out the full timeout.
+        _postError(msgEvent, reqId, 410, 'Song switched away from $fileHash');
+        return;
+      }
+
+      int requestedStart = 0;
+      int requestedEnd = manager.totalBytes - 1;
+
+      if (rangeStr.startsWith('bytes=')) {
+        final parts = rangeStr.substring(6).split('-');
+        if (parts[0].isNotEmpty) {
+          requestedStart = int.parse(parts[0]);
+        }
+        if (parts.length > 1 && parts[1].isNotEmpty) {
+          requestedEnd = int.parse(parts[1]);
+        }
+      }
+
+      const int maxContentLength = 512000;
+      if ((requestedEnd - requestedStart + 1) > maxContentLength) {
+        requestedEnd = requestedStart + maxContentLength - 1;
+      }
+
+      if (requestedEnd >= manager.totalBytes) {
+        requestedEnd = manager.totalBytes - 1;
+      }
+
       final (responseBytes, isP2P) = await _compileBytesForRange(
         manager,
         requestedStart,
         requestedEnd,
       );
+
+      if (_currentFileHash != fileHash) {
+        _postError(msgEvent, reqId, 410, 'Song switched away from $fileHash');
+        return;
+      }
 
       final contentType = await _resolveContentType(manager, fileHash);
 
@@ -150,18 +164,27 @@ class WebP2PBridge {
         (source as web.Client).postMessage(jsResponse);
       }
     } catch (e) {
-      _logger.warning('WebP2PBridge Error', e);
-      final source = msgEvent.source;
-      if (source != null) {
-        (source as web.Client).postMessage(
-          {
-            'type': 'P2P_CHUNK_ERROR',
-            'reqId': reqId,
-            'status': 504,
-            'error': e.toString(),
-          }.jsify(),
-        );
-      }
+      _logger.warning('WebP2PBridge Error for file=$fileHash', e);
+      _postError(msgEvent, reqId, 504, e.toString());
+    }
+  }
+
+  void _postError(
+    web.MessageEvent msgEvent,
+    String reqId,
+    int status,
+    String error,
+  ) {
+    final source = msgEvent.source;
+    if (source != null) {
+      (source as web.Client).postMessage(
+        {
+          'type': 'P2P_CHUNK_ERROR',
+          'reqId': reqId,
+          'status': status,
+          'error': error,
+        }.jsify(),
+      );
     }
   }
 

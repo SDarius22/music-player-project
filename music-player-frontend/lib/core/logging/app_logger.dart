@@ -15,6 +15,13 @@ void configureAppLogging() {
       Level
           .FINE; // temporarily set to FINE for more detailed logs during development
 
+  // ChunkService and WebRTCService each emit a FINE log per chunk fetched and
+  // per peer-discovery/signaling event, which floods the console during
+  // playback. Suppress their FINE chatter while keeping warnings, errors, and
+  // their [METRIC] info lines.
+  Logger('ChunkService').level = Level.INFO;
+  Logger('WebRTCService').level = Level.INFO;
+
   Logger.root.onRecord.listen((record) {
     final time = record.time.toIso8601String();
     final level = record.level.name;
