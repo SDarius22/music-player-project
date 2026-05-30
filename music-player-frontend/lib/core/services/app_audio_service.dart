@@ -54,6 +54,7 @@ class AppAudioService {
 
   bool _initialized = false;
   bool _isSwitchingSong = false;
+  bool _stuckCheckActive = false;
   bool _autoPlayFetchInProgress = false;
   bool _autoPlayTailFetchArmed = true;
   int _currentIndex = 0;
@@ -239,11 +240,31 @@ class AppAudioService {
     }
     _playStartTime ??= DateTime.now();
     final future = audioPlayer.play();
-    unawaited(_retryIfStuck());
+    // The stuck-playback watchdog targets the desktop (media_kit/mpv) player,
+    // which can wedge with the position frozen while still reporting "playing".
+    // On web the HTML audio element handles buffering/stalls natively and
+    // surfaces real failures via the error stream, so the watchdog would just
+    // spin during normal progressive buffering (constant "resetting stuck
+    // timer" churn) — skip it there.
+    if (!UniversalPlatform.isWeb) {
+      unawaited(_retryIfStuck());
+    }
     return future;
   }
 
   Future<void> _retryIfStuck() async {
+    // Guard against stacked watchdog loops: every play() would otherwise spawn
+    // a new one that runs concurrently with any still in flight.
+    if (_stuckCheckActive) return;
+    _stuckCheckActive = true;
+    try {
+      await _runStuckCheck();
+    } finally {
+      _stuckCheckActive = false;
+    }
+  }
+
+  Future<void> _runStuckCheck() async {
     const checkInterval = Duration(milliseconds: 500);
     const maxStuckMs = 1000;
     int stuckMs = 0;
