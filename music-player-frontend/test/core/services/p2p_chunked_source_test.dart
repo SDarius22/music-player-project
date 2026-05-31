@@ -42,11 +42,11 @@ class _FakeChunkService extends Fake implements ChunkService {
   ValueNotifier<int> get peerStateVersionNotifier => ValueNotifier<int>(0);
 }
 
-ChunkManifestDto _manifest(int totalBytes) {
+ChunkManifestDto _manifest(int totalBytes, {int chunkSize = 4}) {
   return ChunkManifestDto.fromJson({
     'fileHash': 'song-hash',
     'totalChunks': 3,
-    'chunkSize': 4,
+    'chunkSize': chunkSize,
     'totalBytes': totalBytes,
     'hashes': const ['', '', ''],
   });
@@ -105,6 +105,38 @@ void main() {
       expect(bytes, Uint8List.fromList([10, 11, 12, 13]));
       expect(manager.getChunkCalls[0], 2);
     });
+
+    test(
+      'open-ended request serves the full length, not a capped slice',
+      () async {
+        // Regression: a 2 MB response cap used to chop open-ended requests into
+        // pieces. ExoPlayer (Android, API 36) then re-requested at an offset
+        // past the previous response end, dropping ~100 KB of FLAC and emitting
+        // a premature EOS. The source must serve contiguously to EOF.
+        const chunkSize = 750000; // 3 chunks => 2.25 MB total, above the old cap
+        const total = chunkSize * 3;
+        final manager = _FakeChunkService(
+          manifest: _manifest(total, chunkSize: chunkSize),
+          chunks: {
+            0: Uint8List(chunkSize),
+            1: Uint8List(chunkSize),
+            2: Uint8List(chunkSize),
+          },
+        );
+
+        final source = P2PChunkedAudioSource(
+          fileHash: 'song-hash',
+          chunkManagerFactory: (_) => manager,
+        );
+
+        final response = await source.request(0); // end == null => to EOF
+        final bytes = await _collect(response.stream);
+
+        expect(response.offset, 0);
+        expect(response.contentLength, total);
+        expect(bytes, hasLength(total));
+      },
+    );
 
     test('returns empty stream when range has zero length', () async {
       final manager = _FakeChunkService(
