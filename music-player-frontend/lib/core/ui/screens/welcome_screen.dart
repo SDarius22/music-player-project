@@ -78,7 +78,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                "Welcome to Music Player!",
+                "Welcome to MP33r!",
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.displaySmall!.copyWith(
                   color: Colors.white,

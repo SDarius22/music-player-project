@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget buildHeader(BuildContext context) {
-    final title = 'Welcome to Music Player!';
+    final title = 'Welcome to MP33r!';
     final subtitle = 'Please continue using your email';
 
     return Column(

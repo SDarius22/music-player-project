@@ -46,7 +46,7 @@ class AppStateProvider extends AbstractAppStateProvider with TrayListener {
       items: [
         MenuItem(
           key: 'title',
-          label: 'Music Player ${kDebugMode ? 'Debug' : ''}',
+          label: 'MP33r ${kDebugMode ? 'Debug' : ''}',
         ),
         MenuItem.separator(),
         MenuItem(
@@ -120,7 +120,7 @@ class AppStateProvider extends AbstractAppStateProvider with TrayListener {
     );
 
     trayManager.setIcon('assets/logo.ico');
-    trayManager.setTitle('Music Player${kDebugMode ? ' Debug' : ''}');
+    trayManager.setTitle('MP33r${kDebugMode ? ' Debug' : ''}');
     trayManager.setContextMenu(menu);
   }
 

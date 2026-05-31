@@ -332,7 +332,7 @@ abstract class AbstractApp extends StatelessWidget {
                 builder: () => audioProvider,
                 config: const platform_service.AudioServiceConfig(
                   androidNotificationChannelId: 'com.example.musicplayer',
-                  androidNotificationChannelName: 'Music Player',
+                  androidNotificationChannelName: 'MP33r',
                   androidStopForegroundOnPause: false,
                 ),
               );

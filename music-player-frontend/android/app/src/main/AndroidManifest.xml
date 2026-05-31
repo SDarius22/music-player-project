@@ -22,7 +22,7 @@
     <application
             android:name="${applicationName}"
             android:icon="@mipmap/ic_launcher"
-            android:label="Music Player"
+            android:label="MP33r"
             android:networkSecurityConfig="@xml/network_security_config">
         <activity
                 android:name="com.ryanheise.audioservice.AudioServiceActivity"

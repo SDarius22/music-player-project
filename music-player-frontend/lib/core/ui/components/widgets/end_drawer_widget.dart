@@ -34,7 +34,7 @@ const _downloads = [
     icon: Icons.android,
     color: Color(0xFF3DDC84),
     path: 'music-player-android/app-release.apk',
-    filename: 'music-player.apk',
+    filename: 'MP33r.apk',
   ),
   _PlatformDownload(
     platform: 'Linux',
@@ -42,7 +42,7 @@ const _downloads = [
     icon: Icons.terminal,
     color: Color(0xFFF7941D),
     path: 'music-player-linux/music-player-linux.tar.gz',
-    filename: 'music-player.tar.gz',
+    filename: 'MP33r.tar.gz',
   ),
   _PlatformDownload(
     platform: 'Windows',
@@ -50,7 +50,7 @@ const _downloads = [
     icon: Icons.laptop_windows,
     color: Color(0xFF0078D7),
     path: 'music-player-windows/music-player-windows.zip',
-    filename: 'music-player.zip',
+    filename: 'MP33r.zip',
   ),
   _PlatformDownload(
     platform: 'macOS',
@@ -58,7 +58,7 @@ const _downloads = [
     icon: Icons.laptop_mac,
     color: Color(0xFFAAAAAA),
     path: 'music-player-macos/music-player-macos.zip',
-    filename: 'music-player.zip',
+    filename: 'MP33r.zip',
   ),
   _PlatformDownload(
     platform: 'iOS',
@@ -66,7 +66,7 @@ const _downloads = [
     icon: Icons.phone_iphone,
     color: Color(0xFF007AFF),
     path: 'music-player-ios/music-player.ipa',
-    filename: 'music-player.ipa',
+    filename: 'MP33r.ipa',
   ),
 ];
 

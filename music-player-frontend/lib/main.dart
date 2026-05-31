@@ -23,7 +23,7 @@ Future<void> main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     JustAudioMediaKit.protocolWhitelist = ["http", "https", "file"];
-    JustAudioMediaKit.title = 'Music Player';
+    JustAudioMediaKit.title = 'MP33r';
     JustAudioMediaKit.bufferSize = 4 * 1024 * 1024;
     JustAudioMediaKit.ensureInitialized(
       linux: true,

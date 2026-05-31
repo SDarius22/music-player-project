@@ -50,7 +50,7 @@ class AppStateProvider extends AbstractAppStateProvider
       items: [
         MenuItem(
           key: 'title',
-          label: 'Music Player ${kDebugMode ? 'Debug' : ''}',
+          label: 'MP33r ${kDebugMode ? 'Debug' : ''}',
         ),
         MenuItem.separator(),
         MenuItem(

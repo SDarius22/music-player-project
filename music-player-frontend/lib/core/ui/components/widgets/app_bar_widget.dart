@@ -67,7 +67,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Music Player',
+                    'MP33r',
                     style: Theme.of(context).textTheme.titleLarge!.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -134,7 +134,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
           ),
         ] else ...[
           Text(
-            'Music Player',
+            'MP33r',
             style: Theme.of(context).textTheme.titleLarge!.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w600,

@@ -1,11 +1,11 @@
 {
-    "name": "Music Player",
-    "short_name": "Music Player",
+    "name": "MP33r",
+    "short_name": "MP33r",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#000000",
     "theme_color": "#000000",
-    "description": "Music Player",
+    "description": "MP33r",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

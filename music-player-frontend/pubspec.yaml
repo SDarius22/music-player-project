@@ -79,8 +79,6 @@ dependencies:
   crypto: ^3.0.7
 
 dependency_overrides:
-  # Vendored to make web playback progressive: preload=metadata + unblock load()
-  # on `loadedmetadata` so playback starts without downloading the whole song.
   just_audio_web:
     path: ./packages/just_audio_web
 
