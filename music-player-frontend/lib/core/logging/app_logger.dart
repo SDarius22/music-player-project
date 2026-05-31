@@ -13,9 +13,6 @@ void configureAppLogging() {
   //Logger.root.level = kDebugMode ? Level.FINE : Level.INFO;
   Logger.root.level = Level.FINE; // temporarily set to FINE
 
-  Logger('ChunkService').level = Level.INFO;
-  Logger('WebRTCService').level = Level.INFO;
-
   Logger.root.onRecord.listen((record) {
     final time = record.time.toIso8601String();
     final level = record.level.name;

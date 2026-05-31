@@ -24,10 +24,6 @@ Future<void> main() async {
 
     JustAudioMediaKit.protocolWhitelist = ["http", "https", "file"];
     JustAudioMediaKit.title = 'Music Player';
-    // The default 32 MiB demuxer cache is larger than most songs, so libmpv
-    // pulls the entire track into its buffer up front (over the P2P chunked
-    // source that means downloading the whole song before/while starting).
-    // A smaller cache makes mpv read ahead progressively instead.
     JustAudioMediaKit.bufferSize = 4 * 1024 * 1024;
     JustAudioMediaKit.ensureInitialized(
       linux: true,
