@@ -9,8 +9,13 @@ import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class StreamingRestClient extends AbstractRestClient {
   static const int _maxConcurrent = 3;
+  static const int _maxPrefetchConcurrent = 1;
+
   int _active = 0;
-  final Queue<Completer<void>> _waitQueue = Queue();
+  int _activePrefetch = 0;
+
+  final Queue<Completer<void>> _playbackWaiters = Queue();
+  final Queue<Completer<void>> _prefetchWaiters = Queue();
 
   StreamingRestClient({
     required String baseUrl,
@@ -20,21 +25,36 @@ class StreamingRestClient extends AbstractRestClient {
     super.authService = authService;
   }
 
-  Future<void> _acquire() async {
-    if (_active < _maxConcurrent) {
-      _active++;
-      return;
-    }
-    final completer = Completer<void>();
-    _waitQueue.add(completer);
-    await completer.future;
-    _active++;
+  bool _canRun(bool prefetch) {
+    if (_active >= _maxConcurrent) return false;
+    if (prefetch && _activePrefetch >= _maxPrefetchConcurrent) return false;
+    return true;
   }
 
-  void _release() {
+  Future<void> _acquire(bool prefetch) {
+    if (_canRun(prefetch)) {
+      _active++;
+      if (prefetch) _activePrefetch++;
+      return Future<void>.value();
+    }
+    final completer = Completer<void>();
+    (prefetch ? _prefetchWaiters : _playbackWaiters).add(completer);
+    return completer.future;
+  }
+
+  void _release(bool prefetch) {
     _active--;
-    if (_waitQueue.isNotEmpty) {
-      _waitQueue.removeFirst().complete();
+    if (prefetch) _activePrefetch--;
+
+    if (_playbackWaiters.isNotEmpty && _canRun(false)) {
+      _active++;
+      _playbackWaiters.removeFirst().complete();
+      return;
+    }
+    if (_prefetchWaiters.isNotEmpty && _canRun(true)) {
+      _active++;
+      _activePrefetch++;
+      _prefetchWaiters.removeFirst().complete();
     }
   }
 
@@ -49,9 +69,10 @@ class StreamingRestClient extends AbstractRestClient {
 
   Future<Uint8List> downloadChunkFallback(
     String fileHash,
-    int chunkIndex,
-  ) async {
-    await _acquire();
+    int chunkIndex, {
+    bool prefetch = false,
+  }) async {
+    await _acquire(prefetch);
     try {
       final response = await get(
         '/stream/$fileHash/chunk/$chunkIndex',
@@ -62,7 +83,7 @@ class StreamingRestClient extends AbstractRestClient {
       }
       throw Exception("Master fallback failed: ${response.statusCode}");
     } finally {
-      _release();
+      _release(prefetch);
     }
   }
 }

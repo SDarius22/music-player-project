@@ -3,6 +3,7 @@ package com.example.musicplayerbackend.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
+import com.example.musicplayerbackend.data.SongChunkRepository;
 import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.domain.*;
 import java.io.File;
@@ -25,13 +26,15 @@ class StreamingServiceTest {
 
   @Mock SongRepository songRepository;
 
+  @Mock SongChunkRepository songChunkRepository;
+
   @TempDir Path tempDir;
 
   StreamingService service;
 
   @BeforeEach
   void setUp() {
-    service = new StreamingService(songRepository);
+    service = new StreamingService(songRepository, songChunkRepository);
   }
 
   private Song streamableSong(long id) {
@@ -149,8 +152,11 @@ class StreamingServiceTest {
     byte[] data = "audio-data".getBytes();
     Song song = streamableSong(1L);
     Chunk chunk = chunkWithFile(data);
-    song.getChunks().add(songChunk(song, chunk, 0));
+    SongChunk sc = songChunk(song, chunk, 0);
+    song.getChunks().add(sc);
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
+    when(songChunkRepository.findWithChunkBySongAndOrderIndex(song, 0))
+        .thenReturn(Optional.of(sc));
 
     Resource resource = service.getSongChunk("hash-1", 0, 99L);
 
@@ -192,8 +198,11 @@ class StreamingServiceTest {
             .size(10)
             .storagePath("/nonexistent/path/chunk")
             .build();
-    song.getChunks().add(songChunk(song, chunk, 0));
+    SongChunk sc = songChunk(song, chunk, 0);
+    song.getChunks().add(sc);
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
+    when(songChunkRepository.findWithChunkBySongAndOrderIndex(song, 0))
+        .thenReturn(Optional.of(sc));
 
     ResponseStatusException ex =
         assertThrows(ResponseStatusException.class, () -> service.getSongChunk("hash-1", 0, 99L));

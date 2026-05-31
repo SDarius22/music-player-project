@@ -173,10 +173,15 @@ class MockStreamingRestClient extends _i1.Mock
   @override
   _i7.Future<_i8.Uint8List> downloadChunkFallback(
     String? fileHash,
-    int? chunkIndex,
-  ) =>
+    int? chunkIndex, {
+    bool? prefetch = false,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#downloadChunkFallback, [fileHash, chunkIndex]),
+            Invocation.method(
+              #downloadChunkFallback,
+              [fileHash, chunkIndex],
+              {#prefetch: prefetch},
+            ),
             returnValue: _i7.Future<_i8.Uint8List>.value(_i8.Uint8List(0)),
             returnValueForMissingStub: _i7.Future<_i8.Uint8List>.value(
               _i8.Uint8List(0),

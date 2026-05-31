@@ -719,24 +719,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Album: obx_int.EntityDefinition<Album>(
       model: _entities[0],
       toOneRelations: (Album object) => [object.artist],
-      toManyRelations:
-          (Album object) => {
-            obx_int.RelInfo<Song>.toOneBacklink(
-                  18,
-                  object.id,
-                  (Song srcObject) => srcObject.album,
-                ):
-                object.songs,
-          },
+      toManyRelations: (Album object) => {
+        obx_int.RelInfo<Song>.toOneBacklink(
+          18,
+          object.id,
+          (Song srcObject) => srcObject.album,
+        ): object.songs,
+      },
       getId: (Album object) => object.id,
       setId: (Album object, int id) {
         object.id = id;
       },
       objectToFB: (Album object, fb.Builder fbb) {
-        final imageBytesOffset =
-            object.imageBytes == null
-                ? null
-                : fbb.writeListInt8(object.imageBytes!);
+        final imageBytesOffset = object.imageBytes == null
+            ? null
+            : fbb.writeListInt8(object.imageBytes!);
         final hashOffset = fbb.writeString(object.hash);
         final nameOffset = fbb.writeString(object.name);
         fbb.startTable(19);
@@ -759,26 +756,25 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final nameParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 32, '');
-        final object =
-            Album(hashParam, nameParam)
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..imageBytes =
-                  const fb.Uint8ListReader(
-                        lazy: false,
-                      ).vTableGetNullable(buffer, rootOffset, 20)
-                      as Uint8List?
-              ..duration = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                34,
-                0,
-              )
-              ..isLocal = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                38,
-                false,
-              );
+        final object = Album(hashParam, nameParam)
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..imageBytes =
+              const fb.Uint8ListReader(
+                    lazy: false,
+                  ).vTableGetNullable(buffer, rootOffset, 20)
+                  as Uint8List?
+          ..duration = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            34,
+            0,
+          )
+          ..isLocal = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            38,
+            false,
+          );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -836,72 +832,75 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object =
-            AppSettings()
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..firstTime = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                10,
-                false,
-              )
-              ..systemTray = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                12,
-                false,
-              )
-              ..fullClose = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                14,
-                false,
-              )
-              ..mainSongPlace = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 16, '')
-              ..songPlaces = const fb.ListReader<String>(
-                fb.StringReader(asciiOptimization: true),
-                lazy: false,
-              ).vTableGet(buffer, rootOffset, 18, [])
-              ..songPlaceIncludeSubfolders = const fb.ListReader<int>(
-                fb.Int64Reader(),
-                lazy: false,
-              ).vTableGet(buffer, rootOffset, 20, [])
-              ..drawerOpen = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                22,
-                false,
-              )
-              ..peerNetworkMode = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                24,
-                0,
-              )
-              ..peerWifiDataLimitGB = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                26,
-                0,
-              )
-              ..peerCellularDataLimitGB = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                28,
-                0,
-              )
-              ..peerWifiUploadedBytesThisMonth = const fb.Int64Reader()
-                  .vTableGet(buffer, rootOffset, 30, 0)
-              ..peerCellularUploadedBytesThisMonth = const fb.Int64Reader()
-                  .vTableGet(buffer, rootOffset, 32, 0)
-              ..peerUploadResetMonth = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                34,
-                0,
-              );
+        final object = AppSettings()
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..firstTime = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            10,
+            false,
+          )
+          ..systemTray = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            12,
+            false,
+          )
+          ..fullClose = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            14,
+            false,
+          )
+          ..mainSongPlace = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 16, '')
+          ..songPlaces = const fb.ListReader<String>(
+            fb.StringReader(asciiOptimization: true),
+            lazy: false,
+          ).vTableGet(buffer, rootOffset, 18, [])
+          ..songPlaceIncludeSubfolders = const fb.ListReader<int>(
+            fb.Int64Reader(),
+            lazy: false,
+          ).vTableGet(buffer, rootOffset, 20, [])
+          ..drawerOpen = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            22,
+            false,
+          )
+          ..peerNetworkMode = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            24,
+            0,
+          )
+          ..peerWifiDataLimitGB = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            26,
+            0,
+          )
+          ..peerCellularDataLimitGB = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            28,
+            0,
+          )
+          ..peerWifiUploadedBytesThisMonth = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            30,
+            0,
+          )
+          ..peerCellularUploadedBytesThisMonth = const fb.Int64Reader()
+              .vTableGet(buffer, rootOffset, 32, 0)
+          ..peerUploadResetMonth = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            34,
+            0,
+          );
 
         return object;
       },
@@ -909,24 +908,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Artist: obx_int.EntityDefinition<Artist>(
       model: _entities[2],
       toOneRelations: (Artist object) => [],
-      toManyRelations:
-          (Artist object) => {
-            obx_int.RelInfo<Song>.toOneBacklink(
-                  17,
-                  object.id,
-                  (Song srcObject) => srcObject.artist,
-                ):
-                object.songs,
-          },
+      toManyRelations: (Artist object) => {
+        obx_int.RelInfo<Song>.toOneBacklink(
+          17,
+          object.id,
+          (Song srcObject) => srcObject.artist,
+        ): object.songs,
+      },
       getId: (Artist object) => object.id,
       setId: (Artist object, int id) {
         object.id = id;
       },
       objectToFB: (Artist object, fb.Builder fbb) {
-        final imageBytesOffset =
-            object.imageBytes == null
-                ? null
-                : fbb.writeListInt8(object.imageBytes!);
+        final imageBytesOffset = object.imageBytes == null
+            ? null
+            : fbb.writeListInt8(object.imageBytes!);
         final hashOffset = fbb.writeString(object.hash);
         final nameOffset = fbb.writeString(object.name);
         fbb.startTable(11);
@@ -948,26 +944,25 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final nameParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 20, '');
-        final object =
-            Artist(hashParam, nameParam)
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..requiresSync = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                12,
-                false,
-              )
-              ..imageBytes =
-                  const fb.Uint8ListReader(
-                        lazy: false,
-                      ).vTableGetNullable(buffer, rootOffset, 16)
-                      as Uint8List?
-              ..isLocal = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                22,
-                false,
-              );
+        final object = Artist(hashParam, nameParam)
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..requiresSync = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            12,
+            false,
+          )
+          ..imageBytes =
+              const fb.Uint8ListReader(
+                    lazy: false,
+                  ).vTableGetNullable(buffer, rootOffset, 16)
+                  as Uint8List?
+          ..isLocal = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            22,
+            false,
+          );
         obx_int.InternalToManyAccess.setRelInfo<Artist>(
           object.songs,
           store,
@@ -1006,57 +1001,56 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object =
-            AudioSettings()
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..repeat = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                12,
-                false,
-              )
-              ..shuffle = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                14,
-                false,
-              )
-              ..speed = const fb.Float64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                18,
-                0,
-              )
-              ..volume = const fb.Float64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                20,
-                0,
-              )
-              ..sliderInSeconds = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                26,
-                0,
-              )
-              ..pitch = const fb.Float64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                28,
-                0,
-              )
-              ..autoPlay = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                30,
-                false,
-              )
-              ..autoPlayRecommendationsPage = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                32,
-                0,
-              );
+        final object = AudioSettings()
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..repeat = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            12,
+            false,
+          )
+          ..shuffle = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            14,
+            false,
+          )
+          ..speed = const fb.Float64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            18,
+            0,
+          )
+          ..volume = const fb.Float64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            20,
+            0,
+          )
+          ..sliderInSeconds = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            26,
+            0,
+          )
+          ..pitch = const fb.Float64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            28,
+            0,
+          )
+          ..autoPlay = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            30,
+            false,
+          )
+          ..autoPlayRecommendationsPage = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            32,
+            0,
+          );
 
         return object;
       },
@@ -1064,19 +1058,17 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Playlist: obx_int.EntityDefinition<Playlist>(
       model: _entities[4],
       toOneRelations: (Playlist object) => [],
-      toManyRelations:
-          (Playlist object) => {
-            obx_int.RelInfo<Playlist>.toMany(10, object.id): object.songs,
-          },
+      toManyRelations: (Playlist object) => {
+        obx_int.RelInfo<Playlist>.toMany(10, object.id): object.songs,
+      },
       getId: (Playlist object) => object.id,
       setId: (Playlist object, int id) {
         object.id = id;
       },
       objectToFB: (Playlist object, fb.Builder fbb) {
-        final imageBytesOffset =
-            object.imageBytes == null
-                ? null
-                : fbb.writeListInt8(object.imageBytes!);
+        final imageBytesOffset = object.imageBytes == null
+            ? null
+            : fbb.writeListInt8(object.imageBytes!);
         final nameOffset = fbb.writeString(object.name);
         final songFileHashesOffset = fbb.writeList(
           object.songFileHashes.map(fbb.writeString).toList(growable: false),
@@ -1101,51 +1093,50 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final nameParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 36, '');
-        final object =
-            Playlist(nameParam)
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..indestructible = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                6,
-                false,
-              )
-              ..createdAt = DateTime.fromMillisecondsSinceEpoch(
-                const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
-              )
-              ..imageBytes =
-                  const fb.Uint8ListReader(
-                        lazy: false,
-                      ).vTableGetNullable(buffer, rootOffset, 24)
-                      as Uint8List?
-              ..requiresSync = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                28,
-                false,
-              )
-              ..serverId = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                30,
-                0,
-              )
-              ..duration = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                38,
-                0,
-              )
-              ..songFileHashes = const fb.ListReader<String>(
-                fb.StringReader(asciiOptimization: true),
-                lazy: false,
-              ).vTableGet(buffer, rootOffset, 40, [])
-              ..isLocal = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                42,
-                false,
-              );
+        final object = Playlist(nameParam)
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..indestructible = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            6,
+            false,
+          )
+          ..createdAt = DateTime.fromMillisecondsSinceEpoch(
+            const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+          )
+          ..imageBytes =
+              const fb.Uint8ListReader(
+                    lazy: false,
+                  ).vTableGetNullable(buffer, rootOffset, 24)
+                  as Uint8List?
+          ..requiresSync = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            28,
+            false,
+          )
+          ..serverId = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            30,
+            0,
+          )
+          ..duration = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            38,
+            0,
+          )
+          ..songFileHashes = const fb.ListReader<String>(
+            fb.StringReader(asciiOptimization: true),
+            lazy: false,
+          ).vTableGet(buffer, rootOffset, 40, [])
+          ..isLocal = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            42,
+            false,
+          );
         obx_int.InternalToManyAccess.setRelInfo<Playlist>(
           object.songs,
           store,
@@ -1163,8 +1154,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (Song object, fb.Builder fbb) {
-        final pathOffset =
-            object.path == null ? null : fbb.writeString(object.path!);
+        final pathOffset = object.path == null
+            ? null
+            : fbb.writeString(object.path!);
         final fileHashOffset = fbb.writeString(object.fileHash);
         final nameOffset = fbb.writeString(object.name);
         fbb.startTable(32);
@@ -1202,69 +1194,62 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final fileHashParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 60, '');
-        final object =
-            Song(fileHashParam)
-              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-              ..path = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGetNullable(buffer, rootOffset, 6)
-              ..trackNumber = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                20,
-                0,
-              )
-              ..discNumber = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                22,
-                0,
-              )
-              ..year = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                24,
-                0,
-              )
-              ..fullyLoaded = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                32,
-                false,
-              )
-              ..durationInSeconds = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                40,
-                0,
-              )
-              ..likedByUser = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                42,
-                false,
-              )
-              ..lastPlayed =
-                  lastPlayedValue == null
-                      ? null
-                      : DateTime.fromMicrosecondsSinceEpoch(
-                        (lastPlayedValue / 1000).round(),
-                      )
-              ..playCount = const fb.Int64Reader().vTableGet(
-                buffer,
-                rootOffset,
-                46,
-                0,
-              )
-              ..name = const fb.StringReader(
-                asciiOptimization: true,
-              ).vTableGet(buffer, rootOffset, 62, '')
-              ..isLocal = const fb.BoolReader().vTableGet(
-                buffer,
-                rootOffset,
-                64,
-                false,
-              );
+        final object = Song(fileHashParam)
+          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+          ..path = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGetNullable(buffer, rootOffset, 6)
+          ..trackNumber = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            20,
+            0,
+          )
+          ..discNumber = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            22,
+            0,
+          )
+          ..year = const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0)
+          ..fullyLoaded = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            32,
+            false,
+          )
+          ..durationInSeconds = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            40,
+            0,
+          )
+          ..likedByUser = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            42,
+            false,
+          )
+          ..lastPlayed = lastPlayedValue == null
+              ? null
+              : DateTime.fromMicrosecondsSinceEpoch(
+                  (lastPlayedValue / 1000).round(),
+                )
+          ..playCount = const fb.Int64Reader().vTableGet(
+            buffer,
+            rootOffset,
+            46,
+            0,
+          )
+          ..name = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 62, '')
+          ..isLocal = const fb.BoolReader().vTableGet(
+            buffer,
+            rootOffset,
+            64,
+            false,
+          );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,

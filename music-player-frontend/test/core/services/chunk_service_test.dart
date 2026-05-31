@@ -215,7 +215,7 @@ void main() {
       mockStreamingClient.fetchManifest('song-hash'),
     ).thenAnswer((_) async => buildManifest(totalChunks: 5, hashes: hashes));
     when(
-      mockStreamingClient.downloadChunkFallback('song-hash', 3),
+      mockStreamingClient.downloadChunkFallback('song-hash', 3, prefetch: true),
     ).thenAnswer((_) async => data);
 
     final service = ChunkService(

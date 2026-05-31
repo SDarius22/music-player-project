@@ -326,14 +326,22 @@ class ChunkService {
         );
         _p2pCompleters.remove(index);
         try {
-          data = await _streamingClient.downloadChunkFallback(fileHash, index);
+          data = await _streamingClient.downloadChunkFallback(
+            fileHash,
+            index,
+            prefetch: true,
+          );
         } catch (_) {
           return;
         }
       }
     } else {
       try {
-        data = await _streamingClient.downloadChunkFallback(fileHash, index);
+        data = await _streamingClient.downloadChunkFallback(
+          fileHash,
+          index,
+          prefetch: true,
+        );
       } catch (_) {
         return;
       }
