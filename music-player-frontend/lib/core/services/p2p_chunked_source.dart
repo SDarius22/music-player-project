@@ -12,8 +12,6 @@ class P2PChunkedAudioSource extends StreamAudioSource {
   final ChunkService Function(String) chunkManagerFactory;
   ChunkService? _chunkManager;
 
-  static const int _maxResponseBytes = 2 * 1024 * 1024;
-
   P2PChunkedAudioSource({
     required this.fileHash,
     required this.chunkManagerFactory,
@@ -35,10 +33,7 @@ class P2PChunkedAudioSource extends StreamAudioSource {
     }
 
     final int reqStart = (start ?? 0).clamp(0, total);
-    int reqEndEx = (end ?? total).clamp(reqStart, total);
-    if (reqEndEx - reqStart > _maxResponseBytes) {
-      reqEndEx = reqStart + _maxResponseBytes;
-    }
+    final int reqEndEx = (end ?? total).clamp(reqStart, total);
     final int contentLen = reqEndEx - reqStart;
 
     if (contentLen == 0) {

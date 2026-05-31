@@ -1,4 +1,4 @@
-# Music Player Frontend
+# MP33r Frontend
 
 Flutter client for the peer-assisted music streaming system.
 

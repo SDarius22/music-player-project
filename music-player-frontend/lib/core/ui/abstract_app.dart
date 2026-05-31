@@ -264,14 +264,21 @@ abstract class AbstractApp extends StatelessWidget {
       Provider<AppAudioService>(
         create: (context) {
           final chunkServiceCache = <String, ChunkService>{};
+          const maxCachedManagers = 9;
           return AppAudioService(
             context.read<SongService>(),
             context.read<SettingsService>(),
             context.read<PlaylistService>(),
             context.read<AuthService>(),
             (String fileHash) {
+              final router = context.read<ActiveChunkRouter>();
               final cached = chunkServiceCache[fileHash];
-              if (cached != null) return cached;
+              if (cached != null) {
+                chunkServiceCache.remove(fileHash);
+                chunkServiceCache[fileHash] = cached;
+                router.registerManager(cached);
+                return cached;
+              }
 
               final manager = ChunkService(
                 fileHash: fileHash,
@@ -280,14 +287,16 @@ abstract class AbstractApp extends StatelessWidget {
                 webrtcManager: context.read<WebRTCService>(),
               );
 
-              if (chunkServiceCache.length >= 5) {
-                final evicted = chunkServiceCache.remove(
-                  chunkServiceCache.keys.first,
-                );
-                evicted?.dispose();
+              if (chunkServiceCache.length >= maxCachedManagers) {
+                final evictedKey = chunkServiceCache.keys.first;
+                final evicted = chunkServiceCache.remove(evictedKey);
+                if (evicted != null) {
+                  router.unregisterManager(evicted);
+                  evicted.dispose();
+                }
               }
               chunkServiceCache[fileHash] = manager;
-              context.read<ActiveChunkRouter>().registerManager(manager);
+              router.registerManager(manager);
 
               return manager;
             },

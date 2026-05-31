@@ -12,9 +12,13 @@ class ActiveChunkRouter {
   ActiveChunkRouter(this._cacheRepo);
 
   void registerManager(ChunkService manager) {
+    _activeManagers.remove(manager.fileHash);
     _activeManagers[manager.fileHash] = manager;
-    if (_activeManagers.length > 5) {
-      _activeManagers.remove(_activeManagers.keys.first);
+  }
+
+  void unregisterManager(ChunkService manager) {
+    if (identical(_activeManagers[manager.fileHash], manager)) {
+      _activeManagers.remove(manager.fileHash);
     }
   }
 
@@ -23,7 +27,8 @@ class ActiveChunkRouter {
       _activeManagers[fileHash]!.resolvePeerRequest(chunkIndex, data);
     } else {
       _logger.fine(
-        'Router: Dropped stray chunk $chunkIndex for song $fileHash',
+        'Router: Dropped stray chunk $chunkIndex for song $fileHash; '
+        'registered keys=${_activeManagers.keys.toList()}',
       );
     }
   }

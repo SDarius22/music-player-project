@@ -1,4 +1,4 @@
-# Music Player
+# MP33r
 
 A cross-platform, peer-assisted music streaming application. The server delivers
 the first chunks of every song (a small "prefix") and then steps aside while

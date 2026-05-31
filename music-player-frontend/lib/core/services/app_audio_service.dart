@@ -702,6 +702,11 @@ class AppAudioService {
     final progress =
         totalSecs > 0 ? (posSecs / totalSecs).clamp(0.0, 1.0) : 0.0;
 
+    final playing = currentSong;
+    if (playing != null && !playing.isLocal && playing.getHash().isNotEmpty) {
+      createChunkManager(playing.getHash());
+    }
+
     final q = _activeQueue;
     for (int i = 0; i < _nextSongTargets.length; i++) {
       final songIdx = (_currentIndex + i + 1) % q.length;
