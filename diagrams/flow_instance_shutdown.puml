@@ -11,7 +11,7 @@ participant "Instance 2\nSignalingHandler" as inst2
 
 inst1 -> inst1: shutdown\nafterConnectionClosed() per session
 inst1 -> inst1: remove sessions from\nregistry / userIndex / peerIndex
-inst1 -> redis: HDEL peer:chunks:{songId} peerA
+inst1 -> redis: HDEL peer:chunks:{fileHash} peerA
 inst1 -> redis: DEL peer:songs:{peerA}
 
 == Client A Reconnects ==
@@ -19,9 +19,9 @@ inst1 -> redis: DEL peer:songs:{peerA}
 clientA -> inst2: WebSocket reconnect
 inst2 -> inst2: register session in\nregistry / userIndex / peerIndex
 
-clientA -> inst2: WS REGISTER_CACHE\n{songId, cachedIndices}
+clientA -> inst2: WS REGISTER_CACHE\n{fileHash, cachedIndices}
 inst2 -> inst2: PeerTrackingService\n.registerPeerChunks()
-inst2 -> redis: HSET peer:chunks:{songId}\npeerA -> [cachedIndices]
-inst2 -> redis: SADD peer:songs:{peerA} songId
+inst2 -> redis: HSET peer:chunks:{fileHash}\npeerA -> [cachedIndices]
+inst2 -> redis: SADD peer:songs:{peerA} fileHash
 
 @enduml

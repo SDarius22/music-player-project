@@ -13,7 +13,7 @@ chunkSvc -> streamServer: GET /stream/{fileHash}/manifest
 streamServer --> chunkSvc: ChunkManifestDto\n(totalChunks, chunkSize, hashes[])
 
 chunkSvc -> webrtc: discoverPeers(fileHash)
-webrtc -> sigServer: WS DISCOVER_PEERS\n{fileHash, userId}
+webrtc -> sigServer: WS DISCOVER_PEERS\n{fileHash, senderId=deviceId}
 sigServer --> webrtc: WS PEER_BUFFER_MAP\n{peerId -> [cachedIndices]}
 
 chunkSvc -> cache: getAvailableChunkIndices(fileHash)

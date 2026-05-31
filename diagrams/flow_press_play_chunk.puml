@@ -51,6 +51,6 @@ loop for each needed chunk N
   chunkPath -> chunkSvc: prefetch next 1..16 chunks
 end
 
-chunkSvc -> streamServer: POST /statistics\n{songFileHash, localCachedChunks,\np2pChunks, serverChunks}
+chunkSvc -> streamServer: POST /statistics\n{songFileHash, songName, localChunks,\nlocalCachedChunks, p2pChunks, serverChunks}
 
 @enduml

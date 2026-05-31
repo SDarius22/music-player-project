@@ -17,7 +17,7 @@ webrtc -> webrtc: signalingSocket.sink.close()
 
 sigBackend -> sigBackend: afterConnectionClosed(session)
 sigBackend -> sigBackend: remove from registry /\nuserIndex / peerIndex
-sigBackend -> redis: HDEL peer:chunks:{songId} peerId
+sigBackend -> redis: HDEL peer:chunks:{fileHash} peerId
 sigBackend -> redis: DEL peer:songs:{peerId}
 
 @enduml

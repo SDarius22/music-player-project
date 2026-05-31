@@ -3,31 +3,51 @@
 skinparam componentStyle rectangle
 skinparam linetype ortho
 skinparam defaultFontName monospaced
+skinparam nodesep 30
+skinparam ranksep 35
+top to bottom direction
 
-package "Spring Boot backend replica(s)" {
-  [REST API adapters\nAuth, Song, Album, Artist, Playlist,\nStreaming, Playback, Statistics, Health] as api
+package "Spring Boot backend replica(s)" as backend {
+  [REST API adapters\n Auth, Song, Album, Artist, Playlist,\n Streaming, Playback, Statistics, Health] as api
 
-  [Security & Authentication\nSecurityConfig, JWTAuthenticationFilter\nAuthService, JWTService] as auth
+  [Security & Authentication\n SecurityConfig, JWTAuthenticationFilter\n AuthService, JWTService] as auth
 
-  [Catalog & Library\nSongService, AlbumService, ArtistService,\nPlaylistService, DefaultPlaylistService,\nRecommendationService] as catalog
+  [Catalog & Library\nSongService, AlbumService, ArtistService,\n PlaylistService, DefaultPlaylistService,\n RecommendationService] as catalog
 
-  [Upload Pipeline\n64 KiB chunking + SHA-256 dedup\nnegotiated upload + missing chunk ingest\nSongEnrichmentService] as upload
+  [Upload Pipeline\n 64 KiB chunking + SHA-256 dedup\n negotiated upload + missing chunk ingest\n SongEnrichmentService] as upload
 
-  [Streaming\nStreamingService\nGET /stream/{fileHash}/manifest\nGET /stream/{fileHash}/chunk/{chunkIndex}] as streaming
+  [Streaming\n StreamingService\n GET /stream/{fileHash}/manifest\n GET /stream/{fileHash}/chunk/{chunkIndex}] as streaming
 
-  [State & Telemetry\nPlaybackStateService\nStatisticsService] as userState
+  [State & Telemetry\n PlaybackStateService\nStatisticsService] as userState
 
-  [Realtime Signaling\nSignalingHandler\nRedisSignalingListener] as signaling
+  [Realtime Signaling\n SignalingHandler\n RedisSignalingListener] as signaling
 
   [PeerTrackingService] as peerTracking
 
-  [Persistence\nJPA repositories\nusers, verification_codes, songs, chunks, song_chunks,\nalbums, artists, album_artists,\nplaylists, playlist_songs,\nuser_library, user_playback_state, chunk_stats] as repos
+  [Persistence\n JPA repositories\n users, verification_codes, songs, chunks, song_chunks,\n albums, artists, album_artists,\n playlists, playlist_songs,\n user_library, user_playback_state, chunk_stats] as repos
+
+  api -[hidden]down-> catalog
+  auth -[hidden]right-> catalog
+  catalog -[hidden]right-> upload
+  catalog -[hidden]down-> streaming
+  streaming -[hidden]right-> userState
+  streaming -[hidden]down-> signaling
+  signaling -[hidden]right-> peerTracking
+  signaling -[hidden]down-> repos
 }
 
-database "PostgreSQL\nmusic_library schema" as postgres
-database "Redis\npub/sub + peer cache" as redis
-storage "Chunk storage\n~/music-server/chunks" as fs
-cloud "SMTP mail" as mail
+package "Infrastructure" as infra {
+  database "PostgreSQL\n music_library schema" as postgres
+  database "Redis\n pub/sub + peer cache" as redis
+  storage "Chunk storage\n ~/music-server/chunks" as fs
+  cloud "SMTP mail" as mail
+
+  postgres -[hidden]right-> redis
+  redis -[hidden]right-> fs
+  fs -[hidden]right-> mail
+}
+
+backend -[hidden]down-> infra
 
 api --> auth
 api --> catalog
@@ -41,14 +61,15 @@ upload   --> repos
 streaming --> repos
 userState --> repos
 
-auth     --> mail : verification email
-upload   --> fs   : write chunk files
-streaming --> fs  : read chunk files
+auth     -down-> mail : verification email
+upload   -down-> fs   : write chunk files
+streaming -down-> fs  : read chunk files
 
 signaling --> peerTracking : REGISTER_CACHE / DISCOVER_PEERS
-signaling <--> redis : signaling:webrtc
-peerTracking --> redis : peer:chunks:*\npeer:songs:*
+signaling -down-> redis : signaling:webrtc
+redis -up-> signaling
+peerTracking -down-> redis : peer:chunks:*\npeer:songs:*
 
-repos --> postgres
+repos -down-> postgres
 
 @enduml
