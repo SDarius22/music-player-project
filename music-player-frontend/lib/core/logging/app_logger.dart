@@ -11,14 +11,8 @@ void configureAppLogging() {
 
   hierarchicalLoggingEnabled = true;
   //Logger.root.level = kDebugMode ? Level.FINE : Level.INFO;
-  Logger.root.level =
-      Level
-          .FINE; // temporarily set to FINE for more detailed logs during development
+  Logger.root.level = Level.FINE; // temporarily set to FINE
 
-  // ChunkService and WebRTCService each emit a FINE log per chunk fetched and
-  // per peer-discovery/signaling event, which floods the console during
-  // playback. Suppress their FINE chatter while keeping warnings, errors, and
-  // their [METRIC] info lines.
   Logger('ChunkService').level = Level.INFO;
   Logger('WebRTCService').level = Level.INFO;
 

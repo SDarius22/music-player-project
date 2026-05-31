@@ -1,41 +1,33 @@
 import 'package:flutter/material.dart';
 
 class MusicPlayerTheme {
-  // ── Gradient anchor colors (exactly 4 — required by the mesh gradient) ──
-  static const Color gradientViolet = Color(0xFF7C3AED); // deep violet
-  static const Color gradientPink = Color(0xFFDB2777); // hot pink
-  static const Color gradientAmber = Color(0xFFD97706); // warm amber
-  static const Color gradientIndigo = Color(0xFF2563EB); // electric indigo
+  static const Color gradientViolet = Color(0xFF7C3AED);
+  static const Color gradientPink = Color(0xFFDB2777);
+  static const Color gradientAmber = Color(0xFFD97706);
+  static const Color gradientIndigo = Color(0xFF2563EB);
 
-  // ── Surfaces ──
   static const Color backgroundDark = Color(0xFF07050E);
   static const Color surfaceDark = Color(0xFF100C1C);
   static const Color surfaceElevated = Color(0xFF1A1430);
 
-  // ── Text ──
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFADA5C8);
 
-  // ── Accent (lighter tints of the gradient for interactive states) ──
   static const Color accentViolet = Color(0xFFA78BFA);
   static const Color accentPink = Color(0xFFF472B6);
 
-  // ── Gradients ──
-  // Used as the default mesh-gradient background (4 colors required).
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [gradientViolet, gradientPink, gradientAmber, gradientIndigo],
   );
 
-  // Horizontal accent strip (e.g. progress bars, highlights).
   static const LinearGradient accentGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [gradientViolet, gradientPink],
   );
 
-  // Subtle card fill.
   static const LinearGradient cardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

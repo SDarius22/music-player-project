@@ -102,9 +102,6 @@ abstract class AbstractApp extends StatelessWidget {
                 ActiveChunkRouter(context.read<ChunkCacheRepository>()),
       ),
 
-      // AuthService is a ChangeNotifier (it notifies when the token is
-      // set/cleared, e.g. to gate the websocket connection), so it must be
-      // exposed via ChangeNotifierProvider rather than a plain Provider.
       ChangeNotifierProvider<AuthService>(
         create: (context) => AuthService(baseUrl: apiBaseUrl),
       ),
