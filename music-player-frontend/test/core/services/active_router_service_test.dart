@@ -46,19 +46,50 @@ void main() {
       );
     });
 
-    test('evicts oldest manager when registry exceeds five entries', () {
+    test('does not self-evict; all registered managers stay routable', () {
       final router = ActiveChunkRouter(InMemoryChunkCacheRepository());
       final managers = List.generate(6, (i) => _FakeChunkService('song-$i'));
       for (final manager in managers) {
         router.registerManager(manager);
       }
 
-      router.routeChunk('song-0', 1, Uint8List.fromList([9]));
-      router.routeChunk('song-5', 1, Uint8List.fromList([9]));
+      for (final manager in managers) {
+        router.routeChunk(manager.fileHash, 1, Uint8List.fromList([9]));
+      }
 
-      expect(managers.first.resolved, isEmpty);
-      expect(managers.last.resolved, hasLength(1));
+      for (final manager in managers) {
+        expect(manager.resolved, hasLength(1));
+      }
     });
+
+    test('unregisterManager stops routing to that manager', () {
+      final router = ActiveChunkRouter(InMemoryChunkCacheRepository());
+      final manager = _FakeChunkService('song-1');
+      router.registerManager(manager);
+
+      router.unregisterManager(manager);
+      router.routeChunk('song-1', 0, Uint8List.fromList([9]));
+
+      expect(manager.resolved, isEmpty);
+    });
+
+    test(
+      'unregisterManager only removes the matching instance, not a newer one',
+      () {
+        final router = ActiveChunkRouter(InMemoryChunkCacheRepository());
+        final older = _FakeChunkService('song-1');
+        final newer = _FakeChunkService('song-1');
+
+        router.registerManager(older);
+        router.registerManager(newer);
+        router.unregisterManager(older);
+
+        router.routeChunk('song-1', 0, Uint8List.fromList([9]));
+
+        expect(newer.resolved, hasLength(1));
+        expect(older.resolved, isEmpty);
+      },
+    );
 
     test('getLocalChunk delegates to cache repository', () async {
       final cache = InMemoryChunkCacheRepository();
