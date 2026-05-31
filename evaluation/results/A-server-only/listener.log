@@ -1,0 +1,313 @@
+2026-05-29 22:22:44.016 Music Player[72659:642983] Running with merged UI and platform thread. Experimental.
+flutter: The Dart VM service is listening on http://127.0.0.1:60883/Lv_DUlpqYvI=/
+flutter: 2026-05-29T22:22:44.466706 [INFO] [eval] [eval] role=listener songs=1 speed=max bitrate=40960 api=http://localhost:9000/api/v1 ws=ws://localhost:9000/ws/signaling
+flutter: 2026-05-29T22:22:44.751921 [WARNING] [eval] [eval] token persistence failed (continuing in-memory): PlatformException(Unexpected security result code, Code: -34018, Message: A required entitlement isn't present., -34018, null)
+flutter: 2026-05-29T22:22:46.831766 [FINE] [ChunkService] [P2P] Manifest loaded for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff chunks=147 bytes=9602655 serverPrefix=7
+flutter: 2026-05-29T22:22:46.833257 [INFO] [eval] [eval] playing 3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff chunks=147 perChunk=0ms
+flutter: 2026-05-29T22:22:46.833872 [FINE] [ChunkService] [P2P] Chunk idx=0 file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff forced to server bootstrap prefix prefixCount=7
+flutter: 2026-05-29T22:22:46.834259 [FINE] [ChunkService] [P2P] Chunk idx=1 file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff forced to server bootstrap prefix prefixCount=7
+flutter: 2026-05-29T22:22:46.834297 [FINE] [ChunkService] [P2P] Chunk idx=2 file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff forced to server bootstrap prefix prefixCount=7
+flutter: 2026-05-29T22:22:46.834321 [FINE] [ChunkService] [P2P] Chunk idx=3 file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff forced to server bootstrap prefix prefixCount=7
+flutter: 2026-05-29T22:22:46.834440 [FINE] [ChunkService] [P2P] Chunk idx=4 file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff forced to server bootstrap prefix prefixCount=7
+flutter: 2026-05-29T22:22:46.834466 [FINE] [ChunkService] [P2P] Chunk idx=5 file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff forced to server bootstrap prefix prefixCount=7
+flutter: 2026-05-29T22:22:46.834486 [FINE] [ChunkService] [P2P] Chunk idx=6 file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff forced to server bootstrap prefix prefixCount=7
+flutter: 2026-05-29T22:22:46.835494 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=7; using server
+flutter: 2026-05-29T22:22:46.835539 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=8; using server
+flutter: 2026-05-29T22:22:46.835569 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=9; using server
+flutter: 2026-05-29T22:22:46.835593 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=10; using server
+flutter: 2026-05-29T22:22:46.835982 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=11; using server
+flutter: 2026-05-29T22:22:46.836007 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=12; using server
+flutter: 2026-05-29T22:22:46.836031 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=13; using server
+flutter: 2026-05-29T22:22:46.836053 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=14; using server
+flutter: 2026-05-29T22:22:46.836074 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=15; using server
+flutter: 2026-05-29T22:22:46.836103 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=16; using server
+flutter: 2026-05-29T22:22:46.876664 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=1 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.882116 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=2 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.883551 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=0 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.886802 [FINE] [WebRTCService] Received PEER_BUFFER_MAP from peer=SERVER peers=
+flutter: 2026-05-29T22:22:46.887073 [FINE] [WebRTCService] Peer discovery for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff returned peers=
+flutter: 2026-05-29T22:22:46.900591 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=5 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.902074 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=3 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.903206 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=4 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.912772 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=6 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.914085 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=7 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.915162 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=8 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.924868 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=10 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.926273 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=9 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.927372 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=11 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.936816 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=12 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.938531 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=13 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.939615 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=14 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.953352 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=16 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.954698 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=15 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.954923 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=17; using server
+flutter: 2026-05-29T22:22:46.954956 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=18; using server
+flutter: 2026-05-29T22:22:46.954978 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=19; using server
+flutter: 2026-05-29T22:22:46.955008 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=20; using server
+flutter: 2026-05-29T22:22:46.955033 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=21; using server
+flutter: 2026-05-29T22:22:46.955053 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=22; using server
+flutter: 2026-05-29T22:22:46.955071 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=23; using server
+flutter: 2026-05-29T22:22:46.955089 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=24; using server
+flutter: 2026-05-29T22:22:46.955107 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=25; using server
+flutter: 2026-05-29T22:22:46.955125 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=26; using server
+flutter: 2026-05-29T22:22:46.955149 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=27; using server
+flutter: 2026-05-29T22:22:46.955167 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=28; using server
+flutter: 2026-05-29T22:22:46.955185 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=29; using server
+flutter: 2026-05-29T22:22:46.955202 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=30; using server
+flutter: 2026-05-29T22:22:46.955220 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=31; using server
+flutter: 2026-05-29T22:22:46.955237 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=32; using server
+flutter: 2026-05-29T22:22:46.955265 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=33; using server
+flutter: 2026-05-29T22:22:46.966774 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=19 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.968306 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=18 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.969661 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=17 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.979149 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=21 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.980428 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=20 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.981913 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=22 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.991575 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=23 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.992850 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=24 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:46.994187 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=25 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.003306 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=28 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.004525 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=26 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.005923 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=27 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.014096 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=29 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.015278 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=30 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.016338 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=31 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.024167 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=32 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.025210 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=33 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.025360 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=34; using server
+flutter: 2026-05-29T22:22:47.025444 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=35; using server
+flutter: 2026-05-29T22:22:47.025474 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=36; using server
+flutter: 2026-05-29T22:22:47.025499 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=37; using server
+flutter: 2026-05-29T22:22:47.025523 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=38; using server
+flutter: 2026-05-29T22:22:47.025543 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=39; using server
+flutter: 2026-05-29T22:22:47.025560 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=40; using server
+flutter: 2026-05-29T22:22:47.025577 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=41; using server
+flutter: 2026-05-29T22:22:47.025592 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=42; using server
+flutter: 2026-05-29T22:22:47.025608 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=43; using server
+flutter: 2026-05-29T22:22:47.025625 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=44; using server
+flutter: 2026-05-29T22:22:47.025695 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=45; using server
+flutter: 2026-05-29T22:22:47.025773 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=46; using server
+flutter: 2026-05-29T22:22:47.025817 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=47; using server
+flutter: 2026-05-29T22:22:47.025869 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=48; using server
+flutter: 2026-05-29T22:22:47.025894 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=49; using server
+flutter: 2026-05-29T22:22:47.025924 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=50; using server
+flutter: 2026-05-29T22:22:47.034732 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=35 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.036153 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=36 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.037252 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=34 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.045882 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=37 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.047242 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=38 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.048435 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=39 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.056046 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=40 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.057398 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=41 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.058660 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=42 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.066410 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=44 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.067646 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=45 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.068850 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=43 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.076876 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=47 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.078267 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=48 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.079883 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=46 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.093192 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=50 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.094276 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=49 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.094475 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=51; using server
+flutter: 2026-05-29T22:22:47.094517 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=52; using server
+flutter: 2026-05-29T22:22:47.094537 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=53; using server
+flutter: 2026-05-29T22:22:47.094554 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=54; using server
+flutter: 2026-05-29T22:22:47.094574 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=55; using server
+flutter: 2026-05-29T22:22:47.094592 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=56; using server
+flutter: 2026-05-29T22:22:47.094608 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=57; using server
+flutter: 2026-05-29T22:22:47.094623 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=58; using server
+flutter: 2026-05-29T22:22:47.094638 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=59; using server
+flutter: 2026-05-29T22:22:47.094657 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=60; using server
+flutter: 2026-05-29T22:22:47.094673 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=61; using server
+flutter: 2026-05-29T22:22:47.094688 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=62; using server
+flutter: 2026-05-29T22:22:47.094704 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=63; using server
+flutter: 2026-05-29T22:22:47.094719 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=64; using server
+flutter: 2026-05-29T22:22:47.094733 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=65; using server
+flutter: 2026-05-29T22:22:47.094747 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=66; using server
+flutter: 2026-05-29T22:22:47.094766 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=67; using server
+flutter: 2026-05-29T22:22:47.129262 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=51 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.130987 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=52 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.132331 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=53 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.142061 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=54 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.143390 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=55 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.144568 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=56 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.153486 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=59 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.154792 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=57 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.155931 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=58 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.166779 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=60 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.168087 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=61 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.169556 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=62 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.179109 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=63 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.180528 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=64 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.181588 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=65 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.189751 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=67 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.190714 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=66 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.190896 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=68; using server
+flutter: 2026-05-29T22:22:47.190923 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=69; using server
+flutter: 2026-05-29T22:22:47.190942 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=70; using server
+flutter: 2026-05-29T22:22:47.190958 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=71; using server
+flutter: 2026-05-29T22:22:47.190978 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=72; using server
+flutter: 2026-05-29T22:22:47.190994 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=73; using server
+flutter: 2026-05-29T22:22:47.191009 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=74; using server
+flutter: 2026-05-29T22:22:47.191024 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=75; using server
+flutter: 2026-05-29T22:22:47.191038 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=76; using server
+flutter: 2026-05-29T22:22:47.191052 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=77; using server
+flutter: 2026-05-29T22:22:47.191066 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=78; using server
+flutter: 2026-05-29T22:22:47.191081 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=79; using server
+flutter: 2026-05-29T22:22:47.191106 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=80; using server
+flutter: 2026-05-29T22:22:47.191120 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=81; using server
+flutter: 2026-05-29T22:22:47.191134 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=82; using server
+flutter: 2026-05-29T22:22:47.191148 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=83; using server
+flutter: 2026-05-29T22:22:47.191164 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=84; using server
+flutter: 2026-05-29T22:22:47.199976 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=68 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.201118 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=69 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.202275 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=70 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.210325 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=71 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.211555 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=72 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.212674 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=73 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.219349 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=74 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.220565 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=75 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.221698 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=76 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.230385 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=79 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.231703 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=77 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.232723 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=78 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.239682 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=81 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.240862 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=80 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.241787 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=82 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.248478 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=83 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.249508 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=84 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.249551 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=85; using server
+flutter: 2026-05-29T22:22:47.249573 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=86; using server
+flutter: 2026-05-29T22:22:47.249590 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=87; using server
+flutter: 2026-05-29T22:22:47.249608 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=88; using server
+flutter: 2026-05-29T22:22:47.249625 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=89; using server
+flutter: 2026-05-29T22:22:47.249639 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=90; using server
+flutter: 2026-05-29T22:22:47.249654 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=91; using server
+flutter: 2026-05-29T22:22:47.249669 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=92; using server
+flutter: 2026-05-29T22:22:47.249683 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=93; using server
+flutter: 2026-05-29T22:22:47.249697 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=94; using server
+flutter: 2026-05-29T22:22:47.249710 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=95; using server
+flutter: 2026-05-29T22:22:47.249725 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=96; using server
+flutter: 2026-05-29T22:22:47.249739 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=97; using server
+flutter: 2026-05-29T22:22:47.249752 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=98; using server
+flutter: 2026-05-29T22:22:47.249765 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=99; using server
+flutter: 2026-05-29T22:22:47.249780 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=100; using server
+flutter: 2026-05-29T22:22:47.249797 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=101; using server
+flutter: 2026-05-29T22:22:47.256703 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=85 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.257999 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=87 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.259152 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=86 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.265589 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=90 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.266791 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=88 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.267766 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=89 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.274069 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=91 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.275265 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=92 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.276287 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=93 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.282826 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=94 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.283945 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=95 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.285007 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=96 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.291964 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=98 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.293087 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=97 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.294102 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=99 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.299849 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=100 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.300731 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=101 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.300776 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=102; using server
+flutter: 2026-05-29T22:22:47.300798 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=103; using server
+flutter: 2026-05-29T22:22:47.300816 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=104; using server
+flutter: 2026-05-29T22:22:47.300831 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=105; using server
+flutter: 2026-05-29T22:22:47.300847 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=106; using server
+flutter: 2026-05-29T22:22:47.300862 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=107; using server
+flutter: 2026-05-29T22:22:47.300875 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=108; using server
+flutter: 2026-05-29T22:22:47.300889 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=109; using server
+flutter: 2026-05-29T22:22:47.300903 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=110; using server
+flutter: 2026-05-29T22:22:47.300926 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=111; using server
+flutter: 2026-05-29T22:22:47.300940 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=112; using server
+flutter: 2026-05-29T22:22:47.300954 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=113; using server
+flutter: 2026-05-29T22:22:47.300967 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=114; using server
+flutter: 2026-05-29T22:22:47.300981 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=115; using server
+flutter: 2026-05-29T22:22:47.300994 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=116; using server
+flutter: 2026-05-29T22:22:47.301008 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=117; using server
+flutter: 2026-05-29T22:22:47.301025 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=118; using server
+flutter: 2026-05-29T22:22:47.307357 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=103 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.308349 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=102 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.309436 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=104 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.315185 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=105 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.316468 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=106 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.317527 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=107 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.324506 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=108 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.325642 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=110 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.326585 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=109 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.332447 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=111 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.333596 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=112 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.334669 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=113 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.342599 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=116 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.343703 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=115 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.344703 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=114 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.349945 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=117 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.350773 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=118 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.350811 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=119; using server
+flutter: 2026-05-29T22:22:47.350831 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=120; using server
+flutter: 2026-05-29T22:22:47.350848 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=121; using server
+flutter: 2026-05-29T22:22:47.350862 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=122; using server
+flutter: 2026-05-29T22:22:47.350878 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=123; using server
+flutter: 2026-05-29T22:22:47.350892 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=124; using server
+flutter: 2026-05-29T22:22:47.350906 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=125; using server
+flutter: 2026-05-29T22:22:47.350919 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=126; using server
+flutter: 2026-05-29T22:22:47.350933 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=127; using server
+flutter: 2026-05-29T22:22:47.350946 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=128; using server
+flutter: 2026-05-29T22:22:47.350959 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=129; using server
+flutter: 2026-05-29T22:22:47.350972 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=130; using server
+flutter: 2026-05-29T22:22:47.350985 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=131; using server
+flutter: 2026-05-29T22:22:47.350998 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=132; using server
+flutter: 2026-05-29T22:22:47.351011 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=133; using server
+flutter: 2026-05-29T22:22:47.351025 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=134; using server
+flutter: 2026-05-29T22:22:47.351040 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=135; using server
+flutter: 2026-05-29T22:22:47.357483 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=121 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.358719 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=119 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.359656 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=120 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.365649 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=124 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.366733 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=123 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.367670 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=122 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.373748 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=127 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.375015 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=125 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.376055 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=126 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.383018 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=129 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.384181 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=130 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.385202 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=128 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.391482 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=133 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.392774 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=132 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.393824 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=131 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.400877 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=134 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.401814 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=135 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.401861 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=136; using server
+flutter: 2026-05-29T22:22:47.401889 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=137; using server
+flutter: 2026-05-29T22:22:47.401907 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=138; using server
+flutter: 2026-05-29T22:22:47.401925 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=139; using server
+flutter: 2026-05-29T22:22:47.401942 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=140; using server
+flutter: 2026-05-29T22:22:47.401957 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=141; using server
+flutter: 2026-05-29T22:22:47.401974 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=142; using server
+flutter: 2026-05-29T22:22:47.402 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=143; using server
+flutter: 2026-05-29T22:22:47.402015 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=144; using server
+flutter: 2026-05-29T22:22:47.402032 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=145; using server
+flutter: 2026-05-29T22:22:47.402049 [FINE] [ChunkService] [P2P] No peers available for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=146; using server
+flutter: 2026-05-29T22:22:47.411294 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=138 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.412527 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=136 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.413558 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=137 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.420021 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=141 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.421154 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=140 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.422289 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=139 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.428178 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=142 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.431167 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=144 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.432111 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=143 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.441697 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=145 bytes=65536; registering for sharing
+flutter: 2026-05-29T22:22:47.444816 [INFO] [ChunkStatsService] [ChunkStats] 0.0% of "3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff" was delivered by peers
+flutter: 2026-05-29T22:22:47.446205 [INFO] [ChunkStatsService] [ChunkStats] 0.0% of "3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff" was delivered by peers
+flutter: 2026-05-29T22:22:47.446520 [INFO] [eval] [eval] finished 3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff in 0.6s
+flutter: 2026-05-29T22:22:47.446553 [INFO] [eval] [eval] listener done; flushing stats
+flutter: 2026-05-29T22:22:47.448420 [FINE] [ChunkService] [P2P] Cached chunk for file=3cecb5842fefc327fa9e6f7e0f0d5f23d5a87eea8ea8b1280174aa7db7ae8cff idx=146 bytes=34399; registering for sharing
+flutter: 2026-05-29T22:22:47.449321 [SEVERE] [zone] Unhandled zone error
+flutter:   error: Bad state: Cannot add event after closing.
+flutter: #0      _GuaranteeSink.add (package:stream_channel/src/guarantee_channel.dart:119:18)
+#1      DelegatingStreamSink.add (package:async/src/delegate/stream_sink.dart:35:11)
+#2      WebRTCService.registerCache (package:music_player_frontend/core/services/webrtc_service.dart:190:28)
+<asynchronous suspension>
+

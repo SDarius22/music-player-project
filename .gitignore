@@ -296,6 +296,7 @@ music-player-frontend/lib/config/secrets.dart
 !LICENSE
 !CHANGELOG.md
 !docs/
+!evaluation/**/*.log
 
 # Keep small asset
 !**/assets/**

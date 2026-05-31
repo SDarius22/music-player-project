@@ -7,10 +7,7 @@
 \indent \par Up to this point, the discussion has been theoretical. Chapter \ref{intro} motivated the problem and surveyed the design space, while Chapter \ref{chap:ch2} turned the chosen ingredients into formal models and ended with an abstract view of the system. The current chapter is the part of the thesis where the keyboard meets the screen. It is organised in three parts. The first describes the architecture and its layers; the second follows the implementation of the runtime flows, from the database that holds the music up to the moment the audio comes out of the speakers, together with how the system was tested; the third is a tour of the graphical interface and a short user manual.
 
 
-\section{Architecture}
-\label{sec:architecture}
-
-\indent \par This first part describes how the system is put together: the requirements it has to satisfy, the toolchain and deployment it runs on, the database schema, and the layered backend and client architectures, with the diagrams that accompany them.
+\indent \par The first part describes how the system is put together: the requirements it has to satisfy, the toolchain and deployment it runs on, the database schema, and the layered backend and client architectures, with the diagrams that accompany them.
 
 \subsection{System Requirements}
 \label{sec:requirements}
@@ -76,7 +73,7 @@
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/db_schema_auxiliary.png}
+\includegraphics[width=0.5\textwidth]{figures/db_schema_auxiliary.png}
 \caption{Auxiliary tables: email verification codes and per-session chunk delivery telemetry.}
 \label{fig:db-schema-auxiliary}
 \end{figure}
@@ -143,10 +140,7 @@
 \indent \par The natural Flutter choice is \texttt{just\_audio}, which exposes a \texttt{StreamAudioSource} abstract class that lets the application provide bytes on demand by range. On Linux and Windows, however, the underlying decoders (GStreamer and Windows Media Foundation) expect a seekable sequential source and stall when seeking through a dynamic stream. The workaround was to switch to \texttt{media\_kit} on Linux, macOS and Windows; it wraps \texttt{libmpv} with an FFmpeg demuxer that is comfortable with random access. The client now uses \texttt{just\_audio} on Android, iOS and the web, and \texttt{media\_kit} on the three desktops; both sit behind the same interface so the UI and chunk pipeline do not have to know which is in use. On the web, the browser audio element issues HTTP range requests, which leaves no Dart-level hook to serve them; the solution is a Service Worker that intercepts requests under a known URL scheme and assembles the response from the chunk cache.
 
 
-\section{Implementation}
-\label{sec:implementation}
-
-\indent \par With the structure established, this part follows the code as it runs: the application bootstrap, the streaming pipeline, the WebRTC peer management, the audio service, the multi-instance coordination and shutdown, and finally how the system was tested and the limitations that remain.
+\indent \par With the structure established, the second part follows the code as it runs: the application bootstrap, the streaming pipeline, the WebRTC peer management, the audio service, the multi-instance coordination and shutdown, and finally how the system was tested and the limitations that remain.
 
 \subsection{Application Bootstrap}
 \label{sec:bootstrap}
@@ -318,10 +312,7 @@ with the $+1$ in the denominator avoiding a division by zero for new peers. The 
 \indent \par The peer-assisted approach gives the largest cost reduction when many people listen to the same song around the same time. For long-tail content, where only a single client is listening at any given moment, the offload ratio drops to zero and the system behaves like a normal client-server stream. This is by design (the server fallback is always available and never blocks playback), but it does mean that the cost reduction predicted by the model in Chapter \ref{chap:ch2} is reached only for the popular fraction of the catalogue.
 
 
-\section{User Interface and Experience}
-\label{sec:gui-manual}
-
-\indent \par This last part shows what the user actually sees while the system runs underneath. The screenshots are taken from the macOS build, with an admin user signed in. All screens have a persistent navigation drawer on the left and a player bar at the bottom; the middle area is what changes between sections.
+\indent \par The last part shows what the user actually sees while the system runs underneath. The screenshots are taken from the macOS build, with an admin user signed in. All screens have a persistent navigation drawer on the left and a player bar at the bottom; the middle area is what changes between sections.
 
 \subsection{Home and Catalogue}
 \label{subsec:gui-home-catalogue}

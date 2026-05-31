@@ -67,6 +67,6 @@ artists ||--o{ songs : "artist_id"
 albums  ||--o{ songs : "album_id"
 
 songs  ||--o{ song_chunks
-chunks ||--o{ song_chunks
+chunks ||-right-o{ song_chunks
 
 @enduml

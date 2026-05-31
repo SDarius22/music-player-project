@@ -1,0 +1,5 @@
+N,listeners,server_chunks,p2p_chunks,total_chunks,server_share_pct,p2p_offload_pct,pure_server_line,ideal_line
+1,1,17,130,147,11.56,88.44,147,7
+2,2,34,260,294,11.56,88.44,294,14
+3,3,181,260,441,41.04,58.96,441,21
+5,5,605,130,735,82.31,17.69,735,35

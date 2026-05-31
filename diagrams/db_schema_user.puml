@@ -63,12 +63,12 @@ entity "songs" as songs <<external>> {
 }
 
 users ||--o{ user_library
-songs ||--o{ user_library
+songs ||-up-o{ user_library
 
 users ||--|| user_playback_state
 
 users     ||--o{ playlists
 playlists ||--o{ playlist_songs
-songs     ||--o{ playlist_songs : "file_hash"
+songs     ||-right-o{ playlist_songs : "file_hash"
 
 @enduml
