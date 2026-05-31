@@ -1,7 +1,7 @@
 package com.example.musicplayerbackend.service;
 
+import com.example.musicplayerbackend.data.SongChunkRepository;
 import com.example.musicplayerbackend.data.SongRepository;
-import com.example.musicplayerbackend.domain.Chunk;
 import com.example.musicplayerbackend.domain.ChunkManifestDto;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongChunk;
@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class StreamingService {
 
   private final SongRepository songRepository;
+  private final SongChunkRepository songChunkRepository;
 
   @Transactional(readOnly = true)
   public ChunkManifestDto getSongManifest(String fileHash, Long userId) {
@@ -55,14 +56,19 @@ public class StreamingService {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
     }
 
-    if (chunkIndex < 0 || chunkIndex >= song.getChunks().size()) {
+    if (chunkIndex == null || chunkIndex < 0) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chunk index out of bounds");
     }
 
-    SongChunk songChunk = song.getChunks().get(chunkIndex);
-    Chunk physicalChunk = songChunk.getChunk();
+    SongChunk songChunk =
+        songChunkRepository
+            .findWithChunkBySongAndOrderIndex(song, chunkIndex)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Chunk index out of bounds"));
 
-    return readBytesFromDisk(physicalChunk.getStoragePath());
+    return readBytesFromDisk(songChunk.getChunk().getStoragePath());
   }
 
   private Song getSongOrThrow(String fileHash) {
