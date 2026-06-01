@@ -3,6 +3,13 @@
 %\chapter*{Introducere}
 \label{intro}
 
+\tolerance=9999
+\emergencystretch=3em
+
+\indent \par This chapter sets the stage for the rest of the thesis. It begins by establishing the problem context: why delivering on-demand audio from the cloud has become economically strained, and why the egress bandwidth bill in particular is the part worth attacking. It then dissects peer-assisted streaming into the handful of design domains that any such system has to address, surveying the candidate solutions for each and reviewing the prior systems that combined them. The aim here is deliberately limited to mapping the design space and weighing the trade-offs; the quantitative argument that turns those trade-offs into a single committed design is the work of Chapter \ref{chap:ch2}.
+
+\section{Problem Context}
+
 \indent \par The adoption of on-demand multimedia streaming has fundamentally changed how content is consumed. However, the economics of delivering this content are reaching a breaking point. Traditionally, streaming platforms rely entirely on centralized Cloud Computing and CDNs (Content Delivery Networks). A request to listen to a song means a fractional bandwidth fee (called 'egress') for the provider, a cost that scales into massive financial burdens as the user base grows. This cost model is not hidden in fine print: AWS, Google Cloud and Azure all expose public data-transfer-out pricing pages, treating bytes leaving the cloud as a first-class billable resource \cite{aws_global_network_faq,google_cloud_network_pricing,azure_bandwidth_pricing}.
 
 \par Initially, this problem was manageable. However, the rapid growth of AI has quickly changed the industry and cloud computing has become a huge financial struggle. Modern streaming services rely heavily on machine learning for real-time content recommendation, user sentiment analysis, adaptive bitrate optimization and predictive analytics. This significantly improves the user experience, but the costs associated are unprecedented.
@@ -70,7 +77,17 @@
     \label{fig:spotify_economics_indexed}
 \end{figure}
 
-\par In an effort to ease the load on cloud infrastructure, the academic community has considerably explored decoupled network models, including hybrid CDN-P2P systems and peer-assisted CDNs \cite{hybrid_cdn_p2p,pa_cdn_survey}. Translating these theoretical architectures into functional systems, however, requires navigating complex technical limitations. Below is an overview of current methods that address the core subproblems of distributed streaming, from the perspective of both the provider and the consumer.
+\par In an effort to ease the load on cloud infrastructure, the academic community has considerably explored decoupled network models, including hybrid CDN-P2P systems and peer-assisted CDNs \cite{hybrid_cdn_p2p,pa_cdn_survey}. Translating these theoretical architectures into a functional system, however, means confronting the same handful of recurring design problems, each with its own competing solutions and its own trade-offs. The remainder of this chapter examines five such domains, viewed from the perspective of both the provider and the consumer:
+
+\begin{itemize}
+  \item \textbf{Latency mitigation}: making playback start the instant a listener presses play, despite the time it takes to locate and connect to peers.
+  \item \textbf{Connectivity}: establishing direct peer-to-peer links across NATs, firewalls and the browser security sandbox, on native and web platforms alike.
+  \item \textbf{Storage strategy}: deciding whether and how a client retains the data it receives, balancing network offloading against device storage and battery.
+  \item \textbf{Data integrity}: segmenting and verifying a file so that bytes arriving from an untrusted peer are as safe as bytes arriving from the server.
+  \item \textbf{Flow control}: reacting to fluctuating peer performance without stalling playback or fragmenting the shared data across the swarm.
+\end{itemize}
+
+\par Each of the following sections takes one of these domains in turn and weighs the leading candidate solutions against each other; a final section then steps back to look at how complete systems have combined these choices in practice.
 
 \section{Achieving Near-Instant Playback (Latency Mitigation)}
 \indent \par The most critical objective for any contemporary streaming service is the rigorous minimization of startup latency. In the modern streaming landscape, the expectation of immediacy must be met with zero-tolerance for significant wait times between initiating playback and content appearing on screen.
@@ -164,9 +181,6 @@
     \label{fig:caching_comparison}
 \end{figure}
 
-\indent \par These strategies present a fundamental trade-off between server and peer dependence, network efficiency, and storage usage. A more advanced solution should explore a hybrid approach between the two, trying to integrate the strengths of both and minimizing their weaknesses.
-
-
 \section{Bridging Native And Browser Environments (Connectivity)}
 \indent \par A fundamental requirement for achieving good results with the Peer-Assisted Streaming is seamless connectivity across different environments, both native and web alike. The application must operate with equal reliability on both robust networking environments, like the native raw TCP and UDP sockets \cite{top_down_cn}, and dynamic networking environments, such as the web browser sandbox, with strict operational limits. As detailed by Kurose and Ross, native operating systems expose the sockets API, granting applications direct, unrestricted access to the transport layer for custom implementation \cite{top_down_cn}.
 
@@ -237,10 +251,6 @@
     \label{fig:turn_architecture}
 \end{figure}
 
-
-\indent \par Ultimately, these strategies present a clear trade-off between guaranteed network traversal, client-side resource consumption and bandwidth usage. Therefore, a robust architecture must explore a hybrid fallback mechanism, with WebRTC as the primary cost-cutting solution for P2P content streaming, and using a Master Server as the immediate, reliable fallback when direct traversal fails. The inherent startup delay can be perfectly masked by the latency mitigation strategy discussed in the previous section, which ensures a seamless cost-effective user experience.
-
-
 \section{Balancing Efficiency and Device Constraints (Storage Strategy)}
 \indent \par A critical architectural decision in distributed content streaming is determining if, how and when the data is retained on the consumer device. This choice needs a careful balance between maximizing networking efficiency of both consumer and provider, storage constraints and battery constraints of the consumer device. The primary methodologies for client-side retention are Mobile Edge Caching and Ephemeral RAM Caching, each presenting distinct trade-offs regarding device impact and networking utility.
 
@@ -301,8 +311,6 @@
     \caption{Data flow comparison of Mobile Edge Caching vs Ephemeral RAM Caching.}
     \label{fig:storage_comparison}
 \end{figure}
-\indent \par The selection of a storage strategy puts an emphasis on the fundamental conflict between maximizing the collective efficiency of the P2P network and the storage capacity as a whole. A purely ephemeral approach renders the P2P architecture useless (see Figure \ref{fig:storage_comparison}, therefore a successful implementation must establish an intelligent edge caching model.
-
 
 \section{Syncing and Integrity (Data Structure)}
 \indent \par Determining the optimal structure for data transmission is another fundamental requirement for a distributed media delivery system. This decision determines how the media file is segmented and exchanged across the network, directly impacting accuracy, fault tolerance, and feasibility of the parallel downloading. The two primary methods evaluated for this architecture are Chunk-Based Synchronization and Continuous Byte-Stream transmission.
@@ -373,8 +381,6 @@
 \end{figure}
 
 \par Despite the simplicity, this method is incompatible with the core mechanics of a robust peer-assisted network. The monolithic structure inherently prevents parallel downloading, restricting the client to a single peer at any given moment. However, the most critical part of this approach is the fragile integrity and lack of fault tolerance (see Figure \ref{fig:continuous_stream_failure}). If even one single byte within the stream is corrupted or lost (which is extremely likely over a P2P connection, as session length varies from one minute to one hour for a peer \cite{measurement_p2p}), the integrity of the entire file from that point onward is compromised. Without granular checksums to isolate the error, the client is often forced to discard the received buffer and restart the download from scratch, resulting in an unacceptable user experience.
-
-\indent \par Ultimately, the fault tolerance and parallel throughput of chunk-based synchronization are strictly necessary for a functioning P2P system, rendering the protocol overhead and client-side complexity an unavoidable but acceptable architectural trade-off.
 
 
 \section{Managing Quality and Source Selection (Flow Control)}
@@ -455,14 +461,16 @@
 
 \par However, this strict adherence to quality increases the risk of playback interruption. When a peer fails, the system must execute a rapid, high-stakes switch to a new source. If the routing switch takes too long, or if the replacement source also possesses insufficient bandwidth, the playback will stall and force a re-buffer. As Magharei et al. demonstrated in their comparative study of P2P streaming architectures, maintaining continuous playback under these strict constraints requires a mesh-pull mechanism: the client must maintain a dynamic pool of standby neighbors and employ an aggressive chunk scheduling algorithm to preemptively request missing segments before the active playback buffer drains completely \cite{live_p2p_approaches}. To mitigate this, the client must employ far more strict buffer management, utilizing sophisticated predictive algorithms to detect failing peer performance and preemptively switch sources before the buffer drains completely. Additionally, this method places a heavier reliance on the central server to act as the ultimate failsafe. If multiple peers fail simultaneously, the server must possess the robustness to absorb the resulting influx of fallback traffic.
 
-\indent \par Ultimately, for a chunk-based peer-assisted architecture, the necessity of universal chunk de-duplication makes Adaptive Routing the only viable choice. The system must accept the heavy load of aggressive predictive buffer management to preserve the mathematical integrity of the distributed file segments.
 
+\section{Lessons from Prior Peer-Assisted Systems}
+\indent \par The five domains dissected above are not a checklist invented for this thesis; every one of them was confronted, in some form, by the peer-assisted systems that came before it. Stepping back from the individual trade-offs to look at how complete systems combined them is instructive in two ways. It confirms that peer assistance is a proven technique rather than a speculative one, and it exposes precisely which of the older assumptions no longer hold under the browser, mobile and cloud constraints that this work targets.
 
-\section{Thesis Objective}
-\indent \par The analysis of these five fundamental domains (latency mitigation, network connectivity, storage retention, data integrity, and flow control) reveals that no single isolated solution can achieve a robust peer-assisted streaming environment. Each architectural decision inherently constrains the others. For instance, the necessity of cryptographic chunk verification for P2P integrity explicitly prohibits Adaptive Bitrate streaming, while the requirement for secure cross-platform browser connectivity enforces WebRTC, which in turn necessitates a server-side prefix cache to mask its connection latency.
+\par The foundational reference point is BitTorrent, whose architecture Cohen described as a swarm of peers exchanging fixed-size, cryptographically identified pieces \cite{bittorent}. BitTorrent established the result that a population of downloaders can collectively serve a file with the origin contributing little more than the first complete copy, and that content-addressed pieces let a client assemble that file from many untrusted sources without sacrificing integrity. What it deliberately does not provide is any notion of a playback deadline: a torrent is finished when every piece has arrived, in whatever order, which is acceptable for a bulk download but not for a listener who expects sound the instant a track is clicked.
 
-\par Therefore, the objective of this thesis is to design, implement, and evaluate a cross-platform media streaming application that synthesizes these optimal trade-offs into a unified system. The proposed architecture will employ a hybrid latency mitigation strategy: utilizing server-side Prefix Caching to guarantee near-instant playback, while establishing a WebRTC mesh network in the background, with further optimization using Predictive Pre-Fetching to achieve the prefix caching without using the master server.
+\par CoolStreaming narrowed that gap for live media. Zhang et al. built a data-driven mesh in which peers periodically exchange ``buffer maps'' advertising the segments they hold and pull missing segments from whichever partner can meet the playback deadline \cite{coolstreaming}. This demonstrated that a mesh-pull design can sustain media under real-time constraints, and it is the direct ancestor of the buffer-map peer discovery and deadline-aware chunk scheduling that reappear later in this thesis. Its assumptions, however, are those of live broadcast: a single shared timeline across all viewers, desktop clients on relatively stable connections, and a tolerance for several seconds of startup buffering that an on-demand music player cannot afford.
 
-\par To guarantee integrity across this distributed network, data will be structured using Chunk-Based Synchronization, so that different chunks can be retrieved concurrently from whichever peers hold them and each chunk verified independently against its hash. This data will be retained via intelligent Mobile Edge Caching to maximize network offloading and enable local music playback. Finally, playback stability will be governed by Adaptive Routing, preemptively switching peer sources to maintain a constant, high-fidelity bitrate without stalling the buffer.
+\par The closest precedent of all is Spotify's own production system. Kreitz and Niemela measured a low-latency, peer-assisted music-on-demand architecture serving a large user base, in which the server delivered the beginning of each track and stood by as a fallback while peers supplied the remainder \cite{spotify_p2p}. The shape of that design, a server-seeded prefix, a peer swarm for the bulk of the bytes, and an origin fallback, is almost exactly the shape that the preceding sections kept arguing toward, which is reassuring: the architecture is known to work at scale. The follow-up work on integrating smartphones into the same model is equally instructive in the opposite direction, showing that mobile devices cannot be treated as desktop peers because battery state, radio access and aggressive background termination change what a peer can promise \cite{spotify_mobile_p2p}. Spotify ultimately retired its peer-assisted layer in favour of a pure cloud and CDN path, a decision driven less by any flaw in the model than by the operational simplicity of centralisation and the rise of the web client, which at the time had no way to open peer connections at all. The lesson this thesis takes from that history is that the model was never the problem; the platforms were, and the platform that made peer assistance impossible in the browser is precisely the one that WebRTC has since reopened.
 
-\par By systematically addressing these interconnected challenges, this paper aims to demonstrate that a decentralized, peer-assisted model can match the Quality of Experience (QoE) of traditional centralized streaming platforms while drastically reducing server-side egress costs and infrastructure reliance.
+\par This reading is consistent with the broader academic treatment of the subject. Surveys of hybrid CDN-P2P and peer-assisted CDN architectures converge on the same division of labour, with the centralised infrastructure shrinking to a seeder and a guarantor of availability rather than the source of every byte \cite{hybrid_cdn_p2p,pa_cdn_survey}. On the cellular side, the device-to-device offloading literature frames the same exchange in terms of relieving network congestion at the cost of energy on the cooperating handset \cite{d2d_survey}, while long-running measurement studies of deployed peer populations supply the churn figures that any realistic cost estimate has to respect \cite{measurement_p2p}.
+
+\par Taken together, these systems establish two things that the rest of the thesis builds on. The origin is not eliminated but demoted: its job is to seed new listeners and to backstop the swarm, and the engineering problem is to make that residual role as small as the constraints allow. And the five design choices are not independent knobs but a coupled system, in which a commitment in one domain forecloses options in the others. What the prior work does not supply is a single design that satisfies all five constraints simultaneously under today's conditions, a browser sandbox, six target platforms, and the instant-play expectation peculiar to music, together with a quantitative argument that the chosen design is the right one rather than merely a plausible one. Supplying that argument, and showing that the constraints leave essentially one coherent set of choices, is the work of the next chapter.

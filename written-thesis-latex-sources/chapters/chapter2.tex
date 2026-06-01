@@ -1,15 +1,14 @@
-\chapter{Theoretical Background and Design Rationale}
+\chapter{Theoretical Background and Design Decisions}
 \label{chap:ch2}
 
 \tolerance=9999
 \emergencystretch=3em
 
-\indent \par Chapter \ref{intro} laid down the five problems that any peer-assisted streaming system has to solve: latency, connectivity, storage, integrity and flow control. Each one of those problems has a few candidate solutions, and Chapter \ref{intro} picked a winner for every domain on the basis of a qualitative argument. The current chapter goes back to those choices with the intention of justifying them quantitatively, before any line of code is written down.
+\indent \par Chapter \ref{intro} outlined the five core problems in peer-assisted streaming: latency, connectivity, storage, integrity, and flow control. We surveyed the potential solutions and weighed the historical trade-offs, but intentionally stopped short of committing to a specific design. Qualitative arguments are a fragile foundation for actual software. Before writing any code, this chapter revisits those trade-offs, settles them quantitatively, and defines the resulting architecture.
 
-\par What we will try to do here is to derive, from a few simple equations and a handful of measurements borrowed from the literature, the constraints that the proposed system has to respect. The discussion is deliberately framework-agnostic: there is no Spring Boot, no Flutter, no Postgres yet. The reader who finishes the chapter should have no more surprise when reading Chapter \ref{chap:ch3} than to find that yes, indeed, that is how one would write the code for what was just described.
+\par We derive the system's hard constraints using a few straightforward equations and baseline measurements from existing literature. This discussion stays strictly framework-agnostic, yet by the end of this chapter, the actual implementation details in Chapter \ref{chap:ch3} should feel like the obvious, inevitable outcome of these decisions.
 
-\par The chapter closes with an abstract view of the system. The role of that section is to separate the conceptual roles from the technologies that realise them, which is useful both because it makes the implementation easier to reason about and because it makes it clear which parts of the architecture could be swapped out without changing the design as a whole.
-
+\par Finally, we consolidate these constraints into the single design this thesis proposes, closing with an abstract view of the architecture. This separates the conceptual mechanics from the specific tech stack, making the implementation easier to reason about and clearly defining which components can be swapped out later without breaking the broader system.
 
 \section{Formalizing the Cost Problem}
 \label{sec:delivery-models}
@@ -28,7 +27,7 @@
   \label{eq:server-cost}
 \end{equation}
 
-\par Equation \eqref{eq:server-cost} is what produces the kind of contracts that Spotify signed with Google back in 2018 \cite{spotify_google}, in which the listening cost is paid per gigabyte transferred out of the data centre. Cloud egress is priced almost identically across the three major providers (AWS, GCP, Azure) at roughly \$0.08 to \$0.12 per gigabyte once the free tier is exhausted, which means that the formula above translates directly into an invoice that scales with popularity rather than with revenue. For a song that goes viral, this is the worst possible behaviour: the more it is loved, the more it costs to serve.
+\par Equation \eqref{eq:server-cost} is what produces the kind of contracts that Spotify signed with Google back in 2018 \cite{spotify_google}, in which the listening cost is paid per gigabyte transferred out of the data center. Cloud egress is priced almost identically across the three major providers (AWS, GCP, Azure) at roughly \$0.08 to \$0.12 per gigabyte once the free tier is exhausted, which means that the formula above translates directly into an invoice that scales with popularity rather than with revenue. For a song that goes viral, this is the worst possible behaviour: the more it is loved, the more it costs to serve.
 
 \subsection{Content Delivery Networks}
 \label{subsec:cdn}
@@ -74,7 +73,7 @@ where $\epsilon$ is the per-client server overhead used for bootstrapping. In pr
     \addlegendentry{Peer-assisted ($\approx 15\%$ server share)}
   \end{axis}
 \end{tikzpicture}
-\caption{Theoretical server egress volume as a function of the concurrent listeners, contrasting pure client-server delivery with a peer-assisted model that routes about 85\% of the data through P2P channels.}
+\caption{Theoretical server egress volume as a function of the concurrent listeners.}
 \label{fig:cost-comparison}
 \end{figure}
 
@@ -276,6 +275,17 @@ Proactive prefetch & a few songs & Eliminates the inter-song latency at a small 
 \caption{Key system parameters and the direction the theory pushes them.}
 \label{tab:param-summary}
 \end{table}
+
+\section{From Constraints to a Single Design}
+\label{sec:synthesis}
+
+\indent \par The preceding sections each took one of the five domains from Chapter \ref{intro} and replaced its qualitative leaning with a quantitative argument: the cost model showed why only a peer-assisted hybrid bends the egress curve, the chunk analysis fixed the 64 KiB content-addressed block, the WebRTC discussion turned the connectivity requirement into a concrete setup-latency budget, and the prefix derivation showed how that budget is hidden. What remains is to observe that these results are not independent recommendations that happen to share a chapter; they are entries in a single chain of implication, and following the chain leaves almost no freedom in the final design.
+
+\par The chain starts at integrity. A peer-assisted system serves bytes from untrusted devices, so every byte has to be verifiable on arrival, which forces the content into hash-identified chunks rather than a continuous stream. Once a chunk is identified by the hash of its content, its identity must not depend on quality, which rules out adaptive bitrate (the same second of audio at two bitrates is two different chunks with two different hashes, and so cannot be deduplicated or shared) and leaves adaptive routing as the only flow-control strategy compatible with a content-addressed swarm. Content addressing is in turn what makes a chunk supplied by a peer indistinguishable from one supplied by the server, which is the precondition for edge caching to contribute anything at all. Connectivity across the browser sandbox forces WebRTC, the only peer transport a browser exposes, and WebRTC's few-hundred-millisecond setup delay forces a latency-hiding mechanism, which equation \eqref{eq:prefix-condition} shows can be nothing more expensive than a small server-served prefix. Predictive pre-fetching then falls out as the same prefix mechanism applied one song ahead, reusing the cache and the verification path it already has.
+
+\par The design this thesis commits to is therefore the fixed point of that chain rather than a menu of independently attractive features. Stated plainly, the system uses a server-side \textbf{prefix cache} to guarantee near-instant playback while a \textbf{WebRTC} mesh forms in the background; it deliberately omits any TURN relay and falls back to the origin server when a direct path cannot be found, so that a relayed byte is never mistaken for a cheap one. Audio is structured as 64\,KiB \textbf{content-addressed chunks} verified by SHA-256, which simultaneously yields parallel peer downloading, server-side deduplication and zero-trust integrity. Those chunks are retained by an \textbf{edge cache} on each device so that a listener becomes a source for later listeners, and playback fidelity is held constant by \textbf{adaptive routing}, which switches source rather than quality and treats the origin as the last resort. \textbf{Predictive prefix prefetching} of nearby queue entries then removes the gap between songs at a bounded, prefix-sized bandwidth cost.
+
+\par The objective of the thesis can now be stated against this design with no remaining ambiguity: to design, implement and measure a single cross-platform application that realises exactly these choices, and to show that the resulting system matches the quality of experience of a conventional centralised streaming service while bounding the origin's per-listener share of the bytes to the prefix rather than the whole song. The remainder of the chapter describes that design at a level still independent of any particular framework; Chapter \ref{chap:ch3} then turns it into code.
 
 \section{An Abstract View of the System}
 \label{sec:system-abstraction}
