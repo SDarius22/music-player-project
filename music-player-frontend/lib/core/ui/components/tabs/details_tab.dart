@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/triangle_clipper.dart';
@@ -120,13 +121,15 @@ class DetailsTab extends StatelessWidget {
                               miniPlayerController.animateToHeight(
                                 state: PanelState.min,
                               );
-
                               var artist = currentSong.artist.target;
                               if (artist != null) {
-                                Navigator.push(
-                                  context,
-                                  ArtistScreen.route(artist: artist),
-                                );
+                                var appStateProvider =
+                                    Provider.of<AbstractAppStateProvider>(
+                                      context,
+                                      listen: false,
+                                    );
+                                appStateProvider.innerNavigatorKey.currentState!
+                                    .push(ArtistScreen.route(artist: artist));
                               }
                             },
                             icon: Icon(
@@ -159,10 +162,13 @@ class DetailsTab extends StatelessWidget {
                               );
                               var album = currentSong.album.target;
                               if (album != null) {
-                                Navigator.push(
-                                  context,
-                                  AlbumScreen.route(album: album),
-                                );
+                                var appStateProvider =
+                                    Provider.of<AbstractAppStateProvider>(
+                                      context,
+                                      listen: false,
+                                    );
+                                appStateProvider.innerNavigatorKey.currentState!
+                                    .push(AlbumScreen.route(album: album));
                               }
                             },
                             icon: Icon(
