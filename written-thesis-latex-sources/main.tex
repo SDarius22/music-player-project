@@ -42,17 +42,11 @@ ABSTRACT
 \hrule
 \vspace{0.5cm}	
 %\cleardoublepage
-This thesis studies how the cloud egress cost of on-demand music streaming can be reduced without changing the listener's experience. The proposed solution is a peer-assisted streaming system in which the server delivers a small initial prefix of each song and remains available as a fallback, while the rest of the audio can be delivered directly between listeners through WebRTC. The original contribution is the design, implementation and evaluation of a single cross-platform prototype that combines dynamic prefix caching, SHA-256 chunk verification, peer ranking, server fallback and multi-replica signaling into one working system.
+{\bfseries
+This thesis studies how the cloud egress cost of on-demand music streaming can be reduced without changing the listener's experience. The egress bill grows with the size of the audience rather than the revenue it brings, yet a listener who has just received a piece of a song already holds a valid copy that another listener starting the same song shortly after may need, so the audience itself already contains a possible delivery network. The proposed solution is a peer-assisted streaming system in which the server delivers a small initial prefix of each song and stays available as a fallback, while the rest of the audio is delivered directly between listeners through WebRTC, moving the origin away from serving $O(N)$ full copies and toward a small bootstrap-and-fallback role.
 
-\par Chapter \ref{intro} presents the problem context and related work. It explains why cloud egress is a relevant cost for music streaming, revisits earlier peer-assisted systems such as Spotify's former P2P architecture, and organises the design space around five problems: startup latency, connectivity, storage, integrity and flow control.
-
-\par Chapter \ref{chap:ch2} turns these trade-offs into a theoretical model. It derives the main design choices of the system, including the 64 KiB content-addressed chunk size, the dynamic 5\% server prefix, the use of WebRTC without TURN relays, and adaptive routing instead of adaptive bitrate.
-
-\par Chapter \ref{chap:ch3} describes the implementation of the prototype, called MP33r. The backend is built with Spring Boot, PostgreSQL and Redis, while the client is written in Flutter and runs on Linux, macOS, Windows, Android, iOS and the web. Audio files are split into SHA-256-addressed chunks, stored with server-side deduplication, verified on the client regardless of source, and exchanged between peers over WebRTC data channels.
-
-\par Chapter \ref{chap:ch4} evaluates the system using a headless measurement client. In the measured warm-swarm scenario, two to five listeners received 88.4\% of their bytes from peers, while the origin share remained flat as the number of listeners grew. The 5\% prefix also hid the median 243 ms WebRTC setup time, keeping click-to-sound latency at the level of a normal server stream.
-
-\par Chapter \ref{chap:ch5} concludes that the listeners of a song can act as part of the delivery infrastructure for that song, as long as the system preserves instant playback, verifies untrusted chunks and keeps a reliable server fallback. The evaluation is limited to a controlled single-machine setup, so the results are not presented as production measurements. Instead, they validate the mechanism and the cost model under repeatable conditions. Future work includes wide-area experiments, warm-cache measurements, larger swarms, stronger mixed-platform connectivity and interoperability with local media players or other streaming services.
+\par The original contribution is the design, implementation and evaluation of a single cross-platform prototype, MP33r, that combines a dynamic 5\% server prefix, 64 KiB content-addressed (SHA-256) chunks verified on the client regardless of source, round-trip-time and throughput-based peer ranking, an always-present server fallback and multi-replica signaling into one working system, with a Spring Boot backend and a Flutter client running on Linux, macOS, Windows, Android, iOS and the web. In the measured warm-swarm scenario, two to five listeners received 88.4\% of their bytes from peers while the origin share stayed flat as listeners grew, and the prefix hid the median 243 ms WebRTC setup time, keeping click-to-sound latency at the level of a normal server stream. These controlled single-machine results validate the mechanism and the cost model rather than serving as production measurements, supporting the conclusion that listeners can act as part of a song's delivery infrastructure as long as the system preserves instant playback, verifies untrusted chunks and keeps a reliable server fallback.
+}
 
 
 
@@ -75,13 +69,9 @@ Every time a song is played from a cloud-hosted streaming service, the provider 
 \vspace{1cm}
 \par The original contributions of this work are the following:
 \begin{itemize}
-  \item a single Flutter and Spring Boot code base that runs the same peer-assisted streaming client across six platforms;
-  \item a dynamic prefix-caching bootstrap, serving roughly 5\% of each song from the origin, that hides the WebRTC connection setup so playback can start while the peer mesh forms in the background;
-  \item a 64 KiB content-addressed (SHA-256) chunking scheme that deduplicates storage on the server and lets the client verify every chunk in the same way, whether it arrived from a peer or from the origin;
-  \item a WebRTC data-channel peer transport with round-trip time and throughput-based peer ranking, staggered fan-out and an always-present server fallback, deliberately built without a TURN relay so the cost-saving property of the peer model is preserved;
-  \item prefix-only predictive prefetching of upcoming queue entries, which removes the gap between songs at a bounded bandwidth cost;
-  \item a multi-replica backend whose cross-replica peer signaling is hidden from the client through Redis publish/subscribe;
-  \item an end-to-end evaluation, built on a purpose-made headless measurement client, that quantifies the egress saving, validates the cost model, and uncovered a signaling concurrency bottleneck that was capping multi-peer scaling.
+  \item \textbf{a dynamic prefix-caching bootstrap}, serving roughly 5\% of each song from the origin, that hides the WebRTC connection setup so playback can start while the peer mesh forms in the background;
+  \item \textbf{a WebRTC data-channel peer transport} with round-trip time and throughput-based peer ranking, staggered fan-out and an always-present server fallback, deliberately built without a TURN relay so the cost-saving property of the peer model is preserved, combined with a 64 KiB content-addressed (SHA-256) chunking scheme that deduplicates storage on the server and lets the client verify every chunk in the same way, whether it arrived from a peer or from the origin;
+  \item \textbf{an end-to-end evaluation}, built on a purpose-made headless measurement client, that quantifies the egress saving, validates the cost model, and uncovered a signaling concurrency bottleneck that was capping multi-peer scaling.
 \end{itemize}
 
 
