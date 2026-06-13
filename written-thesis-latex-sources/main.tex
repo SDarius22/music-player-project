@@ -22,25 +22,34 @@
 
 \begin{document}
 
-\specialization{COMPUTER SCIENCE}	
-\title{Minimizing Cloud Infrastructure Costs in Content Streaming Via Peer-Assisted Delivery and Dynamic Prefix Caching}					   
-\author{Darius-George Sala}											
-\supervisor{Dr. Lect. Prof. Mircea Ioan-Gabriel}				
-				
+\makeatletter
+\setbool{@eng}{false}
+\makeatother
+
+\specialization{INFORMATICĂ}
+\title{Reducerea costurilor de cloud în streamingul muzical prin livrare peer-to-peer}
+\author{Darius-George Sala}
+\supervisor{Dr. Lect. Prof. Mircea Ioan-Gabriel}
 \maketitle
 
+\makeatletter
+\setbool{@eng}{true}
+\makeatother
+
+\specialization{COMPUTER SCIENCE}
+\title{Reducing Cloud Costs in Music Streaming with Peer-Assisted Delivery}
+\author{Darius-George Sala}
+\supervisor{Dr. Lect. Prof. Mircea Ioan-Gabriel}
+\maketitle
 
 \newpage
-\thispagestyle{empty}
-\mbox{}
-\newpage
-\pagenumbering{roman} 
+\pagenumbering{roman}
 
 \cleardoublepage
 ABSTRACT
-\vspace{0.5cm}	
+\vspace{0.5cm}
 \hrule
-\vspace{0.5cm}	
+\vspace{0.5cm}
 %\cleardoublepage
 {\bfseries
 This thesis studies how the cloud egress cost of on-demand music streaming can be reduced without changing the listener's experience. The egress bill grows with the size of the audience rather than the revenue it brings, yet a listener who has just received a piece of a song already holds a valid copy that another listener starting the same song shortly after may need, so the audience itself already contains a possible delivery network. The proposed solution is a peer-assisted streaming system in which the server delivers a small initial prefix of each song and stays available as a fallback, while the rest of the audio is delivered directly between listeners through WebRTC, moving the origin away from serving $O(N)$ full copies and toward a small bootstrap-and-fallback role.
@@ -73,6 +82,15 @@ Every time a song is played from a cloud-hosted streaming service, the provider 
   \item \textbf{a WebRTC data-channel peer transport} with round-trip time and throughput-based peer ranking, staggered fan-out and an always-present server fallback, deliberately built without a TURN relay so the cost-saving property of the peer model is preserved, combined with a 64 KiB content-addressed (SHA-256) chunking scheme that deduplicates storage on the server and lets the client verify every chunk in the same way, whether it arrived from a peer or from the origin;
   \item \textbf{an end-to-end evaluation}, built on a purpose-made headless measurement client, that quantifies the egress saving, validates the cost model, and uncovered a signaling concurrency bottleneck that was capping multi-peer scaling.
 \end{itemize}
+
+
+\vspace{1cm}
+\markboth{}{}
+DECLARATION OF GENERATIVE AI AND AI-ASSISTED TECHNLOGIES IN THE WRITING PROCESS
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}
+\par During the preparation of this work, the author used Gemini to check grammar, refine and improve the academic tone of the text. After using this tool, the author reviewed and edited the content as needed and takes full responsibility for the final thesis.
 
 
 \newpage
