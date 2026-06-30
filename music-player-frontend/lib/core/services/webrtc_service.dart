@@ -592,7 +592,27 @@ class WebRTCService {
     );
 
     for (final packet in packets) {
-      channel!.send(RTCDataChannelMessage.fromBinary(packet));
+      await _awaitDrainableBuffer(channel!);
+      if (channel.state != RTCDataChannelState.RTCDataChannelOpen) return;
+      channel.send(RTCDataChannelMessage.fromBinary(packet));
+    }
+  }
+
+  static const int _maxBufferedBytes = 1 << 20; // 1 MiB
+
+  Future<void> _awaitDrainableBuffer(RTCDataChannel channel) async {
+    var waitedMs = 0;
+    while ((channel.bufferedAmount ?? 0) > _maxBufferedBytes) {
+      if (channel.state != RTCDataChannelState.RTCDataChannelOpen) return;
+      if (waitedMs >= 5000) {
+        _logger.warning(
+          '[P2P] data channel send buffer stuck above ${_maxBufferedBytes}B '
+          'after ${waitedMs}ms; sending anyway',
+        );
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      waitedMs += 20;
     }
   }
 
