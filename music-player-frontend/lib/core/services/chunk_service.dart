@@ -267,6 +267,9 @@ class ChunkService {
   void flushStats() => _emitStats(force: true);
 
   Future<Uint8List> _requestFromPeers(int index, List<String> peers) {
+    final pending = _p2pCompleters[index];
+    if (pending != null && !pending.isCompleted) return pending.future;
+
     final completer = Completer<Uint8List>();
     _p2pCompleters[index] = completer;
 
