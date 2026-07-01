@@ -267,11 +267,6 @@ class ChunkService {
   void flushStats() => _emitStats(force: true);
 
   Future<Uint8List> _requestFromPeers(int index, List<String> peers) {
-    // Coalesce concurrent requests for the same chunk. The SW-driven getChunk
-    // path and AppAudioService.prefetchChunk can both ask for the same index;
-    // without this, the second call overwrote _p2pCompleters[index], orphaning
-    // the first completer so it always timed out at _playbackPeerTimeout even
-    // though the chunk had arrived (and made the peer serve the chunk twice).
     final pending = _p2pCompleters[index];
     if (pending != null && !pending.isCompleted) return pending.future;
 
