@@ -36,6 +36,8 @@ class StreamingControllerIntegrationTest extends BaseIntegrationTest {
   @BeforeEach
   void setUp() {
     testUser = userRepository.save(buildUser("stream-test@example.com", Role.USER));
+    testUser.setAllowed(true);
+    testUser = userRepository.save(testUser);
     otherUser = userRepository.save(buildUser("stream-other@example.com", Role.USER));
 
     publicSong =

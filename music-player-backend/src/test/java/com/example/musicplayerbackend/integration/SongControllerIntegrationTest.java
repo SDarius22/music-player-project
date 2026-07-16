@@ -42,6 +42,8 @@ class SongControllerIntegrationTest extends BaseIntegrationTest {
   @BeforeEach
   void setUp() {
     testUser = userRepository.save(buildUser("song-test@example.com", Role.USER));
+    testUser.setAllowed(true);
+    testUser = userRepository.save(testUser);
     adminUser = userRepository.save(buildUser("song-admin@example.com", Role.ADMIN));
 
     Artist artist = artistRepository.save(Artist.builder().name("Test Artist").build());

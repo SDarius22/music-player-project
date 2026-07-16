@@ -11,7 +11,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +26,7 @@ jobs:
 
   build:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -53,62 +53,9 @@ jobs:
 
       - run: docker push ghcr.io/sdarius22/music-player-project/music-player-backend:latest
 
-  deploy-primary:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: scp_primary
-        uses: appleboy/scp-action@v0.1.7
-        continue-on-error: true
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "music-player-backend/docker-compose.yml"
-          target: "/home/deployer/music-player/"
-          strip_components: 1
-
-      - id: ssh_primary
-        uses: appleboy/ssh-action@v1.0.0
-        continue-on-error: true
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /home/deployer/music-player
-
-            mkdir -p goaccess-report
-
-            docker info --format '{{.Swarm.LocalNodeState}}' | grep -q active || docker swarm init
-
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
-
-            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-            export MAIL_HOST="${{ secrets.MAIL_HOST }}"
-            export MAIL_USER="${{ secrets.MAIL_USER }}"
-            export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
-            export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
-
-            docker stack deploy -c docker-compose.yml --with-registry-auth music-player
-
-      - name: Validate primary deployment
-        if: always()
-        run: |
-          if [ "${{ steps.ssh_primary.outcome }}" = "success" ]; then
-            echo "Primary VPS deployment succeeded."
-          else
-            echo "Primary VPS deployment failed."
-            exit 1
-          fi
-
   deploy-cluj:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v3
@@ -158,4 +105,3 @@ jobs:
             echo "Cluj VPS deployment failed."
             exit 1
           fi
-

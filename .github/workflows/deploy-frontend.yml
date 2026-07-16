@@ -11,7 +11,7 @@ on:
 
 jobs:
   check-changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       lib-changed: ${{ steps.filter.outputs.lib }}
     steps:
@@ -31,7 +31,7 @@ jobs:
   test:
     needs: check-changes
     if: needs.check-changes.outputs.lib-changed == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -65,59 +65,10 @@ jobs:
           xvfb-run -a flutter test integration_test/playlist_provider_flow_test.dart -d linux
           xvfb-run -a flutter test integration_test/artist_provider_flow_test.dart -d linux
 
-  build-and-deploy-primary:
-    needs: [check-changes, test]
-    if: always() && needs.check-changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-
-      - working-directory: ./music-player-frontend
-        run: flutter pub get
-
-      - working-directory: ./music-player-frontend
-        run: flutter build web -t lib/main_web.dart --base-href / --pwa-strategy=none --release --dart-define=API_BASE_URL=https://api.bt-app.com/music-player --dart-define=WS_BASE_URL=wss://wss.bt-app.com/music-player/signaling --dart-define=DOWNLOAD_BASE_URL=https://music.bt-app.com/downloads
-
-      - id: ssh_primary
-        uses: appleboy/ssh-action@v1.0.0
-        continue-on-error: true
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            rm -rf /var/www/music-frontend/*
-
-      - id: scp_primary
-        uses: appleboy/scp-action@v0.1.7
-        continue-on-error: true
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "music-player-frontend/build/web/*"
-          target: "/var/www/music-frontend"
-          strip_components: 3
-
-      - name: Validate primary deployment
-        if: always()
-        run: |
-          if [ "${{ steps.scp_primary.outcome }}" = "success" ]; then
-            echo "Primary VPS deployment succeeded."
-          else
-            echo "Primary VPS deployment failed."
-            exit 1
-          fi
-
   build-and-deploy-cluj:
     needs: [check-changes, test]
     if: always() && needs.check-changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4

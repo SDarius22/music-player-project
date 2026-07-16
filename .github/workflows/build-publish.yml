@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -47,15 +47,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        site: [bt-app, dariussala]
+        site: [dariussala]
         target: [apk, linux, windows, macos, ios]
         include:
-          - site: bt-app
-            site_name: bt-app.com
-            api_base_url: https://api.bt-app.com/music-player
-            ws_base_url: wss://wss.bt-app.com/music-player/signaling
-            download_base_url: https://music.bt-app.com/downloads
-
           - site: dariussala
             site_name: dariussala.com
             api_base_url: https://api.dariussala.com/music-player
@@ -63,31 +57,31 @@ jobs:
             download_base_url: https://music.dariussala.com/downloads
 
           - target: apk
-            os: ubuntu-latest
+            os: ubuntu-24.04
             build_cmd: flutter build apk --release
             artifact_name: music-player-android
             artifact_path: music-player-frontend/build/app/outputs/flutter-apk/app-release.apk
 
           - target: linux
-            os: ubuntu-latest
+            os: ubuntu-24.04
             build_cmd: flutter build linux --release
             artifact_name: music-player-linux
             artifact_path: music-player-frontend/music-player-linux.tar.gz
 
           - target: windows
-            os: windows-latest
+            os: windows-2022
             build_cmd: flutter build windows --release
             artifact_name: music-player-windows
             artifact_path: music-player-frontend/music-player-windows.zip
 
           - target: macos
-            os: macos-latest
+            os: macos-14
             build_cmd: flutter build macos --release --config-only
             artifact_name: music-player-macos
             artifact_path: music-player-frontend/music-player-macos.zip
 
           - target: ios
-            os: macos-latest
+            os: macos-14
             build_cmd: flutter build ipa --release --no-codesign
             artifact_name: music-player-ios
             artifact_path: music-player-frontend/music-player.ipa
@@ -143,59 +137,9 @@ jobs:
           name: ${{ matrix.site }}-${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
 
-  deploy-to-server-primary:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: bt-app-*
-          path: ./downloads
-
-      - name: Prepare primary bt-app.com artifacts
-        run: |
-          rm -rf ./publish
-          mkdir -p ./publish
-
-          shopt -s nullglob
-          artifact_dirs=(./downloads/bt-app-*)
-
-          if [ ${#artifact_dirs[@]} -eq 0 ]; then
-            echo "No bt-app.com artifacts were downloaded."
-            exit 1
-          fi
-
-          for artifact_dir in "${artifact_dirs[@]}"; do
-            target_name="$(basename "$artifact_dir")"
-            target_name="${target_name#bt-app-}"
-            mkdir -p "./publish/$target_name"
-            cp -R "$artifact_dir/." "./publish/$target_name/"
-          done
-
-      - id: scp_primary
-        uses: appleboy/scp-action@v0.1.7
-        continue-on-error: true
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "./publish/*"
-          target: "/var/www/music-player-downloads/"
-          strip_components: 1
-
-      - name: Validate primary binary publish
-        if: always()
-        run: |
-          if [ "${{ steps.scp_primary.outcome }}" = "success" ]; then
-            echo "Primary binary publish upload succeeded."
-          else
-            echo "Primary binary publish upload failed."
-            exit 1
-          fi
-
   deploy-to-server-cluj:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
         with:
