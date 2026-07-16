@@ -47,6 +47,10 @@ public class User implements UserDetails {
   @Column(nullable = false)
   private AuthProvider provider;
 
+  @Builder.Default
+  @Column(nullable = false)
+  private boolean allowed = false;
+
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
     return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

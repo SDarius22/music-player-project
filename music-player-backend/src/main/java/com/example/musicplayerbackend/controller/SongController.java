@@ -128,7 +128,7 @@ public class SongController implements SongsApi {
 
   @Override
   public ResponseEntity<SongDto> getSongById(String fileHash) {
-    return ResponseEntity.ok(songService.getSongByFileHash(fileHash, getCurrentUser().getId()));
+    return ResponseEntity.ok(songService.getSongByFileHash(fileHash, getCurrentUser()));
   }
 
   @Override

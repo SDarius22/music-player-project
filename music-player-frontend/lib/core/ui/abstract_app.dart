@@ -45,6 +45,7 @@ import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
+import 'package:music_player_frontend/core/ui/screens/welcome_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -81,14 +82,16 @@ abstract class AbstractApp extends StatelessWidget {
   }
 
   Widget responsiveBuilder(Widget? child) {
-    return ResponsiveBreakpoints.builder(
-      child: child!,
-      breakpoints: [
-        const Breakpoint(start: 0, end: 599, name: MOBILE),
-        const Breakpoint(start: 600, end: 1024, name: TABLET),
-        const Breakpoint(start: 1025, end: 1920, name: DESKTOP),
-        const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
-      ],
+    return _AuthSessionGuard(
+      child: ResponsiveBreakpoints.builder(
+        child: child!,
+        breakpoints: [
+          const Breakpoint(start: 0, end: 599, name: MOBILE),
+          const Breakpoint(start: 600, end: 1024, name: TABLET),
+          const Breakpoint(start: 1025, end: 1920, name: DESKTOP),
+          const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+        ],
+      ),
     );
   }
 
@@ -395,5 +398,36 @@ abstract class AbstractApp extends StatelessWidget {
       onChunkReceived: router.routeChunk,
       onChunkRequested: router.getLocalChunk,
     );
+  }
+}
+
+class _AuthSessionGuard extends StatefulWidget {
+  const _AuthSessionGuard({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_AuthSessionGuard> createState() => _AuthSessionGuardState();
+}
+
+class _AuthSessionGuardState extends State<_AuthSessionGuard> {
+  AuthStatus? _previousStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = context.watch<UserProvider>().status;
+    if (_previousStatus == AuthStatus.authenticated &&
+        status == AuthStatus.unauthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context
+            .read<AbstractAppStateProvider>()
+            .outerNavigatorKey
+            .currentState
+            ?.pushAndRemoveUntil(WelcomeScreen.route(), (_) => false);
+      });
+    }
+    _previousStatus = status;
+    return widget.child;
   }
 }

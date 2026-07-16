@@ -39,6 +39,7 @@ class JWTServiceTest {
             .email("test@example.com")
             .role(Role.USER)
             .provider(AuthProvider.LOCAL)
+            .allowed(true)
             .createdAt(Instant.now())
             .build();
   }
@@ -54,6 +55,12 @@ class JWTServiceTest {
   void shouldReturnUserEmailFromToken() {
     String token = jwtService.generateAccessToken(testUser);
     assertEquals("test@example.com", jwtService.extractUsername(token));
+  }
+
+  @Test
+  void shouldIncludeAllowedClaimInAccessToken() {
+    String token = jwtService.generateAccessToken(testUser);
+    assertEquals(true, jwtService.extractClaim(token, claims -> claims.get("allowed")));
   }
 
   @Test

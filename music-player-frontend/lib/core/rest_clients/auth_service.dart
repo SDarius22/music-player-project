@@ -13,6 +13,7 @@ class AuthService extends ChangeNotifier {
   final _storage = const FlutterSecureStorage();
   String? _cachedAccessToken;
   Timer? _refreshTimer;
+  bool _sessionExpired = false;
 
   static const _refreshInterval = Duration(minutes: 10);
 
@@ -94,6 +95,7 @@ class AuthService extends ChangeNotifier {
   Future<void> saveTokens(String access, String refresh) async {
     final wasNull = _cachedAccessToken == null;
     _cachedAccessToken = access;
+    _sessionExpired = false;
     await _storage.write(key: 'access_token', value: access);
     await _storage.write(key: 'refresh_token', value: refresh);
     startTokenRefresh();
@@ -138,6 +140,11 @@ class AuthService extends ChangeNotifier {
     final refresh = await _storage.read(key: 'refresh_token');
     if (refresh == null) return null;
 
+    if (_isJwtExpired(refresh)) {
+      await _expireSession();
+      return null;
+    }
+
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/refresh'),
@@ -153,6 +160,9 @@ class AuthService extends ChangeNotifier {
         final data = jsonDecode(response.body);
         await saveTokens(data['accessToken'], data['refreshToken'] ?? refresh);
         return data['accessToken'];
+      }
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        await _expireSession();
       }
     } catch (e) {
       return null;
@@ -171,6 +181,8 @@ class AuthService extends ChangeNotifier {
     if (newToken != null) {
       return true;
     }
+
+    if (_sessionExpired) return false;
 
     final storedAccess = await _storage.read(key: 'access_token');
     if (storedAccess != null) {
@@ -191,6 +203,26 @@ class AuthService extends ChangeNotifier {
     final hadToken = _cachedAccessToken != null;
     _cachedAccessToken = null;
     await _storage.deleteAll();
+    if (hadToken) notifyListeners();
+  }
+
+  bool _isJwtExpired(String token) {
+    try {
+      final expiry = _parseJwt(token)['exp'];
+      if (expiry is! num) return true;
+      return DateTime.now().millisecondsSinceEpoch >= expiry.toInt() * 1000;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> _expireSession() async {
+    _sessionExpired = true;
+    stopTokenRefresh();
+    final hadToken = _cachedAccessToken != null;
+    _cachedAccessToken = null;
+    await _storage.delete(key: 'access_token');
+    await _storage.delete(key: 'refresh_token');
     if (hadToken) notifyListeners();
   }
 }

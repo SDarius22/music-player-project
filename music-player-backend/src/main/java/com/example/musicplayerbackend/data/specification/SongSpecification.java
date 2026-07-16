@@ -11,9 +11,17 @@ public final class SongSpecification {
 
   private SongSpecification() {}
 
+  public static Specification<Song> visibleToUser(Long userId, boolean publicSongsAllowed) {
+    return (root, query, cb) -> {
+      var ownedByUser = cb.equal(root.get("ownerId"), userId);
+      return publicSongsAllowed
+          ? cb.or(ownedByUser, cb.isNull(root.get("ownerId")))
+          : ownedByUser;
+    };
+  }
+
   public static Specification<Song> visibleToUser(Long userId) {
-    return (root, query, cb) ->
-        cb.or(cb.equal(root.get("ownerId"), userId), cb.isNull(root.get("ownerId")));
+    return visibleToUser(userId, true);
   }
 
   public static Specification<Song> matchesQuery(String q) {

@@ -82,6 +82,20 @@ class StreamingServiceTest {
   }
 
   @Test
+  void shouldRejectPublicSongForUserNotOnAllowList() {
+    Song song = streamableSong(1L);
+    when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
+    User user = User.builder().id(99L).role(Role.USER).allowed(false).build();
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.getSongManifest("hash-1", user));
+
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+  }
+
+  @Test
   void shouldThrow404WhenManifestPrivateSongOwnedByOther() {
     Song song = streamableSong(1L);
     song.setOwnerId(5L);

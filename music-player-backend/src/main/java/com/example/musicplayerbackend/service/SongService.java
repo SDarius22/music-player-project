@@ -13,6 +13,7 @@ import com.example.musicplayerbackend.domain.Chunk;
 import com.example.musicplayerbackend.domain.ContentType;
 import com.example.musicplayerbackend.domain.NegotiationRequestDto;
 import com.example.musicplayerbackend.domain.NegotiationResponseDto;
+import com.example.musicplayerbackend.domain.Role;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongChunk;
 import com.example.musicplayerbackend.domain.SongDto;
@@ -69,7 +70,8 @@ public class SongService {
 
   @Transactional(readOnly = true)
   public Page<SongDto> getSongsVisibleToUser(String q, User user, Pageable pageable) {
-    Specification<Song> spec = SongSpecification.visibleToUser(user.getId());
+    Specification<Song> spec =
+        SongSpecification.visibleToUser(user.getId(), canAccessPublicSongs(user));
     Specification<Song> querySpec = SongSpecification.matchesQuery(q);
     if (querySpec != null) {
       spec = spec.and(querySpec);
@@ -81,9 +83,27 @@ public class SongService {
   }
 
   @Transactional(readOnly = true)
-  public SongDto getSongByFileHash(String fileHash, Long userId) {
+  public SongDto getSongByFileHash(String fileHash, User user) {
     Song song = findSongByFileHash(fileHash);
-    return songEnrichmentService.enrich(song, userId);
+    ensureSongVisible(song, user);
+    return songEnrichmentService.enrich(song, user.getId());
+  }
+
+  public SongDto getSongByFileHash(String fileHash, Long userId) {
+    return getSongByFileHash(
+        fileHash, User.builder().id(userId).role(Role.USER).allowed(true).build());
+  }
+
+  private boolean canAccessPublicSongs(User user) {
+    return user.isAllowed() || user.getRole() == Role.ADMIN;
+  }
+
+  private void ensureSongVisible(Song song, User user) {
+    boolean owned = Objects.equals(song.getOwnerId(), user.getId());
+    boolean publicAndAllowed = song.getOwnerId() == null && canAccessPublicSongs(user);
+    if (!owned && !publicAndAllowed) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
+    }
   }
 
   @Transactional

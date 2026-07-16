@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.service;
 
+import com.example.musicplayerbackend.domain.Role;
 import com.example.musicplayerbackend.domain.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -24,7 +25,7 @@ public class JWTService {
   @Value("${application.security.jwt.expiration:900000}")
   private long jwtExpiration;
 
-  @Value("${application.security.jwt.refresh-token.expiration:2592000000}")
+  @Value("${application.security.jwt.refresh-token.expiration:1209600000}")
   private long refreshExpiration;
 
   public String extractUsername(String token) {
@@ -40,6 +41,7 @@ public class JWTService {
     Map<String, Object> extraClaims = new HashMap<>();
     extraClaims.put("role", user.getRole());
     extraClaims.put("userId", user.getId());
+    extraClaims.put("allowed", user.isAllowed() || user.getRole() == Role.ADMIN);
     return generateToken(extraClaims, user, jwtExpiration);
   }
 

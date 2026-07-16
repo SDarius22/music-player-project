@@ -15,3 +15,5 @@ databaseChangeLog:
       file: db/changelog/changes/007-playlist-name-unique.sql
   - include:
       file: db/changelog/changes/008-playback-state-autoplay.sql
+  - include:
+      file: db/changelog/changes/009-user-allowed.sql

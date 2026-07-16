@@ -5,6 +5,8 @@ import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.domain.ChunkManifestDto;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongChunk;
+import com.example.musicplayerbackend.domain.Role;
+import com.example.musicplayerbackend.domain.User;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,11 +26,9 @@ public class StreamingService {
   private final SongChunkRepository songChunkRepository;
 
   @Transactional(readOnly = true)
-  public ChunkManifestDto getSongManifest(String fileHash, Long userId) {
+  public ChunkManifestDto getSongManifest(String fileHash, User user) {
     Song song = getSongOrThrow(fileHash);
-    if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
-    }
+    ensureSongVisible(song, user);
 
     List<String> hashes = new ArrayList<>();
     long totalBytes = 0;
@@ -48,13 +48,15 @@ public class StreamingService {
     return manifest;
   }
 
-  @Transactional(readOnly = true)
-  public Resource getSongChunk(String fileHash, Integer chunkIndex, Long userId) {
-    Song song = getSongOrThrow(fileHash);
+  ChunkManifestDto getSongManifest(String fileHash, Long userId) {
+    return getSongManifest(
+        fileHash, User.builder().id(userId).role(Role.USER).allowed(true).build());
+  }
 
-    if (song.getOwnerId() != null && !song.getOwnerId().equals(userId)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
-    }
+  @Transactional(readOnly = true)
+  public Resource getSongChunk(String fileHash, Integer chunkIndex, User user) {
+    Song song = getSongOrThrow(fileHash);
+    ensureSongVisible(song, user);
 
     if (chunkIndex == null || chunkIndex < 0) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chunk index out of bounds");
@@ -71,10 +73,23 @@ public class StreamingService {
     return readBytesFromDisk(songChunk.getChunk().getStoragePath());
   }
 
+  Resource getSongChunk(String fileHash, Integer chunkIndex, Long userId) {
+    return getSongChunk(
+        fileHash, chunkIndex, User.builder().id(userId).role(Role.USER).allowed(true).build());
+  }
+
   private Song getSongOrThrow(String fileHash) {
     return songRepository
         .findByFileHash(fileHash)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
+  }
+
+  private void ensureSongVisible(Song song, User user) {
+    boolean owned = java.util.Objects.equals(song.getOwnerId(), user.getId());
+    boolean mayAccessPublic = user.isAllowed() || user.getRole() == Role.ADMIN;
+    if (!owned && !(song.getOwnerId() == null && mayAccessPublic)) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found");
+    }
   }
 
   private Resource readBytesFromDisk(String path) {

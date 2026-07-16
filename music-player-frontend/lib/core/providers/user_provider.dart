@@ -11,7 +11,23 @@ class UserProvider with ChangeNotifier {
   User? _currentUser;
   String? _pendingEmail;
 
-  UserProvider(this._authService);
+  UserProvider(this._authService) {
+    _authService.addListener(_handleAuthChange);
+  }
+
+  void _handleAuthChange() {
+    if (!_authService.isLoggedIn && _status == AuthStatus.authenticated) {
+      _currentUser = null;
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _authService.removeListener(_handleAuthChange);
+    super.dispose();
+  }
 
   AuthStatus get status => _status;
 

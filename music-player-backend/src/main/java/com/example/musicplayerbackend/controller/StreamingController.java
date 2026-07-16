@@ -24,20 +24,20 @@ public class StreamingController implements StreamApi {
 
   @Override
   public ResponseEntity<ChunkManifestDto> getSongManifest(String fileHash) {
-    long userId = currentUserId();
-    log.info("[STREAM] Manifest request: fileHash={}, userId={}", fileHash, userId);
-    return ResponseEntity.ok(streamingService.getSongManifest(fileHash, userId));
+    User user = currentUser();
+    log.info("[STREAM] Manifest request: fileHash={}, userId={}", fileHash, user.getId());
+    return ResponseEntity.ok(streamingService.getSongManifest(fileHash, user));
   }
 
   @Override
   public ResponseEntity<Resource> getSongChunk(String fileHash, Integer chunkIndex) {
-    long userId = currentUserId();
+    User user = currentUser();
     log.info(
         "[STREAM] Chunk request (master fallback): fileHash={}, chunkIndex={}, userId={}",
         fileHash,
         chunkIndex,
-        userId);
-    Resource chunk = streamingService.getSongChunk(fileHash, chunkIndex, userId);
+        user.getId());
+    Resource chunk = streamingService.getSongChunk(fileHash, chunkIndex, user);
     return ResponseEntity.ok()
         .contentType(MediaType.APPLICATION_OCTET_STREAM)
         .header(
@@ -45,11 +45,9 @@ public class StreamingController implements StreamApi {
         .body(chunk);
   }
 
-  private long currentUserId() {
-    User user =
-        (User)
-            Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication())
-                .getPrincipal();
-    return user.getId();
+  private User currentUser() {
+    return (User)
+        Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication())
+            .getPrincipal();
   }
 }
