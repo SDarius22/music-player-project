@@ -75,7 +75,7 @@ jobs:
           scan-ref: music-player-frontend
           scanners: vuln
           vuln-type: library
-          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '1'
 

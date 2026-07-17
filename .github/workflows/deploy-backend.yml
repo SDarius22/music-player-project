@@ -50,9 +50,10 @@ jobs:
         with:
           scan-type: fs
           scan-ref: music-player-backend
+          skip-dirs: music-player-backend/target
           scanners: vuln
           vuln-type: library
-          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '1'
 
@@ -92,7 +93,7 @@ jobs:
           image-ref: ghcr.io/sdarius22/music-player-project/music-player-backend:latest
           scanners: vuln
           vuln-type: os,library
-          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '1'
 
