@@ -1,0 +1,118 @@
+name: Code Quality
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: code-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-sonar:
+    name: Backend SonarQube quality gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Validate SonarQube configuration
+        env:
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_BACKEND_PROJECT_KEY }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          test -n "$SONAR_ORGANIZATION" || { echo "SONAR_ORGANIZATION variable is missing"; exit 1; }
+          test -n "$SONAR_PROJECT_KEY" || { echo "SONAR_BACKEND_PROJECT_KEY variable is missing"; exit 1; }
+          test -n "$SONAR_TOKEN" || { echo "SONAR_TOKEN secret is missing"; exit 1; }
+
+      - name: Test, report coverage, and analyze
+        working-directory: music-player-backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >-
+          ./mvnw --batch-mode clean verify
+          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+          -Dsonar.projectKey=${{ vars.SONAR_BACKEND_PROJECT_KEY }}
+          -Dsonar.qualitygate.wait=true
+          -Dsonar.qualitygate.timeout=600
+
+  frontend-sonar:
+    name: Frontend SonarQube quality gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Validate SonarQube configuration
+        env:
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_FRONTEND_PROJECT_KEY }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          test -n "$SONAR_ORGANIZATION" || { echo "SONAR_ORGANIZATION variable is missing"; exit 1; }
+          test -n "$SONAR_PROJECT_KEY" || { echo "SONAR_FRONTEND_PROJECT_KEY variable is missing"; exit 1; }
+          test -n "$SONAR_TOKEN" || { echo "SONAR_TOKEN secret is missing"; exit 1; }
+
+      - name: Install dependencies and generate sources
+        working-directory: music-player-frontend
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+
+      - name: Test with coverage
+        working-directory: music-player-frontend
+        run: flutter test --coverage
+
+      - name: Enforce 85% frontend line coverage
+        working-directory: music-player-frontend
+        run: |
+          awk -F: '
+            /^LF:/ { total += $2 }
+            /^LH:/ { covered += $2 }
+            END {
+              if (total == 0) {
+                print "No coverable Dart lines found in coverage/lcov.info"
+                exit 1
+              }
+              coverage = covered * 100 / total
+              printf "Frontend line coverage: %.2f%% (%d/%d)\n", coverage, covered, total
+              if (coverage < 85) exit 1
+            }
+          ' coverage/lcov.info
+
+      - name: Analyze
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          projectBaseDir: music-player-frontend
+          args: >-
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=${{ vars.SONAR_FRONTEND_PROJECT_KEY }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
