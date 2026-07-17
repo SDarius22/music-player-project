@@ -104,7 +104,9 @@ class SongServiceTest {
     StringBuilder sb = new StringBuilder();
     for (byte b : hash) {
       String h = Integer.toHexString(0xff & b);
-      if (h.length() == 1) sb.append('0');
+      if (h.length() == 1) {
+        sb.append('0');
+      }
       sb.append(h);
     }
     return sb.toString();

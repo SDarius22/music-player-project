@@ -102,7 +102,9 @@ public class RecommendationService {
                 .filter(ul -> !Boolean.TRUE.equals(ul.getIsDeleted()))
                 .collect(Collectors.toMap(ul -> ul.getId().getSongId(), Function.identity()));
         for (Song song : randomSongs) {
-          if (content.size() >= pageSize) break;
+          if (content.size() >= pageSize) {
+            break;
+          }
           if (song.getFileHash() != null && seenHashes.add(song.getFileHash())) {
             content.add(songMapper.toDto(song, entriesById.get(song.getId())));
           }
