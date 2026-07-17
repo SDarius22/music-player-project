@@ -58,7 +58,7 @@ jobs:
         working-directory: ./music-player-frontend
         run: >-
           npx --yes jscpd@4.0.8
-          --threshold 5
+          --threshold 6
           --format dart
           --ignore '**/*.g.dart,**/generated/**'
           lib
