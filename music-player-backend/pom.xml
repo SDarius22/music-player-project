@@ -19,10 +19,6 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <testcontainers.version>1.21.4</testcontainers.version>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.exclusions>target/generated-sources/**</sonar.exclusions>
-        <sonar.coverage.exclusions>target/generated-sources/**,src/main/java/**/MusicPlayerBackendApplication.java</sonar.coverage.exclusions>
-        <sonar.cpd.exclusions>target/generated-sources/**</sonar.cpd.exclusions>
     </properties>
 
     <dependencies>
@@ -219,15 +215,22 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.13</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*$MockitoMock$*</exclude>
+                        <exclude>org/springframework/**</exclude>
+                        <exclude>net/bytebuddy/**</exclude>
+                        <exclude>**/domain/*Dto*</exclude>
+                        <exclude>**/domain/AuthResponse*</exclude>
+                        <exclude>**/domain/EmailRequest*</exclude>
+                        <exclude>**/domain/RefreshAccessTokenRequest*</exclude>
+                        <exclude>**/domain/VerificationRequest*</exclude>
+                        <exclude>**/controller/*Api*</exclude>
+                        <exclude>**/*MapperImpl*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/*$MockitoMock$*</exclude>
-                                <exclude>org/springframework/**</exclude>
-                                <exclude>net/bytebuddy/**</exclude>
-                            </excludes>
-                        </configuration>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
@@ -248,11 +251,6 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/MusicPlayerBackendApplication*</exclude>
-                                <exclude>**/domain/**</exclude>
-                                <exclude>**/data/**</exclude>
-                                <exclude>**/controller/**</exclude>
-                                <exclude>**/config/**</exclude>
-                                <exclude>**/*MapperImpl*</exclude>
                             </excludes>
                             <rules>
                                 <rule>
@@ -261,7 +259,7 @@
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.95</minimum>
+                                            <minimum>0.85</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

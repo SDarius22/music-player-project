@@ -1,0 +1,36 @@
+coverage:
+  precision: 2
+  round: down
+  range: 85..100
+  status:
+    project:
+      default:
+        target: 85%
+        threshold: 0%
+    patch:
+      default:
+        target: 85%
+        threshold: 0%
+
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+        target: 85%
+        threshold: 0%
+      - type: patch
+        target: 85%
+        threshold: 0%
+  individual_flags:
+    - name: backend
+      paths:
+        - music-player-backend/src/main/java/
+    - name: frontend
+      paths:
+        - music-player-frontend/lib/
+
+comment:
+  layout: reach, diff, flags, files
+  behavior: default
+  require_changes: true

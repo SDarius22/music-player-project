@@ -1,4 +1,4 @@
-name: Code Quality
+name: Code Quality and Security
 
 on:
   push:
@@ -7,23 +7,24 @@ on:
   pull_request:
     branches:
       - master
+  schedule:
+    - cron: '17 3 * * 1'
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: code-quality-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  backend-sonar:
-    name: Backend SonarQube quality gate
+  backend-quality:
+    name: Backend tests, coverage, and static analysis
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-java@v4
         with:
@@ -31,57 +32,53 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: Validate SonarQube configuration
-        env:
-          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
-          SONAR_PROJECT_KEY: ${{ vars.SONAR_BACKEND_PROJECT_KEY }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          test -n "$SONAR_ORGANIZATION" || { echo "SONAR_ORGANIZATION variable is missing"; exit 1; }
-          test -n "$SONAR_PROJECT_KEY" || { echo "SONAR_BACKEND_PROJECT_KEY variable is missing"; exit 1; }
-          test -n "$SONAR_TOKEN" || { echo "SONAR_TOKEN secret is missing"; exit 1; }
-
-      - name: Test, report coverage, and analyze
+      - name: Test and enforce 85% line coverage
         working-directory: music-player-backend
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: >-
-          ./mvnw --batch-mode clean verify
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
-          -Dsonar.projectKey=${{ vars.SONAR_BACKEND_PROJECT_KEY }}
-          -Dsonar.qualitygate.wait=true
-          -Dsonar.qualitygate.timeout=600
+        run: ./mvnw --batch-mode clean verify
 
-  frontend-sonar:
-    name: Frontend SonarQube quality gate
+      - name: Check style
+        working-directory: music-player-backend
+        run: ./mvnw --batch-mode org.apache.maven.plugins:maven-checkstyle-plugin:3.6.0:check
+
+      - name: Find code defects
+        working-directory: music-player-backend
+        run: ./mvnw --batch-mode com.github.spotbugs:spotbugs-maven-plugin:4.9.8.2:check
+
+      - name: Find code issues and duplication
+        working-directory: music-player-backend
+        run: >-
+          ./mvnw --batch-mode
+          org.apache.maven.plugins:maven-pmd-plugin:3.28.0:check
+          org.apache.maven.plugins:maven-pmd-plugin:3.28.0:cpd-check
+
+      - name: Upload backend coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: music-player-backend/target/site/jacoco/jacoco.xml
+          flags: backend
+          fail_ci_if_error: true
+          use_oidc: true
+
+  frontend-quality:
+    name: Frontend tests, coverage, and static analysis
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      - name: Validate SonarQube configuration
-        env:
-          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
-          SONAR_PROJECT_KEY: ${{ vars.SONAR_FRONTEND_PROJECT_KEY }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          test -n "$SONAR_ORGANIZATION" || { echo "SONAR_ORGANIZATION variable is missing"; exit 1; }
-          test -n "$SONAR_PROJECT_KEY" || { echo "SONAR_FRONTEND_PROJECT_KEY variable is missing"; exit 1; }
-          test -n "$SONAR_TOKEN" || { echo "SONAR_TOKEN secret is missing"; exit 1; }
-
       - name: Install dependencies and generate sources
         working-directory: music-player-frontend
         run: |
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze Dart
+        working-directory: music-player-frontend
+        run: flutter analyze --fatal-infos
 
       - name: Test with coverage
         working-directory: music-player-frontend
@@ -104,15 +101,77 @@ jobs:
             }
           ' coverage/lcov.info
 
-      - name: Analyze
-        uses: SonarSource/sonarqube-scan-action@v7
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
+      - name: Enforce zero duplicated code
+        working-directory: music-player-frontend
+        run: >-
+          npx --yes jscpd@4.0.8
+          --threshold 0
+          --format dart
+          --ignore '**/*.g.dart,**/generated/**'
+          lib
+
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v5
         with:
-          projectBaseDir: music-player-frontend
-          args: >-
-            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
-            -Dsonar.projectKey=${{ vars.SONAR_FRONTEND_PROJECT_KEY }}
-            -Dsonar.qualitygate.wait=true
-            -Dsonar.qualitygate.timeout=600
+          files: music-player-frontend/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: true
+          use_oidc: true
+
+  dependency-review:
+    name: Review dependency changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reject newly introduced vulnerable dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: low
+
+  source-vulnerabilities:
+    name: Scan dependencies for CVEs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan dependency manifests and lockfiles
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          vuln-type: library
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'
+
+  backend-image-vulnerabilities:
+    name: Scan backend image for CVEs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Package backend
+        working-directory: music-player-backend
+        run: ./mvnw --batch-mode package -DskipTests
+
+      - name: Build backend image
+        run: docker build --tag music-player-backend:cve-scan music-player-backend
+
+      - name: Scan OS and Java packages in the built image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: music-player-backend:cve-scan
+          scanners: vuln
+          vuln-type: os,library
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'
