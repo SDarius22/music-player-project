@@ -1,3 +1,6 @@
+// This vendored plugin still targets the browser API exposed by dart:html.
+// ignore_for_file: deprecated_member_use
+
 /*
 =============
 Author: Lucas Josino

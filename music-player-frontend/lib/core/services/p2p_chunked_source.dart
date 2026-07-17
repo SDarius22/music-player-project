@@ -1,3 +1,8 @@
+// just_audio exposes custom streaming sources through an explicitly
+// experimental API. Keep this suppression local so other experimental API
+// usage remains visible to the analyzer.
+// ignore_for_file: experimental_member_use
+
 import 'dart:async';
 import 'dart:typed_data';
 

@@ -1,4 +1,4 @@
-part of on_audio_query_web;
+part of '../on_audio_query_web.dart';
 
 /// A [controller] to keep the main method more "clean".
 class _OnAudioQueryWebController {

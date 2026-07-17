@@ -122,7 +122,7 @@ class Html5AudioPlayer extends JustAudioPlayer {
   final Map<String, AudioSourcePlayer> _audioSourcePlayers = {};
 
   /// Creates an [Html5AudioPlayer] with the given [id].
-  Html5AudioPlayer({required String id}) : super(id: id) {
+  Html5AudioPlayer({required super.id}) {
     _audioElement.addEventListener(
         'durationchange',
         (Event event) {
@@ -302,9 +302,14 @@ class Html5AudioPlayer extends JustAudioPlayer {
       try {
         await _durationCompleter!.future
             .timeout(const Duration(milliseconds: 1500), onTimeout: () => null);
-      } on MediaError catch (e) {
+      } catch (error) {
+        final jsError = error as JSAny;
+        if (!jsError.isA<MediaError>()) {
+          rethrow;
+        }
+        final mediaError = jsError as MediaError;
         throw PlatformException(
-            code: "${e.code}", message: "Failed to load URL");
+            code: "${mediaError.code}", message: "Failed to load URL");
       } finally {
         _durationCompleter = null;
       }
@@ -611,8 +616,7 @@ abstract class AudioSourcePlayer {
 
 /// A player for an [IndexedAudioSourceMessage].
 abstract class IndexedAudioSourcePlayer extends AudioSourcePlayer {
-  IndexedAudioSourcePlayer(Html5AudioPlayer html5AudioPlayer, String id)
-      : super(html5AudioPlayer, id);
+  IndexedAudioSourcePlayer(super.html5AudioPlayer, super.id);
 
   /// Loads the audio for the underlying audio source.
   Future<Duration?> load([int? initialPosition]);
@@ -664,8 +668,7 @@ abstract class UriAudioSourcePlayer extends IndexedAudioSourcePlayer {
   int? _initialPos;
 
   UriAudioSourcePlayer(
-      Html5AudioPlayer html5AudioPlayer, String id, this.uri, this.headers)
-      : super(html5AudioPlayer, id);
+      super.html5AudioPlayer, super.id, this.uri, this.headers);
 
   @override
   List<IndexedAudioSourcePlayer> get sequence => [this];
@@ -751,23 +754,20 @@ abstract class UriAudioSourcePlayer extends IndexedAudioSourcePlayer {
 
 /// A player for a [ProgressiveAudioSourceMessage].
 class ProgressiveAudioSourcePlayer extends UriAudioSourcePlayer {
-  ProgressiveAudioSourcePlayer(Html5AudioPlayer html5AudioPlayer, String id,
-      Uri uri, Map<String, String>? headers)
-      : super(html5AudioPlayer, id, uri, headers);
+  ProgressiveAudioSourcePlayer(
+      super.html5AudioPlayer, super.id, super.uri, super.headers);
 }
 
 /// A player for a [DashAudioSourceMessage].
 class DashAudioSourcePlayer extends UriAudioSourcePlayer {
-  DashAudioSourcePlayer(Html5AudioPlayer html5AudioPlayer, String id, Uri uri,
-      Map<String, String>? headers)
-      : super(html5AudioPlayer, id, uri, headers);
+  DashAudioSourcePlayer(
+      super.html5AudioPlayer, super.id, super.uri, super.headers);
 }
 
 /// A player for a [HlsAudioSourceMessage].
 class HlsAudioSourcePlayer extends UriAudioSourcePlayer {
-  HlsAudioSourcePlayer(Html5AudioPlayer html5AudioPlayer, String id, Uri uri,
-      Map<String, String>? headers)
-      : super(html5AudioPlayer, id, uri, headers);
+  HlsAudioSourcePlayer(
+      super.html5AudioPlayer, super.id, super.uri, super.headers);
 }
 
 /// A player for a [ConcatenatingAudioSourceMessage].
@@ -779,10 +779,9 @@ class ConcatenatingAudioSourcePlayer extends AudioSourcePlayer {
   final bool useLazyPreparation;
   List<int> _shuffleOrder;
 
-  ConcatenatingAudioSourcePlayer(Html5AudioPlayer html5AudioPlayer, String id,
+  ConcatenatingAudioSourcePlayer(super.html5AudioPlayer, super.id,
       this.audioSourcePlayers, this.useLazyPreparation, List<int> shuffleOrder)
-      : _shuffleOrder = shuffleOrder,
-        super(html5AudioPlayer, id);
+      : _shuffleOrder = shuffleOrder;
 
   @override
   List<IndexedAudioSourcePlayer> get sequence =>
@@ -846,9 +845,8 @@ class ClippingAudioSourcePlayer extends IndexedAudioSourcePlayer {
   Duration? _duration;
   int? _initialPos;
 
-  ClippingAudioSourcePlayer(Html5AudioPlayer html5AudioPlayer, String id,
-      this.audioSourcePlayer, this.start, this.end)
-      : super(html5AudioPlayer, id);
+  ClippingAudioSourcePlayer(super.html5AudioPlayer, super.id,
+      this.audioSourcePlayer, this.start, this.end);
 
   @override
   List<IndexedAudioSourcePlayer> get sequence => [this];
@@ -981,9 +979,8 @@ class LoopingAudioSourcePlayer extends AudioSourcePlayer {
   /// The number of times to loop.
   final int count;
 
-  LoopingAudioSourcePlayer(Html5AudioPlayer html5AudioPlayer, String id,
-      this.audioSourcePlayer, this.count)
-      : super(html5AudioPlayer, id);
+  LoopingAudioSourcePlayer(
+      super.html5AudioPlayer, super.id, this.audioSourcePlayer, this.count);
 
   @override
   List<IndexedAudioSourcePlayer> get sequence =>

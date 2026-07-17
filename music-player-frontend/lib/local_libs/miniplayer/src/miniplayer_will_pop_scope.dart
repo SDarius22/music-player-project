@@ -11,17 +11,17 @@ class MiniplayerWillPopScope extends StatefulWidget {
   final Future<bool> Function() onWillPop;
 
   @override
-  State<MiniplayerWillPopScope> createState() => _MiniplayerWillPopScopeState();
+  State<MiniplayerWillPopScope> createState() => MiniplayerWillPopScopeState();
 
-  static _MiniplayerWillPopScopeState? of(BuildContext context) {
-    return context.findAncestorStateOfType<_MiniplayerWillPopScopeState>();
+  static MiniplayerWillPopScopeState? of(BuildContext context) {
+    return context.findAncestorStateOfType<MiniplayerWillPopScopeState>();
   }
 }
 
-class _MiniplayerWillPopScopeState extends State<MiniplayerWillPopScope> {
-  _MiniplayerWillPopScopeState? _descendant;
+class MiniplayerWillPopScopeState extends State<MiniplayerWillPopScope> {
+  MiniplayerWillPopScopeState? _descendant;
 
-  set descendant(_MiniplayerWillPopScopeState? state) {
+  set descendant(MiniplayerWillPopScopeState? state) {
     _descendant = state;
   }
 

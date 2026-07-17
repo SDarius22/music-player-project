@@ -1,4 +1,4 @@
-part of on_audio_query_web;
+part of '../../on_audio_query_web.dart';
 
 List<SongModel> checkSongsArgs(
   String argsVal,
