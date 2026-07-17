@@ -7,8 +7,8 @@ import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/core/ui/components/scaffolds/glass_scaffold.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 

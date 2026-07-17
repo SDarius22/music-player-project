@@ -3,7 +3,7 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/responsive_screen.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
+import 'package:music_player_frontend/core/ui/components/scaffolds/glass_scaffold.dart';
 
 abstract class EntityScreen<T extends QueryableProvider>
     extends ResponsiveScreen<BaseEntity> {

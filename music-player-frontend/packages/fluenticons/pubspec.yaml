@@ -1,0 +1,9 @@
+name: fluenticons
+description: Local Fluent icon font bindings.
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.7.2
+dependencies:
+  flutter:
+    sdk: flutter

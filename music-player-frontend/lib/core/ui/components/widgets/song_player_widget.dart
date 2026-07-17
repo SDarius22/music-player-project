@@ -8,11 +8,11 @@ import 'package:music_player_frontend/core/ui/components/tabs/details_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/lyrics_tab.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/queue_tab.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/volume_widget.dart';
-import 'package:music_player_frontend/local_libs/audio_video_progress_bar/audio_video_progress_bar.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
-import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:fluenticons/fluenticons.dart';
+import 'package:glass_kit/glass_container.dart';
+import 'package:miniplayer/miniplayer.dart';
+import 'package:multi_value_listenable_builder/mvlb.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 

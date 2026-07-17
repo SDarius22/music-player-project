@@ -11,7 +11,7 @@ import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dar
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/track_screen.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Tracks extends MultipleEntitiesScreen<SongProvider> {

@@ -9,8 +9,8 @@ import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/main_scaffold.dart';
 import 'package:music_player_frontend/core/ui/screens/welcome_screen.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/animated_background.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
+import 'package:music_player_frontend/core/ui/components/scaffolds/animated_background.dart';
+import 'package:music_player_frontend/core/ui/components/scaffolds/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -37,12 +37,15 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AbstractAppStateProvider>();
     return GlassAnimatedScaffold(
-      controller: context.read<AbstractAppStateProvider>().gradientController,
+      controller: appState.gradientController,
+      colors: appState.colors,
       appBar: AppBarWidget(),
       body: SafeArea(
         child: AnimatedBackground(
           controller: AnimatedMeshGradientController(),
+          colors: appState.colors,
           child: const Center(
             child: CircularProgressIndicator(color: Colors.white),
           ),

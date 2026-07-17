@@ -9,7 +9,7 @@ import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/artist_screen.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class Artists extends MultipleEntitiesScreen<ArtistProvider> {

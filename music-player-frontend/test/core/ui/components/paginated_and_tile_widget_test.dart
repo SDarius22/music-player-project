@@ -10,7 +10,7 @@ import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/custom_tile_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class _FakeAudioProvider extends Fake implements AudioProvider {

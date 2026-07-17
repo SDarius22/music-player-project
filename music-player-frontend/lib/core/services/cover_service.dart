@@ -9,17 +9,19 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/cover_rest_client.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
+import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
-import 'package:music_player_frontend/local_libs/cached_network_image/local_cached_network_image.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/cached_cover_image.dart';
+import 'package:fluenticons/fluenticons.dart';
 
 class CoverService {
   final AlbumService albumService;
   final SongService songService;
   final ArtistService artistService;
   final PlaylistService playlistService;
+  final AbstractFileService _fileService;
 
   final CoverRestClient _coverRestService;
   final AuthService _authService;
@@ -29,9 +31,11 @@ class CoverService {
     required this.songService,
     required this.artistService,
     required this.playlistService,
+    required AbstractFileService fileService,
     required CoverRestClient coverRestService,
     required AuthService authService,
-  }) : _coverRestService = coverRestService,
+  }) : _fileService = fileService,
+       _coverRestService = coverRestService,
        _authService = authService;
 
   Widget getWidget(
@@ -64,10 +68,11 @@ class CoverService {
               onBytesLoaded?.call(bytes);
             };
 
-    return LocalCachedNetworkImage(
+    return CachedCoverImage(
       imageUrl: '${_coverRestService.baseUrl}$relativeUrl',
       headers: {'Authorization': 'Bearer ${_authService.accessToken ?? ""}'},
       onBytesLoaded: bytesLoaded,
+      localImageLoader: _fileService.getImage,
       path: (entity is Song && entity.isLocal) ? entity.path : null,
     );
   }

@@ -1,0 +1,10 @@
+name: dominant_color
+description: Local dominant image color extraction utilities.
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.7.2
+dependencies:
+  flutter:
+    sdk: flutter
+  image: ^4.7.2

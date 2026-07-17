@@ -23,11 +23,12 @@ Future<void> pump([int times = 5]) async {
   }
 }
 
-int _chunkIndexOf(http.BaseRequest req) =>
-    int.parse(req.url.pathSegments.last);
+int _chunkIndexOf(http.BaseRequest req) => int.parse(req.url.pathSegments.last);
 
-StreamingRestClient _client() =>
-    StreamingRestClient(baseUrl: 'http://test', authService: _FakeAuthService());
+StreamingRestClient _client() => StreamingRestClient(
+  baseUrl: 'http://test',
+  authService: _FakeAuthService(),
+);
 
 void main() {
   group('StreamingRestClient server-pool prioritization', () {
@@ -124,7 +125,11 @@ void main() {
         expect(started.toSet(), {0, 1, 2});
 
         // Enqueue a prefetch FIRST, then a playback request.
-        final prefetchLate = client.downloadChunkFallback('h', 10, prefetch: true);
+        final prefetchLate = client.downloadChunkFallback(
+          'h',
+          10,
+          prefetch: true,
+        );
         final playbackLate = client.downloadChunkFallback('h', 20);
         await pump();
         // Pool is full: neither has started.
@@ -149,13 +154,10 @@ void main() {
 
   group('StreamingRestClient downloadChunkFallback', () {
     test('returns the response body on 200', () async {
-      await http.runWithClient(
-        () async {
-          final bytes = await _client().downloadChunkFallback('h', 0);
-          expect(bytes, equals([7, 8, 9]));
-        },
-        () => MockClient((req) async => http.Response.bytes([7, 8, 9], 200)),
-      );
+      await http.runWithClient(() async {
+        final bytes = await _client().downloadChunkFallback('h', 0);
+        expect(bytes, equals([7, 8, 9]));
+      }, () => MockClient((req) async => http.Response.bytes([7, 8, 9], 200)));
     });
 
     test('throws on a non-200 (e.g. 504) response', () async {

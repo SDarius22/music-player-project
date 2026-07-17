@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/lyric_ui.dart';
-import 'package:music_player_frontend/local_libs/lyric_reader/lyric_ui/ui_netease.dart';
-import 'package:music_player_frontend/local_libs/lyric_reader/lyrics_reader_widget.dart';
-import 'package:music_player_frontend/local_libs/multivaluelistenablebuilder/mvlb.dart';
+import 'package:lyric_reader/lyric_ui/lyric_ui.dart';
+import 'package:lyric_reader/lyric_ui/ui_netease.dart';
+import 'package:lyric_reader/lyrics_reader_widget.dart';
+import 'package:multi_value_listenable_builder/mvlb.dart';
 import 'package:provider/provider.dart';
 
 class LyricsTab extends StatelessWidget {

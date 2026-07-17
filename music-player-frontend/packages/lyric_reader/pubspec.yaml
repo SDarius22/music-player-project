@@ -1,0 +1,10 @@
+name: lyric_reader
+description: Local synchronized lyric reader widgets.
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.7.2
+dependencies:
+  collection: ^1.19.1
+  flutter:
+    sdk: flutter

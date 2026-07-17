@@ -1,0 +1,11 @@
+name: miniplayer
+description: Local expandable miniplayer widget.
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.7.2
+dependencies:
+  flutter:
+    sdk: flutter
+  multi_value_listenable_builder:
+    path: ../multi_value_listenable_builder

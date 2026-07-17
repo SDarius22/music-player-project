@@ -98,17 +98,21 @@ Future<int> _runEval() async {
   final token = _cfg('AUTH_TOKEN', _ddToken, '');
   final refresh = _cfg('REFRESH_TOKEN', _ddRefresh, token);
   final role = _cfg('ROLE', _ddRole, 'listener').toLowerCase();
-  final hashes = _cfg('SONG_HASHES', _ddHashes, '')
-      .split(',')
-      .map((s) => s.trim())
-      .where((s) => s.isNotEmpty)
-      .toList();
-  final bitrate = int.tryParse(_cfg('BITRATE_BPS', _ddBitrate, '40960')) ?? 40960;
+  final hashes =
+      _cfg(
+        'SONG_HASHES',
+        _ddHashes,
+        '',
+      ).split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+  final bitrate =
+      int.tryParse(_cfg('BITRATE_BPS', _ddBitrate, '40960')) ?? 40960;
   final speedStr = _cfg('SPEED', _ddSpeed, role == 'seeder' ? 'max' : '1.0');
   final isMaxSpeed = speedStr.toLowerCase() == 'max';
   final speed = isMaxSpeed ? 0.0 : (double.tryParse(speedStr) ?? 1.0);
-  final startDelayMs = int.tryParse(_cfg('START_DELAY_MS', _ddStartDelay, '0')) ?? 0;
-  final seedHold = int.tryParse(_cfg('SEED_HOLD_SECONDS', _ddSeedHold, '120')) ?? 120;
+  final startDelayMs =
+      int.tryParse(_cfg('START_DELAY_MS', _ddStartDelay, '0')) ?? 0;
+  final seedHold =
+      int.tryParse(_cfg('SEED_HOLD_SECONDS', _ddSeedHold, '120')) ?? 120;
 
   if (token.isEmpty) {
     _log.severe('AUTH_TOKEN is required (env var or --dart-define). Aborting.');
@@ -191,11 +195,12 @@ Future<int> _runEval() async {
 
     // per-chunk pacing: average chunk duration / speed (zero if max speed)
     final avgChunkBytes = cs.totalBytes / total;
-    final perChunk = (isMaxSpeed || speed <= 0)
-        ? Duration.zero
-        : Duration(
-            microseconds: ((avgChunkBytes / bitrate / speed) * 1e6).round(),
-          );
+    final perChunk =
+        (isMaxSpeed || speed <= 0)
+            ? Duration.zero
+            : Duration(
+              microseconds: ((avgChunkBytes / bitrate / speed) * 1e6).round(),
+            );
 
     _log.info(
       '[eval] ${isSeeder ? 'warming' : 'playing'} $hash chunks=$total '

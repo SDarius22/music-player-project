@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class SearchHeader extends StatefulWidget {

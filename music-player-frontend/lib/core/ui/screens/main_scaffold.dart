@@ -8,8 +8,8 @@ import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.d
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
-import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
+import 'package:music_player_frontend/core/ui/components/scaffolds/glass_animated_scaffold.dart';
+import 'package:miniplayer/miniplayer.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:universal_platform/universal_platform.dart';
@@ -45,7 +45,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _handleBackPressed() async {
-    final provider = context.read<AbstractAppStateProvider>();
+    final provider = context.watch<AbstractAppStateProvider>();
     final scaffoldState = provider.scaffoldKey.currentState;
 
     if (scaffoldState?.isEndDrawerOpen ?? false) {
@@ -135,6 +135,7 @@ class _MainScaffoldState extends State<MainScaffold> {
               child: GlassAnimatedScaffold(
                 scaffoldKey: provider.scaffoldKey,
                 controller: provider.gradientController,
+                colors: provider.colors,
                 extendBody: true,
                 extendBodyBehindAppBar: isMobile,
                 appBar: AppBarWidget(),

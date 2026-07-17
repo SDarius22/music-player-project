@@ -2,7 +2,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
+import 'package:music_player_frontend/core/ui/components/scaffolds/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
 import 'abstract/route_builder.dart';

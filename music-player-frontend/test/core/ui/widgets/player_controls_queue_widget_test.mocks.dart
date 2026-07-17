@@ -29,8 +29,7 @@ import 'package:music_player_frontend/core/providers/song_provider.dart'
 import 'package:music_player_frontend/core/services/health_service.dart' as _i8;
 import 'package:music_player_frontend/core/services/settings_service.dart'
     as _i9;
-import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart'
-    as _i11;
+import 'package:miniplayer/miniplayer.dart' as _i11;
 import 'package:rxdart/rxdart.dart' as _i3;
 
 // ignore_for_file: type=lint

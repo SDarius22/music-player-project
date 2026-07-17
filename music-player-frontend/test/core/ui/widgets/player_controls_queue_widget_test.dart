@@ -13,7 +13,7 @@ import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/ui/components/tabs/queue_tab.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
 import 'package:music_player_frontend/core/ui/screens/tracks.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 import 'player_controls_queue_widget_test.mocks.dart';

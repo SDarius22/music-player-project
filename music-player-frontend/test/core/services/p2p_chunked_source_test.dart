@@ -113,7 +113,8 @@ void main() {
         // pieces. ExoPlayer (Android, API 36) then re-requested at an offset
         // past the previous response end, dropping ~100 KB of FLAC and emitting
         // a premature EOS. The source must serve contiguously to EOF.
-        const chunkSize = 750000; // 3 chunks => 2.25 MB total, above the old cap
+        const chunkSize =
+            750000; // 3 chunks => 2.25 MB total, above the old cap
         const total = chunkSize * 3;
         final manager = _FakeChunkService(
           manifest: _manifest(total, chunkSize: chunkSize),

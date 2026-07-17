@@ -1,0 +1,9 @@
+name: multi_value_listenable_builder
+description: Local builder for multiple value listenables.
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.7.2
+dependencies:
+  flutter:
+    sdk: flutter

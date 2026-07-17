@@ -5,8 +5,8 @@ import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.
 import 'package:music_player_frontend/core/ui/screens/library_settings_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/login_screen.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/glass_animated_scaffold.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/core/ui/components/scaffolds/glass_animated_scaffold.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -47,8 +47,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AbstractAppStateProvider>();
     return GlassAnimatedScaffold(
-      controller: context.read<AbstractAppStateProvider>().gradientController,
+      controller: appState.gradientController,
+      colors: appState.colors,
       appBar: AppBarWidget(),
       body: Container(
         alignment: Alignment.center,

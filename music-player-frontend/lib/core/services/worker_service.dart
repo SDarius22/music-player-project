@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/local_libs/dominant_color/dominant_color.dart';
+import 'package:dominant_color/dominant_color.dart';
 
 class WorkerService {
   static final _logger = Logger('WorkerService');

@@ -4,7 +4,7 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/custom_tile_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 class QueueTab extends StatelessWidget {

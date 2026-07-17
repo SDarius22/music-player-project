@@ -7,9 +7,9 @@ import 'package:music_player_frontend/core/ui/components/triangle_clipper.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
 import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/artist_screen.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
-import 'package:music_player_frontend/local_libs/text_scroll/custom_text_scroll.dart';
+import 'package:fluenticons/fluenticons.dart';
+import 'package:miniplayer/miniplayer.dart';
+import 'package:text_scroll/custom_text_scroll.dart';
 import 'package:provider/provider.dart';
 
 class DetailsTab extends StatelessWidget {

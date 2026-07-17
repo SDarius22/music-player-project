@@ -8,8 +8,8 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
-import 'package:music_player_frontend/local_libs/miniplayer/miniplayer.dart';
+import 'package:fluenticons/fluenticons.dart';
+import 'package:miniplayer/miniplayer.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 abstract class AbstractAppStateProvider with ChangeNotifier {

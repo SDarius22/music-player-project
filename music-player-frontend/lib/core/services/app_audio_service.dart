@@ -16,7 +16,7 @@ import 'package:music_player_frontend/core/services/p2p_chunked_source.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
-import 'package:music_player_frontend/local_libs/extensions.dart';
+import 'package:music_player_frontend/core/extensions/list_extensions.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 class AppAudioService {

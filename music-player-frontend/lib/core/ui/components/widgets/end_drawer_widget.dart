@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/local_libs/glass_kit/glass_container.dart';
-import 'package:music_player_frontend/local_libs/hover_widget/hover_container.dart';
+import 'package:glass_kit/glass_container.dart';
+import 'package:hover_widget/hover_container.dart';
 import 'package:web/web.dart' as web;
 
 class _PlatformDownload {

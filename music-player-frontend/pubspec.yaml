@@ -22,6 +22,8 @@ dependencies:
   # audio
   just_audio: ^0.10.5 # default audio player
   just_audio_platform_interface: ^4.6.0
+  just_audio_media_kit:
+    path: ./packages/just_audio_media_kit
 
   media_kit: ^1.2.6
   media_kit_libs_linux: any
@@ -33,6 +35,26 @@ dependencies:
   audio_service_win: ^0.0.2 # for windows
   on_audio_query:
     path: ./packages/on_audio_query
+
+  # unpublished local packages
+  audio_video_progress_bar:
+    path: ./packages/audio_video_progress_bar
+  dominant_color:
+    path: ./packages/dominant_color
+  fluenticons:
+    path: ./packages/fluenticons
+  glass_kit:
+    path: ./packages/glass_kit
+  hover_widget:
+    path: ./packages/hover_widget
+  lyric_reader:
+    path: ./packages/lyric_reader
+  miniplayer:
+    path: ./packages/miniplayer
+  multi_value_listenable_builder:
+    path: ./packages/multi_value_listenable_builder
+  text_scroll:
+    path: ./packages/text_scroll
 
   audio_metadata_reader: ^1.4.2 # read audio metadata on desktop
 

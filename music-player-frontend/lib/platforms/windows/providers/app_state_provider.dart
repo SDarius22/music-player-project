@@ -44,10 +44,7 @@ class AppStateProvider extends AbstractAppStateProvider with TrayListener {
 
     Menu menu = Menu(
       items: [
-        MenuItem(
-          key: 'title',
-          label: 'MP33r ${kDebugMode ? 'Debug' : ''}',
-        ),
+        MenuItem(key: 'title', label: 'MP33r ${kDebugMode ? 'Debug' : ''}'),
         MenuItem.separator(),
         MenuItem(
           key: 'previous',

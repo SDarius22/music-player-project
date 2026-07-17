@@ -6,8 +6,8 @@ import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
-import 'package:music_player_frontend/local_libs/custom_scaffold/glass_scaffold.dart';
-import 'package:music_player_frontend/local_libs/fluenticons/fluenticons.dart';
+import 'package:music_player_frontend/core/ui/components/scaffolds/glass_scaffold.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
 abstract class MultipleEntitiesScreen<T extends QueryableProvider>

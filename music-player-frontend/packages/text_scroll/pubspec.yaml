@@ -1,0 +1,9 @@
+name: text_scroll
+description: Local scrolling text widgets.
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.7.2
+dependencies:
+  flutter:
+    sdk: flutter
