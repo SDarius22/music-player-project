@@ -95,6 +95,7 @@ class SongServiceTest {
         .email("user@test.com")
         .role(Role.USER)
         .provider(AuthProvider.LOCAL)
+        .allowed(true)
         .build();
   }
 
@@ -155,13 +156,13 @@ class SongServiceTest {
         Song.builder().id(1L).name("S").songType(ContentType.STREAMABLE).fileHash("h").build();
     when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
 
-    assertEquals("h", service.getSongByFileHash("h", 2L).getFileHash());
+    assertEquals("h", service.getSongByFileHash("h", regularUser()).getFileHash());
   }
 
   @Test
   void shouldThrowRuntimeExceptionWhenSongByFileHashNotFound() {
     when(songRepository.findByFileHash("missing")).thenReturn(Optional.empty());
-    assertThrows(RuntimeException.class, () -> service.getSongByFileHash("missing", 2L));
+    assertThrows(RuntimeException.class, () -> service.getSongByFileHash("missing", regularUser()));
   }
 
   @Test

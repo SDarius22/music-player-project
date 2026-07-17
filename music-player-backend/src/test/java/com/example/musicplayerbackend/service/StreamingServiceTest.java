@@ -32,6 +32,10 @@ class StreamingServiceTest {
 
   StreamingService service;
 
+  private User allowedUser(long id) {
+    return User.builder().id(id).role(Role.USER).allowed(true).build();
+  }
+
   @BeforeEach
   void setUp() {
     service = new StreamingService(songRepository, songChunkRepository);
@@ -73,7 +77,7 @@ class StreamingServiceTest {
     song.getChunks().add(songChunk(song, chunk, 0));
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-    ChunkManifestDto manifest = service.getSongManifest("hash-1", 99L);
+    ChunkManifestDto manifest = service.getSongManifest("hash-1", allowedUser(99L));
 
     assertEquals("hash-1", manifest.getFileHash());
     assertEquals(1, manifest.getTotalChunks());
@@ -102,7 +106,9 @@ class StreamingServiceTest {
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
     ResponseStatusException ex =
-        assertThrows(ResponseStatusException.class, () -> service.getSongManifest("hash-1", 99L));
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.getSongManifest("hash-1", allowedUser(99L)));
     assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
   }
 
@@ -114,7 +120,7 @@ class StreamingServiceTest {
     song.getChunks().add(songChunk(song, chunk, 0));
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
-    ChunkManifestDto manifest = service.getSongManifest("hash-1", 5L);
+    ChunkManifestDto manifest = service.getSongManifest("hash-1", allowedUser(5L));
 
     assertNotNull(manifest);
   }
@@ -124,7 +130,7 @@ class StreamingServiceTest {
     Song song = streamableSong(2L);
     when(songRepository.findByFileHash("hash-2")).thenReturn(Optional.of(song));
 
-    ChunkManifestDto manifest = service.getSongManifest("hash-2", 99L);
+    ChunkManifestDto manifest = service.getSongManifest("hash-2", allowedUser(99L));
 
     assertEquals(0, manifest.getTotalChunks());
     assertEquals(0L, manifest.getTotalBytes());
@@ -149,7 +155,7 @@ class StreamingServiceTest {
     song.getChunks().add(songChunk(song, c2, 1));
     when(songRepository.findByFileHash("hash-3")).thenReturn(Optional.of(song));
 
-    ChunkManifestDto manifest = service.getSongManifest("hash-3", 99L);
+    ChunkManifestDto manifest = service.getSongManifest("hash-3", allowedUser(99L));
 
     assertEquals(2, manifest.getTotalChunks());
     assertEquals((long) c1.getSize() + 500L, manifest.getTotalBytes());
@@ -158,7 +164,9 @@ class StreamingServiceTest {
   @Test
   void shouldThrow404WhenManifestSongNotFound() {
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.empty());
-    assertThrows(ResponseStatusException.class, () -> service.getSongManifest("hash-1", 1L));
+    assertThrows(
+        ResponseStatusException.class,
+        () -> service.getSongManifest("hash-1", allowedUser(1L)));
   }
 
   @Test
@@ -172,7 +180,7 @@ class StreamingServiceTest {
     when(songChunkRepository.findWithChunkBySongAndOrderIndex(song, 0))
         .thenReturn(Optional.of(sc));
 
-    Resource resource = service.getSongChunk("hash-1", 0, 99L);
+    Resource resource = service.getSongChunk("hash-1", 0, allowedUser(99L));
 
     assertNotNull(resource);
     assertTrue(resource.exists());
@@ -186,7 +194,9 @@ class StreamingServiceTest {
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
     ResponseStatusException ex =
-        assertThrows(ResponseStatusException.class, () -> service.getSongChunk("hash-1", 5, 99L));
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.getSongChunk("hash-1", 5, allowedUser(99L)));
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
 
@@ -198,7 +208,9 @@ class StreamingServiceTest {
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
     ResponseStatusException ex =
-        assertThrows(ResponseStatusException.class, () -> service.getSongChunk("hash-1", -1, 99L));
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.getSongChunk("hash-1", -1, allowedUser(99L)));
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
 
@@ -219,7 +231,9 @@ class StreamingServiceTest {
         .thenReturn(Optional.of(sc));
 
     ResponseStatusException ex =
-        assertThrows(ResponseStatusException.class, () -> service.getSongChunk("hash-1", 0, 99L));
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.getSongChunk("hash-1", 0, allowedUser(99L)));
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
   }
 
@@ -230,7 +244,9 @@ class StreamingServiceTest {
     when(songRepository.findByFileHash("hash-1")).thenReturn(Optional.of(song));
 
     ResponseStatusException ex =
-        assertThrows(ResponseStatusException.class, () -> service.getSongChunk("hash-1", 0, 99L));
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.getSongChunk("hash-1", 0, allowedUser(99L)));
     assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
   }
 }

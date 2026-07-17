@@ -48,11 +48,6 @@ public class StreamingService {
     return manifest;
   }
 
-  ChunkManifestDto getSongManifest(String fileHash, Long userId) {
-    return getSongManifest(
-        fileHash, User.builder().id(userId).role(Role.USER).allowed(true).build());
-  }
-
   @Transactional(readOnly = true)
   public Resource getSongChunk(String fileHash, Integer chunkIndex, User user) {
     Song song = getSongOrThrow(fileHash);
@@ -71,11 +66,6 @@ public class StreamingService {
                         HttpStatus.BAD_REQUEST, "Chunk index out of bounds"));
 
     return readBytesFromDisk(songChunk.getChunk().getStoragePath());
-  }
-
-  Resource getSongChunk(String fileHash, Integer chunkIndex, Long userId) {
-    return getSongChunk(
-        fileHash, chunkIndex, User.builder().id(userId).role(Role.USER).allowed(true).build());
   }
 
   private Song getSongOrThrow(String fileHash) {

@@ -89,11 +89,6 @@ public class SongService {
     return songEnrichmentService.enrich(song, user.getId());
   }
 
-  public SongDto getSongByFileHash(String fileHash, Long userId) {
-    return getSongByFileHash(
-        fileHash, User.builder().id(userId).role(Role.USER).allowed(true).build());
-  }
-
   private boolean canAccessPublicSongs(User user) {
     return user.isAllowed() || user.getRole() == Role.ADMIN;
   }
