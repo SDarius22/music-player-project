@@ -156,18 +156,21 @@ public class PlaylistService {
   @Transactional
   public PlaylistExpandedDto updatePlaylist(Long playlistId, Long userId, UpdatePlaylistDto req) {
     Playlist playlist = findAndAuthorize(playlistId, userId);
-    if (req.getName() != null && !req.getName().equals(playlist.getName())) {
-      if (playlistRepository.existsByUser_IdAndName(userId, req.getName())) {
+    String requestedName = req.getName();
+    if (requestedName != null && !requestedName.equals(playlist.getName())) {
+      if (playlistRepository.existsByUser_IdAndName(userId, requestedName)) {
         throw new ResponseStatusException(
             HttpStatus.CONFLICT, "Playlist with this name already exists");
       }
-      playlist.setName(req.getName());
+      playlist.setName(requestedName);
     }
-    if (req.getPlaylistSongs() != null && !req.getPlaylistSongs().isEmpty()) {
-      replacePlaylistSongs(playlist, req.getPlaylistSongs());
+    List<PlaylistSongPositionDto> requestedSongs = req.getPlaylistSongs();
+    if (requestedSongs != null && !requestedSongs.isEmpty()) {
+      replacePlaylistSongs(playlist, requestedSongs);
     }
-    if (req.getCoverImage() != null) {
-      playlist.setCoverImage(req.getCoverImage().isBlank() ? null : req.getCoverImage());
+    String requestedCoverImage = req.getCoverImage();
+    if (requestedCoverImage != null) {
+      playlist.setCoverImage(requestedCoverImage.isBlank() ? null : requestedCoverImage);
     }
     playlist.setUpdatedAt(Instant.now());
 

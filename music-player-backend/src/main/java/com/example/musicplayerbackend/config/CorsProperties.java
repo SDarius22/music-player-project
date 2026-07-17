@@ -20,6 +20,6 @@ public class CorsProperties {
   }
 
   public List<String> allowedOrigins() {
-    return allowedOrigins;
+    return List.copyOf(allowedOrigins);
   }
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- OpenAPI models are regenerated from api.yml and must not be edited by hand. -->
+    <Match>
+        <Class name="~com\.example\.musicplayerbackend\.domain\..*(Dto|Request|Response)$"/>
+    </Match>
+    <Match>
+        <Class name="~com\.example\.musicplayerbackend\.controller\..*Api(Util)?$"/>
+    </Match>
+    <Match>
+        <Class name="~.*MapperImpl$"/>
+    </Match>
+
+    <!-- A live WebSocket session is a connection handle and cannot be defensively copied. -->
+    <Match>
+        <Class name="com.example.musicplayerbackend.domain.ClientConnection"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

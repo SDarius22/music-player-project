@@ -30,9 +30,12 @@ public class PlaybackStateService {
             .findById(userId)
             .orElseGet(() -> UserPlaybackState.builder().userId(userId).build());
 
-    state.setPositionSeconds(req.getPositionSeconds() == null ? 0L : req.getPositionSeconds());
-    state.setShuffle(req.getShuffle() != null ? req.getShuffle() : false);
-    state.setRepeat(req.getRepeat() != null ? req.getRepeat() : false);
+    Long positionSeconds = req.getPositionSeconds();
+    Boolean shuffle = req.getShuffle();
+    Boolean repeat = req.getRepeat();
+    state.setPositionSeconds(positionSeconds == null ? Long.valueOf(0L) : positionSeconds);
+    state.setShuffle(shuffle != null && shuffle);
+    state.setRepeat(repeat != null && repeat);
     if (req.getAutoPlay() != null) {
       state.setAutoPlay(req.getAutoPlay());
     } else if (state.getAutoPlay() == null) {

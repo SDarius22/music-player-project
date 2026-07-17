@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -127,20 +128,22 @@ public class SongService {
     boolean lastPlayedChanged = false;
 
     if (patch != null) {
-      if (patch.getLikedByUser() != null
-          && !Objects.equals(patch.getLikedByUser(), entry.getLiked())) {
-        entry.setLiked(patch.getLikedByUser());
+      Boolean likedByUser = patch.getLikedByUser();
+      if (likedByUser != null && !Objects.equals(likedByUser, entry.getLiked())) {
+        entry.setLiked(likedByUser);
         likedChanged = true;
       }
-      if (patch.getLastPlayed() != null) {
-        Instant newLastPlayed = patch.getLastPlayed().toInstant();
+      OffsetDateTime requestedLastPlayed = patch.getLastPlayed();
+      if (requestedLastPlayed != null) {
+        Instant newLastPlayed = requestedLastPlayed.toInstant();
         if (!Objects.equals(newLastPlayed, entry.getLastPlayed())) {
           entry.setLastPlayed(newLastPlayed);
           lastPlayedChanged = true;
         }
       }
-      if (patch.getPlayCount() != null) {
-        long newPlayCount = Math.max(0L, patch.getPlayCount());
+      Long requestedPlayCount = patch.getPlayCount();
+      if (requestedPlayCount != null) {
+        long newPlayCount = Math.max(0L, requestedPlayCount);
         Long currentPlayCount = entry.getPlayCount();
         if (!Objects.equals(currentPlayCount, newPlayCount)) {
           entry.setPlayCount(newPlayCount);

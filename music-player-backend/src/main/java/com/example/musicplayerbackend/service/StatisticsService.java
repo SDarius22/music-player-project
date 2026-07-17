@@ -24,10 +24,14 @@ public class StatisticsService {
 
   @Transactional
   public void record(ChunkStatDto dto, Long userId) {
-    int local = dto.getLocalChunks() == null ? 0 : dto.getLocalChunks();
-    int localCached = dto.getLocalCachedChunks() == null ? 0 : dto.getLocalCachedChunks();
-    int p2p = dto.getP2pChunks() == null ? 0 : dto.getP2pChunks();
-    int server = dto.getServerChunks() == null ? 0 : dto.getServerChunks();
+    Integer requestedLocal = dto.getLocalChunks();
+    Integer requestedLocalCached = dto.getLocalCachedChunks();
+    Integer requestedP2p = dto.getP2pChunks();
+    Integer requestedServer = dto.getServerChunks();
+    int local = requestedLocal == null ? 0 : requestedLocal;
+    int localCached = requestedLocalCached == null ? 0 : requestedLocalCached;
+    int p2p = requestedP2p == null ? 0 : requestedP2p;
+    int server = requestedServer == null ? 0 : requestedServer;
     int total = local + localCached + p2p + server;
     double pct = total > 0 ? p2p * 100.0 / total : 0.0;
 

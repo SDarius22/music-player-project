@@ -92,26 +92,11 @@ public class DefaultPlaylistService {
       return;
     }
 
-    List<PlaylistSong> entries = new ArrayList<>(songs.size());
-    int position = 0;
-    for (Song song : songs) {
-      if (song == null || song.getId() == null) {
-        continue;
-      }
-      entries.add(
-          PlaylistSong.builder()
-              .id(new PlaylistSongId(playlist.getId(), position++))
-              .playlist(playlist)
-              .song(song)
-              .build());
-    }
-    if (!entries.isEmpty()) {
-      playlistSongRepository.saveAll(entries);
-    }
+    int songCount = savePlaylistSongs(playlist, songs);
     log.info(
         "[PROVISION] Created default playlist '{}' with {} songs for userId={}",
         name,
-        entries.size(),
+        songCount,
         user.getId());
   }
 
@@ -164,6 +149,15 @@ public class DefaultPlaylistService {
     playlistSongRepository.deleteByPlaylist_Id(playlist.getId());
     playlistSongRepository.flush();
 
+    int songCount = savePlaylistSongs(playlist, songs);
+    log.info(
+        "[SYNC] Rebuilt default playlist '{}' for userId={} ({} songs)",
+        name,
+        userId,
+        songCount);
+  }
+
+  private int savePlaylistSongs(Playlist playlist, List<Song> songs) {
     List<PlaylistSong> entries = new ArrayList<>(songs.size());
     int position = 0;
     for (Song song : songs) {
@@ -180,11 +174,7 @@ public class DefaultPlaylistService {
     if (!entries.isEmpty()) {
       playlistSongRepository.saveAll(entries);
     }
-    log.info(
-        "[SYNC] Rebuilt default playlist '{}' for userId={} ({} songs)",
-        name,
-        userId,
-        entries.size());
+    return entries.size();
   }
 
   private List<Song> songsFromLibrary(List<UserLibrary> entries) {

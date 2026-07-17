@@ -72,6 +72,32 @@ class SongMapperTest {
   }
 
   @Test
+  void shouldEnrichSongDtoFromUserLibraryEntry() {
+    Song song = Song.builder().name("Song").fileHash("hash").build();
+    Instant lastPlayed = Instant.parse("2026-07-17T12:00:00Z");
+    UserLibrary entry =
+        UserLibrary.builder().lastPlayed(lastPlayed).playCount(7L).liked(true).build();
+
+    SongDto dto = songMapper.toDto(song, entry);
+
+    assertEquals(lastPlayed.atOffset(ZoneOffset.UTC), dto.getLastPlayed());
+    assertEquals(7L, dto.getPlayCount());
+    assertTrue(dto.getLikedByUser());
+  }
+
+  @Test
+  void shouldDefaultNullableUserLibraryValues() {
+    Song song = Song.builder().name("Song").fileHash("hash").build();
+    UserLibrary entry =
+        UserLibrary.builder().playCount(null).liked(null).isDeleted(false).build();
+
+    SongDto dto = songMapper.toDto(song, entry);
+
+    assertEquals(0L, dto.getPlayCount());
+    assertFalse(dto.getLikedByUser());
+  }
+
+  @Test
   void shouldConvertInstantToUtcOffsetDateTime() {
     Instant instant = Instant.parse("2024-01-15T10:00:00Z");
 

@@ -76,12 +76,13 @@ public class AuthService {
     <div style="font-family: Arial, sans-serif; color: #222; line-height: 1.5;">
       <h2 style="margin-bottom: 8px;">Your Login Code</h2>
       <p style="margin-top: 0;">Use this verification code to sign in:</p>
-      <div style="display: inline-block; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px 20px; margin: 8px 0 12px; font-size: 24px; font-weight: 700; letter-spacing: 4px;">%s</div>
-      <p style="margin: 0;">This code expires in <strong>%d minutes</strong>.</p>
+      <div style="display: inline-block; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px 20px; margin: 8px 0 12px; font-size: 24px; font-weight: 700; letter-spacing: 4px;">{{CODE}}</div>
+      <p style="margin: 0;">This code expires in <strong>{{MINUTES}} minutes</strong>.</p>
       <p style="margin-top: 12px; color: #555;">If you did not request this, you can safely ignore this email.</p>
     </div>
     """
-        .formatted(code, VERIFICATION_CODE_TTL_MINUTES);
+        .replace("{{CODE}}", code)
+        .replace("{{MINUTES}}", Long.toString(VERIFICATION_CODE_TTL_MINUTES));
   }
 
   public AuthResponse verifyCodeAndGenerateResponse(String email, String code) {

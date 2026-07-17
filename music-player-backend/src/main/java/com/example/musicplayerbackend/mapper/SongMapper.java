@@ -40,7 +40,8 @@ public interface SongMapper {
       dto.setLikedByUser(false);
     } else {
       dto.setLastPlayed(map(entry.getLastPlayed()));
-      dto.setPlayCount(entry.getPlayCount() == null ? 0L : entry.getPlayCount());
+      Long playCount = entry.getPlayCount();
+      dto.setPlayCount(playCount == null ? Long.valueOf(0L) : playCount);
       dto.setLikedByUser(Boolean.TRUE.equals(entry.getLiked()));
     }
     return dto;
