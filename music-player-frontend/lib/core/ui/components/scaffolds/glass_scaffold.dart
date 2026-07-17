@@ -3,6 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:glass_kit/glass_container.dart';
 
 class GlassScaffold extends StatelessWidget {
+  /// Key used to control the inner material scaffold.
+  final GlobalKey<ScaffoldState>? scaffoldKey;
+
+  /// Whether the glass shell follows the window's rounded presentation.
+  final bool roundedGlass;
+
+  /// Background color of the inner material scaffold.
+  final Color backgroundColor;
+
   /// An app bar to display at the top of the scaffold.
   final PreferredSizeWidget? appBar;
 
@@ -349,6 +358,9 @@ class GlassScaffold extends StatelessWidget {
 
   const GlassScaffold({
     super.key,
+    this.scaffoldKey,
+    this.roundedGlass = true,
+    this.backgroundColor = Colors.transparent,
     this.appBar,
     this.body,
     this.floatingActionButton,
@@ -384,8 +396,12 @@ class GlassScaffold extends StatelessWidget {
       borderWidth: 0.0,
       elevation: 0.0,
       alignment: Alignment.center,
-      borderRadius: BorderRadius.circular(height * 0.015),
+      borderRadius:
+          roundedGlass
+              ? BorderRadius.circular(height * 0.015)
+              : BorderRadius.zero,
       child: Scaffold(
+        key: scaffoldKey,
         appBar: appBar,
         body: body,
         floatingActionButton: floatingActionButton,
@@ -398,7 +414,7 @@ class GlassScaffold extends StatelessWidget {
         onEndDrawerChanged: onEndDrawerChanged,
         bottomNavigationBar: bottomNavigationBar,
         bottomSheet: bottomSheet,
-        backgroundColor: Colors.transparent,
+        backgroundColor: backgroundColor,
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
         primary: primary,
         drawerDragStartBehavior: drawerDragStartBehavior,

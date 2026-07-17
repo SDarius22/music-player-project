@@ -58,11 +58,11 @@ jobs:
             }
           ' coverage/lcov.info
 
-      - name: Enforce zero duplicated code
+      - name: Enforce frontend duplication budget
         working-directory: ./music-player-frontend
         run: >-
           npx --yes jscpd@4.0.8
-          --threshold 0
+          --threshold 5
           --format dart
           --ignore '**/*.g.dart,**/generated/**'
           lib

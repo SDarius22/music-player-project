@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart' as platform_service;
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
@@ -19,6 +20,13 @@ import 'package:music_player_frontend/core/repository/interfaces/chunk_stat_repo
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_album_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_artist_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_chunk_stat_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_playlist_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_settings_repository.dart';
+import 'package:music_player_frontend/core/repository/objectbox/objectbox_song_repository.dart';
+import 'package:music_player_frontend/core/repository/storage/io_chunk_cache_repo.dart';
 import 'package:music_player_frontend/core/rest_clients/album_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/artist_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
@@ -45,6 +53,8 @@ import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
+import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/welcome_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -378,9 +388,36 @@ abstract class AbstractApp extends StatelessWidget {
     return [];
   }
 
-  List<InheritedProvider> platformProviders(BuildContext context);
+  List<InheritedProvider> platformProviders(BuildContext context) {
+    return [
+      Provider<AlbumRepository>(create: (_) => ObjectBoxAlbumRepository()),
+      Provider<ArtistRepository>(create: (_) => ObjectBoxArtistRepository()),
+      Provider<PlaylistRepository>(
+        create: (_) => ObjectBoxPlaylistRepository(),
+      ),
+      Provider<SongRepository>(create: (_) => ObjectBoxSongRepository()),
+      Provider<ChunkCacheRepository>(create: (_) => IOChunkCacheRepository()),
+      Provider<ChunkStatRepository>(
+        create: (_) => ObjectBoxChunkStatRepository(),
+      ),
+      Provider<SettingsRepository>(
+        create: (_) => ObjectBoxSettingsRepository(),
+      ),
+    ];
+  }
 
-  Widget getAppWidget(BuildContext context);
+  Widget getAppWidget(BuildContext context) {
+    final appState = context.read<AbstractAppStateProvider>();
+    return MaterialApp(
+      navigatorKey: appState.outerNavigatorKey,
+      builder:
+          (context, child) => BotToastInit()(context, responsiveBuilder(child)),
+      debugShowCheckedModeBanner: false,
+      checkerboardOffscreenLayers: true,
+      theme: MusicPlayerTheme.getTheme(),
+      home: const LoadingScreen(),
+    );
+  }
 
   AbstractFileService createFileService(BuildContext context);
 
