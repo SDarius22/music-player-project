@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -70,6 +71,19 @@ class _TrackingAudioService extends AppAudioService {
   final List<bool> repeatCalls = [];
   final List<bool> shuffleCalls = [];
   final List<bool> autoPlayCalls = [];
+  final List<Song> testQueue = [];
+  int addLastCalls = 0;
+  int addNextCalls = 0;
+  int removeCalls = 0;
+  int setQueueCalls = 0;
+  int setCurrentCalls = 0;
+  int likeCalls = 0;
+
+  @override
+  List<Song> get queue => List.unmodifiable(testQueue);
+
+  @override
+  List<Song> get normalQueue => List.unmodifiable(testQueue);
 
   void seedSettings({
     required bool repeat,
@@ -137,6 +151,44 @@ class _TrackingAudioService extends AppAudioService {
   Future<void> setAutoPlay(bool autoPlay) async {
     autoPlayCalls.add(autoPlay);
   }
+
+  @override
+  Future<void> addToQueue(List<Song> songs) async {
+    addLastCalls++;
+    testQueue.addAll(songs);
+  }
+
+  @override
+  Future<void> addNextToQueue(List<Song> songs) async {
+    addNextCalls++;
+    testQueue.insertAll(0, songs);
+  }
+
+  @override
+  Future<void> removeFromQueue(Song song) async {
+    removeCalls++;
+    testQueue.remove(song);
+  }
+
+  @override
+  Future<void> setQueueAndPlay(List<Song> songs, Song song) async {
+    setQueueCalls++;
+    testQueue
+      ..clear()
+      ..addAll(songs);
+    currentSongNotifier.value = song;
+  }
+
+  @override
+  Future<void> setCurrentSongAndPlay(Song song) async {
+    setCurrentCalls++;
+    currentSongNotifier.value = song;
+  }
+
+  @override
+  Future<void> likeCurrentSong() async {
+    likeCalls++;
+  }
 }
 
 void main() {
@@ -149,6 +201,10 @@ void main() {
     late MockAudioPlayer mockAudioPlayer;
     late _TrackingAudioService service;
     late AudioProvider provider;
+    late StreamController<Duration?> durationController;
+    late StreamController<Duration> positionController;
+    late StreamController<Duration> bufferedController;
+    late StreamController<PlaybackEvent> eventController;
 
     setUp(() {
       mockSongService = MockSongService();
@@ -158,18 +214,23 @@ void main() {
       mockPlaybackRestClient = MockPlaybackRestClient();
       mockAudioPlayer = MockAudioPlayer();
 
+      durationController = StreamController<Duration?>.broadcast();
+      positionController = StreamController<Duration>.broadcast();
+      bufferedController = StreamController<Duration>.broadcast();
+      eventController = StreamController<PlaybackEvent>.broadcast();
+
       when(
         mockAudioPlayer.durationStream,
-      ).thenAnswer((_) => const Stream<Duration?>.empty());
+      ).thenAnswer((_) => durationController.stream);
       when(
         mockAudioPlayer.positionStream,
-      ).thenAnswer((_) => const Stream<Duration>.empty());
+      ).thenAnswer((_) => positionController.stream);
       when(
         mockAudioPlayer.bufferedPositionStream,
-      ).thenAnswer((_) => const Stream<Duration>.empty());
+      ).thenAnswer((_) => bufferedController.stream);
       when(
         mockAudioPlayer.playbackEventStream,
-      ).thenAnswer((_) => const Stream<PlaybackEvent>.empty());
+      ).thenAnswer((_) => eventController.stream);
       when(mockAudioPlayer.playing).thenReturn(false);
       when(mockAudioPlayer.processingState).thenReturn(ProcessingState.idle);
       when(mockAudioPlayer.position).thenReturn(Duration.zero);
@@ -193,8 +254,12 @@ void main() {
       provider = AudioProvider(service, _FakeFileService());
     });
 
-    tearDown(() {
+    tearDown(() async {
       provider.dispose();
+      await durationController.close();
+      await positionController.close();
+      await bufferedController.close();
+      await eventController.close();
     });
 
     test('initializes notifier state from audio settings', () {
@@ -253,6 +318,103 @@ void main() {
       expect(service.repeatCalls, [false]);
       expect(service.shuffleCalls, [true]);
       expect(service.autoPlayCalls, [false]);
+    });
+
+    test('seek, stop, next, shuffle wait, and peer count delegate', () async {
+      await provider.seek(const Duration(milliseconds: 250));
+      await provider.stop();
+      await provider.skipToNext();
+      await provider.setShuffleAndWait(true);
+
+      expect(provider.sliderNotifier.value, 250);
+      expect(service.seekCalls, [const Duration(milliseconds: 250)]);
+      expect(service.stopCalls, 1);
+      expect(service.skipNextCalls, 1);
+      expect(service.shuffleCalls, [true]);
+      expect(provider.getCurrentSongPeerCount(), 0);
+    });
+
+    test(
+      'uses song duration when available and service duration otherwise',
+      () async {
+        expect(await provider.getDuration(), Duration.zero);
+        final song = Song('song')..durationInSeconds = 42;
+        service.currentSongNotifier.value = song;
+        expect(await provider.getDuration(), const Duration(seconds: 42));
+      },
+    );
+
+    test(
+      'player streams update position, buffer, duration, and state',
+      () async {
+        final song = Song('song');
+        service.currentSongNotifier.value = song;
+        durationController.add(const Duration(seconds: 12));
+        positionController.add(const Duration(milliseconds: 1500));
+        bufferedController.add(const Duration(seconds: 8));
+        eventController.add(PlaybackEvent());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          provider.totalDurationNotifier.value,
+          const Duration(seconds: 12),
+        );
+        expect(provider.sliderNotifier.value, 1500);
+        expect(provider.bufferedPositionNotifier.value, 8);
+        expect(provider.processingState.value, ProcessingState.idle);
+        verify(mockSongService.updateSong(song)).called(1);
+      },
+    );
+
+    test(
+      'current-song changes update duration and queue indices safely',
+      () async {
+        expect(provider.currentIndexInNonShuffled, -1);
+        final song = Song('song')..durationInSeconds = 9;
+        service.currentSongNotifier.value = song;
+        await Future<void>.delayed(Duration.zero);
+        expect(provider.currentSong, song);
+        expect(
+          provider.totalDurationNotifier.value,
+          const Duration(seconds: 9),
+        );
+      },
+    );
+
+    test('queue accessors and mutations delegate and notify', () async {
+      final a = Song('a');
+      final b = Song('b');
+      service.testQueue.add(a);
+      service.currentSongNotifier.value = a;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(provider.currentIndexInNonShuffled, 0);
+      expect(provider.currentIndexInPlaybackQueue, 0);
+      expect(provider.playbackQueue, [a]);
+      expect(provider.normalQueue, [a]);
+
+      await provider.addLastToQueue([b]);
+      await provider.addNextToQueue([Song('c')]);
+      await provider.removeFromQueue(b);
+      await provider.setQueueAndPlay([a, b], b);
+      await provider.setCurrentSongAndPlay(a);
+      await provider.likeCurrentSong();
+
+      expect(service.addLastCalls, 1);
+      expect(service.addNextCalls, 1);
+      expect(service.removeCalls, 1);
+      expect(service.setQueueCalls, 1);
+      expect(service.setCurrentCalls, 1);
+      expect(service.likeCalls, 1);
+    });
+
+    test('current song notifiers are exposed', () {
+      expect(provider.currentSongNotifier, same(service.currentSongNotifier));
+      expect(provider.likedNotifier, same(service.likedNotifier));
+      expect(
+        provider.songPeerCountNotifier,
+        same(service.songPeerCountNotifier),
+      );
     });
   });
 }

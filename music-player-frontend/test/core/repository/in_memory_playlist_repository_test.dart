@@ -28,6 +28,32 @@ void main() {
       expect(repo.getNormalPlaylists(0, 10).map((p) => p.getName()), [
         'Regular',
       ]);
+      expect(repo.getIndestructiblePlaylistCount(), 1);
+      expect(repo.getNormalPlaylistCount(), 1);
+      expect(repo.getPlaylistCount('reg', false), 1);
+      expect(repo.sortFields.keys, ['Name', 'Created At']);
+      expect(repo.getIndestructiblePlaylists(5, 10), isEmpty);
+      expect(repo.getNormalPlaylists(5, 10), isEmpty);
+    });
+
+    test('all, paged, and deletion operations retain stable ordering', () {
+      final repo = InMemoryPlaylistRepository();
+      final zebra = repo.savePlaylist(Playlist('Zebra'));
+      repo.savePlaylist(Playlist('Alpha'));
+      repo.savePlaylist(Playlist('Pinned')..indestructible = true);
+
+      expect(repo.getAllPlaylists().map((p) => p.name), [
+        'Pinned',
+        'Alpha',
+        'Zebra',
+      ]);
+      expect(
+        repo.getPlaylistsPaged('', 'Name', true, false, 1, 1).single.name,
+        'Pinned',
+      );
+      expect(repo.getPlaylistsPaged('', 'Name', true, false, 9, 1), isEmpty);
+      repo.deletePlaylist(zebra);
+      expect(repo.getPlaylistByName('Zebra'), isNull);
     });
   });
 }

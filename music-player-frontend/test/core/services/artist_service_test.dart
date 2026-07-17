@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_expanded_dto.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_album_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_artist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_song_repository.dart';
@@ -47,6 +52,140 @@ void main() {
 
       expect(cached.getSongs().map((s) => s.getHash()).toSet(), {'s1', 's2'});
       expect(songRepo.getSongByFileHash('s1')?.artist.target, same(cached));
+    });
+
+    test(
+      'updateArtist delegates and fetch details caches server data',
+      () async {
+        final artist = service.getOrCreateArtist('Artist');
+        service.updateArtist(artist);
+        expect(artistRepo.getArtistByHash(artist.hash), same(artist));
+
+        await http.runWithClient(
+          () async {
+            final fetched = await service.fetchArtistDetails('server-hash');
+            expect(fetched!.name, 'Server Artist');
+            expect(fetched.getSongs().single.fileHash, 'song');
+          },
+          () => MockClient(
+            (_) async => http.Response(
+              jsonEncode({
+                'hash': 'server-hash',
+                'name': 'Server Artist',
+                'songFileHashes': ['song'],
+              }),
+              200,
+            ),
+          ),
+        );
+      },
+    );
+
+    test('fetch details falls back to locally cached artist', () async {
+      final local = artistRepo.saveArtist(Artist('hash', 'Local'));
+      await http.runWithClient(() async {
+        expect(await service.fetchArtistDetails('hash'), same(local));
+      }, () => MockClient((_) async => http.Response('', 500)));
+    });
+
+    test(
+      'gets server-backed artist page and caches returned artists',
+      () async {
+        await http.runWithClient(
+          () async {
+            final result = await service.getArtistsPage(
+              'query',
+              'name',
+              false,
+              false,
+              0,
+              10,
+            );
+            expect(result.totalPages, 2);
+            expect(artistRepo.getArtistByHash('remote'), isNotNull);
+          },
+          () => MockClient(
+            (_) async => http.Response(
+              jsonEncode({
+                'content': [
+                  {
+                    'hash': 'remote',
+                    'name': 'Remote',
+                    'songFileHashes': <String>[],
+                  },
+                ],
+                'page': 0,
+                'size': 10,
+                'totalPages': 2,
+                'totalElements': 1,
+              }),
+              200,
+            ),
+          ),
+        );
+      },
+    );
+
+    test('falls back to local artist and song paging', () async {
+      final artist = artistRepo.saveArtist(Artist('artist', 'Artist'));
+      final song =
+          songRepo.getOrCreateSong('song')
+            ..fullyLoaded = true
+            ..path = '/tmp/song.mp3';
+      song.artist.target = artist;
+      songRepo.updateSong(song);
+
+      final artists = await service.getArtistsPage(
+        '',
+        'name',
+        true,
+        true,
+        0,
+        10,
+      );
+      expect(artists.content, [artist]);
+      expect(artists.totalPages, 0);
+
+      final songs = await service.getArtistSongsPage(
+        'artist',
+        localOnly: true,
+        size: 10,
+      );
+      expect(songs.content, [song]);
+      expect(songs.totalPages, 1);
+    });
+
+    test('caches complete server songs from artist song paging', () async {
+      await http.runWithClient(
+        () async {
+          final result = await service.getArtistSongsPage('artist', size: 10);
+          expect(result.totalPages, 3);
+          expect(songRepo.getSongByFileHash('song')!.fullyLoaded, isTrue);
+        },
+        () => MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'content': [
+                {
+                  'fileHash': 'song',
+                  'name': 'Track',
+                  'durationInSeconds': 10,
+                  'trackNumber': 1,
+                  'discNumber': 1,
+                  'year': 2025,
+                  'artist': {'hash': 'artist', 'name': 'Artist'},
+                  'album': {'hash': 'album', 'name': 'Album'},
+                },
+              ],
+              'page': 0,
+              'size': 10,
+              'totalPages': 3,
+              'totalElements': 1,
+            }),
+            200,
+          ),
+        ),
+      );
     });
   });
 }

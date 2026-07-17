@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player_frontend/core/entities/album.dart';
@@ -37,6 +38,34 @@ void main() {
       song.album.target = null;
       expect(song.getCoverArt(), equals(artist.imageBytes));
     });
+
+    test('metadata helpers, colours, update, and diagnostics work', () {
+      final artist = Artist('artist', 'Performer');
+      final album = Album('album', 'Record')
+        ..colors = const [Color(0xff123456)];
+      final source =
+          Song('hash')
+            ..name = 'Title'
+            ..durationInSeconds = 12
+            ..trackNumber = 2
+            ..discNumber = 3
+            ..year = 2025
+            ..path = '/tmp/song.mp3'
+            ..fullyLoaded = true;
+      source.artist.target = artist;
+      source.album.target = album;
+      final target = Song('hash')..updateFrom(source);
+
+      expect(target.getName(), 'Title');
+      expect(target.getSecondaryText(), 'Performer');
+      expect(target.getHash(), 'hash');
+      expect(target.getImageUrl(), '/songs/hash/cover');
+      expect(target.getColors(), album.colors);
+      expect(target.toString(), contains('Title'));
+      expect(() => target.updateFrom(Song('other')), throwsArgumentError);
+      target.album.target = null;
+      expect(target.getColors(), isEmpty);
+    });
   });
 
   group('Album', () {
@@ -49,6 +78,41 @@ void main() {
       album.addSong(local);
       album.addSong(remote);
       expect(album.isLocal, isTrue);
+    });
+
+    test('sorts songs, replaces duplicates, and exposes metadata', () {
+      final artist = Artist('artist', 'Artist');
+      final album = Album('album', 'Album')..setArtist(artist);
+      album.addSong(
+        Song('b')
+          ..name = 'Beta'
+          ..discNumber = 2
+          ..trackNumber = 1
+          ..durationInSeconds = 20,
+      );
+      album.addSong(
+        Song('a')
+          ..name = 'Alpha'
+          ..discNumber = 1
+          ..trackNumber = 2
+          ..durationInSeconds = 10,
+      );
+      album.addSong(
+        Song('a')
+          ..name = 'Replacement'
+          ..discNumber = 1
+          ..trackNumber = 1
+          ..durationInSeconds = 15,
+      );
+      expect(album.getSongs().map((song) => song.name), [
+        'Replacement',
+        'Beta',
+      ]);
+      expect(album.getDurationInSeconds(), 35);
+      expect(album.getSecondaryText(), 'Artist');
+      expect(album.getHash(), 'album');
+      expect(album.getImageUrl(), '/albums/album/cover');
+      expect(album.toString(), contains('Album'));
     });
   });
 
@@ -101,6 +165,26 @@ void main() {
       playlist.clearSongs();
       expect(playlist.getSongs(), isEmpty);
       expect(playlist.getDurationInSeconds(), 0);
+    });
+
+    test('insert, duplicate guard, metadata, art, and rename work', () {
+      final playlist =
+          Playlist('Old')
+            ..serverId = 7
+            ..imageBytes = Uint8List.fromList([4]);
+      final a = Song('a')..durationInSeconds = 5;
+      final b = Song('b')..durationInSeconds = 6;
+      playlist.addSong(a);
+      playlist.insertSongAt(b, 0);
+      playlist.addSong(a);
+      playlist.setName('New');
+      expect(playlist.getSongs().map((song) => song.fileHash), ['b', 'a']);
+      expect(playlist.getName(), 'New');
+      expect(playlist.getSecondaryText(), '2 Songs');
+      expect(playlist.getHash(), '7');
+      expect(playlist.getImageUrl(), '/playlists/7/cover');
+      expect(playlist.getCoverArt(), [4]);
+      expect(playlist.toString(), contains('New'));
     });
 
     test('isLocal is true when at least one song is local', () {

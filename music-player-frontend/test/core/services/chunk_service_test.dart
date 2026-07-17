@@ -73,6 +73,27 @@ void main() {
     expect(service.isReady, isTrue);
     verify(mockWebRtc.discoverPeers('song-hash')).called(1);
     verify(mockWebRtc.registerCache('song-hash', [0, 1])).called(1);
+    expect(service.totalBytes, 8);
+    expect(service.totalChunks, 2);
+    expect(service.songName, isNull);
+    expect(service.availablePeerCount, 0);
+    expect(service.peerStateVersionNotifier, isNotNull);
+
+    await service.loadManifest();
+    verify(mockStreamingClient.fetchManifest('song-hash')).called(1);
+  });
+
+  test('loadManifest propagates download failures', () async {
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenThrow(Exception('offline'));
+    final service = ChunkService(
+      fileHash: 'song-hash',
+      cacheRepo: mockCacheRepo,
+      streamingClient: mockStreamingClient,
+      webrtcManager: mockWebRtc,
+    );
+    expect(service.loadManifest(), throwsException);
   });
 
   test('getChunk returns local cached chunk without server request', () async {
@@ -229,6 +250,56 @@ void main() {
     await service.prefetchChunk(3);
 
     verify(mockCacheRepo.saveChunk('song-hash', 3, data)).called(1);
+  });
+
+  test('prefetch skips out-of-range and already cached chunks', () async {
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 2));
+    when(
+      mockCacheRepo.readChunk('song-hash', 1),
+    ).thenAnswer((_) async => Uint8List.fromList([1]));
+    final service = ChunkService(
+      fileHash: 'song-hash',
+      cacheRepo: mockCacheRepo,
+      streamingClient: mockStreamingClient,
+      webrtcManager: mockWebRtc,
+    );
+    await service.loadManifest();
+    await service.prefetchChunk(2);
+    await service.prefetchChunk(1);
+    verifyNever(
+      mockStreamingClient.downloadChunkFallback(
+        any,
+        any,
+        prefetch: anyNamed('prefetch'),
+      ),
+    );
+  });
+
+  test('prefetch accepts a valid peer response', () async {
+    final data = Uint8List.fromList([8, 6]);
+    final hashes = List<String>.filled(3, hashOf(Uint8List.fromList([0])));
+    hashes[2] = hashOf(data);
+    when(
+      mockStreamingClient.fetchManifest('song-hash'),
+    ).thenAnswer((_) async => buildManifest(totalChunks: 3, hashes: hashes));
+    when(
+      mockWebRtc.getSortedPeersForChunk('song-hash', 2),
+    ).thenReturn(const ['peer']);
+    final service = ChunkService(
+      fileHash: 'song-hash',
+      cacheRepo: mockCacheRepo,
+      streamingClient: mockStreamingClient,
+      webrtcManager: mockWebRtc,
+    );
+    await service.loadManifest();
+    final pending = service.prefetchChunk(2);
+    await Future<void>.delayed(Duration.zero);
+    service.resolvePeerRequest(2, data);
+    await pending;
+    expect(service.wasServedByP2P(2), isTrue);
+    verify(mockCacheRepo.saveChunk('song-hash', 2, data)).called(1);
   });
 
   test(

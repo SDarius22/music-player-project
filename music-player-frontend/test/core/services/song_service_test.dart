@@ -47,6 +47,28 @@ class FakeSongRestClient extends SongRestClient {
     totalPages: 0,
     totalElements: 0,
   );
+  SongPageDto recommendationsPage = SongPageDto(
+    content: const [],
+    page: 0,
+    size: 50,
+    totalPages: 0,
+    totalElements: 0,
+  );
+  SongPageDto forgottenPage = SongPageDto(
+    content: const [],
+    page: 0,
+    size: 50,
+    totalPages: 0,
+    totalElements: 0,
+  );
+  SongPageDto quickDialPage = SongPageDto(
+    content: const [],
+    page: 0,
+    size: 50,
+    totalPages: 0,
+    totalElements: 0,
+  );
+  bool throwOnLists = false;
   bool throwOnUpdate = false;
 
   @override
@@ -71,18 +93,35 @@ class FakeSongRestClient extends SongRestClient {
 
   @override
   Future<SongPageDto> getFavourites({int page = 0, int size = 250}) async {
+    if (throwOnLists) throw Exception('offline');
     return favouritesPage;
   }
 
   @override
   Future<SongPageDto> getMostPlayed({int page = 0, int size = 50}) async {
+    if (throwOnLists) throw Exception('offline');
     return mostPlayedPage;
   }
 
   @override
   Future<SongPageDto> getRecentlyPlayed({int page = 0, int size = 50}) async {
+    if (throwOnLists) throw Exception('offline');
     return recentlyPlayedPage;
   }
+
+  @override
+  Future<SongPageDto> getRecommendations({int page = 0, int size = 50}) async =>
+      recommendationsPage;
+
+  @override
+  Future<SongPageDto> getForgottenFavourites({
+    int page = 0,
+    int size = 50,
+  }) async => forgottenPage;
+
+  @override
+  Future<SongPageDto> getQuickDial({int page = 0, int size = 50}) async =>
+      quickDialPage;
 
   @override
   Future<SongDto?> updateSongLibraryEntry(
@@ -185,6 +224,16 @@ void main() {
       expect(() => service.getOrCreateSong(''), throwsArgumentError);
     });
 
+    test('exposes repository metadata, stream, and basic mutations', () async {
+      expect(service.sortFields, isNotEmpty);
+      expect(service.watchSongs, isA<Stream<dynamic>>());
+      final song = service.getOrCreateSong('created');
+      service.updateSongsBatch([song..name = 'Updated']);
+      expect(service.getLocalSong('created')?.name, 'Updated');
+      service.deleteSong(song);
+      expect(service.getLocalSong('created'), isNull);
+    });
+
     test(
       'fullyFetchSong returns same song when already fully loaded',
       () async {
@@ -214,6 +263,69 @@ void main() {
       final result = await service.fullyFetchSong(partial);
 
       expect(result, same(partial));
+    });
+
+    test('fullyFetchSongs downloads and caches every partial song', () async {
+      restClient.byHash['one'] = buildSongDto('one');
+      restClient.byHash['two'] = buildSongDto('two');
+      final result = await service.fullyFetchSongs([Song('one'), Song('two')]);
+      expect(result.map((song) => song.getHash()), ['one', 'two']);
+      expect(result.every((song) => song.fullyLoaded), isTrue);
+    });
+
+    test(
+      'server page is cached and its total page count is retained',
+      () async {
+        restClient.songsPage = SongPageDto(
+          content: [buildSongDto('paged')],
+          page: 1,
+          size: 1,
+          totalPages: 4,
+          totalElements: 4,
+        );
+        final page = await service.getSongsPage(
+          'Track',
+          'duration',
+          null,
+          null,
+          null,
+          false,
+          false,
+          1,
+          1,
+        );
+        expect(page.totalPages, 4);
+        expect(songRepo.getSongByFileHash('paged'), isNotNull);
+      },
+    );
+
+    test('recommendation collections are cached', () async {
+      SongPageDto page(String hash) => SongPageDto(
+        content: [buildSongDto(hash)],
+        page: 0,
+        size: 1,
+        totalPages: 1,
+        totalElements: 1,
+      );
+      restClient.recommendationsPage = page('recommendation');
+      restClient.forgottenPage = page('forgotten');
+      restClient.quickDialPage = page('quick');
+      expect(
+        (await service.getRecommendations(0, 1)).content.single.getHash(),
+        'recommendation',
+      );
+      expect(
+        (await service.getForgottenFavourites()).single.getHash(),
+        'forgotten',
+      );
+      expect((await service.getQuickDial()).single.getHash(), 'quick');
+    });
+
+    test('invalid server songs are rejected', () {
+      expect(
+        () => service.cacheServerSongs([buildSongDto('')]),
+        throwsException,
+      );
     });
 
     test(
@@ -282,5 +394,12 @@ void main() {
         expect(result.single.getHash(), 'recent-1');
       },
     );
+
+    test('empty recommendation fallbacks survive server failures', () async {
+      restClient.throwOnLists = true;
+      expect(await service.getFavoriteSongs(), isEmpty);
+      expect(await service.getMostPlayedSongs(2), isEmpty);
+      expect(await service.getRecentlyPlayedSongs(2), isEmpty);
+    });
   });
 }
