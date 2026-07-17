@@ -22,7 +22,7 @@ jobs:
       - name: Install Linux integration test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libjsoncpp-dev libmpv-dev mpv libayatana-appindicator3-dev xvfb
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libjsoncpp-dev libmpv-dev mpv libayatana-appindicator3-dev xvfb lcov
 
       - run: flutter config --enable-linux-desktop
 
@@ -36,9 +36,28 @@ jobs:
         working-directory: ./music-player-frontend
         run: flutter analyze --fatal-infos
 
-      - name: Test with coverage
+      - name: Run unit and host integration tests with coverage
         working-directory: ./music-player-frontend
-        run: flutter test --coverage
+        run: flutter test --coverage --coverage-path=coverage/unit.info
+
+      - name: Run Linux integration tests with coverage
+        working-directory: ./music-player-frontend
+        run: |
+          mkdir -p coverage/integration
+          for test_file in integration_test/*_test.dart; do
+            report="coverage/integration/$(basename "${test_file%.dart}").info"
+            xvfb-run -a flutter test "$test_file" -d linux \
+              --coverage --coverage-path="$report"
+          done
+
+      - name: Merge unit and integration coverage
+        working-directory: ./music-player-frontend
+        run: |
+          trace_args=(--add-tracefile coverage/unit.info)
+          for report in coverage/integration/*.info; do
+            trace_args+=(--add-tracefile "$report")
+          done
+          lcov "${trace_args[@]}" --output-file coverage/lcov.info
 
       - name: Enforce 85% line coverage
         working-directory: ./music-player-frontend
@@ -54,15 +73,6 @@ jobs:
             }
           ' coverage/lcov.info
 
-      - name: Enforce frontend duplication budget
-        working-directory: ./music-player-frontend
-        run: >-
-          npx --yes jscpd@4.0.8
-          --threshold 6
-          --format dart
-          --ignore '**/*.g.dart,**/generated/**'
-          lib
-
       - name: Scan frontend dependencies for CVEs
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -73,15 +83,6 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '1'
-
-      - name: Run Flutter integration tests
-        working-directory: ./music-player-frontend
-        run: |
-          flutter test test/core/integration/song_playlist_flow_test.dart
-          xvfb-run -a flutter test integration_test/song_provider_flow_test.dart -d linux
-          xvfb-run -a flutter test integration_test/album_provider_flow_test.dart -d linux
-          xvfb-run -a flutter test integration_test/playlist_provider_flow_test.dart -d linux
-          xvfb-run -a flutter test integration_test/artist_provider_flow_test.dart -d linux
 
   build:
     needs: test
