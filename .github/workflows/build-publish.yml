@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   test:
@@ -74,14 +73,6 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '1'
-
-      - name: Upload frontend coverage
-        uses: codecov/codecov-action@v5
-        with:
-          files: music-player-frontend/coverage/lcov.info
-          flags: frontend
-          fail_ci_if_error: true
-          use_oidc: true
 
       - name: Run Flutter integration tests
         working-directory: ./music-player-frontend
