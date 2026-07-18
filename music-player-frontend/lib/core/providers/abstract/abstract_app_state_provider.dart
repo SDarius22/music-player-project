@@ -46,6 +46,8 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
     ),
   );
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  List<ConnectivityResult> _connectivityResults = const [];
+  VoidCallback? _healthListener;
   VoidCallback? _audioProviderListener;
   VoidCallback? _currentSongListener;
   VoidCallback? _playingListener;
@@ -77,52 +79,21 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
     _isInitialized = true;
     appSettings = settingsService.getAppSettings();
 
-    if (!UniversalPlatform.isWeb) {
-      _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
-        List<ConnectivityResult> result,
+    _healthListener = _updateConnectivityStatus;
+    healthService.isHealthy.addListener(_healthListener!);
+
+    if (UniversalPlatform.isWeb) {
+      _updateConnectivityStatus();
+    } else {
+      final connectivity = Connectivity();
+      _connectivitySubscription = connectivity.onConnectivityChanged.listen((
+        results,
       ) {
-        if (result.contains(ConnectivityResult.none)) {
-          connectivityStatusNotifier.value = const Tooltip(
-            message: "No Internet Connection",
-            child: Icon(FluentIcons.signalCellularOff, color: Colors.red),
-          );
-          shouldDisplayLocalOnly.value = true;
-          return;
-        }
-
-        if (!healthService.isHealthy.value) {
-          connectivityStatusNotifier.value = const Tooltip(
-            message: "Server is unreachable",
-            child: Icon(FluentIcons.error, color: Colors.red),
-          );
-          shouldDisplayLocalOnly.value = true;
-          return;
-        }
-
-        if (result.contains(ConnectivityResult.wifi)) {
-          connectivityStatusNotifier.value = const Tooltip(
-            message: "Connected to Wi-Fi",
-            child: Icon(FluentIcons.wifi, color: Colors.green),
-          );
-          shouldDisplayLocalOnly.value = false;
-          return;
-        }
-
-        if (result.contains(ConnectivityResult.mobile)) {
-          connectivityStatusNotifier.value = const Tooltip(
-            message: "Connected to Mobile Data",
-            child: Icon(FluentIcons.signalCellularOn, color: Colors.orange),
-          );
-          shouldDisplayLocalOnly.value = false;
-          return;
-        }
-
-        connectivityStatusNotifier.value = const Tooltip(
-          message: "No Internet Connection",
-          child: Icon(FluentIcons.signalCellularOff, color: Colors.red),
-        );
-        shouldDisplayLocalOnly.value = true;
+        _connectivityResults = results;
+        _updateConnectivityStatus();
       });
+      _connectivityResults = await connectivity.checkConnectivity();
+      _updateConnectivityStatus();
     }
 
     _currentSongListener = () {
@@ -145,6 +116,49 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
     audioProvider.playingNotifier.addListener(_playingListener!);
   }
 
+  void _updateConnectivityStatus() {
+    final hasNetwork =
+        UniversalPlatform.isWeb ||
+        (_connectivityResults.isNotEmpty &&
+            !_connectivityResults.contains(ConnectivityResult.none));
+
+    if (!hasNetwork) {
+      connectivityStatusNotifier.value = const Tooltip(
+        message: "No Internet Connection",
+        child: Icon(FluentIcons.signalCellularOff, color: Colors.red),
+      );
+      shouldDisplayLocalOnly.value = true;
+      return;
+    }
+
+    if (!healthService.isHealthy.value) {
+      connectivityStatusNotifier.value = const Tooltip(
+        message: "Server is unreachable",
+        child: Icon(FluentIcons.error, color: Colors.red),
+      );
+      shouldDisplayLocalOnly.value = true;
+      return;
+    }
+
+    if (_connectivityResults.contains(ConnectivityResult.mobile)) {
+      connectivityStatusNotifier.value = const Tooltip(
+        message: "Connected to Mobile Data",
+        child: Icon(FluentIcons.signalCellularOn, color: Colors.orange),
+      );
+    } else if (_connectivityResults.contains(ConnectivityResult.wifi)) {
+      connectivityStatusNotifier.value = const Tooltip(
+        message: "Connected to Wi-Fi",
+        child: Icon(FluentIcons.wifi, color: Colors.green),
+      );
+    } else {
+      connectivityStatusNotifier.value = const Tooltip(
+        message: "Connected",
+        child: Icon(FluentIcons.wifi, color: Colors.green),
+      );
+    }
+    shouldDisplayLocalOnly.value = false;
+  }
+
   @override
   void dispose() {
     if (_currentSongListener != null) {
@@ -157,6 +171,9 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
       audioProvider.playingNotifier.removeListener(_playingListener!);
     }
     _connectivitySubscription?.cancel();
+    if (_healthListener != null) {
+      healthService.isHealthy.removeListener(_healthListener!);
+    }
     super.dispose();
   }
 

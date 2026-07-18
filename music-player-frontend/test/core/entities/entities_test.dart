@@ -6,22 +6,67 @@ import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
+import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 
 void main() {
+  group('ChunkStat', () {
+    test('calculates server offload from every non-server source', () {
+      final stat = ChunkStat(
+        songFileHash: 'song',
+        songName: 'Song',
+        localChunks: 20,
+        localCachedChunks: 30,
+        p2pChunks: 10,
+        serverChunks: 40,
+      );
+
+      expect(stat.serverOffloadedChunks, 60);
+      expect(stat.serverOffloadPercentage, 60);
+      expect(stat.p2pPercentage, 10);
+    });
+
+    test('server offload is zero when no chunks were delivered', () {
+      final stat = ChunkStat(songFileHash: 'song', songName: 'Song');
+
+      expect(stat.serverOffloadedChunks, 0);
+      expect(stat.serverOffloadPercentage, 0);
+    });
+  });
+
   group('Song', () {
     test('equality is based on fileHash', () {
       expect(Song('same-hash'), equals(Song('same-hash')));
       expect(Song('hash-a'), isNot(equals(Song('hash-b'))));
     });
 
-    test('isLocal uses path presence', () {
+    test('local and offline availability distinguish files from chunks', () {
       final local = Song('local-hash')..path = '/music/song.mp3';
       final remote = Song('remote-hash');
+      final partial =
+          Song('partial-hash')
+            ..manifestChunkSize = 4
+            ..manifestTotalBytes = 16
+            ..chunkHashes = List<String>.filled(4, '0' * 64)
+            ..cachedChunkCount = 1;
+      final cached =
+          Song('cached-hash')
+            ..manifestChunkSize = 4
+            ..manifestTotalBytes = 16
+            ..chunkHashes = List<String>.filled(4, '0' * 64)
+            ..cachedChunkCount = 4
+            ..fullyCached = true;
 
       expect(local.isLocal, isTrue);
+      expect(local.isPlayableOffline, isTrue);
       expect(remote.isLocal, isFalse);
+      expect(remote.isPlayableOffline, isFalse);
+      expect(partial.hasCachedChunks, isTrue);
+      expect(partial.isLocal, isFalse);
+      expect(partial.isPlayableOffline, isFalse);
+      expect(cached.isFullyCached, isTrue);
+      expect(cached.isPlayableOffline, isTrue);
     });
 
     test('getCoverArt falls back from album to artist', () {

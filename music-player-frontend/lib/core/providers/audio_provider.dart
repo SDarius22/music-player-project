@@ -166,6 +166,8 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> downloadSong(Song song) => _audioService.downloadSong(song);
+
   @override
   Future<void> seek(Duration position) async {
     sliderNotifier.value = position.inMilliseconds;
@@ -303,7 +305,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     if (!_colorExtractionInProgress.add(key)) return;
 
     try {
-      final colors = await WorkerService.extractColors(coverArt);
+      final colors = await WorkerService.getColorIsolate(coverArt);
       if (colors.length != 4) {
         _logger.warning(
           'Color extraction for ${song.getName()} returned ${colors.length} colors',

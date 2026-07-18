@@ -1,15 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_dto.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_dto.dart';
+import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/entities/local_track.dart';
+import 'package:music_player_frontend/core/repository/memory/in_memory_local_track_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_album_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_artist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
+import 'package:music_player_frontend/core/services/local_track_service.dart';
+import 'package:music_player_frontend/core/services/potential_identity.dart';
 
 class FakeSongRestClient extends SongRestClient {
   FakeSongRestClient()
@@ -200,6 +205,7 @@ void main() {
       final local =
           Song('h1')
             ..name = 'Track'
+            ..path = '/music/track.flac'
             ..fullyLoaded = true;
       songRepo.saveSong(local);
 
@@ -220,8 +226,151 @@ void main() {
       expect(page.totalPages, 1);
     });
 
+    test(
+      'offline and stream filters intersect after identity merging',
+      () async {
+        final localRepository = InMemoryLocalTrackRepository();
+        final localTracks = LocalTrackService(localRepository);
+        final identity = PotentialIdentity.create(
+          title: 'Shared Track',
+          artist: 'Artist',
+          durationInSeconds: 120,
+        );
+        localRepository.save(
+          LocalTrack(
+            sourceKey: '/music/shared.flac',
+            sourceUri: '/music/shared.flac',
+            potentialIdentityKey: identity,
+            name: 'Shared Track',
+            artistName: 'Artist',
+            durationInSeconds: 120,
+            metadataLoaded: true,
+          ),
+        );
+        restClient.songsPage = SongPageDto(
+          content: [
+            SongDto(
+              fileHash: 'remote-shared',
+              name: 'Shared Track',
+              durationInSeconds: 120,
+              trackNumber: 1,
+              discNumber: 1,
+              year: 2024,
+              artist: ArtistDto(hash: 'artist', name: 'Artist'),
+              album: AlbumDto(hash: 'album', name: 'Album'),
+              playCount: 0,
+              likedByUser: false,
+            ),
+          ],
+          page: 0,
+          size: 20,
+          totalPages: 1,
+          totalElements: 1,
+        );
+        final unifiedService = SongService(
+          songRepo,
+          artistRepo,
+          albumRepo,
+          restClient,
+          localTracks,
+        );
+
+        final both = await unifiedService.getSongsPage(
+          '',
+          'Title',
+          null,
+          null,
+          null,
+          true,
+          true,
+          0,
+          20,
+          streamOnly: true,
+        );
+
+        expect(both.content, hasLength(1));
+        expect(both.content.single.hasLocalFile, isTrue);
+        expect(both.content.single.isAvailableToStream, isTrue);
+        expect(both.content.single.potentialRemoteHashes, ['remote-shared']);
+      },
+    );
+
+    test('fullyFetchSong restores a matching local playback source', () async {
+      final localRepository = InMemoryLocalTrackRepository();
+      final localTracks = LocalTrackService(localRepository);
+      localRepository.save(
+        LocalTrack(
+          sourceKey: '/music/local.flac',
+          sourceUri: '/music/local.flac',
+          potentialIdentityKey: PotentialIdentity.create(
+            title: 'Track',
+            artist: 'Artist',
+            durationInSeconds: 120,
+          ),
+          name: 'Track',
+          artistName: 'Artist',
+          durationInSeconds: 120,
+          metadataLoaded: true,
+        )..resolvedSongHash = 'remote-hash',
+      );
+      final localAwareService = SongService(
+        songRepo,
+        artistRepo,
+        albumRepo,
+        restClient,
+        localTracks,
+      );
+      final queued =
+          Song('remote-hash')
+            ..name = 'Track'
+            ..durationInSeconds = 120;
+
+      final resolved = await localAwareService.fullyFetchSong(queued);
+
+      expect(resolved.path, '/music/local.flac');
+      expect(resolved.hasLocalFile, isTrue);
+      expect(resolved.potentialRemoteHashes, contains('remote-hash'));
+    });
+
     test('getOrCreateSong throws on empty hash', () {
       expect(() => service.getOrCreateSong(''), throwsArgumentError);
+    });
+
+    test('chunk manifest round-trips through the persisted song', () {
+      final manifest = ChunkManifestDto.fromJson({
+        'fileHash': 'manifest-song',
+        'totalChunks': 2,
+        'chunkSize': 4,
+        'totalBytes': 8,
+        'hashes': ['0' * 64, '1' * 64],
+      });
+
+      service.cacheManifest(manifest);
+      service.updateCacheAvailability('manifest-song', 2, 2);
+
+      final restored = service.getCachedManifest('manifest-song');
+      final song = service.getLocalSong('manifest-song')!;
+      expect(restored?.toJson(), manifest.toJson());
+      expect(song.expectedChunkCount, 2);
+      expect(song.isFullyCached, isTrue);
+      expect(song.isPlayableOffline, isTrue);
+    });
+
+    test('successful scan reconciliation detaches missing local files', () {
+      final present =
+          Song('present')
+            ..path = '/music/present.flac'
+            ..localFileSize = 10;
+      final missing =
+          Song('missing')
+            ..path = '/music/missing.flac'
+            ..localFileSize = 20;
+      songRepo.saveSongs([present, missing]);
+
+      service.reconcileMissingLocalFiles({'/music/present.flac'});
+
+      expect(service.getLocalSong('present')?.hasLocalFile, isTrue);
+      expect(service.getLocalSong('missing')?.hasLocalFile, isFalse);
     });
 
     test('exposes repository metadata, stream, and basic mutations', () async {

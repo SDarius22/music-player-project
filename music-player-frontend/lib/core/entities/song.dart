@@ -17,7 +17,28 @@ class Song implements BaseEntity {
   @Unique()
   final String fileHash;
 
+  @Transient()
+  String? localSourceKey;
+
+  @Transient()
+  String? potentialIdentityKey;
+
+  @Transient()
+  List<String> potentialRemoteHashes = [];
+
+  @Transient()
+  List<String> localSourceUris = [];
+
   String? path;
+  int? localFileSize;
+
+  @Property(type: PropertyType.dateNano)
+  DateTime? localFileModifiedAt;
+  int manifestChunkSize = 0;
+  int manifestTotalBytes = 0;
+  List<String> chunkHashes = [];
+  int cachedChunkCount = 0;
+  bool fullyCached = false;
   String name = 'Unknown Song';
   int durationInSeconds = 0;
   int trackNumber = 0;
@@ -46,12 +67,42 @@ class Song implements BaseEntity {
 
   @override
   String getHash() {
-    return fileHash;
+    if (fileHash.isNotEmpty) return fileHash;
+    return 'local:${localSourceKey ?? path ?? id}';
   }
 
   @override
   bool get isLocal {
-    return path != null && path!.isNotEmpty;
+    return isPlayableOffline;
+  }
+
+  bool get hasLocalFile => path != null && path!.isNotEmpty;
+
+  bool get hasCachedChunks => cachedChunkCount > 0;
+
+  @Transient()
+  int get expectedChunkCount => chunkHashes.length;
+
+  @Transient()
+  bool get hasManifest =>
+      manifestChunkSize > 0 && manifestTotalBytes > 0 && chunkHashes.isNotEmpty;
+
+  bool get isFullyCached => fullyCached;
+
+  bool get isPlayableOffline => hasLocalFile || isFullyCached;
+
+  @override
+  bool get isAvailableOffline => isPlayableOffline;
+
+  @override
+  bool get isAvailableToStream =>
+      potentialRemoteHashes.isNotEmpty ||
+      (fileHash.isNotEmpty && localSourceKey == null);
+
+  bool matchesLocalFileStat(int size, DateTime modifiedAt) {
+    return localFileSize == size &&
+        localFileModifiedAt?.microsecondsSinceEpoch ==
+            modifiedAt.microsecondsSinceEpoch;
   }
 
   set isLocal(bool value) {
@@ -94,6 +145,8 @@ class Song implements BaseEntity {
     discNumber = other.discNumber;
     year = other.year;
     path = other.path;
+    localFileSize = other.localFileSize;
+    localFileModifiedAt = other.localFileModifiedAt;
     fullyLoaded = other.fullyLoaded;
     artist.target = other.artist.target;
     album.target = other.album.target;
@@ -102,14 +155,11 @@ class Song implements BaseEntity {
   @override
   bool operator ==(Object other) {
     if (other is! Song) return false;
-
-    return fileHash == other.fileHash;
+    return getHash() == other.getHash();
   }
 
   @override
-  int get hashCode {
-    return fileHash.hashCode;
-  }
+  int get hashCode => getHash().hashCode;
 
   @override
   String toString() {

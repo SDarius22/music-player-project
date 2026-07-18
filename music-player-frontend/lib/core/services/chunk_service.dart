@@ -12,6 +12,17 @@ import 'package:music_player_frontend/core/services/webrtc_service.dart';
 
 enum _ChunkSource { localCached, p2p, server }
 
+typedef CacheAvailabilityChanged =
+    void Function(String fileHash, int expectedChunks, int cachedChunks);
+typedef CachedManifestLoader = ChunkManifestDto? Function(String fileHash);
+typedef ManifestCached = void Function(ChunkManifestDto manifest);
+typedef PotentialLocalChunkLoader =
+    Future<Uint8List?> Function(
+      String fileHash,
+      ChunkManifestDto manifest,
+      int chunkIndex,
+    );
+
 class ChunkService {
   static final _logger = Logger('ChunkService');
 
@@ -19,6 +30,10 @@ class ChunkService {
   final ChunkCacheRepository cacheRepo;
   final StreamingRestClient _streamingClient;
   final WebRTCService _webrtcManager;
+  final CacheAvailabilityChanged? _onCacheAvailabilityChanged;
+  final CachedManifestLoader? _cachedManifestLoader;
+  final ManifestCached? _onManifestCached;
+  final PotentialLocalChunkLoader? _potentialLocalChunkLoader;
 
   ChunkManifestDto? manifest;
 
@@ -30,6 +45,11 @@ class ChunkService {
   final Map<int, Future<Uint8List>> _activeRequests = {};
   final Map<int, Completer<Uint8List>> _p2pCompleters = {};
   final Map<int, Uint8List> _hotRamCache = {};
+  final Set<int> _availableCachedIndices = {};
+  final Set<Future<void>> _pendingCacheWrites = {};
+  Future<bool>? _finalizationFuture;
+  Timer? _cacheAvailabilityTimer;
+  int? _lastReportedCachedCount;
 
   final Map<int, _ChunkSource> _deliveredBy = {};
   String? _songName;
@@ -59,8 +79,16 @@ class ChunkService {
     required this.cacheRepo,
     required StreamingRestClient streamingClient,
     required WebRTCService webrtcManager,
+    CacheAvailabilityChanged? onCacheAvailabilityChanged,
+    CachedManifestLoader? cachedManifestLoader,
+    ManifestCached? onManifestCached,
+    PotentialLocalChunkLoader? potentialLocalChunkLoader,
   }) : _streamingClient = streamingClient,
-       _webrtcManager = webrtcManager;
+       _webrtcManager = webrtcManager,
+       _onCacheAvailabilityChanged = onCacheAvailabilityChanged,
+       _cachedManifestLoader = cachedManifestLoader,
+       _onManifestCached = onManifestCached,
+       _potentialLocalChunkLoader = potentialLocalChunkLoader;
 
   void configureSongInfo(
     String songName,
@@ -81,16 +109,38 @@ class ChunkService {
   Future<void> loadManifest() async {
     if (isReady) return;
     try {
-      manifest = await _streamingClient.fetchManifest(fileHash);
+      final cachedManifest = _cachedManifestLoader?.call(fileHash);
+      if (cachedManifest?.isValidFor(fileHash) == true) {
+        manifest = cachedManifest;
+        _logger.fine('[P2P] Using cached manifest for file=$fileHash');
+      } else {
+        final serverManifest = await _streamingClient.fetchManifest(fileHash);
+        if (!serverManifest.isValidFor(fileHash)) {
+          throw FormatException('Invalid chunk manifest for $fileHash');
+        }
+        _onManifestCached?.call(serverManifest);
+        manifest = serverManifest;
+      }
       _logger.fine(
         '[P2P] Manifest loaded for file=$fileHash '
         'chunks=${manifest?.totalChunks ?? 0} bytes=${manifest?.totalBytes ?? 0} '
         'serverPrefix=$_serverPrefixCount',
       );
 
+      await cacheRepo.configureSong(
+        fileHash,
+        manifest!.chunkSize,
+        manifest!.totalBytes,
+        manifest!.totalChunks,
+      );
+
       unawaited(_webrtcManager.discoverPeers(fileHash));
 
       var indices = await cacheRepo.getAvailableChunkIndices(fileHash);
+      _availableCachedIndices
+        ..clear()
+        ..addAll(indices);
+      _reportCacheAvailability(force: true);
       if (indices.isNotEmpty) {
         _logger.fine(
           '[P2P] Registering ${indices.length} cached chunk(s) for file=$fileHash after manifest load',
@@ -105,6 +155,9 @@ class ChunkService {
 
   Future<Uint8List> getChunk(int index) async {
     if (!isReady) await loadManifest();
+    if (index < 0 || index >= totalChunks) {
+      throw RangeError.range(index, 0, totalChunks - 1, 'index');
+    }
 
     if (_hotRamCache.containsKey(index)) return _hotRamCache[index]!;
 
@@ -122,6 +175,10 @@ class ChunkService {
         '(bytes=${cachedData.length}); evicting and refetching',
       );
       await cacheRepo.deleteChunk(fileHash, index);
+      _availableCachedIndices
+        ..clear()
+        ..addAll(await cacheRepo.getAvailableChunkIndices(fileHash));
+      _reportCacheAvailability(force: true);
     }
 
     final future = _fetchChunkLogic(index);
@@ -163,6 +220,17 @@ class ChunkService {
   Future<Uint8List> _fetchChunkLogic(int index) async {
     Uint8List data;
     _ChunkSource source = _ChunkSource.server;
+
+    final localCandidate = await _potentialLocalChunkLoader?.call(
+      fileHash,
+      manifest!,
+      index,
+    );
+    if (localCandidate != null && _verifyIntegrity(index, localCandidate)) {
+      _saveToCache(index, localCandidate);
+      _recordDelivery(index, _ChunkSource.localCached);
+      return localCandidate;
+    }
 
     if (index < _serverPrefixCount) {
       _logger.fine(
@@ -356,7 +424,32 @@ class ChunkService {
     }
   }
 
+  Future<void> downloadAll() async {
+    if (!isReady) await loadManifest();
+    for (var index = 0; index < totalChunks; index++) {
+      await getChunk(index);
+    }
+    while (_pendingCacheWrites.isNotEmpty) {
+      await Future.wait(List<Future<void>>.from(_pendingCacheWrites));
+    }
+    final cached = await cacheRepo.getAvailableChunkIndices(fileHash);
+    _availableCachedIndices
+      ..clear()
+      ..addAll(cached.where((index) => index < totalChunks));
+    if (_availableCachedIndices.length != totalChunks) {
+      throw StateError(
+        'Download incomplete for $fileHash: '
+        '${_availableCachedIndices.length}/$totalChunks chunks cached',
+      );
+    }
+    if (!await _finalizeOnce()) {
+      throw StateError('Downloaded file failed final integrity verification');
+    }
+    _reportCacheAvailability(force: true);
+  }
+
   void dispose() {
+    _flushCacheAvailability();
     _statsEmitTimer?.cancel();
     _statsEmitTimer = null;
   }
@@ -375,12 +468,68 @@ class ChunkService {
 
   void _saveToCache(int index, Uint8List data) {
     _addToHotCache(index, data);
-    cacheRepo.saveChunk(fileHash, index, data).then((_) {
-      _logger.fine(
-        '[P2P] Cached chunk for file=$fileHash idx=$index bytes=${data.length}; registering for sharing',
-      );
-      unawaited(_webrtcManager.registerCache(fileHash, [index]));
+    late final Future<void> write;
+    write = cacheRepo
+        .saveChunk(fileHash, index, data)
+        .then((_) {
+          _logger.fine(
+            '[P2P] Cached chunk for file=$fileHash idx=$index bytes=${data.length}; registering for sharing',
+          );
+          unawaited(_webrtcManager.registerCache(fileHash, [index]));
+          _availableCachedIndices.add(index);
+          if (_availableCachedIndices.length >= (manifest?.totalChunks ?? 0)) {
+            unawaited(_finalizeOnce());
+          }
+          _reportCacheAvailability();
+        })
+        .whenComplete(() {
+          _pendingCacheWrites.remove(write);
+        });
+    _pendingCacheWrites.add(write);
+  }
+
+  Future<bool> _finalizeOnce() {
+    final active = _finalizationFuture;
+    if (active != null) return active;
+    late final Future<bool> future;
+    future = cacheRepo.finalizeSong(fileHash).whenComplete(() {
+      if (identical(_finalizationFuture, future)) {
+        _finalizationFuture = null;
+      }
     });
+    _finalizationFuture = future;
+    return future;
+  }
+
+  void _reportCacheAvailability({bool force = false}) {
+    final expected = manifest?.totalChunks ?? 0;
+    if (expected == 0) return;
+    final validCount =
+        _availableCachedIndices.where((index) => index < expected).length;
+    if (validCount == _lastReportedCachedCount) return;
+
+    final change = (validCount - (_lastReportedCachedCount ?? 0)).abs();
+    if (force || validCount >= expected || change >= 16) {
+      _flushCacheAvailability();
+      return;
+    }
+
+    _cacheAvailabilityTimer ??= Timer(
+      const Duration(seconds: 2),
+      _flushCacheAvailability,
+    );
+  }
+
+  void _flushCacheAvailability() {
+    _cacheAvailabilityTimer?.cancel();
+    _cacheAvailabilityTimer = null;
+    final expected = manifest?.totalChunks ?? 0;
+    if (expected == 0) return;
+    final validCount =
+        _availableCachedIndices.where((index) => index < expected).length;
+    if (validCount == _lastReportedCachedCount) return;
+    _lastReportedCachedCount = validCount;
+    _onCacheAvailabilityChanged?.call(fileHash, expected, validCount);
   }
 
   void _addToHotCache(int index, Uint8List data) {

@@ -14,6 +14,8 @@ class CustomTileComponent extends StatelessWidget {
   // Fires when a dropdown item (actions[2+]) is tapped.
   // dropdownIndex is 0-based within the dropdown (0 = actions[2]).
   final void Function(BaseEntity entity, int dropdownIndex)? onDropdownSelected;
+  final bool Function(BaseEntity entity, int dropdownIndex)?
+  isDropdownActionVisible;
   final Function(BaseEntity) onTap;
   final Function(BaseEntity) onLongPress;
   final bool Function(BaseEntity) isSelected;
@@ -31,20 +33,30 @@ class CustomTileComponent extends StatelessWidget {
     required this.isSelected,
     this.actions = const [],
     this.onDropdownSelected,
+    this.isDropdownActionVisible,
     this.enrichEntity,
     this.showEnrichLoadingPlaceholder = true,
     this.buildExtraTile,
     this.itemExtent = 72,
   });
 
-  List<Widget> _buildActions(BaseEntity entity) =>
-      actions.map((f) => f(entity)).toList();
+  List<int> _visibleDropdownIndices(BaseEntity entity) => [
+    for (var index = 2; index < actions.length; index++)
+      if (isDropdownActionVisible?.call(entity, index - 2) ?? true) index - 2,
+  ];
+
+  List<Widget> _buildActions(BaseEntity entity) => [
+    ...actions.take(2).map((action) => action(entity)),
+    for (final index in _visibleDropdownIndices(entity))
+      actions[index + 2](entity),
+  ];
 
   Widget _buildTile(BaseEntity entity) {
     final builtActions = _buildActions(entity);
+    final visibleDropdownIndices = _visibleDropdownIndices(entity);
     final void Function(int)? drop =
         onDropdownSelected != null
-            ? (i) => onDropdownSelected!(entity, i)
+            ? (i) => onDropdownSelected!(entity, visibleDropdownIndices[i])
             : null;
 
     if (tileType == TileType.list) {

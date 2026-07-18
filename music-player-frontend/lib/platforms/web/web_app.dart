@@ -6,6 +6,7 @@ import 'package:music_player_frontend/core/repository/interfaces/album_repositor
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_stat_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/local_track_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
@@ -13,6 +14,7 @@ import 'package:music_player_frontend/core/repository/memory/in_memory_album_rep
 import 'package:music_player_frontend/core/repository/memory/in_memory_artist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_stat_repository.dart';
+import 'package:music_player_frontend/core/repository/memory/in_memory_local_track_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_song_repository.dart';
 import 'package:music_player_frontend/core/repository/storage/local_storage_settings_repository.dart';
@@ -23,7 +25,9 @@ import 'package:music_player_frontend/core/services/active_router_service.dart';
 import 'package:music_player_frontend/core/services/app_audio_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/health_service.dart';
+import 'package:music_player_frontend/core/services/local_track_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
+import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/services/web_p2p_bridge.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
 import 'package:music_player_frontend/core/ui/abstract_app.dart';
@@ -44,6 +48,9 @@ class WebApp extends AbstractApp {
       Provider<ArtistRepository>(create: (_) => InMemoryArtistRepository()),
       Provider<PlaylistRepository>(create: (_) => InMemoryPlaylistRepository()),
       Provider<SongRepository>(create: (_) => InMemorySongRepository()),
+      Provider<LocalTrackRepository>(
+        create: (_) => InMemoryLocalTrackRepository(),
+      ),
       Provider<ChunkCacheRepository>(
         create: (_) => InMemoryChunkCacheRepository(),
       ),
@@ -89,6 +96,18 @@ class WebApp extends AbstractApp {
               cacheRepo: context.read<ChunkCacheRepository>(),
               streamingClient: context.read<StreamingRestClient>(),
               webrtcManager: context.read<WebRTCService>(),
+              onCacheAvailabilityChanged:
+                  context.read<SongService>().updateCacheAvailability,
+              cachedManifestLoader:
+                  context.read<SongService>().getCachedManifest,
+              onManifestCached: context.read<SongService>().cacheManifest,
+              potentialLocalChunkLoader: (hash, manifest, index) {
+                final song = context.read<SongService>().getLocalSong(hash);
+                if (song == null) return Future.value(null);
+                return context
+                    .read<LocalTrackService>()
+                    .readVerifiedPotentialChunk(song, manifest, index);
+              },
             );
             context.read<ActiveChunkRouter>().registerManager(manager);
             return manager;

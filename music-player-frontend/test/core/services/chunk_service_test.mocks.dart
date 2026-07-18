@@ -64,6 +64,34 @@ class _FakeValueNotifier_3<T> extends _i1.SmartFake
 class MockChunkCacheRepository extends _i1.Mock
     implements _i6.ChunkCacheRepository {
   @override
+  _i7.Future<void> configureSong(
+    String? fileHash,
+    int? chunkSize,
+    int? totalBytes,
+    int? totalChunks,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#configureSong, [
+              fileHash,
+              chunkSize,
+              totalBytes,
+              totalChunks,
+            ]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<bool> finalizeSong(String? fileHash) =>
+      (super.noSuchMethod(
+            Invocation.method(#finalizeSong, [fileHash]),
+            returnValue: _i7.Future<bool>.value(false),
+            returnValueForMissingStub: _i7.Future<bool>.value(false),
+          )
+          as _i7.Future<bool>);
+
+  @override
   _i7.Future<_i8.Uint8List?> readChunk(String? fileHash, int? chunkIndex) =>
       (super.noSuchMethod(
             Invocation.method(#readChunk, [fileHash, chunkIndex]),
@@ -102,6 +130,17 @@ class MockChunkCacheRepository extends _i1.Mock
             returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
           )
           as _i7.Future<List<int>>);
+
+  @override
+  _i7.Future<List<String>> getCachedFileHashes() =>
+      (super.noSuchMethod(
+            Invocation.method(#getCachedFileHashes, []),
+            returnValue: _i7.Future<List<String>>.value(<String>[]),
+            returnValueForMissingStub: _i7.Future<List<String>>.value(
+              <String>[],
+            ),
+          )
+          as _i7.Future<List<String>>);
 }
 
 /// A class which mocks [StreamingRestClient].

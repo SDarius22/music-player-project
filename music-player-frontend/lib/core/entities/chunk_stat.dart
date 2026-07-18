@@ -36,6 +36,11 @@ class ChunkStat {
   double get p2pPercentage =>
       totalChunks > 0 ? (p2pChunks / totalChunks * 100) : 0.0;
 
+  int get serverOffloadedChunks => localChunks + localCachedChunks + p2pChunks;
+
+  double get serverOffloadPercentage =>
+      totalChunks > 0 ? (serverOffloadedChunks / totalChunks * 100) : 0.0;
+
   bool get isLocalFilePlayback =>
       localChunks > 0 &&
       p2pChunks == 0 &&
@@ -71,5 +76,6 @@ class ChunkStat {
   String toString() =>
       'ChunkStat(song=$songName, local=$localChunks, cached=$localCachedChunks, '
       'p2p=$p2pChunks, server=$serverChunks, total=$totalChunks, '
-      'p2p%=${p2pPercentage.toStringAsFixed(1)}%)';
+      'p2p%=${p2pPercentage.toStringAsFixed(1)}, '
+      'offload%=${serverOffloadPercentage.toStringAsFixed(1)}%)';
 }

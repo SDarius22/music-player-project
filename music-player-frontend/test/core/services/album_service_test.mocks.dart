@@ -340,6 +340,14 @@ class MockSongRepository extends _i1.Mock implements _i11.SongRepository {
           as _i4.Song?);
 
   @override
+  _i4.Song? getSongByLocalPath(String? path) =>
+      (super.noSuchMethod(
+            Invocation.method(#getSongByLocalPath, [path]),
+            returnValueForMissingStub: null,
+          )
+          as _i4.Song?);
+
+  @override
   _i4.Song getOrCreateSong(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#getOrCreateSong, [fileHash]),

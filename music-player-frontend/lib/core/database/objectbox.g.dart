@@ -19,6 +19,7 @@ import '../../core/entities/app_settings.dart';
 import '../../core/entities/artist.dart';
 import '../../core/entities/audio_settings.dart';
 import '../../core/entities/chunk_stat.dart';
+import '../../core/entities/local_track.dart';
 import '../../core/entities/playlist.dart';
 import '../../core/entities/song.dart';
 
@@ -380,7 +381,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(6, 5328859898643810358),
     name: 'Song',
-    lastPropertyId: const obx_int.IdUid(31, 2531404889274986009),
+    lastPropertyId: const obx_int.IdUid(39, 5973356514149286900),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -480,6 +481,48 @@ final _entities = <obx_int.ModelEntity>[
         type: 1,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(32, 411355640750837036),
+        name: 'localFileSize',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(33, 7488473020334125890),
+        name: 'localFileModifiedAt',
+        type: 12,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(35, 7784839284837429330),
+        name: 'cachedChunkCount',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(36, 8140606922242338683),
+        name: 'manifestChunkSize',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(37, 2204730568269627636),
+        name: 'manifestTotalBytes',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(38, 1553791694405602903),
+        name: 'chunkHashes',
+        type: 30,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(39, 5973356514149286900),
+        name: 'fullyCached',
+        type: 1,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
@@ -549,6 +592,144 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(15, 2945740980705724958),
+    name: 'LocalTrack',
+    lastPropertyId: const obx_int.IdUid(21, 8897077843577320749),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 2077269001600247140),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 7345749804365285103),
+        name: 'sourceKey',
+        type: 9,
+        flags: 2080,
+        indexId: const obx_int.IdUid(31, 9193025249151034608),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 6018616063970906674),
+        name: 'sourceUri',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 3395965466467413925),
+        name: 'potentialIdentityKey',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(32, 8313128316531896333),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 4612442381075463814),
+        name: 'contentHash',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 7387144961737167593),
+        name: 'resolvedSongHash',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 6308742482471645916),
+        name: 'fileSize',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 8385779945019702048),
+        name: 'modifiedAt',
+        type: 12,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 6675741452802662644),
+        name: 'name',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 1194403866148071788),
+        name: 'artistName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 2512683893858552360),
+        name: 'albumName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 6458749858391096787),
+        name: 'durationInSeconds',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 4115216890703249904),
+        name: 'trackNumber',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 5871459636106643732),
+        name: 'discNumber',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 2994734519572167845),
+        name: 'year',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 7175017500711942423),
+        name: 'available',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 3255800994788113581),
+        name: 'supportsRandomAccess',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(18, 6447133463789238132),
+        name: 'metadataLoaded',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(19, 8706462220867521924),
+        name: 'likedByUser',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(20, 4707247574705027975),
+        name: 'lastPlayed',
+        type: 12,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(21, 8897077843577320749),
+        name: 'playCount',
+        type: 6,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -594,8 +775,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     // Typically, this is done with `dart run build_runner build`.
     generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(14, 6389059844630226255),
-    lastIndexId: const obx_int.IdUid(30, 5322149114517963262),
+    lastEntityId: const obx_int.IdUid(15, 2945740980705724958),
+    lastIndexId: const obx_int.IdUid(32, 8313128316531896333),
     lastRelationId: const obx_int.IdUid(10, 1976178507562192675),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -698,6 +879,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
       1880970681925066010,
       5586295309400875881,
       5063639271441214345,
+      7071971923846190552,
     ],
     retiredRelationUids: const [
       1387782578054686999,
@@ -719,21 +901,24 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Album: obx_int.EntityDefinition<Album>(
       model: _entities[0],
       toOneRelations: (Album object) => [object.artist],
-      toManyRelations: (Album object) => {
-        obx_int.RelInfo<Song>.toOneBacklink(
-          18,
-          object.id,
-          (Song srcObject) => srcObject.album,
-        ): object.songs,
-      },
+      toManyRelations:
+          (Album object) => {
+            obx_int.RelInfo<Song>.toOneBacklink(
+                  18,
+                  object.id,
+                  (Song srcObject) => srcObject.album,
+                ):
+                object.songs,
+          },
       getId: (Album object) => object.id,
       setId: (Album object, int id) {
         object.id = id;
       },
       objectToFB: (Album object, fb.Builder fbb) {
-        final imageBytesOffset = object.imageBytes == null
-            ? null
-            : fbb.writeListInt8(object.imageBytes!);
+        final imageBytesOffset =
+            object.imageBytes == null
+                ? null
+                : fbb.writeListInt8(object.imageBytes!);
         final hashOffset = fbb.writeString(object.hash);
         final nameOffset = fbb.writeString(object.name);
         fbb.startTable(19);
@@ -756,25 +941,26 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final nameParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 32, '');
-        final object = Album(hashParam, nameParam)
-          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-          ..imageBytes =
-              const fb.Uint8ListReader(
-                    lazy: false,
-                  ).vTableGetNullable(buffer, rootOffset, 20)
-                  as Uint8List?
-          ..duration = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            34,
-            0,
-          )
-          ..isLocal = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            38,
-            false,
-          );
+        final object =
+            Album(hashParam, nameParam)
+              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+              ..imageBytes =
+                  const fb.Uint8ListReader(
+                        lazy: false,
+                      ).vTableGetNullable(buffer, rootOffset, 20)
+                      as Uint8List?
+              ..duration = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                34,
+                0,
+              )
+              ..isLocal = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                38,
+                false,
+              );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -832,75 +1018,72 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object = AppSettings()
-          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-          ..firstTime = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            10,
-            false,
-          )
-          ..systemTray = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            12,
-            false,
-          )
-          ..fullClose = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            14,
-            false,
-          )
-          ..mainSongPlace = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGet(buffer, rootOffset, 16, '')
-          ..songPlaces = const fb.ListReader<String>(
-            fb.StringReader(asciiOptimization: true),
-            lazy: false,
-          ).vTableGet(buffer, rootOffset, 18, [])
-          ..songPlaceIncludeSubfolders = const fb.ListReader<int>(
-            fb.Int64Reader(),
-            lazy: false,
-          ).vTableGet(buffer, rootOffset, 20, [])
-          ..drawerOpen = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            22,
-            false,
-          )
-          ..peerNetworkMode = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            24,
-            0,
-          )
-          ..peerWifiDataLimitGB = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            26,
-            0,
-          )
-          ..peerCellularDataLimitGB = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            28,
-            0,
-          )
-          ..peerWifiUploadedBytesThisMonth = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            30,
-            0,
-          )
-          ..peerCellularUploadedBytesThisMonth = const fb.Int64Reader()
-              .vTableGet(buffer, rootOffset, 32, 0)
-          ..peerUploadResetMonth = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            34,
-            0,
-          );
+        final object =
+            AppSettings()
+              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+              ..firstTime = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                10,
+                false,
+              )
+              ..systemTray = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                12,
+                false,
+              )
+              ..fullClose = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                14,
+                false,
+              )
+              ..mainSongPlace = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGet(buffer, rootOffset, 16, '')
+              ..songPlaces = const fb.ListReader<String>(
+                fb.StringReader(asciiOptimization: true),
+                lazy: false,
+              ).vTableGet(buffer, rootOffset, 18, [])
+              ..songPlaceIncludeSubfolders = const fb.ListReader<int>(
+                fb.Int64Reader(),
+                lazy: false,
+              ).vTableGet(buffer, rootOffset, 20, [])
+              ..drawerOpen = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                22,
+                false,
+              )
+              ..peerNetworkMode = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                24,
+                0,
+              )
+              ..peerWifiDataLimitGB = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                26,
+                0,
+              )
+              ..peerCellularDataLimitGB = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                28,
+                0,
+              )
+              ..peerWifiUploadedBytesThisMonth = const fb.Int64Reader()
+                  .vTableGet(buffer, rootOffset, 30, 0)
+              ..peerCellularUploadedBytesThisMonth = const fb.Int64Reader()
+                  .vTableGet(buffer, rootOffset, 32, 0)
+              ..peerUploadResetMonth = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                34,
+                0,
+              );
 
         return object;
       },
@@ -908,21 +1091,24 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Artist: obx_int.EntityDefinition<Artist>(
       model: _entities[2],
       toOneRelations: (Artist object) => [],
-      toManyRelations: (Artist object) => {
-        obx_int.RelInfo<Song>.toOneBacklink(
-          17,
-          object.id,
-          (Song srcObject) => srcObject.artist,
-        ): object.songs,
-      },
+      toManyRelations:
+          (Artist object) => {
+            obx_int.RelInfo<Song>.toOneBacklink(
+                  17,
+                  object.id,
+                  (Song srcObject) => srcObject.artist,
+                ):
+                object.songs,
+          },
       getId: (Artist object) => object.id,
       setId: (Artist object, int id) {
         object.id = id;
       },
       objectToFB: (Artist object, fb.Builder fbb) {
-        final imageBytesOffset = object.imageBytes == null
-            ? null
-            : fbb.writeListInt8(object.imageBytes!);
+        final imageBytesOffset =
+            object.imageBytes == null
+                ? null
+                : fbb.writeListInt8(object.imageBytes!);
         final hashOffset = fbb.writeString(object.hash);
         final nameOffset = fbb.writeString(object.name);
         fbb.startTable(11);
@@ -944,25 +1130,26 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final nameParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 20, '');
-        final object = Artist(hashParam, nameParam)
-          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-          ..requiresSync = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            12,
-            false,
-          )
-          ..imageBytes =
-              const fb.Uint8ListReader(
-                    lazy: false,
-                  ).vTableGetNullable(buffer, rootOffset, 16)
-                  as Uint8List?
-          ..isLocal = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            22,
-            false,
-          );
+        final object =
+            Artist(hashParam, nameParam)
+              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+              ..requiresSync = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                12,
+                false,
+              )
+              ..imageBytes =
+                  const fb.Uint8ListReader(
+                        lazy: false,
+                      ).vTableGetNullable(buffer, rootOffset, 16)
+                      as Uint8List?
+              ..isLocal = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                22,
+                false,
+              );
         obx_int.InternalToManyAccess.setRelInfo<Artist>(
           object.songs,
           store,
@@ -1001,56 +1188,57 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
 
-        final object = AudioSettings()
-          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-          ..repeat = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            12,
-            false,
-          )
-          ..shuffle = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            14,
-            false,
-          )
-          ..speed = const fb.Float64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            18,
-            0,
-          )
-          ..volume = const fb.Float64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            20,
-            0,
-          )
-          ..sliderInSeconds = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            26,
-            0,
-          )
-          ..pitch = const fb.Float64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            28,
-            0,
-          )
-          ..autoPlay = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            30,
-            false,
-          )
-          ..autoPlayRecommendationsPage = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            32,
-            0,
-          );
+        final object =
+            AudioSettings()
+              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+              ..repeat = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                12,
+                false,
+              )
+              ..shuffle = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                14,
+                false,
+              )
+              ..speed = const fb.Float64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                18,
+                0,
+              )
+              ..volume = const fb.Float64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                20,
+                0,
+              )
+              ..sliderInSeconds = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                26,
+                0,
+              )
+              ..pitch = const fb.Float64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                28,
+                0,
+              )
+              ..autoPlay = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                30,
+                false,
+              )
+              ..autoPlayRecommendationsPage = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                32,
+                0,
+              );
 
         return object;
       },
@@ -1058,17 +1246,19 @@ obx_int.ModelDefinition getObjectBoxModel() {
     Playlist: obx_int.EntityDefinition<Playlist>(
       model: _entities[4],
       toOneRelations: (Playlist object) => [],
-      toManyRelations: (Playlist object) => {
-        obx_int.RelInfo<Playlist>.toMany(10, object.id): object.songs,
-      },
+      toManyRelations:
+          (Playlist object) => {
+            obx_int.RelInfo<Playlist>.toMany(10, object.id): object.songs,
+          },
       getId: (Playlist object) => object.id,
       setId: (Playlist object, int id) {
         object.id = id;
       },
       objectToFB: (Playlist object, fb.Builder fbb) {
-        final imageBytesOffset = object.imageBytes == null
-            ? null
-            : fbb.writeListInt8(object.imageBytes!);
+        final imageBytesOffset =
+            object.imageBytes == null
+                ? null
+                : fbb.writeListInt8(object.imageBytes!);
         final nameOffset = fbb.writeString(object.name);
         final songFileHashesOffset = fbb.writeList(
           object.songFileHashes.map(fbb.writeString).toList(growable: false),
@@ -1093,50 +1283,51 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final nameParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 36, '');
-        final object = Playlist(nameParam)
-          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-          ..indestructible = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            6,
-            false,
-          )
-          ..createdAt = DateTime.fromMillisecondsSinceEpoch(
-            const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
-          )
-          ..imageBytes =
-              const fb.Uint8ListReader(
-                    lazy: false,
-                  ).vTableGetNullable(buffer, rootOffset, 24)
-                  as Uint8List?
-          ..requiresSync = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            28,
-            false,
-          )
-          ..serverId = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            30,
-            0,
-          )
-          ..duration = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            38,
-            0,
-          )
-          ..songFileHashes = const fb.ListReader<String>(
-            fb.StringReader(asciiOptimization: true),
-            lazy: false,
-          ).vTableGet(buffer, rootOffset, 40, [])
-          ..isLocal = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            42,
-            false,
-          );
+        final object =
+            Playlist(nameParam)
+              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+              ..indestructible = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                6,
+                false,
+              )
+              ..createdAt = DateTime.fromMillisecondsSinceEpoch(
+                const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+              )
+              ..imageBytes =
+                  const fb.Uint8ListReader(
+                        lazy: false,
+                      ).vTableGetNullable(buffer, rootOffset, 24)
+                      as Uint8List?
+              ..requiresSync = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                28,
+                false,
+              )
+              ..serverId = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                30,
+                0,
+              )
+              ..duration = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                38,
+                0,
+              )
+              ..songFileHashes = const fb.ListReader<String>(
+                fb.StringReader(asciiOptimization: true),
+                lazy: false,
+              ).vTableGet(buffer, rootOffset, 40, [])
+              ..isLocal = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                42,
+                false,
+              );
         obx_int.InternalToManyAccess.setRelInfo<Playlist>(
           object.songs,
           store,
@@ -1154,12 +1345,14 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (Song object, fb.Builder fbb) {
-        final pathOffset = object.path == null
-            ? null
-            : fbb.writeString(object.path!);
+        final pathOffset =
+            object.path == null ? null : fbb.writeString(object.path!);
         final fileHashOffset = fbb.writeString(object.fileHash);
         final nameOffset = fbb.writeString(object.name);
-        fbb.startTable(32);
+        final chunkHashesOffset = fbb.writeList(
+          object.chunkHashes.map(fbb.writeString).toList(growable: false),
+        );
+        fbb.startTable(40);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, pathOffset);
         fbb.addInt64(8, object.trackNumber);
@@ -1180,6 +1373,18 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(28, fileHashOffset);
         fbb.addOffset(29, nameOffset);
         fbb.addBool(30, object.isLocal);
+        fbb.addInt64(31, object.localFileSize);
+        fbb.addInt64(
+          32,
+          object.localFileModifiedAt == null
+              ? null
+              : object.localFileModifiedAt!.microsecondsSinceEpoch * 1000,
+        );
+        fbb.addInt64(34, object.cachedChunkCount);
+        fbb.addInt64(35, object.manifestChunkSize);
+        fbb.addInt64(36, object.manifestTotalBytes);
+        fbb.addOffset(37, chunkHashesOffset);
+        fbb.addBool(38, object.fullyCached);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -1191,65 +1396,113 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           44,
         );
+        final localFileModifiedAtValue = const fb.Int64Reader()
+            .vTableGetNullable(buffer, rootOffset, 68);
         final fileHashParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 60, '');
-        final object = Song(fileHashParam)
-          ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
-          ..path = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGetNullable(buffer, rootOffset, 6)
-          ..trackNumber = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            20,
-            0,
-          )
-          ..discNumber = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            22,
-            0,
-          )
-          ..year = const fb.Int64Reader().vTableGet(buffer, rootOffset, 24, 0)
-          ..fullyLoaded = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            32,
-            false,
-          )
-          ..durationInSeconds = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            40,
-            0,
-          )
-          ..likedByUser = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            42,
-            false,
-          )
-          ..lastPlayed = lastPlayedValue == null
-              ? null
-              : DateTime.fromMicrosecondsSinceEpoch(
-                  (lastPlayedValue / 1000).round(),
-                )
-          ..playCount = const fb.Int64Reader().vTableGet(
-            buffer,
-            rootOffset,
-            46,
-            0,
-          )
-          ..name = const fb.StringReader(
-            asciiOptimization: true,
-          ).vTableGet(buffer, rootOffset, 62, '')
-          ..isLocal = const fb.BoolReader().vTableGet(
-            buffer,
-            rootOffset,
-            64,
-            false,
-          );
+        final object =
+            Song(fileHashParam)
+              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+              ..path = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 6)
+              ..trackNumber = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                20,
+                0,
+              )
+              ..discNumber = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                22,
+                0,
+              )
+              ..year = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                24,
+                0,
+              )
+              ..fullyLoaded = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                32,
+                false,
+              )
+              ..durationInSeconds = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                40,
+                0,
+              )
+              ..likedByUser = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                42,
+                false,
+              )
+              ..lastPlayed =
+                  lastPlayedValue == null
+                      ? null
+                      : DateTime.fromMicrosecondsSinceEpoch(
+                        (lastPlayedValue / 1000).round(),
+                      )
+              ..playCount = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                46,
+                0,
+              )
+              ..name = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGet(buffer, rootOffset, 62, '')
+              ..isLocal = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                64,
+                false,
+              )
+              ..localFileSize = const fb.Int64Reader().vTableGetNullable(
+                buffer,
+                rootOffset,
+                66,
+              )
+              ..localFileModifiedAt =
+                  localFileModifiedAtValue == null
+                      ? null
+                      : DateTime.fromMicrosecondsSinceEpoch(
+                        (localFileModifiedAtValue / 1000).round(),
+                      )
+              ..cachedChunkCount = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                72,
+                0,
+              )
+              ..manifestChunkSize = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                74,
+                0,
+              )
+              ..manifestTotalBytes = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                76,
+                0,
+              )
+              ..chunkHashes = const fb.ListReader<String>(
+                fb.StringReader(asciiOptimization: true),
+                lazy: false,
+              ).vTableGet(buffer, rootOffset, 78, [])
+              ..fullyCached = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                80,
+                false,
+              );
         object.artist.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -1343,6 +1596,195 @@ obx_int.ModelDefinition getObjectBoxModel() {
           p2pChunks: p2pChunksParam,
           serverChunks: serverChunksParam,
         )..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+
+        return object;
+      },
+    ),
+    LocalTrack: obx_int.EntityDefinition<LocalTrack>(
+      model: _entities[7],
+      toOneRelations: (LocalTrack object) => [],
+      toManyRelations: (LocalTrack object) => {},
+      getId: (LocalTrack object) => object.id,
+      setId: (LocalTrack object, int id) {
+        object.id = id;
+      },
+      objectToFB: (LocalTrack object, fb.Builder fbb) {
+        final sourceKeyOffset = fbb.writeString(object.sourceKey);
+        final sourceUriOffset = fbb.writeString(object.sourceUri);
+        final potentialIdentityKeyOffset = fbb.writeString(
+          object.potentialIdentityKey,
+        );
+        final contentHashOffset =
+            object.contentHash == null
+                ? null
+                : fbb.writeString(object.contentHash!);
+        final resolvedSongHashOffset =
+            object.resolvedSongHash == null
+                ? null
+                : fbb.writeString(object.resolvedSongHash!);
+        final nameOffset = fbb.writeString(object.name);
+        final artistNameOffset = fbb.writeString(object.artistName);
+        final albumNameOffset = fbb.writeString(object.albumName);
+        fbb.startTable(22);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, sourceKeyOffset);
+        fbb.addOffset(2, sourceUriOffset);
+        fbb.addOffset(3, potentialIdentityKeyOffset);
+        fbb.addOffset(4, contentHashOffset);
+        fbb.addOffset(5, resolvedSongHashOffset);
+        fbb.addInt64(6, object.fileSize);
+        fbb.addInt64(
+          7,
+          object.modifiedAt == null
+              ? null
+              : object.modifiedAt!.microsecondsSinceEpoch * 1000,
+        );
+        fbb.addOffset(8, nameOffset);
+        fbb.addOffset(9, artistNameOffset);
+        fbb.addOffset(10, albumNameOffset);
+        fbb.addInt64(11, object.durationInSeconds);
+        fbb.addInt64(12, object.trackNumber);
+        fbb.addInt64(13, object.discNumber);
+        fbb.addInt64(14, object.year);
+        fbb.addBool(15, object.available);
+        fbb.addBool(16, object.supportsRandomAccess);
+        fbb.addBool(17, object.metadataLoaded);
+        fbb.addBool(18, object.likedByUser);
+        fbb.addInt64(
+          19,
+          object.lastPlayed == null
+              ? null
+              : object.lastPlayed!.microsecondsSinceEpoch * 1000,
+        );
+        fbb.addInt64(20, object.playCount);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final modifiedAtValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          18,
+        );
+        final lastPlayedValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          42,
+        );
+        final sourceKeyParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final sourceUriParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final potentialIdentityKeyParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final nameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 20, '');
+        final artistNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 22, '');
+        final albumNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 24, '');
+        final durationInSecondsParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          26,
+          0,
+        );
+        final trackNumberParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          28,
+          0,
+        );
+        final discNumberParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          30,
+          0,
+        );
+        final yearParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          32,
+          0,
+        );
+        final availableParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          34,
+          false,
+        );
+        final supportsRandomAccessParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          36,
+          false,
+        );
+        final metadataLoadedParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          38,
+          false,
+        );
+        final object =
+            LocalTrack(
+                sourceKey: sourceKeyParam,
+                sourceUri: sourceUriParam,
+                potentialIdentityKey: potentialIdentityKeyParam,
+                name: nameParam,
+                artistName: artistNameParam,
+                albumName: albumNameParam,
+                durationInSeconds: durationInSecondsParam,
+                trackNumber: trackNumberParam,
+                discNumber: discNumberParam,
+                year: yearParam,
+                available: availableParam,
+                supportsRandomAccess: supportsRandomAccessParam,
+                metadataLoaded: metadataLoadedParam,
+              )
+              ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0)
+              ..contentHash = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 12)
+              ..resolvedSongHash = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 14)
+              ..fileSize = const fb.Int64Reader().vTableGetNullable(
+                buffer,
+                rootOffset,
+                16,
+              )
+              ..modifiedAt =
+                  modifiedAtValue == null
+                      ? null
+                      : DateTime.fromMicrosecondsSinceEpoch(
+                        (modifiedAtValue / 1000).round(),
+                      )
+              ..likedByUser = const fb.BoolReader().vTableGet(
+                buffer,
+                rootOffset,
+                40,
+                false,
+              )
+              ..lastPlayed =
+                  lastPlayedValue == null
+                      ? null
+                      : DateTime.fromMicrosecondsSinceEpoch(
+                        (lastPlayedValue / 1000).round(),
+                      )
+              ..playCount = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                44,
+                0,
+              );
 
         return object;
       },
@@ -1674,6 +2116,41 @@ class Song_ {
   static final isLocal = obx.QueryBooleanProperty<Song>(
     _entities[5].properties[14],
   );
+
+  /// See [Song.localFileSize].
+  static final localFileSize = obx.QueryIntegerProperty<Song>(
+    _entities[5].properties[15],
+  );
+
+  /// See [Song.localFileModifiedAt].
+  static final localFileModifiedAt = obx.QueryDateNanoProperty<Song>(
+    _entities[5].properties[16],
+  );
+
+  /// See [Song.cachedChunkCount].
+  static final cachedChunkCount = obx.QueryIntegerProperty<Song>(
+    _entities[5].properties[17],
+  );
+
+  /// See [Song.manifestChunkSize].
+  static final manifestChunkSize = obx.QueryIntegerProperty<Song>(
+    _entities[5].properties[18],
+  );
+
+  /// See [Song.manifestTotalBytes].
+  static final manifestTotalBytes = obx.QueryIntegerProperty<Song>(
+    _entities[5].properties[19],
+  );
+
+  /// See [Song.chunkHashes].
+  static final chunkHashes = obx.QueryStringVectorProperty<Song>(
+    _entities[5].properties[20],
+  );
+
+  /// See [Song.fullyCached].
+  static final fullyCached = obx.QueryBooleanProperty<Song>(
+    _entities[5].properties[21],
+  );
 }
 
 /// [ChunkStat] entity fields to define ObjectBox queries.
@@ -1721,5 +2198,113 @@ class ChunkStat_ {
   /// See [ChunkStat.serverChunks].
   static final serverChunks = obx.QueryIntegerProperty<ChunkStat>(
     _entities[6].properties[8],
+  );
+}
+
+/// [LocalTrack] entity fields to define ObjectBox queries.
+class LocalTrack_ {
+  /// See [LocalTrack.id].
+  static final id = obx.QueryIntegerProperty<LocalTrack>(
+    _entities[7].properties[0],
+  );
+
+  /// See [LocalTrack.sourceKey].
+  static final sourceKey = obx.QueryStringProperty<LocalTrack>(
+    _entities[7].properties[1],
+  );
+
+  /// See [LocalTrack.sourceUri].
+  static final sourceUri = obx.QueryStringProperty<LocalTrack>(
+    _entities[7].properties[2],
+  );
+
+  /// See [LocalTrack.potentialIdentityKey].
+  static final potentialIdentityKey = obx.QueryStringProperty<LocalTrack>(
+    _entities[7].properties[3],
+  );
+
+  /// See [LocalTrack.contentHash].
+  static final contentHash = obx.QueryStringProperty<LocalTrack>(
+    _entities[7].properties[4],
+  );
+
+  /// See [LocalTrack.resolvedSongHash].
+  static final resolvedSongHash = obx.QueryStringProperty<LocalTrack>(
+    _entities[7].properties[5],
+  );
+
+  /// See [LocalTrack.fileSize].
+  static final fileSize = obx.QueryIntegerProperty<LocalTrack>(
+    _entities[7].properties[6],
+  );
+
+  /// See [LocalTrack.modifiedAt].
+  static final modifiedAt = obx.QueryDateNanoProperty<LocalTrack>(
+    _entities[7].properties[7],
+  );
+
+  /// See [LocalTrack.name].
+  static final name = obx.QueryStringProperty<LocalTrack>(
+    _entities[7].properties[8],
+  );
+
+  /// See [LocalTrack.artistName].
+  static final artistName = obx.QueryStringProperty<LocalTrack>(
+    _entities[7].properties[9],
+  );
+
+  /// See [LocalTrack.albumName].
+  static final albumName = obx.QueryStringProperty<LocalTrack>(
+    _entities[7].properties[10],
+  );
+
+  /// See [LocalTrack.durationInSeconds].
+  static final durationInSeconds = obx.QueryIntegerProperty<LocalTrack>(
+    _entities[7].properties[11],
+  );
+
+  /// See [LocalTrack.trackNumber].
+  static final trackNumber = obx.QueryIntegerProperty<LocalTrack>(
+    _entities[7].properties[12],
+  );
+
+  /// See [LocalTrack.discNumber].
+  static final discNumber = obx.QueryIntegerProperty<LocalTrack>(
+    _entities[7].properties[13],
+  );
+
+  /// See [LocalTrack.year].
+  static final year = obx.QueryIntegerProperty<LocalTrack>(
+    _entities[7].properties[14],
+  );
+
+  /// See [LocalTrack.available].
+  static final available = obx.QueryBooleanProperty<LocalTrack>(
+    _entities[7].properties[15],
+  );
+
+  /// See [LocalTrack.supportsRandomAccess].
+  static final supportsRandomAccess = obx.QueryBooleanProperty<LocalTrack>(
+    _entities[7].properties[16],
+  );
+
+  /// See [LocalTrack.metadataLoaded].
+  static final metadataLoaded = obx.QueryBooleanProperty<LocalTrack>(
+    _entities[7].properties[17],
+  );
+
+  /// See [LocalTrack.likedByUser].
+  static final likedByUser = obx.QueryBooleanProperty<LocalTrack>(
+    _entities[7].properties[18],
+  );
+
+  /// See [LocalTrack.lastPlayed].
+  static final lastPlayed = obx.QueryDateNanoProperty<LocalTrack>(
+    _entities[7].properties[19],
+  );
+
+  /// See [LocalTrack.playCount].
+  static final playCount = obx.QueryIntegerProperty<LocalTrack>(
+    _entities[7].properties[20],
   );
 }

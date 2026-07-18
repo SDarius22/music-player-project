@@ -299,7 +299,7 @@
     },
     {
       "id": "6:5328859898643810358",
-      "lastPropertyId": "31:2531404889274986009",
+      "lastPropertyId": "39:5973356514149286900",
       "name": "Song",
       "properties": [
         {
@@ -385,6 +385,41 @@
           "id": "31:2531404889274986009",
           "name": "isLocal",
           "type": 1
+        },
+        {
+          "id": "32:411355640750837036",
+          "name": "localFileSize",
+          "type": 6
+        },
+        {
+          "id": "33:7488473020334125890",
+          "name": "localFileModifiedAt",
+          "type": 12
+        },
+        {
+          "id": "35:7784839284837429330",
+          "name": "cachedChunkCount",
+          "type": 6
+        },
+        {
+          "id": "36:8140606922242338683",
+          "name": "manifestChunkSize",
+          "type": 6
+        },
+        {
+          "id": "37:2204730568269627636",
+          "name": "manifestTotalBytes",
+          "type": 6
+        },
+        {
+          "id": "38:1553791694405602903",
+          "name": "chunkHashes",
+          "type": 30
+        },
+        {
+          "id": "39:5973356514149286900",
+          "name": "fullyCached",
+          "type": 1
         }
       ],
       "relations": []
@@ -444,10 +479,128 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "15:2945740980705724958",
+      "lastPropertyId": "21:8897077843577320749",
+      "name": "LocalTrack",
+      "properties": [
+        {
+          "id": "1:2077269001600247140",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:7345749804365285103",
+          "name": "sourceKey",
+          "indexId": "31:9193025249151034608",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:6018616063970906674",
+          "name": "sourceUri",
+          "type": 9
+        },
+        {
+          "id": "4:3395965466467413925",
+          "name": "potentialIdentityKey",
+          "indexId": "32:8313128316531896333",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "5:4612442381075463814",
+          "name": "contentHash",
+          "type": 9
+        },
+        {
+          "id": "6:7387144961737167593",
+          "name": "resolvedSongHash",
+          "type": 9
+        },
+        {
+          "id": "7:6308742482471645916",
+          "name": "fileSize",
+          "type": 6
+        },
+        {
+          "id": "8:8385779945019702048",
+          "name": "modifiedAt",
+          "type": 12
+        },
+        {
+          "id": "9:6675741452802662644",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "10:1194403866148071788",
+          "name": "artistName",
+          "type": 9
+        },
+        {
+          "id": "11:2512683893858552360",
+          "name": "albumName",
+          "type": 9
+        },
+        {
+          "id": "12:6458749858391096787",
+          "name": "durationInSeconds",
+          "type": 6
+        },
+        {
+          "id": "13:4115216890703249904",
+          "name": "trackNumber",
+          "type": 6
+        },
+        {
+          "id": "14:5871459636106643732",
+          "name": "discNumber",
+          "type": 6
+        },
+        {
+          "id": "15:2994734519572167845",
+          "name": "year",
+          "type": 6
+        },
+        {
+          "id": "16:7175017500711942423",
+          "name": "available",
+          "type": 1
+        },
+        {
+          "id": "17:3255800994788113581",
+          "name": "supportsRandomAccess",
+          "type": 1
+        },
+        {
+          "id": "18:6447133463789238132",
+          "name": "metadataLoaded",
+          "type": 1
+        },
+        {
+          "id": "19:8706462220867521924",
+          "name": "likedByUser",
+          "type": 1
+        },
+        {
+          "id": "20:4707247574705027975",
+          "name": "lastPlayed",
+          "type": 12
+        },
+        {
+          "id": "21:8897077843577320749",
+          "name": "playCount",
+          "type": 6
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "14:6389059844630226255",
-  "lastIndexId": "30:5322149114517963262",
+  "lastEntityId": "15:2945740980705724958",
+  "lastIndexId": "32:8313128316531896333",
   "lastRelationId": "10:1976178507562192675",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
@@ -551,7 +704,8 @@
     3835940553080101764,
     1880970681925066010,
     5586295309400875881,
-    5063639271441214345
+    5063639271441214345,
+    7071971923846190552
   ],
   "retiredRelationUids": [
     1387782578054686999,

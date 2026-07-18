@@ -299,22 +299,17 @@ class _DrawerWidgetState extends State<DrawerWidget> {
               },
             ),
 
-            StreamBuilder<double>(
+            StreamBuilder<MusicScanProgress>(
               stream:
                   context.read<AbstractMusicScannerService>().progressStream,
-              initialData: 2.0,
+              initialData: const MusicScanProgress(MusicScanPhase.idle),
               builder: (context, snapshot) {
-                final progress = snapshot.data ?? 2.0;
+                final scan =
+                    snapshot.data ??
+                    const MusicScanProgress(MusicScanPhase.idle);
+                final progress = scan.fraction;
 
-                final toBeShown = progress >= 0.0 && progress <= 1.0;
-                final isFinished = progress == 1.0;
-
-                if (isFinished) {
-                  debugPrint("Refresh after metadata enrichment finished.");
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    context.read<SongProvider>().refreshSongs();
-                  });
-                }
+                final toBeShown = scan.isRunning;
 
                 return AnimatedContainer(
                   height: height * 0.05,
@@ -340,17 +335,22 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                                     child: CircularProgressIndicator(
                                       color: Colors.white,
                                       strokeWidth: 2.5,
-                                      value: progress > 0 ? progress : null,
+                                      value: progress,
                                     ),
                                   ),
                                 ),
                                 SizedBox(width: width * 0.01),
                                 Expanded(
                                   child: AnimatedOpacity(
-                                    opacity: !isFinished ? 1.0 : 0.0,
+                                    opacity: 1.0,
                                     duration: const Duration(milliseconds: 300),
                                     child: Text(
-                                      isFinished ? "Complete" : "Scanning...",
+                                      scan.phase == MusicScanPhase.discovering
+                                          ? "Finding music..."
+                                          : scan.phase ==
+                                              MusicScanPhase.enriching
+                                          ? "Reading details ${scan.processed}/${scan.total}"
+                                          : "Scanning ${scan.processed}/${scan.total}",
                                       style: MusicPlayerTheme.getTheme()
                                           .textTheme
                                           .bodyLarge!
@@ -363,6 +363,19 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                                     ),
                                   ),
                                 ),
+                                IconButton(
+                                  tooltip: 'Cancel scan',
+                                  onPressed:
+                                      () =>
+                                          context
+                                              .read<SongProvider>()
+                                              .cancelBackgroundScan(),
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.white70,
+                                    size: 18,
+                                  ),
+                                ),
                               ] else ...[
                                 Expanded(
                                   child: AspectRatio(
@@ -370,7 +383,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                                     child: CircularProgressIndicator(
                                       color: Colors.white,
                                       strokeWidth: 2.5,
-                                      value: progress > 0 ? progress : null,
+                                      value: progress,
                                     ),
                                   ),
                                 ),

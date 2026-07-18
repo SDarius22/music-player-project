@@ -28,6 +28,7 @@ SearchHeader _buildHeader({
   required void Function(String) onSortField,
   required void Function(bool) onAscending,
   required void Function(bool) onLocalOnly,
+  void Function(bool)? onStreamOnly,
 }) {
   return SearchHeader(
     title: 'Tracks',
@@ -39,6 +40,7 @@ SearchHeader _buildHeader({
     onSortField: onSortField,
     onAscending: onAscending,
     onLocalOnly: onLocalOnly,
+    onStreamOnly: onStreamOnly,
   );
 }
 
@@ -75,6 +77,7 @@ void main() {
     testWidgets('emits filter and sort menu selections', (tester) async {
       final appStateProvider = _FakeAppStateProvider();
       final localOnlySelections = <bool>[];
+      final streamOnlySelections = <bool>[];
       final sortSelections = <String>[];
       final ascendingSelections = <bool>[];
 
@@ -86,16 +89,24 @@ void main() {
             onSortField: sortSelections.add,
             onAscending: ascendingSelections.add,
             onLocalOnly: localOnlySelections.add,
+            onStreamOnly: streamOnlySelections.add,
           ),
         ),
       );
 
       await tester.tap(find.byTooltip('Filter'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Local Only'));
+      await tester.tap(find.text('Available Offline'));
       await tester.pumpAndSettle();
 
       expect(localOnlySelections, [true]);
+
+      await tester.tap(find.byTooltip('Filter'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Available to Stream'));
+      await tester.pumpAndSettle();
+
+      expect(streamOnlySelections, [true]);
 
       await tester.tap(find.byTooltip('Sort'));
       await tester.pumpAndSettle();

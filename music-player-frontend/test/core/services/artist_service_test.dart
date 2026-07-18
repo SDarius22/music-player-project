@@ -65,7 +65,8 @@ void main() {
           () async {
             final fetched = await service.fetchArtistDetails('server-hash');
             expect(fetched!.name, 'Server Artist');
-            expect(fetched.getSongs().single.fileHash, 'song');
+            expect(fetched.remoteSourceHashes, ['server-hash']);
+            expect(fetched.isAvailableToStream, isTrue);
           },
           () => MockClient(
             (_) async => http.Response(

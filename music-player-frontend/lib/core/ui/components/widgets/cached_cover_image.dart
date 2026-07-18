@@ -50,6 +50,7 @@ Future<File?> _cacheFile(String url) async {
 
 class CachedCoverImage extends StatefulWidget {
   final String imageUrl;
+  final String? cacheKey;
   final Map<String, String> headers;
   final BoxFit fit;
   final void Function(Uint8List bytes)? onBytesLoaded;
@@ -59,6 +60,7 @@ class CachedCoverImage extends StatefulWidget {
   const CachedCoverImage({
     super.key,
     required this.imageUrl,
+    this.cacheKey,
     this.headers = const {},
     this.fit = BoxFit.cover,
     this.onBytesLoaded,
@@ -82,23 +84,26 @@ class _CachedCoverImageState extends State<CachedCoverImage> {
   @override
   void didUpdateWidget(covariant CachedCoverImage old) {
     super.didUpdateWidget(old);
-    if (old.imageUrl != widget.imageUrl) {
+    if (old.imageUrl != widget.imageUrl ||
+        old.cacheKey != widget.cacheKey ||
+        old.path != widget.path) {
       _future = _load();
       setState(() {});
     }
   }
 
   Future<Uint8List?> _load() async {
-    if (widget.imageUrl.isEmpty) return null;
+    if (widget.imageUrl.isEmpty && widget.path == null) return null;
+    final cacheKey = widget.cacheKey ?? widget.imageUrl;
 
-    final mem = _MemoryCache.get(widget.imageUrl);
+    final mem = _MemoryCache.get(cacheKey);
     if (mem != null) return _bytesLoaded(mem);
 
-    final file = await _cacheFile(widget.imageUrl);
+    final file = await _cacheFile(cacheKey);
     if (file != null && file.existsSync()) {
       final bytes = await file.readAsBytes();
       if (bytes.isNotEmpty) {
-        _MemoryCache.put(widget.imageUrl, bytes);
+        _MemoryCache.put(cacheKey, bytes);
         return _bytesLoaded(bytes);
       }
     }
@@ -110,6 +115,8 @@ class _CachedCoverImageState extends State<CachedCoverImage> {
           throw Exception('File service returned null for ${widget.path!}');
         }
         if (bytes.isNotEmpty) {
+          _MemoryCache.put(cacheKey, bytes);
+          file?.writeAsBytes(bytes, flush: true).ignore();
           return _bytesLoaded(bytes);
         }
       } catch (e) {
@@ -119,6 +126,7 @@ class _CachedCoverImageState extends State<CachedCoverImage> {
       }
     }
 
+    if (widget.imageUrl.isEmpty) return null;
     try {
       final response = await http.get(
         Uri.parse(widget.imageUrl),
@@ -127,7 +135,7 @@ class _CachedCoverImageState extends State<CachedCoverImage> {
       if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         final bytes = response.bodyBytes;
         if (!widget.imageUrl.contains('playlists')) {
-          _MemoryCache.put(widget.imageUrl, bytes);
+          _MemoryCache.put(cacheKey, bytes);
           file?.writeAsBytes(bytes, flush: true).ignore();
         }
         return _bytesLoaded(bytes);

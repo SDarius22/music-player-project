@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
+import 'package:music_player_frontend/core/services/desktop_audio_metadata_reader.dart';
 
 class MacosFileService extends AbstractFileService {
   static final _logger = Logger('MacosFileService');
@@ -54,29 +55,7 @@ class MacosFileService extends AbstractFileService {
     String path, {
     bool withImage = false,
   }) async {
-    Map<String, dynamic>? metadataVariable = {};
-    metadataVariable['path'] = path;
-
-    AudioMetadata metadataVar;
-    try {
-      metadataVar = readMetadata(File(path), getImage: withImage);
-    } catch (e) {
-      _logger.warning('Error reading metadata for $path', e);
-      metadataVariable['title'] = path.replaceAll("\\", "/").split("/").last;
-      return metadataVariable;
-    }
-    metadataVariable['title'] =
-        metadataVar.title ?? path.replaceAll("\\", "/").split("/").last;
-    metadataVariable['album'] = metadataVar.album ?? "Unknown Album";
-    metadataVariable['duration'] = metadataVar.duration?.inSeconds ?? 0;
-    metadataVariable['trackNumber'] = metadataVar.trackNumber ?? 0;
-    metadataVariable['artist'] = metadataVar.artist ?? "Unknown Artist";
-    metadataVariable['discNumber'] = metadataVar.discNumber ?? 0;
-    metadataVariable['year'] = metadataVar.year?.year ?? 0;
-    metadataVariable['image'] =
-        metadataVar.pictures.isNotEmpty ? metadataVar.pictures[0].bytes : null;
-    metadataVariable['lyricsPath'] = super.getLyricsPath(path);
-    return metadataVariable;
+    return readDesktopAudioMetadata(path, withImage: withImage);
   }
 
   @override

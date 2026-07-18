@@ -4,6 +4,8 @@ import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/providers/selection_provider.dart';
+import 'package:music_player_frontend/core/services/entity_song_order.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
@@ -97,22 +99,24 @@ class PlaylistScreen extends EntityScreen<PlaylistProvider> {
               tooltip: "Play",
               padding: EdgeInsets.all(height * 0.005),
               onPressed: () async {
-                final audioProvider = Provider.of<AudioProvider>(
-                  context,
-                  listen: false,
-                );
-                await audioProvider.setQueueAndPlay(songs, songs.first);
+                final ordered = await EntitySongOrder.load(playlist, provider);
+                if (ordered.isEmpty) return;
+                if (!context.mounted) return;
+                final audioProvider = context.read<AudioProvider>();
+                await audioProvider.setQueueAndPlay(ordered, ordered.first);
               },
               icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
             ),
             IconButton(
               tooltip: "Shuffle",
               onPressed: () async {
-                if (songs.isEmpty) return;
+                final ordered = await EntitySongOrder.load(playlist, provider);
+                if (ordered.isEmpty) return;
+                if (!context.mounted) return;
                 final audioProvider = context.read<AudioProvider>();
                 await audioProvider.setShuffleAndWait(true);
-                final shuffled = List<Song>.from(songs)..shuffle();
-                await audioProvider.setQueueAndPlay(songs, shuffled.first);
+                final shuffled = List<Song>.from(ordered)..shuffle();
+                await audioProvider.setQueueAndPlay(ordered, shuffled.first);
               },
               padding: EdgeInsets.all(height * 0.005),
               icon: Icon(FluentIcons.shuffleOn, color: Colors.white, size: 24),
@@ -441,6 +445,7 @@ class PlaylistScreen extends EntityScreen<PlaylistProvider> {
     BoxConstraints constraints,
   ) {
     final playlist = entity as Playlist;
+    final selection = context.watch<SelectionProvider>();
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
 
@@ -466,17 +471,27 @@ class PlaylistScreen extends EntityScreen<PlaylistProvider> {
             (page, size) =>
                 provider.getPlaylistSongsPage(playlist, page: page, size: size),
         onTap: (BaseEntity selected, List<dynamic> items) async {
+          if (selection.selectedEntities.isNotEmpty) {
+            _toggleSelection(selection, selected);
+            return;
+          }
           final audioProvider = context.read<AudioProvider>();
-          final queue = items.whereType<Song>().toList(growable: false);
+          final queue = await EntitySongOrder.load(playlist, provider);
           if (queue.isEmpty) {
             return;
           }
           await audioProvider.setQueueAndPlay(queue, selected as Song);
         },
-        onLongPress: (BaseEntity entity, List<dynamic> items) {},
-        isSelected: (BaseEntity p1) => false,
+        onLongPress: (entity, items) => _toggleSelection(selection, entity),
+        isSelected: selection.isSelected,
         reloadToken: playlist.getHash(),
       ),
     );
+  }
+
+  void _toggleSelection(SelectionProvider selection, BaseEntity entity) {
+    selection.isSelected(entity)
+        ? selection.deselectEntity(entity)
+        : selection.selectEntity(entity);
   }
 }

@@ -24,8 +24,9 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
     bool ascending,
     bool localOnly,
     int page,
-    int size,
-  ) async {
+    int size, {
+    bool streamOnly = false,
+  }) async {
     final result = await _playlistService.getPlaylistsPage(
       query,
       sortField,
@@ -33,6 +34,7 @@ class PlaylistProvider with ChangeNotifier implements QueryableProvider {
       localOnly,
       page,
       size,
+      streamOnly: streamOnly,
     );
     return PageResult(
       content: result.content,

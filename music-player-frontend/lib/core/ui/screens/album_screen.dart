@@ -5,6 +5,8 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/providers/selection_provider.dart';
+import 'package:music_player_frontend/core/services/entity_song_order.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
@@ -99,19 +101,24 @@ class AlbumScreen extends EntityScreen<AlbumProvider> {
 
   Future<void> _playSong(BuildContext context, Album album, Song song) async {
     final audioProvider = context.read<AudioProvider>();
-    await audioProvider.setQueueAndPlay(album.getSongs(), song);
+    final songs = await EntitySongOrder.load(album, provider);
+    if (songs.isEmpty) return;
+    final selected = songs.where((candidate) => candidate == song).firstOrNull;
+    await audioProvider.setQueueAndPlay(songs, selected ?? song);
   }
 
   Future<void> _playAlbum(BuildContext context, Album album) async {
-    if (album.getSongs().isEmpty) {
-      return;
-    }
-    await _playSong(context, album, album.getSongs().first);
+    final songs = await EntitySongOrder.load(album, provider);
+    if (songs.isEmpty) return;
+    if (!context.mounted) return;
+    final audioProvider = context.read<AudioProvider>();
+    await audioProvider.setQueueAndPlay(songs, songs.first);
   }
 
   Future<void> _shuffleAlbum(BuildContext context, Album album) async {
-    final songs = album.getSongs();
+    final songs = await EntitySongOrder.load(album, provider);
     if (songs.isEmpty) return;
+    if (!context.mounted) return;
     final audioProvider = context.read<AudioProvider>();
     await audioProvider.setShuffleAndWait(true);
     final shuffled = List<Song>.from(songs)..shuffle();
@@ -125,6 +132,7 @@ class AlbumScreen extends EntityScreen<AlbumProvider> {
     BoxConstraints constraints,
   ) {
     final album = entity as Album;
+    final selection = context.watch<SelectionProvider>();
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
 
@@ -149,15 +157,23 @@ class AlbumScreen extends EntityScreen<AlbumProvider> {
         fetchPage:
             (page, size) =>
                 provider.getSongsPage(album.getHash(), page: page, size: size),
-        onTap:
-            (BaseEntity entity, List<dynamic> items) =>
-                _playSong(context, album, entity as Song),
-        onLongPress: (BaseEntity entity, List<dynamic> items) {},
-        isSelected: (BaseEntity p1) {
-          return false;
+        onTap: (BaseEntity entity, List<dynamic> items) {
+          if (selection.selectedEntities.isNotEmpty) {
+            _toggleSelection(selection, entity);
+            return Future<void>.value();
+          }
+          return _playSong(context, album, entity as Song);
         },
+        onLongPress: (entity, items) => _toggleSelection(selection, entity),
+        isSelected: selection.isSelected,
         reloadToken: album.getHash(),
       ),
     );
+  }
+
+  void _toggleSelection(SelectionProvider selection, BaseEntity entity) {
+    selection.isSelected(entity)
+        ? selection.deselectEntity(entity)
+        : selection.selectEntity(entity);
   }
 }

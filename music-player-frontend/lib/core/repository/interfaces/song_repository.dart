@@ -13,6 +13,8 @@ abstract class SongRepository {
 
   Song? getSongByFileHash(String fileHash);
 
+  Song? getSongByLocalPath(String path);
+
   Song getOrCreateSong(String fileHash);
 
   Song? getMostRecentPlayedSong();

@@ -17,6 +17,11 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
 
   @override
   Future<Artist?> fetchEntity(BaseEntity artist) async {
+    if (artist is Artist &&
+        artist.hash.startsWith('local-artist:') &&
+        artist.remoteSourceHashes.isNotEmpty) {
+      return artist;
+    }
     return await _artistService.fetchArtistDetails(artist.getHash());
   }
 
@@ -27,8 +32,9 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
     bool ascending,
     bool localOnly,
     int page,
-    int size,
-  ) async {
+    int size, {
+    bool streamOnly = false,
+  }) async {
     final result = await _artistService.getArtistsPage(
       query,
       sortField,
@@ -36,6 +42,7 @@ class ArtistProvider with ChangeNotifier implements QueryableProvider {
       localOnly,
       page,
       size,
+      streamOnly: streamOnly,
     );
     return PageResult(
       content: result.content,

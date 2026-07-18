@@ -41,5 +41,14 @@ void main() {
         expect(indices, [2, 7, 10]);
       },
     );
+
+    test('getCachedFileHashes returns unique cached song hashes', () async {
+      final repo = InMemoryChunkCacheRepository();
+      await repo.saveChunk('song-a', 0, Uint8List.fromList([1]));
+      await repo.saveChunk('song-a', 1, Uint8List.fromList([2]));
+      await repo.saveChunk('song-b', 0, Uint8List.fromList([3]));
+
+      expect((await repo.getCachedFileHashes()).toSet(), {'song-a', 'song-b'});
+    });
   });
 }

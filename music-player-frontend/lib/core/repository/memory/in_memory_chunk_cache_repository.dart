@@ -5,6 +5,17 @@ import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_rep
 class InMemoryChunkCacheRepository implements ChunkCacheRepository {
   final Map<String, Uint8List> _cache = {};
 
+  @override
+  Future<void> configureSong(
+    String fileHash,
+    int chunkSize,
+    int totalBytes,
+    int totalChunks,
+  ) async {}
+
+  @override
+  Future<bool> finalizeSong(String fileHash) async => true;
+
   String _key(String fileHash, int chunkIndex) => '$fileHash:$chunkIndex';
 
   @override
@@ -38,5 +49,10 @@ class InMemoryChunkCacheRepository implements ChunkCacheRepository {
     }
     indices.sort();
     return indices;
+  }
+
+  @override
+  Future<List<String>> getCachedFileHashes() async {
+    return _cache.keys.map((key) => key.split(':').first).toSet().toList();
   }
 }

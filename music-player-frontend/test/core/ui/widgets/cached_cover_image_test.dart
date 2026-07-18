@@ -69,6 +69,46 @@ void main() {
     );
   });
 
+  testWidgets('reuses locally extracted artwork by album cache key', (
+    tester,
+  ) async {
+    var localLoads = 0;
+    Future<Uint8List?> loader(String path) async {
+      localLoads++;
+      return _png;
+    }
+
+    await tester.pumpWidget(
+      _host(
+        CachedCoverImage(
+          imageUrl: 'http://test/songs/first/cover',
+          cacheKey: 'album:shared-test-album',
+          path: '/music/first.flac',
+          localImageLoader: loader,
+        ),
+      ),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump();
+
+    await tester.pumpWidget(
+      _host(
+        CachedCoverImage(
+          imageUrl: 'http://test/songs/second/cover',
+          cacheKey: 'album:shared-test-album',
+          path: '/music/second.flac',
+          localImageLoader: loader,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(localLoads, 1);
+    expect(find.byType(Image), findsOneWidget);
+  });
+
   testWidgets('failed local and network loads show the placeholder', (
     tester,
   ) async {

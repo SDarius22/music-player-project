@@ -9,6 +9,7 @@ import 'package:music_player_frontend/core/ui/screens/abstract/multiple_entities
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/artist_screen.dart';
+import 'package:music_player_frontend/core/services/entity_song_order.dart';
 import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
 
@@ -32,12 +33,10 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
       icon: const Icon(FluentIcons.play, color: Colors.white, size: 24),
       onPressed: () async {
         if (entity is! Artist) return;
-        final songs = entity.getSongs();
+        final audioProvider = context.read<AudioProvider>();
+        final songs = await EntitySongOrder.load(entity, provider);
         if (songs.isEmpty) return;
-        await Provider.of<AudioProvider>(
-          context,
-          listen: false,
-        ).setQueueAndPlay(songs, songs.first);
+        await audioProvider.setQueueAndPlay(songs, songs.first);
       },
     );
   }
@@ -59,26 +58,27 @@ class Artists extends MultipleEntitiesScreen<ArtistProvider> {
     BaseEntity entity,
     int dropdownIndex,
     BuildContext context,
-  ) {
+  ) async {
     final artist = entity as Artist;
+    if (dropdownIndex == 2) {
+      final selection = context.read<SelectionProvider>();
+      selection.isSelected(entity)
+          ? selection.deselectEntity(entity)
+          : selection.selectEntity(entity);
+      return;
+    }
+    final appState = context.read<AbstractAppStateProvider>();
+    final audioProvider = context.read<AudioProvider>();
+    final songs = await EntitySongOrder.load(artist, provider);
     switch (dropdownIndex) {
       case 0:
-        Provider.of<AbstractAppStateProvider>(context, listen: false)
-            .innerNavigatorKey
-            .currentState!
-            .push(AddOrExportScreen.route(songs: artist.getSongs()));
+        appState.innerNavigatorKey.currentState?.push(
+          AddOrExportScreen.route(songs: songs),
+        );
       case 1:
-        Provider.of<AudioProvider>(
-          context,
-          listen: false,
-        ).addNextToQueue(artist.getSongs());
+        audioProvider.addNextToQueue(songs);
       case 2:
-        final sp = Provider.of<SelectionProvider>(context, listen: false);
-        if (sp.selectedEntities.contains(entity)) {
-          sp.deselectEntity(entity);
-        } else {
-          sp.selectEntity(entity);
-        }
+        return;
     }
   }
 

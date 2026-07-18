@@ -10,8 +10,9 @@ abstract class QueryableProvider {
     bool ascending,
     bool localOnly,
     int page,
-    int size,
-  );
+    int size, {
+    bool streamOnly = false,
+  });
 
   Future<PageResult<Song>> getSongsPage(
     String hash, {

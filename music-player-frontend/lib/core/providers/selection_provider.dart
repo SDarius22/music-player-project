@@ -4,10 +4,10 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 class SelectionProvider with ChangeNotifier {
   final Set<BaseEntity> _selectedEntities = {};
 
-  late Set<BaseEntity> selectedEntities = _selectedEntities;
+  Set<BaseEntity> selectedEntities = const {};
 
   void refreshSelection() {
-    selectedEntities = _selectedEntities;
+    selectedEntities = Set<BaseEntity>.unmodifiable(_selectedEntities);
     notifyListeners();
   }
 

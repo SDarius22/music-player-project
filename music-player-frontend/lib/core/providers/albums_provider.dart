@@ -17,6 +17,11 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
 
   @override
   Future<Album?> fetchEntity(BaseEntity album) async {
+    if (album is Album &&
+        album.hash.startsWith('local-album:') &&
+        album.remoteSourceHashes.isNotEmpty) {
+      return album;
+    }
     return await _albumService.fetchAlbumDetails(album.getHash());
   }
 
@@ -27,8 +32,9 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
     bool ascending,
     bool localOnly,
     int page,
-    int size,
-  ) async {
+    int size, {
+    bool streamOnly = false,
+  }) async {
     final result = await _albumService.getAlbumsPage(
       query,
       sortField,
@@ -36,6 +42,7 @@ class AlbumProvider with ChangeNotifier implements QueryableProvider {
       localOnly,
       page,
       size,
+      streamOnly: streamOnly,
     );
     return PageResult(
       content: result.content,

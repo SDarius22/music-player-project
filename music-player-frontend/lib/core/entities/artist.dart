@@ -21,6 +21,15 @@ class Artist implements BaseEntity {
   @Property(type: PropertyType.byteVector)
   Uint8List? imageBytes;
 
+  @Transient()
+  bool hasOfflineSource = false;
+
+  @Transient()
+  bool hasRemoteSource = false;
+
+  @Transient()
+  List<String> remoteSourceHashes = [];
+
   @Backlink('artist')
   final songs = ToMany<Song>();
 
@@ -55,6 +64,7 @@ class Artist implements BaseEntity {
 
   @override
   bool get isLocal {
+    if (hasOfflineSource) return true;
     if (songs.isEmpty) {
       return false;
     }
@@ -65,6 +75,13 @@ class Artist implements BaseEntity {
     }
     return false;
   }
+
+  @override
+  bool get isAvailableOffline => isLocal;
+
+  @override
+  bool get isAvailableToStream =>
+      hasRemoteSource || songs.any((song) => song.isAvailableToStream);
 
   set isLocal(bool value) {
     // No-op: Artist's locality is determined by its songs

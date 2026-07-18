@@ -640,7 +640,9 @@ class AppAudioService {
   }
 
   AudioSource _buildAudioSource(Song song) {
-    final bool isServerTrack = !song.isLocal;
+    // Offline availability and playback source are separate concepts. A fully
+    // cached remote song is offline-playable but still uses the chunk source.
+    final bool isServerTrack = !song.hasLocalFile;
 
     if (isServerTrack) {
       if (UniversalPlatform.isWeb && _useWebServiceWorkerStream) {
@@ -679,8 +681,12 @@ class AppAudioService {
           "Warning: Song ${song.getName()} is marked as local but has no path",
         );
       }
+      final localPath = song.path!;
+      final parsed = Uri.tryParse(localPath);
+      final localUri =
+          parsed != null && parsed.hasScheme ? parsed : Uri.file(localPath);
       return AudioSource.uri(
-        Uri.file(song.path!),
+        localUri,
         tag: Map<String, dynamic>.from({
           "path": song.path,
           "fileHash": song.getHash(),
@@ -743,6 +749,19 @@ class AppAudioService {
     } catch (e) {
       _logger.warning('[prefetch] ${song.getName()}: $e');
     }
+  }
+
+  Future<void> downloadSong(Song song) async {
+    final remoteHash = song.potentialRemoteHashes.firstOrNull ?? song.fileHash;
+    if (remoteHash.isEmpty || !song.isAvailableToStream) {
+      throw StateError('Song is not available to stream');
+    }
+    final manager = createChunkManager(remoteHash);
+    manager.configureSongInfo(
+      song.getName(),
+      ChunkStatsService.instance.reportSilently,
+    );
+    await manager.downloadAll();
   }
 
   Future<void> likeCurrentSong() async {

@@ -70,7 +70,15 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
     (entity, context) => const Text("Play Next"),
     (entity, context) => const Text("Select"),
     (entity, context) => const Text("Track Details"),
+    (entity, context) => const Text("Download"),
   ];
+
+  @override
+  bool isExtraActionVisible(BaseEntity entity, int actionIndex) {
+    if (actionIndex != 4) return true;
+    final song = entity as Song;
+    return song.isAvailableToStream && !song.isAvailableOffline;
+  }
 
   @override
   void onDropdownAction(
@@ -102,6 +110,28 @@ class Tracks extends MultipleEntitiesScreen<SongProvider> {
           context,
           listen: false,
         ).innerNavigatorKey.currentState?.push(TrackScreen.route(song: song));
+      case 4:
+        _downloadSong(song, context);
+    }
+  }
+
+  Future<void> _downloadSong(Song song, BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      SnackBar(content: Text('Downloading ${song.getName()}...')),
+    );
+    try {
+      await context.read<AudioProvider>().downloadSong(song);
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('${song.getName()} is available offline')),
+      );
+      provider.refreshSongs();
+    } catch (error) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Download failed: $error')),
+      );
     }
   }
 

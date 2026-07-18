@@ -12,6 +12,7 @@ import 'package:flutter/cupertino.dart' as _i2;
 import 'package:flutter/material.dart' as _i21;
 import 'package:just_audio/just_audio.dart' as _i13;
 import 'package:mesh_gradient/mesh_gradient.dart' as _i10;
+import 'package:miniplayer/miniplayer.dart' as _i11;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i19;
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart'
@@ -29,7 +30,6 @@ import 'package:music_player_frontend/core/providers/song_provider.dart'
 import 'package:music_player_frontend/core/services/health_service.dart' as _i8;
 import 'package:music_player_frontend/core/services/settings_service.dart'
     as _i9;
-import 'package:miniplayer/miniplayer.dart' as _i11;
 import 'package:rxdart/rxdart.dart' as _i3;
 
 // ignore_for_file: type=lint
@@ -613,6 +613,15 @@ class MockAudioProvider extends _i1.Mock implements _i7.AudioProvider {
           as _i15.Future<void>);
 
   @override
+  _i15.Future<void> downloadSong(_i4.Song? song) =>
+      (super.noSuchMethod(
+            Invocation.method(#downloadSong, [song]),
+            returnValue: _i15.Future<void>.value(),
+            returnValueForMissingStub: _i15.Future<void>.value(),
+          )
+          as _i15.Future<void>);
+
+  @override
   _i15.Future<void> seek(Duration? position) =>
       (super.noSuchMethod(
             Invocation.method(#seek, [position]),
@@ -1170,9 +1179,30 @@ class MockSongProvider extends _i1.Mock implements _i18.SongProvider {
           as bool);
 
   @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i15.Future<void> initialize(List<String>? musicDirectories) =>
       (super.noSuchMethod(
             Invocation.method(#initialize, [musicDirectories]),
+            returnValue: _i15.Future<void>.value(),
+            returnValueForMissingStub: _i15.Future<void>.value(),
+          )
+          as _i15.Future<void>);
+
+  @override
+  void startBackgroundScan() => super.noSuchMethod(
+    Invocation.method(#startBackgroundScan, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i15.Future<void> cancelBackgroundScan() =>
+      (super.noSuchMethod(
+            Invocation.method(#cancelBackgroundScan, []),
             returnValue: _i15.Future<void>.value(),
             returnValueForMissingStub: _i15.Future<void>.value(),
           )
@@ -1208,6 +1238,7 @@ class MockSongProvider extends _i1.Mock implements _i18.SongProvider {
     bool? localOnly,
     int? page,
     int? size, {
+    bool? streamOnly = false,
     String? filterAlbumHash,
     String? filterArtistHash,
     int? filterPlaylistId,
@@ -1217,6 +1248,7 @@ class MockSongProvider extends _i1.Mock implements _i18.SongProvider {
               #fetchPage,
               [query, sortField, ascending, localOnly, page, size],
               {
+                #streamOnly: streamOnly,
                 #filterAlbumHash: filterAlbumHash,
                 #filterArtistHash: filterArtistHash,
                 #filterPlaylistId: filterPlaylistId,
@@ -1229,6 +1261,7 @@ class MockSongProvider extends _i1.Mock implements _i18.SongProvider {
                   #fetchPage,
                   [query, sortField, ascending, localOnly, page, size],
                   {
+                    #streamOnly: streamOnly,
                     #filterAlbumHash: filterAlbumHash,
                     #filterArtistHash: filterArtistHash,
                     #filterPlaylistId: filterPlaylistId,
@@ -1244,6 +1277,7 @@ class MockSongProvider extends _i1.Mock implements _i18.SongProvider {
                       #fetchPage,
                       [query, sortField, ascending, localOnly, page, size],
                       {
+                        #streamOnly: streamOnly,
                         #filterAlbumHash: filterAlbumHash,
                         #filterArtistHash: filterArtistHash,
                         #filterPlaylistId: filterPlaylistId,
@@ -1363,12 +1397,6 @@ class MockSongProvider extends _i1.Mock implements _i18.SongProvider {
   @override
   void removeListener(_i17.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
 

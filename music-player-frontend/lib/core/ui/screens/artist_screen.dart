@@ -5,6 +5,8 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/core/providers/selection_provider.dart';
+import 'package:music_player_frontend/core/services/entity_song_order.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
@@ -80,14 +82,11 @@ class ArtistScreen extends EntityScreen<ArtistProvider> {
               padding: EdgeInsets.all(height * 0.005),
               onPressed: () async {
                 debugPrint("Play ${artist.name}");
-                var audioProvider = Provider.of<AudioProvider>(
-                  context,
-                  listen: false,
-                );
-                await audioProvider.setQueueAndPlay(
-                  artist.getSongs(),
-                  artist.getSongs().first,
-                );
+                final songs = await EntitySongOrder.load(artist, provider);
+                if (songs.isEmpty) return;
+                if (!context.mounted) return;
+                final audioProvider = context.read<AudioProvider>();
+                await audioProvider.setQueueAndPlay(songs, songs.first);
               },
               icon: Icon(FluentIcons.play, color: Colors.white, size: 24),
             ),
@@ -108,12 +107,16 @@ class ArtistScreen extends EntityScreen<ArtistProvider> {
 
   Future<void> _playSong(BuildContext context, Artist artist, Song song) async {
     final audioProvider = context.read<AudioProvider>();
-    await audioProvider.setQueueAndPlay(artist.getSongs(), song);
+    final songs = await EntitySongOrder.load(artist, provider);
+    if (songs.isEmpty) return;
+    final selected = songs.where((candidate) => candidate == song).firstOrNull;
+    await audioProvider.setQueueAndPlay(songs, selected ?? song);
   }
 
   Future<void> _shuffleArtist(BuildContext context, Artist artist) async {
-    final songs = artist.getSongs();
+    final songs = await EntitySongOrder.load(artist, provider);
     if (songs.isEmpty) return;
+    if (!context.mounted) return;
     final audioProvider = context.read<AudioProvider>();
     await audioProvider.setShuffleAndWait(true);
     final shuffled = List<Song>.from(songs)..shuffle();
@@ -127,6 +130,7 @@ class ArtistScreen extends EntityScreen<ArtistProvider> {
     BoxConstraints constraints,
   ) {
     final artist = entity as Artist;
+    final selection = context.watch<SelectionProvider>();
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
 
@@ -151,15 +155,23 @@ class ArtistScreen extends EntityScreen<ArtistProvider> {
         fetchPage:
             (page, size) =>
                 provider.getSongsPage(artist.getHash(), page: page, size: size),
-        onTap:
-            (BaseEntity entity, List<dynamic> items) =>
-                _playSong(context, artist, entity as Song),
-        onLongPress: (BaseEntity entity, List<dynamic> items) {},
-        isSelected: (BaseEntity p1) {
-          return false;
+        onTap: (BaseEntity entity, List<dynamic> items) {
+          if (selection.selectedEntities.isNotEmpty) {
+            _toggleSelection(selection, entity);
+            return Future<void>.value();
+          }
+          return _playSong(context, artist, entity as Song);
         },
+        onLongPress: (entity, items) => _toggleSelection(selection, entity),
+        isSelected: selection.isSelected,
         reloadToken: artist.getHash(),
       ),
     );
+  }
+
+  void _toggleSelection(SelectionProvider selection, BaseEntity entity) {
+    selection.isSelected(entity)
+        ? selection.deselectEntity(entity)
+        : selection.selectEntity(entity);
   }
 }

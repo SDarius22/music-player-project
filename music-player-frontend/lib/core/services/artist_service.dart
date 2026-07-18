@@ -11,6 +11,8 @@ import 'package:music_player_frontend/core/repository/interfaces/album_repositor
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/artist_rest_client.dart';
+import 'package:music_player_frontend/core/services/local_track_service.dart';
+import 'package:music_player_frontend/core/services/potential_identity.dart';
 
 class ArtistService {
   static final _logger = Logger('ArtistService');
@@ -19,13 +21,15 @@ class ArtistService {
   final AlbumRepository _albumRepository;
   final SongRepository _songRepository;
   final ArtistRestClient _artistRestService;
+  final LocalTrackService? _localTrackService;
 
   ArtistService(
     this._artistRepository,
     this._albumRepository,
     this._songRepository,
-    this._artistRestService,
-  );
+    this._artistRestService, [
+    this._localTrackService,
+  ]);
 
   Map<String, dynamic> get sortFields => _artistRepository.sortFields;
 
@@ -41,11 +45,14 @@ class ArtistService {
   Future<Artist?> fetchArtistDetails(String artistHash) async {
     try {
       final result = await _artistRestService.getArtistByHash(artistHash);
-      return cacheServerArtist(result!);
+      return _cacheServerArtistSummary(result!);
     } catch (e) {
       _logger.warning('Failed to fetch artist', e);
     }
-    return _artistRepository.getArtistByHash(artistHash);
+    return _artistRepository.getArtistByHash(artistHash) ??
+        _localArtists()
+            .where((artist) => artist.hash == artistHash)
+            .firstOrNull;
   }
 
   Future<({List<Artist> content, int totalPages, int page})> getArtistsPage(
@@ -54,8 +61,9 @@ class ArtistService {
     bool ascending,
     bool containLocalOnly,
     int page,
-    int size,
-  ) async {
+    int size, {
+    bool streamOnly = false,
+  }) async {
     int? serverTotalPages;
     try {
       final sort =
@@ -69,30 +77,113 @@ class ArtistService {
       serverTotalPages = serverPage.totalPages;
 
       for (final serverArtist in serverPage.content) {
-        cacheServerArtist(serverArtist);
+        _cacheServerArtistSummary(serverArtist);
       }
     } catch (e) {
       _logger.warning('ArtistService: server fetch failed, using local', e);
     }
 
-    final localContent = _artistRepository.getArtistsPaged(
+    final persisted = _artistRepository.getArtistsPaged(
       query,
       sortField,
       ascending,
-      containLocalOnly,
-      page * size,
-      size,
+      false,
+      0,
+      1 << 30,
     );
+    final localArtists = _localArtists();
+    final offlineHashes = <String>{};
+    final remoteHashes = <String>{};
+    for (final song in _songRepository.getAllSongs()) {
+      final hash = song.artist.target?.hash;
+      if (hash == null) continue;
+      if (song.isAvailableOffline) offlineHashes.add(hash);
+      if (song.isAvailableToStream) remoteHashes.add(hash);
+    }
+    for (final artist in localArtists) {
+      if (artist.songs.any((song) => song.isAvailableOffline)) {
+        offlineHashes.add(artist.hash);
+      }
+    }
+
+    final byIdentity = <String, Artist>{};
+    for (final artist in [...persisted, ...localArtists]) {
+      if (!artist.name.toLowerCase().contains(query.toLowerCase())) continue;
+      final identity = PotentialIdentity.create(
+        title: artist.name,
+        artist: '',
+        durationInSeconds: 0,
+      );
+      artist
+        ..hasOfflineSource = offlineHashes.contains(artist.hash)
+        ..hasRemoteSource =
+            !artist.hash.startsWith('local-artist:') ||
+            remoteHashes.contains(artist.hash);
+      if (artist.hasRemoteSource &&
+          !artist.hash.startsWith('local-artist:') &&
+          !artist.remoteSourceHashes.contains(artist.hash)) {
+        artist.remoteSourceHashes.add(artist.hash);
+      }
+      final existing = byIdentity[identity];
+      if (existing == null || (artist.isLocal && !existing.isLocal)) {
+        if (existing != null) {
+          _mergeSources(artist, existing);
+        }
+        byIdentity[identity] = artist;
+      } else {
+        _mergeSources(existing, artist);
+      }
+    }
+    final all =
+        byIdentity.values
+            .where(
+              (artist) =>
+                  (!containLocalOnly || artist.isAvailableOffline) &&
+                  (!streamOnly || artist.isAvailableToStream),
+            )
+            .toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
+    if (!ascending) {
+      final reversed = all.reversed.toList();
+      all
+        ..clear()
+        ..addAll(reversed);
+    }
+    final offset = page * size;
+    final localContent =
+        offset >= all.length
+            ? <Artist>[]
+            : all.sublist(offset, (offset + size).clamp(0, all.length));
 
     final totalPages =
         serverTotalPages ??
-        ((_artistRepository.getArtistCount(query, containLocalOnly) +
-                    size -
-                    1) ~/
-                size)
-            .clamp(1, double.maxFinite.toInt());
+        ((all.length + size - 1) ~/ size).clamp(1, double.maxFinite.toInt());
 
     return (content: localContent, totalPages: totalPages, page: page);
+  }
+
+  void _mergeSources(Artist target, Artist source) {
+    target
+      ..hasOfflineSource |= source.isAvailableOffline
+      ..hasRemoteSource |= source.isAvailableToStream;
+    for (final hash in source.remoteSourceHashes) {
+      if (!target.remoteSourceHashes.contains(hash)) {
+        target.remoteSourceHashes.add(hash);
+      }
+    }
+  }
+
+  Artist _cacheServerArtistSummary(ArtistExpandedDto serverArtist) {
+    final artist = _artistRepository.getOrCreateArtist(
+      serverArtist.hash,
+      serverArtist.name,
+    );
+    artist
+      ..hasRemoteSource = serverArtist.songFileHashes.isNotEmpty
+      ..remoteSourceHashes = [serverArtist.hash];
+    return _artistRepository.saveArtist(artist);
   }
 
   Artist cacheServerArtist(ArtistExpandedDto serverArtist) {
@@ -100,6 +191,9 @@ class ArtistService {
       serverArtist.hash,
       serverArtist.name,
     );
+    cachedArtist
+      ..hasRemoteSource = serverArtist.songFileHashes.isNotEmpty
+      ..remoteSourceHashes = [serverArtist.hash];
 
     for (var songHash in serverArtist.songFileHashes) {
       var cachedSong = _songRepository.getOrCreateSong(songHash);
@@ -136,17 +230,35 @@ class ArtistService {
       _logger.fine('ArtistService: server fetch failed for artist songs: $e');
     }
 
-    final localSongs = _songRepository.getArtistSongsPaged(
-      artistHash,
-      localOnly,
-      page * size,
-      size,
-    );
+    final localCandidates = _localSongsForArtist(artistHash);
+    final offset = page * size;
+    final localSourcePage =
+        offset >= localCandidates.length
+            ? <Song>[]
+            : localCandidates.sublist(
+              offset,
+              (offset + size).clamp(0, localCandidates.length),
+            );
+    final localSongs =
+        <String, Song>{
+            for (final song in _songRepository.getArtistSongsPaged(
+              artistHash,
+              localOnly,
+              offset,
+              size,
+            ))
+              song.getHash(): song,
+            for (final song in localSourcePage) song.getHash(): song,
+          }.values.take(size).toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
 
     final totalPages =
         (serverTotalPages != null && serverTotalPages > 0)
             ? serverTotalPages
             : ((_songRepository.getArtistSongCount(artistHash, localOnly) +
+                        localCandidates.length +
                         size -
                         1) ~/
                     size)
@@ -154,6 +266,28 @@ class ArtistService {
 
     return PageResult(content: localSongs, totalPages: totalPages, page: page);
   }
+
+  List<Artist> _localArtists() {
+    final artists = <String, Artist>{};
+    for (final track in _localTrackService?.getAll() ?? const []) {
+      if (!track.available) continue;
+      final song = _localTrackService!.toSongProjection(track);
+      final artist = song.artist.target!;
+      final existing = artists[artist.hash];
+      if (existing == null) {
+        artists[artist.hash] = artist;
+      } else {
+        existing.addSong(song);
+      }
+    }
+    return artists.values.toList();
+  }
+
+  List<Song> _localSongsForArtist(String artistHash) =>
+      _localArtists()
+          .where((artist) => artist.hash == artistHash)
+          .expand((artist) => artist.getSongs())
+          .toList();
 
   Song _cacheServerSong(SongDto serverSong) {
     var cachedSong = _songRepository.getOrCreateSong(serverSong.fileHash);

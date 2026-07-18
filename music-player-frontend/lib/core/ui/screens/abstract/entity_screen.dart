@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/image_widget.dart';
+import 'package:music_player_frontend/core/providers/selection_provider.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/selection_action_button.dart';
+import 'package:provider/provider.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/responsive_screen.dart';
 import 'package:music_player_frontend/core/ui/components/scaffolds/glass_scaffold.dart';
 
@@ -16,9 +19,16 @@ abstract class EntityScreen<T extends QueryableProvider>
   Widget build(BuildContext context) {
     return GlassScaffold(
       appBar: buildAppBar(context, entity),
+      floatingActionButton: Selector<SelectionProvider, Set<BaseEntity>>(
+        selector: (context, selection) => selection.selectedEntities,
+        builder: (context, selected, child) {
+          if (selected.isEmpty) return const SizedBox.shrink();
+          return SelectionActionButton(provider: provider, selected: selected);
+        },
+      ),
       body: FutureBuilder<BaseEntity>(
         future: Future.delayed(
-          const Duration(milliseconds: 500),
+          Duration.zero,
           () => context.mounted ? loadEntityData(context) : entity,
         ),
         builder: (context, snapshot) {

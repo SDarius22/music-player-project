@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_request_dto.dart';
@@ -10,9 +9,11 @@ import 'package:music_player_frontend/core/dtos/negotiation_response_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
 import 'package:music_player_frontend/core/rest_clients/abstract_rest_client.dart';
+import 'package:music_player_frontend/core/services/audio_content_hasher.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 
 class SongRestClient extends AbstractRestClient {
+  static const _contentHasher = AudioContentHasher();
   static final _logger = Logger('SongRestClient');
 
   SongRestClient({required String baseUrl, required AuthService authService}) {
@@ -86,8 +87,7 @@ class SongRestClient extends AbstractRestClient {
   }) async {
     try {
       final file = File(audioFilePath);
-      final fileBytes = await file.readAsBytes();
-      final fileHash = sha256.convert(fileBytes).toString();
+      final fileHash = await _contentHasher.hashFile(audioFilePath);
 
       final fields = {
         'name': name,

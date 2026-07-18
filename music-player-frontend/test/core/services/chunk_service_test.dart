@@ -7,6 +7,7 @@ import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
+import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/webrtc_service.dart';
@@ -29,7 +30,7 @@ void main() {
       'totalChunks': totalChunks,
       'chunkSize': 4,
       'totalBytes': totalChunks * 4,
-      'hashes': hashes ?? List<String>.filled(totalChunks, ''),
+      'hashes': hashes ?? List<String>.filled(totalChunks, '0' * 64),
     });
   }
 
@@ -61,11 +62,19 @@ void main() {
       mockCacheRepo.getAvailableChunkIndices('song-hash'),
     ).thenAnswer((_) async => [0, 1]);
 
+    String? reportedHash;
+    int? reportedExpected;
+    int? reportedCached;
     final service = ChunkService(
       fileHash: 'song-hash',
       cacheRepo: mockCacheRepo,
       streamingClient: mockStreamingClient,
       webrtcManager: mockWebRtc,
+      onCacheAvailabilityChanged: (hash, expected, cached) {
+        reportedHash = hash;
+        reportedExpected = expected;
+        reportedCached = cached;
+      },
     );
 
     await service.loadManifest();
@@ -78,6 +87,9 @@ void main() {
     expect(service.songName, isNull);
     expect(service.availablePeerCount, 0);
     expect(service.peerStateVersionNotifier, isNotNull);
+    expect(reportedHash, 'song-hash');
+    expect(reportedExpected, 2);
+    expect(reportedCached, 2);
 
     await service.loadManifest();
     verify(mockStreamingClient.fetchManifest('song-hash')).called(1);
@@ -95,6 +107,79 @@ void main() {
     );
     expect(service.loadManifest(), throwsException);
   });
+
+  test(
+    'downloadAll caches every verified chunk and reports completion',
+    () async {
+      final first = Uint8List.fromList([1, 2, 3, 4]);
+      final second = Uint8List.fromList([5, 6, 7, 8]);
+      when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
+        (_) async => buildManifest(
+          totalChunks: 2,
+          hashes: [hashOf(first), hashOf(second)],
+        ),
+      );
+      when(
+        mockStreamingClient.downloadChunkFallback('song-hash', 0),
+      ).thenAnswer((_) async => first);
+      when(
+        mockStreamingClient.downloadChunkFallback('song-hash', 1),
+      ).thenAnswer((_) async => second);
+      final cache = InMemoryChunkCacheRepository();
+      int? completedCount;
+      final service = ChunkService(
+        fileHash: 'song-hash',
+        cacheRepo: cache,
+        streamingClient: mockStreamingClient,
+        webrtcManager: mockWebRtc,
+        onCacheAvailabilityChanged: (_, _, cached) => completedCount = cached,
+      );
+
+      await service.downloadAll();
+
+      expect(await cache.getAvailableChunkIndices('song-hash'), [0, 1]);
+      expect(completedCount, 2);
+    },
+  );
+
+  test('loadManifest uses persisted song manifest while offline', () async {
+    final cachedManifest = buildManifest(totalChunks: 2);
+    final service = ChunkService(
+      fileHash: 'song-hash',
+      cacheRepo: mockCacheRepo,
+      streamingClient: mockStreamingClient,
+      webrtcManager: mockWebRtc,
+      cachedManifestLoader: (_) => cachedManifest,
+    );
+
+    await service.loadManifest();
+
+    expect(service.manifest, same(cachedManifest));
+    verifyNever(mockStreamingClient.fetchManifest(any));
+  });
+
+  test(
+    'loadManifest persists a valid server manifest on a local miss',
+    () async {
+      final serverManifest = buildManifest(totalChunks: 2);
+      ChunkManifestDto? persisted;
+      when(
+        mockStreamingClient.fetchManifest('song-hash'),
+      ).thenAnswer((_) async => serverManifest);
+      final service = ChunkService(
+        fileHash: 'song-hash',
+        cacheRepo: mockCacheRepo,
+        streamingClient: mockStreamingClient,
+        webrtcManager: mockWebRtc,
+        cachedManifestLoader: (_) => null,
+        onManifestCached: (manifest) => persisted = manifest,
+      );
+
+      await service.loadManifest();
+
+      expect(persisted, same(serverManifest));
+    },
+  );
 
   test('getChunk returns local cached chunk without server request', () async {
     final cached = Uint8List.fromList([1, 2, 3]);
@@ -120,6 +205,37 @@ void main() {
     expect(service.wasServedByP2P(0), isFalse);
     verifyNever(mockStreamingClient.downloadChunkFallback(any, any));
   });
+
+  test(
+    'getChunk reuses a verified potential local chunk before network',
+    () async {
+      final localData = Uint8List.fromList([3, 1, 4, 1]);
+      final manifest = buildManifest(
+        totalChunks: 1,
+        hashes: [hashOf(localData)],
+      );
+      when(
+        mockStreamingClient.fetchManifest('song-hash'),
+      ).thenAnswer((_) async => manifest);
+
+      final service = ChunkService(
+        fileHash: 'song-hash',
+        cacheRepo: mockCacheRepo,
+        streamingClient: mockStreamingClient,
+        webrtcManager: mockWebRtc,
+        potentialLocalChunkLoader: (hash, loadedManifest, index) async {
+          expect(hash, 'song-hash');
+          expect(loadedManifest, same(manifest));
+          expect(index, 0);
+          return localData;
+        },
+      );
+
+      expect(await service.getChunk(0), localData);
+      verifyNever(mockStreamingClient.downloadChunkFallback(any, any));
+      verify(mockCacheRepo.saveChunk('song-hash', 0, localData)).called(1);
+    },
+  );
 
   test('getChunk fetches prefix chunks from server and caches them', () async {
     final serverData = Uint8List.fromList([9, 9, 9]);

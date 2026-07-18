@@ -33,13 +33,17 @@ import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class FakeScanner implements AbstractMusicScannerService {
-  final StreamController<double> _progress = StreamController.broadcast();
+  final StreamController<MusicScanProgress> _progress =
+      StreamController.broadcast();
 
   @override
-  Stream<double> get progressStream => _progress.stream;
+  Stream<MusicScanProgress> get progressStream => _progress.stream;
 
   @override
   Future<void> performQuickScan() async {}
+
+  @override
+  Future<void> cancelScan() async {}
 
   Future<void> dispose() => _progress.close();
 }

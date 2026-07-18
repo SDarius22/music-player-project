@@ -4,22 +4,24 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i12;
-import 'dart:io' as _i23;
-import 'dart:typed_data' as _i16;
-import 'dart:ui' as _i20;
+import 'dart:io' as _i24;
+import 'dart:typed_data' as _i17;
+import 'dart:ui' as _i21;
 
-import 'package:audio_session/audio_session.dart' as _i24;
+import 'package:audio_session/audio_session.dart' as _i25;
 import 'package:http/http.dart' as _i9;
 import 'package:just_audio/just_audio.dart' as _i10;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i19;
+import 'package:mockito/src/dummies.dart' as _i20;
+import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart'
+    as _i13;
 import 'package:music_player_frontend/core/dtos/playback_state_dto.dart'
-    as _i22;
+    as _i23;
 import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart'
-    as _i18;
+    as _i19;
 import 'package:music_player_frontend/core/dtos/playlists/playlist_dto.dart'
-    as _i17;
-import 'package:music_player_frontend/core/dtos/songs/song_dto.dart' as _i13;
+    as _i18;
+import 'package:music_player_frontend/core/dtos/songs/song_dto.dart' as _i14;
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart'
     as _i3;
 import 'package:music_player_frontend/core/entities/app_settings.dart' as _i6;
@@ -31,11 +33,11 @@ import 'package:music_player_frontend/core/providers/abstract/queryable_provider
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart'
     as _i8;
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart'
-    as _i21;
+    as _i22;
 import 'package:music_player_frontend/core/services/playlist_service.dart'
-    as _i15;
+    as _i16;
 import 'package:music_player_frontend/core/services/settings_service.dart'
-    as _i14;
+    as _i15;
 import 'package:music_player_frontend/core/services/song_service.dart' as _i11;
 
 // ignore_for_file: type=lint
@@ -146,6 +148,14 @@ class MockSongService extends _i1.Mock implements _i11.SongService {
           as _i2.Song?);
 
   @override
+  _i2.Song? getLocalSongByPath(String? path) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLocalSongByPath, [path]),
+            returnValueForMissingStub: null,
+          )
+          as _i2.Song?);
+
+  @override
   _i2.Song getOrCreateSong(String? fileHash) =>
       (super.noSuchMethod(
             Invocation.method(#getOrCreateSong, [fileHash]),
@@ -194,6 +204,21 @@ class MockSongService extends _i1.Mock implements _i11.SongService {
           as _i12.Future<_i2.Song>);
 
   @override
+  _i2.Song resolvePreferredLocalSource(_i2.Song? song) =>
+      (super.noSuchMethod(
+            Invocation.method(#resolvePreferredLocalSource, [song]),
+            returnValue: _FakeSong_0(
+              this,
+              Invocation.method(#resolvePreferredLocalSource, [song]),
+            ),
+            returnValueForMissingStub: _FakeSong_0(
+              this,
+              Invocation.method(#resolvePreferredLocalSource, [song]),
+            ),
+          )
+          as _i2.Song);
+
+  @override
   _i12.Future<void> updateSong(_i2.Song? song) =>
       (super.noSuchMethod(
             Invocation.method(#updateSong, [song]),
@@ -209,10 +234,54 @@ class MockSongService extends _i1.Mock implements _i11.SongService {
   );
 
   @override
+  void updateCacheAvailability(
+    String? fileHash,
+    int? expectedChunks,
+    int? cachedChunks,
+  ) => super.noSuchMethod(
+    Invocation.method(#updateCacheAvailability, [
+      fileHash,
+      expectedChunks,
+      cachedChunks,
+    ]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i13.ChunkManifestDto? getCachedManifest(String? fileHash) =>
+      (super.noSuchMethod(
+            Invocation.method(#getCachedManifest, [fileHash]),
+            returnValueForMissingStub: null,
+          )
+          as _i13.ChunkManifestDto?);
+
+  @override
+  void cacheManifest(_i13.ChunkManifestDto? manifest) => super.noSuchMethod(
+    Invocation.method(#cacheManifest, [manifest]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   void deleteSong(_i2.Song? song) => super.noSuchMethod(
     Invocation.method(#deleteSong, [song]),
     returnValueForMissingStub: null,
   );
+
+  @override
+  List<_i2.Song> getAllLocalSongs() =>
+      (super.noSuchMethod(
+            Invocation.method(#getAllLocalSongs, []),
+            returnValue: <_i2.Song>[],
+            returnValueForMissingStub: <_i2.Song>[],
+          )
+          as List<_i2.Song>);
+
+  @override
+  void reconcileMissingLocalFiles(Set<String>? discoveredPaths) =>
+      super.noSuchMethod(
+        Invocation.method(#reconcileMissingLocalFiles, [discoveredPaths]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   _i12.Future<_i4.PageResult<_i2.Song>> getSongsPage(
@@ -224,51 +293,64 @@ class MockSongService extends _i1.Mock implements _i11.SongService {
     bool? ascending,
     bool? localOnly,
     int? page,
-    int? pageSize,
-  ) =>
+    int? pageSize, {
+    bool? streamOnly = false,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#getSongsPage, [
-              query,
-              sortField,
-              filterAlbumHash,
-              filterArtistHash,
-              filterPlaylistId,
-              ascending,
-              localOnly,
-              page,
-              pageSize,
-            ]),
+            Invocation.method(
+              #getSongsPage,
+              [
+                query,
+                sortField,
+                filterAlbumHash,
+                filterArtistHash,
+                filterPlaylistId,
+                ascending,
+                localOnly,
+                page,
+                pageSize,
+              ],
+              {#streamOnly: streamOnly},
+            ),
             returnValue: _i12.Future<_i4.PageResult<_i2.Song>>.value(
               _FakePageResult_1<_i2.Song>(
                 this,
-                Invocation.method(#getSongsPage, [
-                  query,
-                  sortField,
-                  filterAlbumHash,
-                  filterArtistHash,
-                  filterPlaylistId,
-                  ascending,
-                  localOnly,
-                  page,
-                  pageSize,
-                ]),
+                Invocation.method(
+                  #getSongsPage,
+                  [
+                    query,
+                    sortField,
+                    filterAlbumHash,
+                    filterArtistHash,
+                    filterPlaylistId,
+                    ascending,
+                    localOnly,
+                    page,
+                    pageSize,
+                  ],
+                  {#streamOnly: streamOnly},
+                ),
               ),
             ),
             returnValueForMissingStub:
                 _i12.Future<_i4.PageResult<_i2.Song>>.value(
                   _FakePageResult_1<_i2.Song>(
                     this,
-                    Invocation.method(#getSongsPage, [
-                      query,
-                      sortField,
-                      filterAlbumHash,
-                      filterArtistHash,
-                      filterPlaylistId,
-                      ascending,
-                      localOnly,
-                      page,
-                      pageSize,
-                    ]),
+                    Invocation.method(
+                      #getSongsPage,
+                      [
+                        query,
+                        sortField,
+                        filterAlbumHash,
+                        filterArtistHash,
+                        filterPlaylistId,
+                        ascending,
+                        localOnly,
+                        page,
+                        pageSize,
+                      ],
+                      {#streamOnly: streamOnly},
+                    ),
                   ),
                 ),
           )
@@ -353,7 +435,7 @@ class MockSongService extends _i1.Mock implements _i11.SongService {
           as _i12.Future<List<_i2.Song>>);
 
   @override
-  List<_i2.Song> cacheServerSongs(List<_i13.SongDto>? serverSongs) =>
+  List<_i2.Song> cacheServerSongs(List<_i14.SongDto>? serverSongs) =>
       (super.noSuchMethod(
             Invocation.method(#cacheServerSongs, [serverSongs]),
             returnValue: <_i2.Song>[],
@@ -365,7 +447,7 @@ class MockSongService extends _i1.Mock implements _i11.SongService {
 /// A class which mocks [SettingsService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSettingsService extends _i1.Mock implements _i14.SettingsService {
+class MockSettingsService extends _i1.Mock implements _i15.SettingsService {
   @override
   _i12.Future<_i5.AudioSettings> getAudioSettings() =>
       (super.noSuchMethod(
@@ -419,7 +501,7 @@ class MockSettingsService extends _i1.Mock implements _i14.SettingsService {
 /// A class which mocks [PlaylistService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockPlaylistService extends _i1.Mock implements _i15.PlaylistService {
+class MockPlaylistService extends _i1.Mock implements _i16.PlaylistService {
   @override
   Map<String, dynamic> get sortFields =>
       (super.noSuchMethod(
@@ -433,7 +515,7 @@ class MockPlaylistService extends _i1.Mock implements _i15.PlaylistService {
   _i12.Future<_i7.Playlist> addPlaylist(
     String? name,
     List<_i2.Song>? songs,
-    _i16.Uint8List? coverArt,
+    _i17.Uint8List? coverArt,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#addPlaylist, [name, songs, coverArt]),
@@ -554,17 +636,15 @@ class MockPlaylistService extends _i1.Mock implements _i15.PlaylistService {
     bool? ascending,
     bool? containLocalOnly,
     int? page,
-    int? size,
-  ) =>
+    int? size, {
+    bool? streamOnly = false,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#getPlaylistsPage, [
-              query,
-              sortField,
-              ascending,
-              containLocalOnly,
-              page,
-              size,
-            ]),
+            Invocation.method(
+              #getPlaylistsPage,
+              [query, sortField, ascending, containLocalOnly, page, size],
+              {#streamOnly: streamOnly},
+            ),
             returnValue: _i12.Future<
               ({List<_i7.Playlist> content, int page, int totalPages})
             >.value((content: <_i7.Playlist>[], page: 0, totalPages: 0)),
@@ -676,7 +756,7 @@ class MockPlaylistService extends _i1.Mock implements _i15.PlaylistService {
           as _i12.Future<void>);
 
   @override
-  _i7.Playlist cacheServerPlaylist(_i17.PlaylistDto? serverPlaylist) =>
+  _i7.Playlist cacheServerPlaylist(_i18.PlaylistDto? serverPlaylist) =>
       (super.noSuchMethod(
             Invocation.method(#cacheServerPlaylist, [serverPlaylist]),
             returnValue: _FakePlaylist_4(
@@ -692,7 +772,7 @@ class MockPlaylistService extends _i1.Mock implements _i15.PlaylistService {
 
   @override
   _i7.Playlist cacheServerPlaylistDetails(
-    _i18.PlaylistExpandedDto? serverPlaylist,
+    _i19.PlaylistExpandedDto? serverPlaylist,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#cacheServerPlaylistDetails, [serverPlaylist]),
@@ -753,11 +833,11 @@ class MockAuthService extends _i1.Mock implements _i8.AuthService {
   String get baseUrl =>
       (super.noSuchMethod(
             Invocation.getter(#baseUrl),
-            returnValue: _i19.dummyValue<String>(
+            returnValue: _i20.dummyValue<String>(
               this,
               Invocation.getter(#baseUrl),
             ),
-            returnValueForMissingStub: _i19.dummyValue<String>(
+            returnValueForMissingStub: _i20.dummyValue<String>(
               this,
               Invocation.getter(#baseUrl),
             ),
@@ -867,13 +947,13 @@ class MockAuthService extends _i1.Mock implements _i8.AuthService {
           as _i12.Future<void>);
 
   @override
-  void addListener(_i20.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i21.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i20.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i21.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );
@@ -895,16 +975,16 @@ class MockAuthService extends _i1.Mock implements _i8.AuthService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockPlaybackRestClient extends _i1.Mock
-    implements _i21.PlaybackRestClient {
+    implements _i22.PlaybackRestClient {
   @override
   String get baseUrl =>
       (super.noSuchMethod(
             Invocation.getter(#baseUrl),
-            returnValue: _i19.dummyValue<String>(
+            returnValue: _i20.dummyValue<String>(
               this,
               Invocation.getter(#baseUrl),
             ),
-            returnValueForMissingStub: _i19.dummyValue<String>(
+            returnValueForMissingStub: _i20.dummyValue<String>(
               this,
               Invocation.getter(#baseUrl),
             ),
@@ -939,17 +1019,17 @@ class MockPlaybackRestClient extends _i1.Mock
   );
 
   @override
-  _i12.Future<_i22.PlaybackStateDto?> getPlaybackState() =>
+  _i12.Future<_i23.PlaybackStateDto?> getPlaybackState() =>
       (super.noSuchMethod(
             Invocation.method(#getPlaybackState, []),
-            returnValue: _i12.Future<_i22.PlaybackStateDto?>.value(),
+            returnValue: _i12.Future<_i23.PlaybackStateDto?>.value(),
             returnValueForMissingStub:
-                _i12.Future<_i22.PlaybackStateDto?>.value(),
+                _i12.Future<_i23.PlaybackStateDto?>.value(),
           )
-          as _i12.Future<_i22.PlaybackStateDto?>);
+          as _i12.Future<_i23.PlaybackStateDto?>);
 
   @override
-  _i12.Future<void> savePlaybackState(_i22.PlaybackStateDto? state) =>
+  _i12.Future<void> savePlaybackState(_i23.PlaybackStateDto? state) =>
       (super.noSuchMethod(
             Invocation.method(#savePlaybackState, [state]),
             returnValue: _i12.Future<void>.value(),
@@ -1083,7 +1163,7 @@ class MockPlaybackRestClient extends _i1.Mock
   _i12.Future<_i9.Response> multipartRequestWithProgress(
     String? method,
     String? endpoint,
-    _i23.File? file,
+    _i24.File? file,
     Map<String, String>? fields,
     void Function(int, int)? onProgress,
   ) =>
@@ -1554,11 +1634,11 @@ class MockAudioPlayer extends _i1.Mock implements _i10.AudioPlayer {
   String get webSinkId =>
       (super.noSuchMethod(
             Invocation.getter(#webSinkId),
-            returnValue: _i19.dummyValue<String>(
+            returnValue: _i20.dummyValue<String>(
               this,
               Invocation.getter(#webSinkId),
             ),
-            returnValueForMissingStub: _i19.dummyValue<String>(
+            returnValueForMissingStub: _i20.dummyValue<String>(
               this,
               Invocation.getter(#webSinkId),
             ),
@@ -1994,7 +2074,7 @@ class MockAudioPlayer extends _i1.Mock implements _i10.AudioPlayer {
 
   @override
   _i12.Future<void> setAndroidAudioAttributes(
-    _i24.AndroidAudioAttributes? audioAttributes,
+    _i25.AndroidAudioAttributes? audioAttributes,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#setAndroidAudioAttributes, [audioAttributes]),

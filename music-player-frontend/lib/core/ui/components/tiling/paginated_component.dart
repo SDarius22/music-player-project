@@ -23,6 +23,8 @@ class PaginatedComponent extends StatefulWidget {
 
   // Fires when dropdown item i (0-based) is tapped on the tile for entity.
   final void Function(BaseEntity entity, int dropdownIndex)? onDropdownSelected;
+  final bool Function(BaseEntity entity, int dropdownIndex)?
+  isDropdownActionVisible;
   final Widget Function()? buildExtraTile; // grid/wide only
   final double? itemExtent; // list only
 
@@ -44,6 +46,7 @@ class PaginatedComponent extends StatefulWidget {
     this.emptyText = 'No items found',
     this.actions = const [],
     this.onDropdownSelected,
+    this.isDropdownActionVisible,
     this.buildExtraTile,
     this.itemExtent,
     this.initialLoadDelay = Duration.zero,
@@ -149,6 +152,7 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
           items: state.items,
           actions: widget.actions,
           onDropdownSelected: widget.onDropdownSelected,
+          isDropdownActionVisible: widget.isDropdownActionVisible,
           showEnrichLoadingPlaceholder: false,
           isSelected: widget.isSelected,
           onTap: (entity) => widget.onTap(entity, state.items),
@@ -166,6 +170,7 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
         items: state.items,
         actions: widget.actions,
         onDropdownSelected: widget.onDropdownSelected,
+        isDropdownActionVisible: widget.isDropdownActionVisible,
         showEnrichLoadingPlaceholder: false,
         isSelected: widget.isSelected,
         onTap: (entity) => widget.onTap(entity, state.items),

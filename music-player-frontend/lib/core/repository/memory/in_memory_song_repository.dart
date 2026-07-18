@@ -14,7 +14,7 @@ class InMemorySongRepository implements SongRepository {
     _controller.add(getAllSongs());
   }
 
-  bool _isLocalSong(Song song) => song.path != null && song.path!.isNotEmpty;
+  bool _isLocalSong(Song song) => song.isLocal;
 
   List<Song> _paginate(List<Song> songs, int offset, int limit) {
     if (offset >= songs.length) {
@@ -67,7 +67,12 @@ class InMemorySongRepository implements SongRepository {
   int getSongCount(String query, bool localOnly) {
     final q = query.toLowerCase();
     return _byId.values
-        .where((s) => s.getName().toLowerCase().contains(q) && s.fullyLoaded)
+        .where(
+          (s) =>
+              s.getName().toLowerCase().contains(q) &&
+              s.fullyLoaded &&
+              (!localOnly || _isLocalSong(s)),
+        )
         .length;
   }
 
@@ -76,6 +81,15 @@ class InMemorySongRepository implements SongRepository {
     if (fileHash.isEmpty) return null;
     for (final s in _byId.values) {
       if (s.getHash() == fileHash) return s;
+    }
+    return null;
+  }
+
+  @override
+  Song? getSongByLocalPath(String path) {
+    if (path.isEmpty) return null;
+    for (final song in _byId.values) {
+      if (song.path == path) return song;
     }
     return null;
   }

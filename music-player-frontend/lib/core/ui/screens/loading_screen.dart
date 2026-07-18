@@ -93,6 +93,9 @@ class _LoadingScreenState extends State<LoadingScreen>
 
     if (context.mounted) {
       Navigator.pushReplacement(context, MainScaffold.route());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        songProvider.startBackgroundScan();
+      });
     }
   }
 }

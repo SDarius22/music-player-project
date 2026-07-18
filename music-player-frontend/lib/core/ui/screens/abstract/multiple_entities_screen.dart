@@ -6,6 +6,7 @@ import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
+import 'package:music_player_frontend/core/ui/components/widgets/selection_action_button.dart';
 import 'package:music_player_frontend/core/ui/components/scaffolds/glass_scaffold.dart';
 import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,8 @@ abstract class MultipleEntitiesScreen<T extends QueryableProvider>
 
   // actions[2+]: each entry provides the display widget for a dropdown item
   List<Widget Function(BaseEntity, BuildContext)> get extraActions => [];
+
+  bool isExtraActionVisible(BaseEntity entity, int actionIndex) => true;
 
   // Called when dropdown item at [dropdownIndex] is tapped.
   void onDropdownAction(
@@ -53,6 +56,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     extends State<MultipleEntitiesScreen<T>> {
   late String _sortField;
   late bool _localOnly;
+  bool _streamOnly = false;
   late bool _ascending;
   String _query = '';
   late final AbstractAppStateProvider _appStateProvider;
@@ -61,10 +65,10 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
   @override
   void initState() {
     super.initState();
-    _localOnly = false;
+    _appStateProvider = context.read<AbstractAppStateProvider>();
+    _localOnly = _appStateProvider.shouldDisplayLocalOnly.value;
     _sortField = widget.provider.sortFields.keys.firstOrNull ?? 'Name';
     _ascending = true;
-    _appStateProvider = context.read<AbstractAppStateProvider>();
     (widget.provider as ChangeNotifier).addListener(_onProviderChanged);
     _appStateProvider.refreshRequestNotifier.addListener(_onGlobalRefresh);
     _appStateProvider.shouldDisplayLocalOnly.addListener(_onLocalOnlyChanged);
@@ -103,6 +107,11 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
     _triggerReload();
   }
 
+  void _onToggleStreamOnly(bool value) {
+    _streamOnly = value;
+    _triggerReload();
+  }
+
   void _onQuery(String q) {
     _query = q;
     _triggerReload();
@@ -135,7 +144,9 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
             initialSortField: _sortField,
             initialAscending: _ascending,
             initialLocalOnly: _localOnly,
+            initialStreamOnly: _streamOnly,
             onLocalOnly: _onToggleLocalOnly,
+            onStreamOnly: _onToggleStreamOnly,
             onQuery: _onQuery,
             onSortField: _onSortField,
             onAscending: _onAscending,
@@ -143,6 +154,16 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
         ),
       ),
       body: _buildGrid(context),
+      floatingActionButton: Selector<SelectionProvider, Set<BaseEntity>>(
+        selector: (context, provider) => provider.selectedEntities,
+        builder: (context, selected, child) {
+          if (selected.isEmpty) return const SizedBox.shrink();
+          return SelectionActionButton(
+            provider: widget.provider,
+            selected: selected,
+          );
+        },
+      ),
     );
   }
 
@@ -158,7 +179,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
           type: TileType.grid,
           reloadToken: _reloadToken,
           onRefresh: widget.provider.refresh,
-          initialLoadDelay: const Duration(milliseconds: 400),
+          initialLoadDelay: Duration.zero,
           fetchPage:
               (page, size) => widget.provider.fetchPage(
                 _query,
@@ -167,6 +188,7 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
                 _localOnly,
                 page,
                 size,
+                streamOnly: _streamOnly,
               ),
           isSelected: (entity) => selected.contains(entity),
           onTap: (entity, items) async {
@@ -215,6 +237,8 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
           ],
           onDropdownSelected:
               (entity, i) => widget.onDropdownAction(entity, i, context),
+          isDropdownActionVisible:
+              (entity, i) => widget.isExtraActionVisible(entity, i),
           buildExtraTile:
               widget.buildExtraTile == null
                   ? null

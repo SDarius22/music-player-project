@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
@@ -42,6 +43,7 @@ class _FakeSongProvider extends ChangeNotifier implements SongProvider {
           String sortField,
           bool ascending,
           bool localOnly,
+          bool streamOnly,
           int page,
           int size,
         })
@@ -58,6 +60,7 @@ class _FakeSongProvider extends ChangeNotifier implements SongProvider {
     bool localOnly,
     int page,
     int size, {
+    bool streamOnly = false,
     String? filterAlbumHash,
     String? filterArtistHash,
     int? filterPlaylistId,
@@ -67,6 +70,7 @@ class _FakeSongProvider extends ChangeNotifier implements SongProvider {
       sortField: sortField,
       ascending: ascending,
       localOnly: localOnly,
+      streamOnly: streamOnly,
       page: page,
       size: size,
     ));
@@ -79,6 +83,7 @@ class _FakeSongProvider extends ChangeNotifier implements SongProvider {
             return false;
           }
           if (localOnly && !song.isLocal) return false;
+          if (streamOnly && !song.isAvailableToStream) return false;
           return true;
         }).toList();
 
@@ -249,12 +254,51 @@ void main() {
 
       await tester.tap(find.byTooltip('Filter'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Local Only'));
+      await tester.tap(find.text('Available Offline'));
       await tester.pumpAndSettle();
 
       expect(songProvider.fetchCalls.last.localOnly, true);
       expect(find.text('Beta Local'), findsWidgets);
       expect(find.text('Alpha Remote'), findsNothing);
+
+      await tester.tap(find.byTooltip('Filter'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Available to Stream'));
+      await tester.pumpAndSettle();
+
+      expect(songProvider.fetchCalls.last.localOnly, true);
+      expect(songProvider.fetchCalls.last.streamOnly, true);
+    });
+
+    testWidgets('remote-only track menu offers download', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final songProvider = _FakeSongProvider([
+        _song('remote', 'Remote Track'),
+        _song('local', 'Local Track', local: true),
+      ]);
+      await tester.pumpWidget(
+        _wrapTracks(
+          appStateProvider: _FakeAppStateProvider(),
+          songProvider: songProvider,
+          audioProvider: _FakeAudioProvider(),
+          selectionProvider: SelectionProvider(),
+        ),
+      );
+      await _pumpInitialTrackLoad(tester);
+
+      await tester.tap(
+        find.descendant(
+          of: _tileForText('Remote Track'),
+          matching: find.byIcon(FluentIcons.moreVertical),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Download'), findsOneWidget);
     });
 
     testWidgets('tapping a track queues the visible page and selected song', (
@@ -332,6 +376,19 @@ void main() {
         'Beta Track',
       ]);
       expect(audioProvider.queueCalls, isEmpty);
+
+      expect(find.text('2 songs selected'), findsOneWidget);
+      await tester.tap(find.byTooltip('Selection actions'));
+      await tester.pumpAndSettle();
+      expect(find.text('Play'), findsOneWidget);
+      expect(find.text('Play Next'), findsOneWidget);
+      expect(find.text('Add to'), findsOneWidget);
+      expect(find.text('Download'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(selectionProvider.selectedEntities, isEmpty);
     });
   });
 }

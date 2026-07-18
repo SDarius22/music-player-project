@@ -25,6 +25,15 @@ class Album implements BaseEntity {
   @Transient()
   List<Color> colors = [];
 
+  @Transient()
+  bool hasOfflineSource = false;
+
+  @Transient()
+  bool hasRemoteSource = false;
+
+  @Transient()
+  List<String> remoteSourceHashes = [];
+
   @Backlink('album')
   final ToMany<Song> songs = ToMany<Song>();
   final ToOne<Artist> artist = ToOne<Artist>();
@@ -79,6 +88,7 @@ class Album implements BaseEntity {
 
   @override
   bool get isLocal {
+    if (hasOfflineSource) return true;
     if (songs.isEmpty) {
       return false;
     }
@@ -90,6 +100,13 @@ class Album implements BaseEntity {
     }
     return false;
   }
+
+  @override
+  bool get isAvailableOffline => isLocal;
+
+  @override
+  bool get isAvailableToStream =>
+      hasRemoteSource || songs.any((song) => song.isAvailableToStream);
 
   set isLocal(bool value) {
     // No-op: isLocal is derived from the songs, so we don't set it directly.

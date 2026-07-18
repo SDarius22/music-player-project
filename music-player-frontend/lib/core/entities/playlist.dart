@@ -108,6 +108,12 @@ class Playlist implements BaseEntity {
     return false;
   }
 
+  @override
+  bool get isAvailableOffline => isLocal;
+
+  @override
+  bool get isAvailableToStream => serverId >= 0;
+
   set isLocal(bool value) {
     // No-op: Playlist's locality is determined by its songs
   }

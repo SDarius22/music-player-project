@@ -6,7 +6,7 @@ import 'package:music_player_frontend/core/repository/interfaces/song_repository
 class ObjectBoxSongRepository implements SongRepository {
   Box<Song> get _songBox => ObjectBox.store.box<Song>();
 
-  bool _isLocalSong(Song song) => song.path != null && song.path!.isNotEmpty;
+  bool _isLocalSong(Song song) => song.isLocal;
 
   List<Song> _paginate(List<Song> songs, int offset, int limit) {
     if (offset >= songs.length) {
@@ -50,7 +50,10 @@ class ObjectBoxSongRepository implements SongRepository {
         .contains(query, caseSensitive: false)
         .and(Song_.fullyLoaded.equals(true));
     if (localOnly) {
-      conditions = conditions.and(Song_.path.notNull());
+      conditions = conditions.and(
+        (Song_.path.notNull() & Song_.path.notEquals('')) |
+            Song_.fullyCached.equals(true),
+      );
     }
     return _songBox.query(conditions).build().count();
   }
@@ -59,6 +62,12 @@ class ObjectBoxSongRepository implements SongRepository {
   Song? getSongByFileHash(String fileHash) {
     if (fileHash.isEmpty) return null;
     return _songBox.query(Song_.fileHash.equals(fileHash)).build().findFirst();
+  }
+
+  @override
+  Song? getSongByLocalPath(String path) {
+    if (path.isEmpty) return null;
+    return _songBox.query(Song_.path.equals(path)).build().findFirst();
   }
 
   @override
@@ -122,9 +131,10 @@ class ObjectBoxSongRepository implements SongRepository {
         .contains(query, caseSensitive: false)
         .and(Song_.fullyLoaded.equals(true));
     if (localOnly) {
-      conditions = conditions
-          .and(Song_.path.notNull())
-          .and(Song_.path.notEquals(''));
+      conditions = conditions.and(
+        (Song_.path.notNull() & Song_.path.notEquals('')) |
+            Song_.fullyCached.equals(true),
+      );
     }
     final q =
         _songBox

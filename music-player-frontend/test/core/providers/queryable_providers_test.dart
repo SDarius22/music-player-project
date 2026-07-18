@@ -40,8 +40,9 @@ class _FakeAlbumService extends Fake implements AlbumService {
     bool ascending,
     bool containLocalOnly,
     int page,
-    int size,
-  ) async => pageResult;
+    int size, {
+    bool streamOnly = false,
+  }) async => pageResult;
 
   @override
   Future<PageResult<Song>> getAlbumSongsPage(
@@ -75,8 +76,9 @@ class _FakeArtistService extends Fake implements ArtistService {
     bool ascending,
     bool containLocalOnly,
     int page,
-    int size,
-  ) async => pageResult;
+    int size, {
+    bool streamOnly = false,
+  }) async => pageResult;
 
   @override
   Future<PageResult<Song>> getArtistSongsPage(
@@ -117,8 +119,9 @@ class _FakePlaylistService extends Fake implements PlaylistService {
     bool ascending,
     bool containLocalOnly,
     int page,
-    int size,
-  ) async => pageResult;
+    int size, {
+    bool streamOnly = false,
+  }) async => pageResult;
 
   @override
   Future<PageResult<Song>> getPlaylistSongsPageByHash(
@@ -202,8 +205,9 @@ class _FakeSongService extends Fake implements SongService {
     bool ascending,
     bool localOnly,
     int page,
-    int pageSize,
-  ) async => pageResult;
+    int pageSize, {
+    bool streamOnly = false,
+  }) async => pageResult;
 
   @override
   Future<PageResult<Song>> getRecommendations(int page, int size) async =>
@@ -223,17 +227,26 @@ class _FakeSongService extends Fake implements SongService {
 }
 
 class _FakeScannerService extends Fake implements AbstractMusicScannerService {
-  final _controller = StreamController<double>.broadcast();
+  final _controller = StreamController<MusicScanProgress>.broadcast();
 
   @override
-  Stream<double> get progressStream => _controller.stream;
+  Stream<MusicScanProgress> get progressStream => _controller.stream;
 
   void emit(double progress) {
-    _controller.add(progress);
+    _controller.add(
+      MusicScanProgress(
+        progress >= 1 ? MusicScanPhase.completed : MusicScanPhase.scanning,
+        processed: (progress * 100).round(),
+        total: 100,
+      ),
+    );
   }
 
   @override
   Future<void> performQuickScan() async {}
+
+  @override
+  Future<void> cancelScan() async {}
 
   Future<void> dispose() async {
     await _controller.close();
@@ -396,7 +409,7 @@ void main() {
       },
     );
 
-    test('listens to scanner progress and notifies listeners', () async {
+    test('notifies listeners once when scanning completes', () async {
       final songService = _FakeSongService();
       final scanner = _FakeScannerService();
       addTearDown(scanner.dispose);
@@ -406,7 +419,20 @@ void main() {
         notifyCount++;
       });
 
-      scanner.emit(0.5);
+      scanner.emit(1.0);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(notifyCount, 1);
+    });
+
+    test('refreshes the library when a scan batch is published', () async {
+      final scanner = _FakeScannerService();
+      addTearDown(scanner.dispose);
+      final provider = SongProvider(_FakeSongService(), scanner);
+      var notifyCount = 0;
+      provider.addListener(() => notifyCount++);
+
+      scanner.emit(0.25);
       await Future<void>.delayed(Duration.zero);
 
       expect(notifyCount, 1);

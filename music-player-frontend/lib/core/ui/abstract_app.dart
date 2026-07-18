@@ -16,6 +16,7 @@ import 'package:music_player_frontend/core/repository/interfaces/album_repositor
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_stat_repository.dart';
+import 'package:music_player_frontend/core/repository/interfaces/local_track_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/settings_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
@@ -41,6 +42,7 @@ import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
+import 'package:music_player_frontend/core/services/local_track_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
@@ -143,6 +145,13 @@ abstract class AbstractApp extends StatelessWidget {
       Provider<AbstractFileService>(
         create: (context) => createFileService(context),
       ),
+      Provider<LocalTrackService>(
+        create:
+            (context) => LocalTrackService(
+              context.read<LocalTrackRepository>(),
+              context.read<SongRepository>(),
+            ),
+      ),
 
       Provider<CoverRestClient>(
         create:
@@ -194,6 +203,7 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<ArtistRepository>(),
               context.read<SongRepository>(),
               context.read<AlbumRestClient>(),
+              context.read<LocalTrackService>(),
             ),
       ),
       Provider<ArtistService>(
@@ -203,6 +213,7 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<AlbumRepository>(),
               context.read<SongRepository>(),
               context.read<ArtistRestClient>(),
+              context.read<LocalTrackService>(),
             ),
       ),
       Provider<SettingsService>(
@@ -219,6 +230,7 @@ abstract class AbstractApp extends StatelessWidget {
               context.read<ArtistRepository>(),
               context.read<AlbumRepository>(),
               context.read<SongRestClient>(),
+              context.read<LocalTrackService>(),
             ),
       ),
       Provider<PlaylistService>(
@@ -289,6 +301,18 @@ abstract class AbstractApp extends StatelessWidget {
                 cacheRepo: context.read<ChunkCacheRepository>(),
                 streamingClient: context.read<StreamingRestClient>(),
                 webrtcManager: context.read<WebRTCService>(),
+                onCacheAvailabilityChanged:
+                    context.read<SongService>().updateCacheAvailability,
+                cachedManifestLoader:
+                    context.read<SongService>().getCachedManifest,
+                onManifestCached: context.read<SongService>().cacheManifest,
+                potentialLocalChunkLoader: (hash, manifest, index) {
+                  final song = context.read<SongService>().getLocalSong(hash);
+                  if (song == null) return Future.value(null);
+                  return context
+                      .read<LocalTrackService>()
+                      .readVerifiedPotentialChunk(song, manifest, index);
+                },
               );
 
               if (chunkServiceCache.length >= maxCachedManagers) {
@@ -326,6 +350,8 @@ abstract class AbstractApp extends StatelessWidget {
             (context) => SongProvider(
               context.read<SongService>(),
               context.read<AbstractMusicScannerService>(),
+              context.read<ChunkCacheRepository>(),
+              context.read<LocalTrackService>(),
             ),
         lazy: false,
       ),

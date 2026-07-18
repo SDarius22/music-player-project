@@ -124,7 +124,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Chunk Delivery Statistics',
+                          'Server Offload Statistics',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -220,10 +220,12 @@ class _SummaryCard extends StatelessWidget {
     final totalP2p = records.fold(0, (s, r) => s + r.p2pChunks);
     final totalCached = records.fold(0, (s, r) => s + r.localCachedChunks);
     final totalLocal = records.fold(0, (s, r) => s + r.localChunks);
-    final avgP2p =
-        records.isEmpty
-            ? 0.0
-            : records.fold(0.0, (s, r) => s + r.p2pPercentage) / records.length;
+    final totalOffloaded = records.fold(
+      0,
+      (sum, record) => sum + record.serverOffloadedChunks,
+    );
+    final serverOffload =
+        totalChunks == 0 ? 0.0 : totalOffloaded / totalChunks * 100;
 
     return Container(
       decoration: BoxDecoration(
@@ -239,8 +241,8 @@ class _SummaryCard extends StatelessWidget {
         alignment: WrapAlignment.spaceAround,
         children: [
           _StatBadge(
-            label: 'Avg P2P',
-            value: '${avgP2p.toStringAsFixed(1)}%',
+            label: 'Server Offload',
+            value: '${serverOffload.toStringAsFixed(1)}%',
             color: Colors.greenAccent,
           ),
           _StatBadge(
@@ -372,9 +374,9 @@ class _StatRow extends StatelessWidget {
                 )
               else
                 Text(
-                  '${record.p2pPercentage.toStringAsFixed(1)}% P2P',
+                  '${record.serverOffloadPercentage.toStringAsFixed(1)}% offloaded',
                   style: TextStyle(
-                    color: _p2pColor(record.p2pPercentage),
+                    color: _offloadColor(record.serverOffloadPercentage),
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
@@ -411,7 +413,7 @@ class _StatRow extends StatelessWidget {
     );
   }
 
-  Color _p2pColor(double pct) {
+  Color _offloadColor(double pct) {
     if (pct >= 70) return Colors.greenAccent;
     if (pct >= 40) return Colors.orangeAccent;
     return Colors.redAccent;

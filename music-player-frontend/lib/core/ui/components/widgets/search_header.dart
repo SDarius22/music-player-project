@@ -13,10 +13,12 @@ class SearchHeader extends StatefulWidget {
     required this.initialSortField,
     required this.initialAscending,
     required this.initialLocalOnly,
+    this.initialStreamOnly = false,
     required this.onQuery,
     required this.onSortField,
     required this.onAscending,
     required this.onLocalOnly,
+    this.onStreamOnly,
     this.clickedPlayAll,
     this.clickedShuffle,
   });
@@ -26,10 +28,12 @@ class SearchHeader extends StatefulWidget {
   final String initialSortField;
   final bool initialAscending;
   final bool initialLocalOnly;
+  final bool initialStreamOnly;
   final void Function(String) onQuery;
   final void Function(String) onSortField;
   final void Function(bool) onAscending;
   final void Function(bool) onLocalOnly;
+  final void Function(bool)? onStreamOnly;
   final void Function()? clickedPlayAll;
   final void Function()? clickedShuffle;
 
@@ -43,14 +47,33 @@ class _SearchHeaderState extends State<SearchHeader> {
   final TextEditingController _controller = TextEditingController();
   late String _sortField;
   late bool _localOnly;
+  late bool _streamOnly;
   late bool _isAscending;
 
   @override
   void initState() {
     super.initState();
     _localOnly = widget.initialLocalOnly;
+    _streamOnly = widget.initialStreamOnly;
     _sortField = widget.initialSortField;
     _isAscending = widget.initialAscending;
+  }
+
+  @override
+  void didUpdateWidget(covariant SearchHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialLocalOnly != widget.initialLocalOnly) {
+      _localOnly = widget.initialLocalOnly;
+    }
+    if (oldWidget.initialStreamOnly != widget.initialStreamOnly) {
+      _streamOnly = widget.initialStreamOnly;
+    }
+    if (oldWidget.initialSortField != widget.initialSortField) {
+      _sortField = widget.initialSortField;
+    }
+    if (oldWidget.initialAscending != widget.initialAscending) {
+      _isAscending = widget.initialAscending;
+    }
   }
 
   @override
@@ -133,15 +156,10 @@ class _SearchHeaderState extends State<SearchHeader> {
           valueListenable:
               context.read<AbstractAppStateProvider>().shouldDisplayLocalOnly,
           builder: (context, shouldDisplayLocalOnly, child) {
-            if (shouldDisplayLocalOnly) {
-              debugPrint(
-                "SearchHeader: shouldDisplayLocalOnly is false, allowing user to toggle local only filter",
-              );
-              _localOnly = shouldDisplayLocalOnly;
-              widget.onLocalOnly(_localOnly);
-            }
+            final effectiveLocalOnly = shouldDisplayLocalOnly || _localOnly;
             return PopupMenuButton<String>(
               tooltip: "Filter",
+              constraints: const BoxConstraints(minWidth: 300),
               icon: const Icon(
                 FluentIcons.filter,
                 color: Colors.white,
@@ -176,18 +194,49 @@ class _SearchHeaderState extends State<SearchHeader> {
                       child: Row(
                         children: [
                           Icon(
-                            _localOnly
+                            effectiveLocalOnly
                                 ? FluentIcons.checkCircleOn
                                 : FluentIcons.checkCircleOff,
                             color:
-                                _localOnly ? Colors.blue : Colors.transparent,
+                                effectiveLocalOnly
+                                    ? Colors.blue
+                                    : Colors.transparent,
                             size: 16,
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            "Local Only",
+                            "Available Offline",
                             style:
-                                _localOnly
+                                effectiveLocalOnly
+                                    ? Theme.of(context).textTheme.titleMedium
+                                    : Theme.of(context).textTheme.bodyMedium!
+                                        .copyWith(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      onTap: () {
+                        setState(() {
+                          _streamOnly = !_streamOnly;
+                        });
+                        widget.onStreamOnly?.call(_streamOnly);
+                      },
+                      child: Row(
+                        children: [
+                          Icon(
+                            _streamOnly
+                                ? FluentIcons.checkCircleOn
+                                : FluentIcons.checkCircleOff,
+                            color:
+                                _streamOnly ? Colors.blue : Colors.transparent,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Available to Stream",
+                            style:
+                                _streamOnly
                                     ? Theme.of(context).textTheme.titleMedium
                                     : Theme.of(context).textTheme.bodyMedium!
                                         .copyWith(color: Colors.grey),

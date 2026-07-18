@@ -9,6 +9,7 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/ui/screens/album_screen.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/entity_screen.dart';
@@ -17,7 +18,15 @@ import 'package:provider/provider.dart';
 
 class _SongProvider extends Fake implements SongProvider {}
 
-class _AlbumProvider extends Fake implements AlbumProvider {}
+class _AlbumProvider extends Fake implements AlbumProvider {
+  @override
+  Future<PageResult<Song>> getSongsPage(
+    String hash, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 10,
+  }) async => PageResult(content: const [], totalPages: 0, page: page);
+}
 
 class _Queryable extends ChangeNotifier implements QueryableProvider {
   _Queryable(this.result, {this.shouldThrow = false});
@@ -54,14 +63,16 @@ class _Cover implements CoverService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Widget _host(Widget Function(BuildContext) builder) =>
-    Provider<CoverService>.value(
-      value: _Cover(),
-      child: MaterialApp(
-        theme: ThemeData.dark(),
-        home: Scaffold(body: Builder(builder: builder)),
-      ),
-    );
+Widget _host(Widget Function(BuildContext) builder) => MultiProvider(
+  providers: [
+    Provider<CoverService>.value(value: _Cover()),
+    ChangeNotifierProvider(create: (_) => SelectionProvider()),
+  ],
+  child: MaterialApp(
+    theme: ThemeData.dark(),
+    home: Scaffold(body: Builder(builder: builder)),
+  ),
+);
 
 void main() {
   testWidgets('track details and app bar render complete metadata', (

@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
+import 'package:music_player_frontend/core/services/local_track_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class SongProvider with ChangeNotifier implements QueryableProvider {
@@ -11,14 +15,39 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
 
   final SongService _songService;
   final AbstractMusicScannerService _scannerService;
+  final ChunkCacheRepository? _chunkCacheRepository;
+  final LocalTrackService? _localTrackService;
 
   bool _isInitialized = false;
+  StreamSubscription<dynamic>? _localTrackSubscription;
 
-  SongProvider(this._songService, this._scannerService) {
-    _scannerService.progressStream.listen((progress) {
-      _logger.fine('Music scan progress: $progress');
+  SongProvider(
+    this._songService,
+    this._scannerService, [
+    this._chunkCacheRepository,
+    this._localTrackService,
+  ]) {
+    _localTrackSubscription = _localTrackService?.watchTracks.listen((_) {
       notifyListeners();
     });
+    _scannerService.progressStream.listen((progress) {
+      _logger.fine('Music scan progress: $progress');
+      if ((progress.phase == MusicScanPhase.scanning ||
+              progress.phase == MusicScanPhase.enriching) &&
+          progress.processed > 0) {
+        notifyListeners();
+      } else if (progress.phase == MusicScanPhase.completed ||
+          progress.phase == MusicScanPhase.cancelled ||
+          progress.phase == MusicScanPhase.failed) {
+        notifyListeners();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _localTrackSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -35,12 +64,58 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     _isInitialized = true;
   }
 
+  void startBackgroundScan() {
+    if (!_isInitialized) return;
+    unawaited(_reconcileCacheAvailability());
+    unawaited(
+      _scannerService.performQuickScan().catchError((Object error) {
+        _logger.warning('Background music scan failed', error);
+      }),
+    );
+  }
+
+  Future<void> cancelBackgroundScan() => _scannerService.cancelScan();
+
+  Future<void> _reconcileCacheAvailability() async {
+    final cache = _chunkCacheRepository;
+    if (cache == null) return;
+    try {
+      final cachedHashes = (await cache.getCachedFileHashes()).toSet();
+      final songs = _songService.getAllLocalSongs();
+      final hashesToCheck = <String>{
+        ...cachedHashes,
+        ...songs
+            .where((song) => song.cachedChunkCount > 0 || song.fullyCached)
+            .map((song) => song.fileHash),
+      };
+      for (final hash in hashesToCheck) {
+        final song = _songService.getLocalSong(hash);
+        if (song == null || !song.hasManifest) continue;
+        final indices = await cache.getAvailableChunkIndices(hash);
+        final validCount =
+            indices
+                .where((index) => index < song.expectedChunkCount)
+                .toSet()
+                .length;
+        _songService.updateCacheAvailability(
+          hash,
+          song.expectedChunkCount,
+          validCount,
+        );
+      }
+      notifyListeners();
+    } catch (e) {
+      _logger.warning('Failed to reconcile cached song availability', e);
+    }
+  }
+
   Future<Song> enrichSong(Song song) async {
     return await _songService.fullyFetchSong(song);
   }
 
   @override
   Future<Song?> fetchEntity(BaseEntity song) async {
+    if (song is Song && song.fileHash.isEmpty) return song;
     return await _songService.fetchSongByFileHash(song.getHash());
   }
 
@@ -52,6 +127,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
     bool localOnly,
     int page,
     int size, {
+    bool streamOnly = false,
     String? filterAlbumHash,
     String? filterArtistHash,
     int? filterPlaylistId,
@@ -66,6 +142,7 @@ class SongProvider with ChangeNotifier implements QueryableProvider {
       localOnly,
       page,
       size,
+      streamOnly: streamOnly,
     );
   }
 

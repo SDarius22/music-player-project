@@ -2,9 +2,7 @@ import 'package:music_player_frontend/platforms/macos/services/macos_music_scann
 
 class IosMusicScannerService extends MacosMusicScannerService {
   IosMusicScannerService(
-    super.songService,
-    super.artistService,
-    super.albumService,
+    super.localTrackService,
     super.fileService,
     super.settingsService,
   );

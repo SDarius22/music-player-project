@@ -197,8 +197,9 @@ class PlaylistService {
     bool ascending,
     bool containLocalOnly,
     int page,
-    int size,
-  ) async {
+    int size, {
+    bool streamOnly = false,
+  }) async {
     int? serverTotalPages;
     try {
       final serverPage = await _playlistRestService.getPlaylistsPage(
@@ -215,14 +216,20 @@ class PlaylistService {
       _logger.fine('server fetch failed, using local: $e');
     }
 
-    final localContent = _playlistRepository.getPlaylistsPaged(
-      query,
-      sortField,
-      ascending,
-      containLocalOnly,
-      page * size,
-      size,
-    );
+    final all =
+        _playlistRepository
+            .getPlaylistsPaged(query, sortField, ascending, false, 0, 1 << 30)
+            .where(
+              (playlist) =>
+                  (!containLocalOnly || playlist.isAvailableOffline) &&
+                  (!streamOnly || playlist.isAvailableToStream),
+            )
+            .toList();
+    final offset = page * size;
+    final localContent =
+        offset >= all.length
+            ? <Playlist>[]
+            : all.sublist(offset, (offset + size).clamp(0, all.length));
 
     for (final playlist in localContent) {
       _logger.fine('Playlist $playlist}');
@@ -231,11 +238,10 @@ class PlaylistService {
     final totalPages =
         (serverTotalPages != null && serverTotalPages > 0)
             ? serverTotalPages
-            : ((_playlistRepository.getPlaylistCount(query, containLocalOnly) +
-                        size -
-                        1) ~/
-                    size)
-                .clamp(1, double.maxFinite.toInt());
+            : ((all.length + size - 1) ~/ size).clamp(
+              1,
+              double.maxFinite.toInt(),
+            );
 
     return (content: localContent, totalPages: totalPages, page: page);
   }

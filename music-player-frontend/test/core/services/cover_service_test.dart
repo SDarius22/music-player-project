@@ -96,7 +96,7 @@ void main() {
   });
 
   test('builds authenticated remote images and persists album covers', () {
-    final album = Album('album', 'Album');
+    final album = Album('album', 'Album')..id = 1;
     final widget = service.getWidget(album) as CachedCoverImage;
     expect(widget.imageUrl, 'http://test/albums/album/cover');
     expect(widget.headers['Authorization'], 'Bearer token');
@@ -108,22 +108,63 @@ void main() {
   });
 
   test('persists artist and song album covers', () {
-    final artist = Artist('artist', 'Artist');
+    final artist = Artist('artist', 'Artist')..id = 1;
     final artistWidget = service.getWidget(artist) as CachedCoverImage;
     artistWidget.onBytesLoaded!(Uint8List.fromList([4]));
     expect(artists.updated, [artist]);
 
-    final album = Album('album', 'Album');
+    final album = Album('album', 'Album')..id = 1;
     final song = Song('song')..path = '/tmp/song.mp3';
     song.album.target = album;
     final songWidget = service.getWidget(song) as CachedCoverImage;
     expect(songWidget.path, '/tmp/song.mp3');
+    expect(songWidget.cacheKey, 'album:album');
     songWidget.onBytesLoaded!(Uint8List.fromList([5]));
     expect(albums.updated, [album]);
+  });
+
+  test('does not persist covers through transient local projections', () {
+    final artist = Artist('local-artist', 'Artist');
+    final album = Album('local-album', 'Album')..artist.target = artist;
+    final song = Song('')..path = '/tmp/local.mp3';
+    song.album.target = album;
+
+    final widget = service.getWidget(song) as CachedCoverImage;
+
+    expect(widget.cacheKey, 'album:album');
+    expect(widget.onBytesLoaded, isNull);
+    expect(albums.updated, isEmpty);
+    expect(artists.updated, isEmpty);
   });
 
   test('song without an album still builds a remote widget', () {
     final widget = service.getWidget(Song('song')) as CachedCoverImage;
     expect(widget.onBytesLoaded, isNull);
+  });
+
+  test('loads a local artist cover from one of its song files', () {
+    final artist = Artist('local-artist:test', 'Local Artist');
+    final album = Album('local-album:test', 'Local Album')
+      ..artist.target = artist;
+    final song = Song('')..path = '/tmp/local-artist-song.flac';
+    song
+      ..artist.target = artist
+      ..album.target = album;
+    artist.addSong(song);
+
+    final widget = service.getWidget(artist) as CachedCoverImage;
+
+    expect(widget.path, '/tmp/local-artist-song.flac');
+    expect(widget.imageUrl, isEmpty);
+    expect(widget.cacheKey, 'artist:local artist');
+  });
+
+  test('uses the remote source hash for a merged local artist cover', () {
+    final artist = Artist('local-artist:test', 'Merged Artist')
+      ..remoteSourceHashes = ['remote-artist-hash'];
+
+    final widget = service.getWidget(artist) as CachedCoverImage;
+
+    expect(widget.imageUrl, 'http://test/artists/remote-artist-hash/cover');
   });
 }
