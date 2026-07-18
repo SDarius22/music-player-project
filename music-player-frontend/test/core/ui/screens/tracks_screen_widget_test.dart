@@ -122,6 +122,9 @@ class _FakeSongProvider extends ChangeNotifier implements SongProvider {
 class _FakeAudioProvider extends ChangeNotifier implements AudioProvider {
   final queueCalls = <({List<Song> songs, Song selected})>[];
   final nextQueueCalls = <List<Song>>[];
+  final downloads = <Song>[];
+  int playCalls = 0;
+  int pauseCalls = 0;
 
   @override
   final ValueNotifier<bool> playingNotifier = ValueNotifier(false);
@@ -141,6 +144,23 @@ class _FakeAudioProvider extends ChangeNotifier implements AudioProvider {
   @override
   Future<void> addNextToQueue(List<Song> songs) async {
     nextQueueCalls.add(songs);
+  }
+
+  @override
+  Future<void> downloadSong(Song song) async {
+    downloads.add(song);
+  }
+
+  @override
+  Future<void> play() async {
+    playCalls++;
+    playingNotifier.value = true;
+  }
+
+  @override
+  Future<void> pause() async {
+    pauseCalls++;
+    playingNotifier.value = false;
   }
 
   @override
@@ -276,6 +296,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
+      final audioProvider = _FakeAudioProvider();
       final songProvider = _FakeSongProvider([
         _song('remote', 'Remote Track'),
         _song('local', 'Local Track', local: true),
@@ -284,7 +305,7 @@ void main() {
         _wrapTracks(
           appStateProvider: _FakeAppStateProvider(),
           songProvider: songProvider,
-          audioProvider: _FakeAudioProvider(),
+          audioProvider: audioProvider,
           selectionProvider: SelectionProvider(),
         ),
       );
@@ -299,6 +320,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Download'), findsOneWidget);
+      await tester.tap(find.text('Download'));
+      await tester.pumpAndSettle();
+
+      expect(audioProvider.downloads.map((song) => song.fileHash), ['remote']);
     });
 
     testWidgets('tapping a track queues the visible page and selected song', (
@@ -334,6 +359,60 @@ void main() {
         audioProvider.queueCalls.single.songs.map((song) => song.getName()),
         ['Alpha Track', 'Beta Track'],
       );
+
+      await tester.tap(_tileForText('Beta Track'));
+      await tester.pumpAndSettle();
+      expect(audioProvider.playCalls, 1);
+
+      await tester.tap(_tileForText('Beta Track'));
+      await tester.pumpAndSettle();
+      expect(audioProvider.pauseCalls, 1);
+    });
+
+    testWidgets('track menu queues next and toggles selection', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final audioProvider = _FakeAudioProvider();
+      final selectionProvider = SelectionProvider();
+      final songProvider = _FakeSongProvider([_song('song', 'Menu Track')]);
+      await tester.pumpWidget(
+        _wrapTracks(
+          appStateProvider: _FakeAppStateProvider(),
+          songProvider: songProvider,
+          audioProvider: audioProvider,
+          selectionProvider: selectionProvider,
+        ),
+      );
+      await _pumpInitialTrackLoad(tester);
+
+      Future<void> choose(String label) async {
+        await tester.tap(
+          find.descendant(
+            of: _tileForText('Menu Track'),
+            matching: find.byIcon(FluentIcons.moreVertical),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label));
+        await tester.pumpAndSettle();
+      }
+
+      await choose('Add to...');
+      await choose('Play Next');
+      expect(audioProvider.nextQueueCalls.single.single.fileHash, 'song');
+
+      await choose('Track Details');
+      await choose('Select');
+      expect(selectionProvider.selectedEntities.single.getName(), 'Menu Track');
+
+      await tester.tap(find.byTooltip('Selection actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(selectionProvider.selectedEntities, isEmpty);
     });
 
     testWidgets('selection mode toggles tiles without starting playback', (
@@ -386,6 +465,29 @@ void main() {
       expect(find.text('Download'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
 
+      await tester.tap(find.text('Play'));
+      await tester.pumpAndSettle();
+      expect(audioProvider.queueCalls, hasLength(1));
+
+      await tester.tap(find.byTooltip('Selection actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Play Next'));
+      await tester.pumpAndSettle();
+      expect(audioProvider.nextQueueCalls, hasLength(1));
+
+      await tester.tap(find.byTooltip('Selection actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Download'));
+      await tester.pumpAndSettle();
+      expect(audioProvider.downloads, hasLength(2));
+
+      await tester.tap(find.byTooltip('Selection actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add to'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Selection actions'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(selectionProvider.selectedEntities, isEmpty);

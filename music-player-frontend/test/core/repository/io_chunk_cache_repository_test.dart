@@ -47,4 +47,55 @@ void main() {
     expect(await repository.finalizeSong(wrongHash), isFalse);
     expect(await repository.readChunk(wrongHash, 0), [1, 2, 3, 4]);
   });
+
+  test(
+    'reloads layouts, enumerates songs, and deletes completed media',
+    () async {
+      final directory = await Directory.systemTemp.createTemp('chunk-cache-');
+      addTearDown(() => directory.delete(recursive: true));
+      final bytes = Uint8List.fromList([1, 2, 3, 4]);
+      final fileHash = sha256.convert(bytes).toString();
+      final writer = IOChunkCacheRepository(baseDirectory: directory);
+      await writer.configureSong(fileHash, 4, 4, 1);
+      await writer.saveChunk(fileHash, 0, bytes);
+      expect(await writer.finalizeSong(fileHash), isTrue);
+
+      final reader = IOChunkCacheRepository(baseDirectory: directory);
+      expect(await reader.getCachedFileHashes(), [fileHash]);
+      expect(await reader.readChunk(fileHash, -1), isNull);
+      expect(await reader.readChunk(fileHash, 1), isNull);
+      expect(await reader.readChunk(fileHash, 0), bytes);
+      await reader.deleteChunk(fileHash, 0);
+
+      expect(await reader.readChunk(fileHash, 0), isNull);
+      expect(await reader.getAvailableChunkIndices(fileHash), isEmpty);
+    },
+  );
+
+  test('handles incomplete and invalid persisted layouts', () async {
+    final directory = await Directory.systemTemp.createTemp('chunk-cache-');
+    addTearDown(() => directory.delete(recursive: true));
+    final repository = IOChunkCacheRepository(baseDirectory: directory);
+    await repository.configureSong('incomplete', 4, 8, 2);
+    await repository.saveChunk('incomplete', 0, Uint8List.fromList([1, 2]));
+
+    expect(await repository.finalizeSong('incomplete'), isFalse);
+    expect(await repository.getAvailableChunkIndices('incomplete'), [0]);
+    expect(
+      (await repository.getCachedFileHashes()).toSet(),
+      contains('incomplete'),
+    );
+
+    final invalidDirectory = Directory('${directory.path}/invalid');
+    await invalidDirectory.create();
+    await File(
+      '${invalidDirectory.path}/layout.json',
+    ).writeAsString('{"chunkSize":0,"totalBytes":0,"totalChunks":0}');
+    final reloaded = IOChunkCacheRepository(baseDirectory: directory);
+    expect(await reloaded.finalizeSong('invalid'), isFalse);
+
+    await File('${invalidDirectory.path}/layout.json').writeAsString('broken');
+    final malformed = IOChunkCacheRepository(baseDirectory: directory);
+    expect(await malformed.finalizeSong('invalid'), isFalse);
+  });
 }

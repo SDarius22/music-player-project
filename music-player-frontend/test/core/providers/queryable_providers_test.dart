@@ -11,6 +11,7 @@ import 'package:music_player_frontend/core/providers/albums_provider.dart';
 import 'package:music_player_frontend/core/providers/artist_provider.dart';
 import 'package:music_player_frontend/core/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/services/album_service.dart';
 import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
@@ -185,6 +186,8 @@ class _FakeSongService extends Fake implements SongService {
   );
   List<Song> forgotten = const [];
   List<Song> quickDial = const [];
+  List<Song> localSongs = const [];
+  final cacheUpdates = <({String hash, int expected, int cached})>[];
 
   @override
   Map<String, dynamic> get sortFields => sortMap;
@@ -224,10 +227,49 @@ class _FakeSongService extends Fake implements SongService {
 
   @override
   void deleteSong(Song song) {}
+
+  @override
+  List<Song> getAllLocalSongs() => localSongs;
+
+  @override
+  Song? getLocalSong(String fileHash) =>
+      localSongs.where((song) => song.fileHash == fileHash).firstOrNull;
+
+  @override
+  void updateCacheAvailability(
+    String fileHash,
+    int expectedChunkCount,
+    int cachedChunkCount,
+  ) {
+    cacheUpdates.add((
+      hash: fileHash,
+      expected: expectedChunkCount,
+      cached: cachedChunkCount,
+    ));
+  }
+}
+
+class _FakeChunkCache extends Fake implements ChunkCacheRepository {
+  List<String> hashes = const [];
+  Map<String, List<int>> indices = const {};
+  bool throwOnRead = false;
+
+  @override
+  Future<List<String>> getCachedFileHashes() async {
+    if (throwOnRead) throw Exception('cache unavailable');
+    return hashes;
+  }
+
+  @override
+  Future<List<int>> getAvailableChunkIndices(String fileHash) async =>
+      indices[fileHash] ?? const [];
 }
 
 class _FakeScannerService extends Fake implements AbstractMusicScannerService {
   final _controller = StreamController<MusicScanProgress>.broadcast();
+  int scanCalls = 0;
+  int cancelCalls = 0;
+  bool failScan = false;
 
   @override
   Stream<MusicScanProgress> get progressStream => _controller.stream;
@@ -243,10 +285,15 @@ class _FakeScannerService extends Fake implements AbstractMusicScannerService {
   }
 
   @override
-  Future<void> performQuickScan() async {}
+  Future<void> performQuickScan() async {
+    scanCalls++;
+    if (failScan) throw Exception('scan failed');
+  }
 
   @override
-  Future<void> cancelScan() async {}
+  Future<void> cancelScan() async {
+    cancelCalls++;
+  }
 
   Future<void> dispose() async {
     await _controller.close();
@@ -357,6 +404,65 @@ void main() {
   });
 
   group('SongProvider', () {
+    test('initializes, scans, and reconciles cached availability', () async {
+      final songService = _FakeSongService();
+      final scanner = _FakeScannerService();
+      final cache = _FakeChunkCache();
+      addTearDown(scanner.dispose);
+      final song =
+          Song('cached')
+            ..manifestChunkSize = 4
+            ..manifestTotalBytes = 12
+            ..chunkHashes = List.filled(3, 'hash')
+            ..cachedChunkCount = 1;
+      songService.localSongs = [song];
+      cache
+        ..hashes = ['cached', 'missing']
+        ..indices = {
+          'cached': [0, 1, 9],
+        };
+      final provider = SongProvider(songService, scanner, cache);
+      addTearDown(provider.dispose);
+      var notifications = 0;
+      provider.addListener(() => notifications++);
+
+      provider.startBackgroundScan();
+      expect(scanner.scanCalls, 0);
+      await provider.initialize(['/music']);
+      await provider.initialize(['/ignored']);
+      provider.startBackgroundScan();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      await provider.cancelBackgroundScan();
+
+      expect(provider.sortFields, songService.sortMap);
+      expect(provider.defaultSortField, 'Title');
+      expect(scanner.scanCalls, 1);
+      expect(scanner.cancelCalls, 1);
+      expect(songService.cacheUpdates, [
+        (hash: 'cached', expected: 3, cached: 2),
+      ]);
+      expect(notifications, 1);
+      expect(await provider.fetchEntity(Song('')), isA<Song>());
+    });
+
+    test('cache reconciliation and scan failures stay non-fatal', () async {
+      final songService = _FakeSongService();
+      final scanner = _FakeScannerService()..failScan = true;
+      final cache = _FakeChunkCache()..throwOnRead = true;
+      addTearDown(scanner.dispose);
+      final provider = SongProvider(songService, scanner, cache);
+      addTearDown(provider.dispose);
+
+      await provider.initialize(const []);
+      provider.startBackgroundScan();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(scanner.scanCalls, 1);
+      expect(songService.cacheUpdates, isEmpty);
+    });
+
     test(
       'delegates fetch/enrich/list methods and notifies on refresh',
       () async {
