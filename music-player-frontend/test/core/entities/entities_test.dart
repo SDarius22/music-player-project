@@ -7,6 +7,7 @@ import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/chunk_stat.dart';
+import 'package:music_player_frontend/core/entities/local_track.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 
@@ -241,6 +242,45 @@ void main() {
 
       playlist.addSong(Song('remote'));
       expect(playlist.isLocal, isTrue);
+    });
+  });
+
+  group('LocalTrack', () {
+    test('exposes local playback identity and display metadata', () {
+      final track = LocalTrack(
+        sourceKey: 'source-key',
+        sourceUri: 'file:///music/song.mp3',
+        potentialIdentityKey: 'identity',
+        name: 'Local Song',
+        artistName: 'Local Artist',
+      );
+
+      expect(track.playbackIdentity, 'local:source-key');
+      expect(track.isLocal, isTrue);
+      expect(track.isAvailableOffline, isTrue);
+      expect(track.isAvailableToStream, isFalse);
+      expect(track.getName(), 'Local Song');
+      expect(track.getSecondaryText(), 'Local Artist');
+      expect(track.getHash(), 'local:source-key');
+      expect(track.getCoverArt(), isNull);
+      expect(track.getImageUrl(), '');
+    });
+
+    test('prefers resolved content identity and reflects availability', () {
+      final track =
+          LocalTrack(
+              sourceKey: 'source-key',
+              sourceUri: 'content://track',
+              potentialIdentityKey: 'identity',
+              available: false,
+            )
+            ..contentHash = 'content-hash'
+            ..resolvedSongHash = 'remote-hash';
+
+      expect(track.playbackIdentity, 'content-hash');
+      expect(track.isLocal, isFalse);
+      expect(track.isAvailableOffline, isFalse);
+      expect(track.isAvailableToStream, isTrue);
     });
   });
 

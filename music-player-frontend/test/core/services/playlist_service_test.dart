@@ -142,6 +142,10 @@ void main() {
       );
     });
 
+    test('exposes repository sort fields', () {
+      expect(service.sortFields, playlistRepo.sortFields);
+    });
+
     test(
       'addPlaylist saves local playlist and applies returned server id',
       () async {
@@ -297,6 +301,23 @@ void main() {
         'Normal',
         'Queue',
       ]);
+    });
+
+    test('calculates local totals when the server has no pages', () async {
+      for (var index = 0; index < 5; index++) {
+        playlistRepo.savePlaylist(
+          Playlist('Protected $index')..indestructible = true,
+        );
+        playlistRepo.savePlaylist(Playlist('Normal $index'));
+      }
+
+      final protected = await service.getIndestructiblePlaylists(0, 2);
+      final normal = await service.getNormalPlaylists(0, 2);
+      final all = await service.getPlaylistsPage('', 'Name', true, false, 0, 2);
+
+      expect(protected.totalPages, 3);
+      expect(normal.totalPages, 5);
+      expect(all.totalPages, 5);
     });
 
     test('gets details and playlist songs from server', () async {

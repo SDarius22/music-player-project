@@ -109,6 +109,11 @@ void main() {
   });
 
   group('getAlbumsPage', () {
+    test('exposes repository sort fields', () {
+      when(mockAlbumRepo.sortFields).thenReturn(const {'Name': null});
+      expect(service.sortFields, const {'Name': null});
+    });
+
     test('returns server totalPages when server call succeeds', () async {
       final serverPage = AlbumPageDto(
         content: [
@@ -190,6 +195,59 @@ void main() {
       expect(result.content, equals(local));
       expect(result.totalPages, 1);
     });
+
+    test(
+      'merges equivalent local and remote albums and supports paging',
+      () async {
+        final artist = Artist('artist', 'Artist');
+        final remote =
+            Album('remote-album', 'Shared')
+              ..hasRemoteSource = true
+              ..remoteSourceHashes = ['remote-album'];
+        final local = Album('local-album:shared', 'Shared')
+          ..hasOfflineSource = true;
+        remote.artist.target = artist;
+        local.artist.target = artist;
+        final localSong = Song('local-song')..path = '/music/local.mp3';
+        localSong.album.target = local;
+        local.addSong(localSong);
+
+        when(
+          mockRestClient.getAlbumsPage(
+            query: anyNamed('query'),
+            page: anyNamed('page'),
+            size: anyNamed('size'),
+            sort: anyNamed('sort'),
+          ),
+        ).thenThrow(Exception('offline'));
+        when(
+          mockAlbumRepo.getAlbumsPaged(any, any, any, any, any, any),
+        ).thenReturn([remote, local]);
+        when(mockSongRepo.getAllSongs()).thenReturn([localSong]);
+
+        final first = await service.getAlbumsPage(
+          '',
+          'unknown',
+          false,
+          true,
+          0,
+          1,
+        );
+        expect(first.content, [local]);
+        expect(local.hasRemoteSource, isTrue);
+        expect(local.remoteSourceHashes, contains('remote-album'));
+
+        final beyondEnd = await service.getAlbumsPage(
+          '',
+          'name',
+          true,
+          false,
+          2,
+          1,
+        );
+        expect(beyondEnd.content, isEmpty);
+      },
+    );
   });
 
   group('fetchAlbumDetails', () {
@@ -225,6 +283,16 @@ void main() {
       expect(result, same(local));
       verify(mockAlbumRepo.getAlbumByHash('album-hash')).called(1);
     });
+
+    test(
+      'returns null when neither server nor local cache has the album',
+      () async {
+        when(mockRestClient.getAlbumByHash('missing')).thenThrow(Exception());
+        when(mockAlbumRepo.getAlbumByHash('missing')).thenReturn(null);
+
+        expect(await service.fetchAlbumDetails('missing'), isNull);
+      },
+    );
   });
 
   group('updateAlbum', () {
@@ -303,5 +371,30 @@ void main() {
       expect(result.content, [song]);
       expect(result.totalPages, 2);
     });
+
+    test(
+      'returns an empty page when the requested offset is past songs',
+      () async {
+        when(
+          mockRestClient.getAlbumSongsPage(
+            albumHash: 'album',
+            page: 3,
+            size: 2,
+          ),
+        ).thenThrow(Exception('offline'));
+        when(
+          mockSongRepo.getAlbumSongsPaged('album', false, 6, 2),
+        ).thenReturn(const []);
+        when(mockSongRepo.getAlbumSongCount('album', false)).thenReturn(0);
+
+        final result = await service.getAlbumSongsPage(
+          'album',
+          page: 3,
+          size: 2,
+        );
+        expect(result.content, isEmpty);
+        expect(result.page, 3);
+      },
+    );
   });
 }

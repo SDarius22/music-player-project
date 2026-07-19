@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 
 class _FileService extends AbstractFileService {
@@ -52,6 +53,8 @@ void main() {
     final songPath = '${directory.path}/missing.mp3';
     expect(service.getLyricsPath(songPath), '');
     expect(service.getLyrics(songPath), '');
+    expect(service.getLyricsPath('${directory.path}/extensionless'), '');
+    expect(service.getLyrics('content://media/42'), '');
   });
 
   test('saves lyrics beside plain and file-URI song paths', () async {
@@ -72,6 +75,12 @@ void main() {
       'uri lyrics',
     );
     expect(await service.saveLyrics('content://media/42', 'lyrics'), isFalse);
+    expect(await service.saveLyrics(null, 'lyrics'), isFalse);
+    expect(await service.saveLyrics(songPath, '   '), isFalse);
+    expect(
+      await service.saveLyrics('${directory.path}/extensionless', 'lyrics'),
+      isFalse,
+    );
   });
 
   test('exports an M3U playlist and checks file existence', () {
@@ -88,4 +97,14 @@ void main() {
   test('createWorkaroundFile rejects a missing song', () async {
     await expectLater(service.createWorkaroundFile(null), throwsException);
   });
+
+  test(
+    'createWorkaroundFile returns an empty file without cover art',
+    () async {
+      final file = await service.createWorkaroundFile(
+        Song('song')..name = 'No cover',
+      );
+      expect(file.path, '');
+    },
+  );
 }

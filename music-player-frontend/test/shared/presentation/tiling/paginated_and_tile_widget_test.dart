@@ -274,5 +274,96 @@ void main() {
 
       expect(identical(tapped, enriched), isTrue);
     });
+
+    testWidgets('shows a next-page error and retries that page', (
+      tester,
+    ) async {
+      final page0 = List.generate(20, (i) => _song('base-$i', 'Base $i'));
+      var pageOneCalls = 0;
+
+      await tester.pumpWidget(
+        _withProviders(
+          audioProvider: audioProvider,
+          coverService: coverService,
+          child: PaginatedComponent(
+            type: TileType.list,
+            itemExtent: 56,
+            fetchPage: (page, _) async {
+              if (page == 0) {
+                return PageResult<Song>(content: page0, totalPages: 2, page: 0);
+              }
+              pageOneCalls++;
+              if (pageOneCalls == 1) throw Exception('temporary failure');
+              return PageResult<Song>(
+                content: [_song('recovered', 'Recovered')],
+                totalPages: 2,
+                page: 1,
+              );
+            },
+            onTap: (_, _) async {},
+            onLongPress: (_, _) {},
+            isSelected: (_) => false,
+            reloadToken: 0,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+      final retry = find.text(
+        'Failed to load more. Tap to retry.',
+        skipOffstage: false,
+      );
+      expect(retry, findsOneWidget);
+
+      final retryButton = tester.widget<TextButton>(
+        find.byType(TextButton, skipOffstage: false),
+      );
+      retryButton.onPressed!();
+      await tester.pumpAndSettle();
+      expect(pageOneCalls, 2);
+      expect(find.text('Failed to load more. Tap to retry.'), findsNothing);
+    });
+
+    testWidgets('honors initial delay and refresh callback', (tester) async {
+      var fetches = 0;
+      var refreshes = 0;
+      await tester.pumpWidget(
+        _withProviders(
+          audioProvider: audioProvider,
+          coverService: coverService,
+          child: PaginatedComponent(
+            type: TileType.list,
+            initialLoadDelay: const Duration(milliseconds: 10),
+            fetchPage: (page, _) async {
+              fetches++;
+              return PageResult<Song>(
+                content: [_song('refresh-$fetches', 'Refresh $fetches')],
+                totalPages: 1,
+                page: page,
+              );
+            },
+            onRefresh: () async {
+              refreshes++;
+            },
+            onTap: (_, _) async {},
+            onLongPress: (_, _) {},
+            isSelected: (_) => false,
+            reloadToken: 0,
+          ),
+        ),
+      );
+
+      expect(fetches, 0);
+      await tester.pump(const Duration(milliseconds: 10));
+      await tester.pumpAndSettle();
+      expect(fetches, 1);
+
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
+      await tester.pumpAndSettle();
+      expect(refreshes, 1);
+      expect(fetches, 2);
+    });
   });
 }

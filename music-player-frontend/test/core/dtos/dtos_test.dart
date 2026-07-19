@@ -5,6 +5,7 @@ import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/dtos/negotiation_response_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
+import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 
 void main() {
   group('Page DTOs', () {
@@ -114,6 +115,36 @@ void main() {
 
       expect(dto.fileHash, 'f2');
       expect(dto.missingIndices, [0, 3]);
+    });
+
+    test('SongDto serializes its API fields and parses last-played time', () {
+      final dto = SongDto.fromJson({
+        'fileHash': 'song',
+        'name': 'Track',
+        'durationInSeconds': 123,
+        'trackNumber': 4,
+        'discNumber': 2,
+        'year': 2025,
+        'artist': {'hash': 'artist', 'name': 'Artist'},
+        'album': {'hash': 'album', 'name': 'Album'},
+        'playCount': 7,
+        'lastPlayed': '2026-07-19T12:00:00.000Z',
+        'likedByUser': true,
+      });
+
+      expect(dto.releaseYear, 2025);
+      expect(dto.lastPlayed, DateTime.utc(2026, 7, 19, 12));
+      expect(dto.likedByUser, isTrue);
+      expect(dto.toJson(), {
+        'fileHash': 'song',
+        'name': 'Track',
+        'durationInSeconds': 123,
+        'trackNumber': 4,
+        'discNumber': 2,
+        'year': 2025,
+        'artist': {'hash': 'artist', 'name': 'Artist'},
+        'album': {'hash': 'album', 'name': 'Album'},
+      });
     });
   });
 }

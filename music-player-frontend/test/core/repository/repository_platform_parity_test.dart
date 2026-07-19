@@ -119,6 +119,242 @@ void main() {
         expect(memory.idsAssigned, objectBox.idsAssigned);
         expect(memory.initialWatch, objectBox.initialWatch);
       });
+
+      test(
+        'native song repository supports its complete query contract',
+        () async {
+          final repository = ObjectBoxSongRepository();
+          final artist = ObjectBoxArtistRepository().saveArtist(
+            Artist('artist', 'Artist'),
+          );
+          final album = Album('album', 'Album')..setArtist(artist);
+          ObjectBoxAlbumRepository().saveAlbum(album);
+
+          Song song(String hash, String name, int track, {bool local = false}) {
+            final value =
+                Song(hash)
+                  ..name = name
+                  ..fullyLoaded = true
+                  ..durationInSeconds = track * 10
+                  ..year = 2020 + track
+                  ..discNumber = track == 3 ? 2 : 1
+                  ..trackNumber = track
+                  ..path = local ? '/music/$hash.mp3' : null
+                  ..lastPlayed = DateTime.utc(2026, 1, track)
+                  ..playCount = track;
+            value.artist.target = artist;
+            value.album.target = album;
+            return value;
+          }
+
+          final alpha = song('alpha', 'Alpha', 2, local: true)
+            ..likedByUser = true;
+          final beta = song('beta', 'Beta', 1);
+          final gamma = song('gamma', 'Gamma', 3)..fullyCached = true;
+          final unloaded = Song('unloaded')..name = 'Unloaded';
+          repository.saveSongs([gamma, unloaded, alpha, beta]);
+
+          expect(repository.sortFields.keys, ['Title', 'Duration', 'Year']);
+          expect(repository.getSongCount('', false), 3);
+          expect(repository.getSongCount('', true), 2);
+          expect(repository.getSongByFileHash(''), isNull);
+          expect(repository.getSongByFileHash('alpha')?.name, 'Alpha');
+          expect(repository.getSongByLocalPath(''), isNull);
+          expect(
+            repository.getSongByLocalPath('/music/alpha.mp3')?.name,
+            'Alpha',
+          );
+          expect(repository.getOrCreateSong('alpha').id, alpha.id);
+          expect(repository.getOrCreateSong('new').id, isPositive);
+          expect(repository.getMostRecentPlayedSong()?.name, 'Gamma');
+          expect(
+            repository.getRecentlyPlayedSongs(2).map((song) => song.name),
+            ['Gamma', 'Alpha'],
+          );
+          expect(repository.getMostPlayedSongs(1).single.name, 'Gamma');
+          expect(repository.getFavoriteSongs().single.name, 'Alpha');
+          expect(
+            repository
+                .getSongsPaged('', 'Duration', false, false, 1, 1)
+                .single
+                .name,
+            'Alpha',
+          );
+          expect(
+            repository
+                .getSongsPaged('', 'invalid', true, true, 0, 10)
+                .map((song) => song.name),
+            ['Alpha', 'Gamma'],
+          );
+          expect(repository.getAlbumSongCount('album', false), 3);
+          expect(repository.getAlbumSongCount('album', true), 2);
+          expect(
+            repository
+                .getAlbumSongsPaged('album', false, 0, 3)
+                .map((song) => song.name),
+            ['Beta', 'Alpha', 'Gamma'],
+          );
+          expect(repository.getAlbumSongsPaged('album', false, 9, 1), isEmpty);
+          expect(repository.getArtistSongCount('artist', false), 3);
+          expect(repository.getArtistSongCount('artist', true), 2);
+          expect(
+            repository
+                .getArtistSongsPaged('artist', false, 0, 2)
+                .map((song) => song.name),
+            ['Alpha', 'Beta'],
+          );
+          expect(
+            repository
+                .getPlaylistSongsPaged(
+                  ['gamma', 'alpha', 'missing'],
+                  false,
+                  0,
+                  10,
+                )
+                .map((song) => song.name),
+            ['Gamma', 'Alpha'],
+          );
+          expect(repository.getPlaylistSongCount(['gamma', 'alpha'], true), 2);
+          expect(
+            repository.getPlaylistSongsPaged(['alpha'], false, 5, 1),
+            isEmpty,
+          );
+          expect(repository.getAllSongs().first.name, 'Alpha');
+
+          alpha.name = 'Alpha Updated';
+          repository.updateSong(alpha);
+          beta.name = 'Beta Updated';
+          gamma.name = 'Gamma Updated';
+          repository.updateSongs([beta, gamma]);
+          expect(repository.getSongByFileHash('beta')?.name, 'Beta Updated');
+          repository.deleteSong(unloaded);
+          expect(repository.getSongByFileHash('unloaded'), isNull);
+
+          final initial = await repository.watchSongs().first;
+          expect(initial, isNotEmpty);
+        },
+      );
+
+      test('native catalog repositories support all CRUD and paging paths', () {
+        final artistRepository = ObjectBoxArtistRepository();
+        final albumRepository = ObjectBoxAlbumRepository();
+        final artist = artistRepository.getOrCreateArtist('a', 'Alpha');
+        expect(artistRepository.getOrCreateArtist('a', 'Alpha').id, artist.id);
+        final zulu = artistRepository.saveArtist(
+          Artist('z', 'Zulu')..hasOfflineSource = true,
+        );
+        expect(artistRepository.sortFields.keys, ['Name']);
+        expect(artistRepository.getArtistByHash('z')?.name, 'Zulu');
+        expect(artistRepository.getArtistCount('', false), 2);
+        expect(artistRepository.getArtistCount('', true), 1);
+        expect(
+          artistRepository
+              .getArtistsPaged('', 'invalid', false, false, 0, 1)
+              .single
+              .name,
+          'Zulu',
+        );
+        zulu.requiresSync = true;
+        artistRepository.updateArtist(zulu);
+
+        final alphaAlbum = albumRepository.getOrCreateAlbum(
+          'aa',
+          'Alpha Album',
+          artist,
+        );
+        expect(
+          albumRepository.getOrCreateAlbum('aa', 'Alpha Album', artist).id,
+          alphaAlbum.id,
+        );
+        final zuluAlbum =
+            Album('zz', 'Zulu Album')
+              ..setArtist(zulu)
+              ..hasOfflineSource = true;
+        albumRepository.saveAlbum(zuluAlbum);
+        expect(albumRepository.sortFields.keys, ['Name']);
+        expect(albumRepository.getAlbumByHash('zz')?.name, 'Zulu Album');
+        expect(albumRepository.getAlbumCount('', false), 2);
+        expect(albumRepository.getAlbumCount('', true), 1);
+        expect(
+          albumRepository
+              .getAlbumsPaged('', 'invalid', false, false, 0, 1)
+              .single
+              .name,
+          'Zulu Album',
+        );
+        zuluAlbum.duration = 42;
+        albumRepository.updateAlbum(zuluAlbum);
+      });
+
+      test('native playlist repository covers Queue, paging, and deletion', () {
+        final repository = ObjectBoxPlaylistRepository();
+        final song = ObjectBoxSongRepository().saveSong(
+          Song('local')
+            ..name = 'Local'
+            ..fullyLoaded = true
+            ..path = '/music/local.mp3',
+        );
+        final queue = repository.getOrCreatePlaylist('Queue')
+          ..indestructible = true;
+        repository.savePlaylist(queue);
+        expect(repository.getOrCreatePlaylist('Queue').id, queue.id);
+        final local = repository.savePlaylist(
+          Playlist('Local', songs: [song])..createdAt = DateTime.utc(2024),
+        );
+        final remote = repository.savePlaylist(
+          Playlist('Remote')..createdAt = DateTime.utc(2025),
+        );
+
+        expect(repository.sortFields.keys, ['Name', 'Created At']);
+        expect(repository.getPlaylistByName('Local')?.id, local.id);
+        expect(repository.getPlaylistCount('', false), 3);
+        expect(repository.getPlaylistCount('', true), 1);
+        expect(repository.getIndestructiblePlaylistCount(), 1);
+        expect(
+          repository.getIndestructiblePlaylists(0, 1).single.name,
+          'Queue',
+        );
+        expect(repository.getNormalPlaylistCount(), 3);
+        expect(repository.getNormalPlaylists(1, 1).single.name, 'Queue');
+        expect(repository.getAllPlaylists().first.name, 'Queue');
+        expect(
+          repository
+              .getPlaylistsPaged('', 'Created At', false, false, 1, 1)
+              .single
+              .name,
+          'Remote',
+        );
+        expect(
+          repository
+              .getPlaylistsPaged('', 'invalid', true, true, 0, 10)
+              .single
+              .name,
+          'Local',
+        );
+        repository.deletePlaylist(remote);
+        expect(repository.getPlaylistByName('Remote'), isNull);
+
+        final duplicate = repository.savePlaylist(Playlist('Local'));
+        expect(duplicate.id, 0);
+      });
+
+      test(
+        'native local-track repository covers lookups and bulk saves',
+        () async {
+          final repository = ObjectBoxLocalTrackRepository();
+          final alpha = _track('alpha', 'Alpha');
+          final beta = _track('beta', 'Beta');
+          repository.save(alpha);
+          repository.saveMany([beta]);
+
+          expect(repository.getBySourceKey('alpha')?.name, 'Alpha');
+          expect(repository.getAll().map((track) => track.name), [
+            'Alpha',
+            'Beta',
+          ]);
+          expect(await repository.watch().first, hasLength(2));
+        },
+      );
     },
     skip:
         objectBoxLibraryPath == null

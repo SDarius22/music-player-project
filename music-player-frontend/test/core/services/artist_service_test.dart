@@ -41,6 +41,10 @@ void main() {
       expect(first.getHash(), second.getHash());
     });
 
+    test('exposes repository sort fields', () {
+      expect(service.sortFields, artistRepo.sortFields);
+    });
+
     test('cacheServerArtist links songs to cached artist', () {
       final cached = service.cacheServerArtist(
         ArtistExpandedDto(
@@ -154,6 +158,66 @@ void main() {
       );
       expect(songs.content, [song]);
       expect(songs.totalPages, 1);
+    });
+
+    test(
+      'merges equivalent sources, reverses sort, and bounds pages',
+      () async {
+        final remote = artistRepo.saveArtist(
+          Artist('remote', 'Shared')
+            ..hasRemoteSource = true
+            ..remoteSourceHashes = ['remote'],
+        );
+        final local = artistRepo.saveArtist(
+          Artist('local-artist:shared', 'Shared')..hasOfflineSource = true,
+        );
+        final localSong = songRepo.getOrCreateSong('local-song')
+          ..path = '/music/local.mp3';
+        localSong.artist.target = local;
+        songRepo.updateSong(localSong);
+        local.addSong(localSong);
+        artistRepo.updateArtist(local);
+        artistRepo.saveArtist(Artist('z', 'Zulu'));
+
+        await http.runWithClient(() async {
+          final first = await service.getArtistsPage(
+            '',
+            'unknown',
+            false,
+            false,
+            0,
+            10,
+          );
+          expect(first.content.first.name, 'Zulu');
+          expect(first.content, contains(local));
+          expect(first.content, isNot(contains(remote)));
+          expect(local.hasRemoteSource, isTrue);
+          expect(local.remoteSourceHashes, contains('remote'));
+
+          final beyondEnd = await service.getArtistsPage(
+            '',
+            'name',
+            true,
+            false,
+            5,
+            10,
+          );
+          expect(beyondEnd.content, isEmpty);
+        }, () => MockClient((_) async => http.Response('', 500)));
+      },
+    );
+
+    test('missing artist and out-of-range song pages stay empty', () async {
+      await http.runWithClient(() async {
+        expect(await service.fetchArtistDetails('missing'), isNull);
+        final page = await service.getArtistSongsPage(
+          'missing',
+          page: 3,
+          size: 2,
+        );
+        expect(page.content, isEmpty);
+        expect(page.page, 3);
+      }, () => MockClient((_) async => http.Response('', 500)));
     });
 
     test('caches complete server songs from artist song paging', () async {
