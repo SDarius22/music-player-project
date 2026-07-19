@@ -11,6 +11,9 @@ import 'package:music_player_frontend/features/player/presentation/providers/lyr
 import 'package:music_player_frontend/features/library/presentation/providers/playlist_provider.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/selection_provider.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/song_provider.dart';
+import 'package:music_player_frontend/features/library/application/playlist_file_gateway.dart';
+import 'package:music_player_frontend/features/library/application/playlist_transfer_service.dart';
+import 'package:music_player_frontend/features/library/infrastructure/file_picker_playlist_file_gateway.dart';
 import 'package:music_player_frontend/features/auth/presentation/providers/user_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
@@ -249,6 +252,13 @@ abstract class MusicPlayerApp extends StatelessWidget {
               context.read<SongRepository>(),
               context.read<SongService>(),
             ),
+      ),
+      Provider<PlaylistFileGateway>(
+        create: (_) => const FilePickerPlaylistFileGateway(),
+      ),
+      Provider<PlaylistTransferService>(
+        create:
+            (context) => PlaylistTransferService(context.read<SongService>()),
       ),
       Provider<LyricsService>(
         create:

@@ -4,10 +4,9 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/app/state/app_state_provider.dart';
 import 'package:music_player_frontend/features/player/presentation/providers/audio_provider.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/playlist_provider.dart';
-import 'package:music_player_frontend/core/services/abstract/file_service.dart';
+import 'package:music_player_frontend/features/library/presentation/playlist_transfer_actions.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/custom_tile_component.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/tile_type.dart';
 import 'package:music_player_frontend/shared/presentation/navigation/route_builder.dart';
@@ -125,7 +124,9 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
     }
 
     if (widget.export) {
-      _exportPlaylists();
+      final exported = await _exportPlaylists();
+      if (!mounted) return;
+      if (!exported) return;
       Navigator.pop(context);
       return;
     }
@@ -135,22 +136,18 @@ class _AddOrExportScreenState extends State<AddOrExportScreen> {
     Navigator.pop(context);
   }
 
-  void _exportPlaylists() {
-    final appStateProvider = Provider.of<AbstractAppStateProvider>(
-      context,
-      listen: false,
-    );
-    final fileService = Provider.of<AbstractFileService>(
-      context,
-      listen: false,
-    );
-
+  Future<bool> _exportPlaylists() async {
+    final mode = await PlaylistTransferActions.chooseExportMode(context);
+    if (mode == null || !mounted) return false;
     for (final playlist in selected.value) {
-      final songHashes = playlist.getSongs().map((e) => e.getHash()).toList();
-      final fileName =
-          "${appStateProvider.appSettings.mainSongPlace}/${playlist.name}.m3u";
-      fileService.exportPlaylist(fileName, songHashes);
+      final saved = await PlaylistTransferActions.exportPlaylist(
+        context,
+        playlist,
+        mode: mode,
+      );
+      if (!saved || !mounted) return false;
     }
+    return true;
   }
 
   Future<void> _addSongsToPlaylists() async {

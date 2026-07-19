@@ -6,6 +6,8 @@ import 'package:music_player_frontend/features/auth/presentation/providers/user_
 import 'package:music_player_frontend/app/theme/music_player_theme.dart';
 import 'package:music_player_frontend/app/widgets/loading_screen.dart';
 import 'package:music_player_frontend/features/auth/presentation/screens/login_screen.dart';
+import 'package:music_player_frontend/features/library/presentation/playlist_import_actions.dart';
+import 'package:music_player_frontend/features/library/presentation/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/shared/presentation/scaffolds/glass_scaffold.dart';
 import 'package:provider/provider.dart';
 
@@ -89,6 +91,34 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
               ),
             );
           },
+        ),
+      },
+
+      {
+        "title": const Text("Playlists"),
+        "subtitle": const Text(
+          "Import M3U/M3U8 playlists or export several playlists at once.",
+        ),
+        "trailing": Wrap(
+          spacing: 8,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => PlaylistImportActions.importPlaylist(context),
+              icon: const Icon(Icons.file_upload_outlined),
+              label: const Text("Import"),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                context
+                    .read<AbstractAppStateProvider>()
+                    .innerNavigatorKey
+                    .currentState
+                    ?.push(AddOrExportScreen.route(export: true));
+              },
+              icon: const Icon(Icons.file_download_outlined),
+              label: const Text("Export"),
+            ),
+          ],
         ),
       },
 

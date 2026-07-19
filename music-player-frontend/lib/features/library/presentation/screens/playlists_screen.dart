@@ -11,9 +11,13 @@ import 'package:music_player_frontend/shared/presentation/navigation/route_build
 import 'package:music_player_frontend/features/library/presentation/screens/create_or_import_screen.dart';
 import 'package:music_player_frontend/features/library/presentation/screens/playlist_screen.dart';
 import 'package:music_player_frontend/features/library/presentation/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/features/library/presentation/playlist_transfer_actions.dart';
+import 'package:music_player_frontend/features/library/presentation/playlist_import_actions.dart';
 import 'package:music_player_frontend/core/services/entity_song_order.dart';
 import 'package:fluenticons/fluenticons.dart';
 import 'package:provider/provider.dart';
+
+enum _CreatePlaylistAction { create, import }
 
 class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   static Route<dynamic> route() {
@@ -33,20 +37,46 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   Widget Function(BuildContext context)? get buildExtraTile => (context) {
     Playlist emptyPlaylist = Playlist('Create New Playlist');
     emptyPlaylist.indestructible = true;
-    return CustomGridTile(
-      onTap: () {
-        var appState = Provider.of<AbstractAppStateProvider>(
-          context,
-          listen: false,
-        );
-        appState.innerNavigatorKey.currentState?.push(
-          CreateOrImportScreen.route(),
-        );
+    return PopupMenuButton<_CreatePlaylistAction>(
+      tooltip: 'Create or import playlist',
+      onSelected: (action) async {
+        switch (action) {
+          case _CreatePlaylistAction.create:
+            context
+                .read<AbstractAppStateProvider>()
+                .innerNavigatorKey
+                .currentState
+                ?.push(CreateOrImportScreen.route());
+            return;
+          case _CreatePlaylistAction.import:
+            await PlaylistImportActions.importPlaylist(context);
+            return;
+        }
       },
-      onLongPress: () {},
-      entity: emptyPlaylist,
-      isSelected: false,
-      isExtraTile: true,
+      itemBuilder:
+          (_) => const [
+            PopupMenuItem(
+              value: _CreatePlaylistAction.create,
+              child: ListTile(
+                leading: Icon(FluentIcons.add),
+                title: Text('Create new playlist'),
+              ),
+            ),
+            PopupMenuItem(
+              value: _CreatePlaylistAction.import,
+              child: ListTile(
+                leading: Icon(Icons.file_upload_outlined),
+                title: Text('Import M3U / M3U8'),
+              ),
+            ),
+          ],
+      child: CustomGridTile(
+        onTap: null,
+        onLongPress: null,
+        entity: emptyPlaylist,
+        isSelected: false,
+        isExtraTile: true,
+      ),
     );
   };
 
@@ -73,6 +103,7 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
   List<Widget Function(BaseEntity, BuildContext)> get extraActions => [
     (entity, context) => const Text("Add to Playlist"),
     (entity, context) => const Text("Play Next"),
+    (entity, context) => const Text("Export M3U8"),
     (entity, context) => const Text("Select"),
   ];
 
@@ -83,11 +114,15 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
     BuildContext context,
   ) async {
     final playlist = entity as Playlist;
-    if (dropdownIndex == 2) {
+    if (dropdownIndex == 3) {
       final selection = context.read<SelectionProvider>();
       selection.isSelected(entity)
           ? selection.deselectEntity(entity)
           : selection.selectEntity(entity);
+      return;
+    }
+    if (dropdownIndex == 2) {
+      await PlaylistTransferActions.exportPlaylist(context, playlist);
       return;
     }
     final appState = context.read<AbstractAppStateProvider>();
@@ -98,9 +133,13 @@ class Playlists extends MultipleEntitiesScreen<PlaylistProvider> {
         appState.innerNavigatorKey.currentState?.push(
           AddOrExportScreen.route(songs: songs),
         );
+        return;
       case 1:
         await audioProvider.addNextToQueue(songs);
+        return;
       case 2:
+        return;
+      case 3:
         return;
     }
   }

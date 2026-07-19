@@ -24,6 +24,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
   static Route<void> route({
     String playlistName = "",
     List<String> songFileHashes = const [],
+    List<Song> initialSongs = const [],
     bool import = false,
   }) {
     final draftPlaylist = Playlist(playlistName);
@@ -32,6 +33,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
         entity: draftPlaylist,
         provider: context.read<SongProvider>(),
         songFileHashes: songFileHashes,
+        initialSongs: initialSongs,
         import: import,
       ),
       settings: RouteSettings(name: import ? "/import" : "/create"),
@@ -39,6 +41,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
   }
 
   final List<String> songFileHashes;
+  final List<Song> initialSongs;
   final bool import;
 
   final ValueNotifier<List<Song>> selected = ValueNotifier<List<Song>>([]);
@@ -53,6 +56,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
     required Playlist super.entity,
     required super.provider,
     required this.songFileHashes,
+    this.initialSongs = const [],
     required this.import,
   }) : playlistName = ValueNotifier<String>(entity.name);
 
@@ -62,6 +66,15 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
       return entity;
     }
     _initialized.value = true;
+
+    if (initialSongs.isNotEmpty) {
+      selected.value = List<Song>.from(initialSongs);
+      if (coverArt.value == null) {
+        coverArt.value = initialSongs.first.getCoverArt();
+      }
+      reloadToken.value++;
+      return entity;
+    }
 
     if (songFileHashes.isEmpty) {
       reloadToken.value++;
@@ -115,7 +128,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: width * 0.01),
                 ),
-                onPressed: () => _handleCreatePlaylist(context),
+                onPressed: () async => _handleCreatePlaylist(context),
                 child: Text(
                   "Done",
                   style: Theme.of(
@@ -346,7 +359,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
     );
   }
 
-  void _handleCreatePlaylist(BuildContext context) {
+  Future<void> _handleCreatePlaylist(BuildContext context) async {
     if (playlistName.value.trim().isEmpty) {
       _showToast("Playlist name cannot be empty");
       return;
@@ -357,11 +370,13 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
     }
 
     final playlistProvider = context.read<PlaylistProvider>();
-    playlistProvider.addPlaylist(
+    await playlistProvider.addPlaylist(
       playlistName.value.trim(),
       selected.value,
       coverArt.value,
     );
+
+    if (!context.mounted) return;
 
     _showToast(
       import

@@ -1,9 +1,10 @@
 import 'dart:typed_data';
+import 'dart:convert';
 
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
-import 'package:music_player_frontend/core/entities/app_settings.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
@@ -13,10 +14,11 @@ import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
-import 'package:music_player_frontend/app/state/app_state_provider.dart';
+import 'package:music_player_frontend/features/library/application/playlist_file_gateway.dart';
+import 'package:music_player_frontend/features/library/application/playlist_transfer_service.dart';
+import 'package:music_player_frontend/features/library/presentation/providers/queryable_provider.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
-import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/features/library/presentation/screens/add_or_export_screen.dart';
 import 'package:music_player_frontend/features/player/presentation/providers/audio_provider.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/grid_tile.dart';
@@ -42,6 +44,18 @@ class _Playlists extends ChangeNotifier implements PlaylistProvider {
   Future<void> addSongsToPlaylist(Playlist playlist, List<Song> songs) async {
     additions.add((playlist: playlist, songs: songs));
   }
+
+  @override
+  Future<PageResult<Song>> getSongsPage(
+    String hash, {
+    bool localOnly = false,
+    int page = 0,
+    int size = 10,
+  }) async => PageResult<Song>(
+    content: result.content.expand((playlist) => playlist.getSongs()).toList(),
+    totalPages: 1,
+    page: page,
+  );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -92,17 +106,19 @@ class _Audio extends Fake implements AudioProvider {
   }
 }
 
-class _AppState extends Fake implements AbstractAppStateProvider {
-  @override
-  AppSettings appSettings = AppSettings()..mainSongPlace = '/music';
-}
-
-class _Files extends Fake implements AbstractFileService {
-  final List<({String path, List<String> hashes})> exports = [];
+class _Gateway implements PlaylistFileGateway {
+  final List<({String fileName, Uint8List bytes})> exports = [];
 
   @override
-  void exportPlaylist(String filePath, List<String> paths) {
-    exports.add((path: filePath, hashes: paths));
+  Future<PlaylistFileData?> pickPlaylist() async => null;
+
+  @override
+  Future<bool> savePlaylist({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    exports.add((fileName: fileName, bytes: bytes));
+    return true;
   }
 }
 
@@ -110,18 +126,23 @@ Widget _host(
   PlaylistProvider provider,
   AddOrExportScreen child, {
   AudioProvider? audio,
-  AbstractAppStateProvider? appState,
-  AbstractFileService? files,
+  PlaylistFileGateway? gateway,
+  PlaylistTransferService? transfer,
 }) => MultiProvider(
   providers: [
     ChangeNotifierProvider<PlaylistProvider>.value(value: provider),
     Provider<CoverService>.value(value: _Cover()),
     if (audio != null) Provider<AudioProvider>.value(value: audio),
-    if (appState != null)
-      Provider<AbstractAppStateProvider>.value(value: appState),
-    if (files != null) Provider<AbstractFileService>.value(value: files),
+    if (gateway != null) Provider<PlaylistFileGateway>.value(value: gateway),
+    if (transfer != null)
+      Provider<PlaylistTransferService>.value(value: transfer),
   ],
-  child: MaterialApp(theme: ThemeData.dark(), home: child),
+  child: MaterialApp(
+    theme: ThemeData.dark(),
+    builder: BotToastInit(),
+    navigatorObservers: [BotToastNavigatorObserver()],
+    home: child,
+  ),
 );
 
 void _useWideSurface(WidgetTester tester) {
@@ -258,21 +279,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('exports selected playlist to the configured music folder', (
+  testWidgets('mass export uses the selected portable M3U8 format', (
     tester,
   ) async {
     _useWideSurface(tester);
     final songs = [Song('first'), Song('second')];
     final playlist = Playlist('Road Trip', songs: songs);
     final provider = _Playlists((content: [playlist], page: 0, totalPages: 1));
-    final files = _Files();
+    final gateway = _Gateway();
 
     await tester.pumpWidget(
       _host(
         provider,
         const AddOrExportScreen(export: true),
-        appState: _AppState(),
-        files: files,
+        gateway: gateway,
+        transfer: PlaylistTransferService(_UnusedSongService()),
       ),
     );
     await tester.pumpAndSettle();
@@ -280,11 +301,37 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Portable M3U8'));
+    await tester.pumpAndSettle();
 
-    expect(files.exports, hasLength(1));
-    expect(files.exports.single.path, '/music/Road Trip.m3u');
-    expect(files.exports.single.hashes, ['first', 'second']);
+    expect(gateway.exports, hasLength(1));
+    expect(gateway.exports.single.fileName, 'Road Trip.m3u8');
+    final exported = utf8.decode(gateway.exports.single.bytes);
+    expect(exported, contains('#PLAYLIST:Road Trip'));
+    expect(exported, contains('#MPM-HASH:first'));
+    expect(exported, contains('music-player://song/second'));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('canceling export format keeps mass selection open', (
+    tester,
+  ) async {
+    _useWideSurface(tester);
+    final playlist = Playlist('Stay Open', songs: [Song('song')]);
+    final provider = _Playlists((content: [playlist], page: 0, totalPages: 1));
+
+    await tester.pumpWidget(
+      _host(provider, const AddOrExportScreen(export: true)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(_playlistTile('Stay Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('to export'), findsOneWidget);
   });
 
   testWidgets('route builds the requested add screen', (tester) async {

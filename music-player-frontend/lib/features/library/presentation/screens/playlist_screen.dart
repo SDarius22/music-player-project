@@ -11,6 +11,7 @@ import 'package:music_player_frontend/shared/presentation/tiling/paginated_compo
 import 'package:music_player_frontend/shared/presentation/tiling/tile_type.dart';
 import 'package:music_player_frontend/features/library/presentation/screens/base/entity_screen.dart';
 import 'package:music_player_frontend/features/library/presentation/screens/add_or_export_screen.dart';
+import 'package:music_player_frontend/features/library/presentation/playlist_transfer_actions.dart';
 import 'package:fluenticons/fluenticons.dart';
 import 'package:glass_kit/glass_container.dart';
 import 'package:provider/provider.dart';
@@ -149,20 +150,10 @@ class PlaylistScreen extends EntityScreen<PlaylistProvider> {
                           case _PlaylistAction.export:
                             {
                               debugPrint("Export ${playlist.name}");
-                              final abstractAppStateProvider =
-                                  Provider.of<AbstractAppStateProvider>(
-                                    context,
-                                    listen: false,
-                                  );
-                              abstractAppStateProvider
-                                  .innerNavigatorKey
-                                  .currentState
-                                  ?.push(
-                                    AddOrExportScreen.route(
-                                      songs: songs,
-                                      export: true,
-                                    ),
-                                  );
+                              await PlaylistTransferActions.exportPlaylist(
+                                context,
+                                playlist,
+                              );
                               return;
                             }
                           case _PlaylistAction.editToggle:
@@ -271,20 +262,10 @@ class PlaylistScreen extends EntityScreen<PlaylistProvider> {
                       case _PlaylistAction.export:
                         {
                           debugPrint("Export ${playlist.name}");
-                          final abstractAppStateProvider =
-                              Provider.of<AbstractAppStateProvider>(
-                                context,
-                                listen: false,
-                              );
-                          abstractAppStateProvider
-                              .innerNavigatorKey
-                              .currentState
-                              ?.push(
-                                AddOrExportScreen.route(
-                                  songs: songs,
-                                  export: true,
-                                ),
-                              );
+                          await PlaylistTransferActions.exportPlaylist(
+                            context,
+                            playlist,
+                          );
                           return;
                         }
                       case _PlaylistAction.editToggle:
