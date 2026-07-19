@@ -385,7 +385,7 @@ class AppAudioService {
 
   int getCurrentSongPeerCount() {
     final song = currentSong;
-    if (song == null || song.isLocal || song.getHash().isEmpty) return 0;
+    if (song == null || song.hasLocalFile || song.getHash().isEmpty) return 0;
     return createChunkManager(song.getHash()).availablePeerCount;
   }
 
@@ -570,14 +570,14 @@ class AppAudioService {
     try {
       final outgoing = currentSong;
       if (outgoing != null &&
-          !outgoing.isLocal &&
+          !outgoing.hasLocalFile &&
           outgoing.getHash().isNotEmpty) {
         createChunkManager(outgoing.getHash()).flushStats();
       }
 
       final song = await _fullyFetchQueueSong(_activeQueue[idx]);
       currentSong = song;
-      if (UniversalPlatform.isWeb && !song.isLocal) {
+      if (UniversalPlatform.isWeb && !song.hasLocalFile) {
         if (_onBeforeWebPlayback == null) {
           _useWebServiceWorkerStream = false;
         } else {
@@ -711,7 +711,9 @@ class AppAudioService {
         totalSecs > 0 ? (posSecs / totalSecs).clamp(0.0, 1.0) : 0.0;
 
     final playing = currentSong;
-    if (playing != null && !playing.isLocal && playing.getHash().isNotEmpty) {
+    if (playing != null &&
+        !playing.hasLocalFile &&
+        playing.getHash().isNotEmpty) {
       createChunkManager(playing.getHash());
     }
 
@@ -720,7 +722,7 @@ class AppAudioService {
       final songIdx = (_currentIndex + i + 1) % q.length;
       if (songIdx == _currentIndex) continue;
       final song = q[songIdx];
-      if (song.isLocal || song.getHash().isEmpty) continue;
+      if (song.hasLocalFile || song.getHash().isEmpty) continue;
       unawaited(_prefetchSongFraction(song, _nextSongTargets[i] * progress));
     }
 
@@ -728,7 +730,7 @@ class AppAudioService {
       final songIdx = (_currentIndex - i - 1 + q.length) % q.length;
       if (songIdx == _currentIndex) continue;
       final song = q[songIdx];
-      if (song.isLocal || song.getHash().isEmpty) continue;
+      if (song.hasLocalFile || song.getHash().isEmpty) continue;
       unawaited(_prefetchSongFraction(song, _prevSongTargets[i] * progress));
     }
   }
@@ -780,7 +782,7 @@ class AppAudioService {
     songService.updateSong(song);
     _proactivelyCachePrefixes();
 
-    if (song.isLocal) {
+    if (song.hasLocalFile) {
       ChunkStatsService.instance.report(
         ChunkStat(
           songFileHash: song.getHash(),
@@ -857,7 +859,7 @@ class AppAudioService {
     _boundPeerStateNotifier = null;
     _boundPeerStateListener = null;
 
-    if (song.isLocal || song.getHash().isEmpty) {
+    if (song.hasLocalFile || song.getHash().isEmpty) {
       songPeerCountNotifier.value = 0;
       return;
     }
@@ -868,7 +870,7 @@ class AppAudioService {
     _boundPeerStateListener = () {
       final current = currentSong;
       if (current == null ||
-          current.isLocal ||
+          current.hasLocalFile ||
           current.getHash().isEmpty ||
           current.getHash() != song.getHash()) {
         songPeerCountNotifier.value = 0;

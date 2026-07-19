@@ -133,6 +133,27 @@ void main() {
 
       expect(serviceWithChunkFactory.getCurrentSongPeerCount(), 4);
     });
+
+    test('fully cached remote song still uses the remote playback source', () {
+      final chunkManager = _FakeChunkService(availablePeers: 4);
+      final serviceWithChunkFactory = AppAudioService(
+        mockSongService,
+        mockSettingsService,
+        mockPlaylistService,
+        mockAuthService,
+        (_) => chunkManager,
+        mockPlaybackRestService,
+        audioPlayer: mockAudioPlayer,
+      );
+      serviceWithChunkFactory.currentSong =
+          Song('cached-remote')
+            ..fullyCached = true
+            ..cachedChunkCount = 10;
+
+      expect(serviceWithChunkFactory.currentSong!.isLocal, isTrue);
+      expect(serviceWithChunkFactory.currentSong!.hasLocalFile, isFalse);
+      expect(serviceWithChunkFactory.getCurrentSongPeerCount(), 4);
+    });
   });
 
   group('queue invariants', () {

@@ -90,7 +90,9 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.read<AbstractAppStateProvider>();
+    // Background colors are populated asynchronously from the active cover.
+    // Subscribe so the mesh repaints as soon as extraction completes.
+    final provider = context.watch<AbstractAppStateProvider>();
 
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
