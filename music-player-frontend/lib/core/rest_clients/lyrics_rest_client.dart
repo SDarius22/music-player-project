@@ -7,20 +7,39 @@ import 'package:music_player_frontend/core/entities/song.dart';
 class LyricsRestClient {
   static final _logger = Logger('LyricsRestClient');
 
-  Future<String?> fetchLyrics(Song? song) async {
+  Future<String?> fetchLyrics(
+    Song? song, {
+    int resultIndex = 0,
+    bool titleOnly = false,
+  }) async {
     if (song == null) return null;
-    var param =
-        'track_name=${Uri.encodeComponent(song.name)}${song.artist.target != null ? '&artist_name=${Uri.encodeComponent(song.artist.target!.name)}' : ''}';
+    final parameters = <String, String>{'track_name': song.name};
+    if (!titleOnly && song.artist.target != null) {
+      parameters['artist_name'] = song.artist.target!.name;
+    }
+    if (!titleOnly && song.album.target != null) {
+      parameters['album_name'] = song.album.target!.name;
+    }
+    final uri = Uri.https('lrclib.net', '/api/search', parameters);
     try {
-      final response = await http.get(
-        Uri.parse('https://lrclib.net/api/search?$param'),
-      );
+      final response = await http.get(uri);
       if (response.statusCode == 200) {
         var lyricsList = jsonDecode(response.body) as List<dynamic>;
-        if (lyricsList.isNotEmpty) {
-          var firstResult = lyricsList.first as Map<String, dynamic>;
-          return firstResult['syncedLyrics'] as String?;
+        final usable =
+            lyricsList
+                .cast<Map<String, dynamic>>()
+                .map(
+                  (result) =>
+                      result['syncedLyrics'] as String? ??
+                      result['plainLyrics'] as String?,
+                )
+                .where((lyrics) => lyrics?.trim().isNotEmpty == true)
+                .cast<String>()
+                .toList();
+        if (resultIndex >= 0 && resultIndex < usable.length) {
+          return usable[resultIndex];
         }
+        return null;
       }
       throw Exception('Failed to fetch lyrics: ${response.statusCode}');
     } catch (e) {

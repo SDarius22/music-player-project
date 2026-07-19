@@ -17,3 +17,5 @@ databaseChangeLog:
       file: db/changelog/changes/008-playback-state-autoplay.sql
   - include:
       file: db/changelog/changes/009-user-allowed.sql
+  - include:
+      file: db/changelog/changes/010-song-lyrics.sql

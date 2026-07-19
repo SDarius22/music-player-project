@@ -36,6 +36,7 @@ class SongServiceTest {
   @Mock AlbumRepository albumRepository;
   @Mock ChunkRepository chunkRepository;
   @Mock SongChunkRepository songChunkRepository;
+  @Mock SongLyricsRepository songLyricsRepository;
   @Mock UserLibraryRepository userLibraryRepository;
   @Mock SongEnrichmentService songEnrichmentService;
   @Mock DefaultPlaylistService defaultPlaylistService;
@@ -55,6 +56,7 @@ class SongServiceTest {
             albumRepository,
             chunkRepository,
             songChunkRepository,
+            songLyricsRepository,
             userLibraryRepository,
             songMapper,
             songEnrichmentService,
@@ -159,6 +161,55 @@ class SongServiceTest {
     when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
 
     assertEquals("h", service.getSongByFileHash("h", regularUser()).getFileHash());
+  }
+
+  @Test
+  void shouldReadAndUpsertLyricsForVisibleSong() {
+    Song song =
+        Song.builder()
+            .id(1L)
+            .name("S")
+            .songType(ContentType.STREAMABLE)
+            .fileHash("h")
+            .build();
+    when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
+    SongLyrics storedLyrics = SongLyrics.builder().song(song).lyrics("old lyrics").build();
+    when(songLyricsRepository.findById(1L)).thenReturn(Optional.of(storedLyrics));
+
+    assertEquals("old lyrics", service.getSongLyrics("h", regularUser()));
+    assertEquals("new lyrics", service.upsertSongLyrics("h", "new lyrics", regularUser()));
+    assertEquals("new lyrics", storedLyrics.getLyrics());
+    verify(songLyricsRepository).save(storedLyrics);
+  }
+
+  @Test
+  void shouldRejectMissingOrBlankLyrics() {
+    Song song =
+        Song.builder().id(1L).name("S").songType(ContentType.STREAMABLE).fileHash("h").build();
+    when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
+    when(songLyricsRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThrows(RuntimeException.class, () -> service.getSongLyrics("h", regularUser()));
+    assertThrows(
+        RuntimeException.class, () -> service.upsertSongLyrics("h", "  ", regularUser()));
+  }
+
+  @Test
+  void shouldCreateLyricsRecordWhenSongHasNone() {
+    Song song =
+        Song.builder().id(1L).name("S").songType(ContentType.STREAMABLE).fileHash("h").build();
+    when(songRepository.findByFileHash("h")).thenReturn(Optional.of(song));
+    when(songLyricsRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertEquals("new lyrics", service.upsertSongLyrics("h", "new lyrics", regularUser()));
+
+    verify(songLyricsRepository)
+        .save(
+            argThat(
+                saved ->
+                    saved.getSong() == song
+                        && saved.getSongId() == null
+                        && "new lyrics".equals(saved.getLyrics())));
   }
 
   @Test

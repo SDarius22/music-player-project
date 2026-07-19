@@ -5,6 +5,7 @@ import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/components/app_layout.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/grid_tile.dart';
 import 'package:music_player_frontend/core/ui/screens/abstract/route_builder.dart';
 import 'package:music_player_frontend/core/ui/components/scaffolds/glass_scaffold.dart';
@@ -141,10 +142,10 @@ class _HomeScreenState extends State<HomeScreen> {
     ThemeData theme,
   ) {
     final wide = cardStyle == _CardStyle.wide;
-    final cardHeight = wide ? width * 0.08 : width * 0.14;
+    final cardHeight = AppLayout.homeCardHeight(width, wide: wide);
 
     return SizedBox(
-      height: cardHeight + width * 0.045,
+      height: cardHeight + AppLayout.sectionGap(width, mobile: false),
       child: ScrollConfiguration(
         behavior: const ScrollBehavior().copyWith(
           scrollbars: true,
@@ -153,7 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: songs.length,
-          separatorBuilder: (_, _) => SizedBox(width: width * 0.015),
+          separatorBuilder:
+              (_, _) => SizedBox(width: AppLayout.contentGap(width)),
           itemBuilder: (context, i) {
             return CustomGridTile(
               isWide: wide,
@@ -325,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     slivers.add(
       SliverToBoxAdapter(
-        child: SizedBox(height: isMobile ? width * 0.075 : width * 0.02),
+        child: SizedBox(height: AppLayout.sectionGap(width, mobile: isMobile)),
       ),
     );
     return slivers;
@@ -381,7 +383,9 @@ class _HomeScreenState extends State<HomeScreen> {
   double hPadFor(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
-    return isMobile ? width * 0.04 : width * 0.01;
+    return isMobile
+        ? AppLayout.pageInset(width, mobile: true)
+        : AppLayout.contentInset(width);
   }
 
   Widget _buildEmptyState() {

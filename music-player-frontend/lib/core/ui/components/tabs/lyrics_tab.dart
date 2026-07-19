@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/providers/lyrics_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:fluenticons/fluenticons.dart';
 import 'package:lyric_reader/lyric_ui/lyric_ui.dart';
 import 'package:lyric_reader/lyric_ui/ui_netease.dart';
 import 'package:lyric_reader/lyrics_reader_widget.dart';
@@ -39,7 +40,7 @@ class LyricsTab extends StatelessWidget {
     var audioProvider = Provider.of<AudioProvider>(context, listen: false);
     var lyricsProvider = Provider.of<LyricsProvider>(context, listen: false);
 
-    return MultiValueListenableBuilder(
+    final lyrics = MultiValueListenableBuilder(
       valueListenables: [
         audioProvider.sliderNotifier,
         audioProvider.playingNotifier,
@@ -105,5 +106,126 @@ class LyricsTab extends StatelessWidget {
         );
       },
     );
+    if (oneLine) return lyrics;
+    return Stack(
+      children: [
+        Positioned.fill(child: lyrics),
+        Positioned(
+          top: 0,
+          right: 0,
+          child: PopupMenuButton<_LyricsAction>(
+            tooltip: 'Lyrics options',
+            icon: const Icon(FluentIcons.moreVertical, color: Colors.white70),
+            onSelected: (action) => _handleAction(context, action),
+            itemBuilder:
+                (context) => const [
+                  PopupMenuItem(
+                    value: _LyricsAction.incorrect,
+                    child: ListTile(
+                      leading: Icon(Icons.warning_amber_outlined),
+                      title: Text('Mark lyrics as incorrect'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _LyricsAction.saveLocally,
+                    child: ListTile(
+                      leading: Icon(Icons.save_alt),
+                      title: Text('Save locally'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _LyricsAction.edit,
+                    child: ListTile(
+                      leading: Icon(Icons.edit_outlined),
+                      title: Text('Edit lyrics'),
+                    ),
+                  ),
+                ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleAction(BuildContext context, _LyricsAction action) async {
+    final provider = context.read<LyricsProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    switch (action) {
+      case _LyricsAction.incorrect:
+        final replaced = await provider.markLyricsIncorrect();
+        if (!context.mounted) return;
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              replaced
+                  ? 'Loaded another lyrics match'
+                  : 'No alternative lyrics were found',
+            ),
+          ),
+        );
+        return;
+      case _LyricsAction.saveLocally:
+        final saved = await provider.saveLyricsLocally();
+        if (!context.mounted) return;
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              saved
+                  ? 'Lyrics saved next to the song'
+                  : 'This song does not have a writable local file',
+            ),
+          ),
+        );
+        return;
+      case _LyricsAction.edit:
+        await _editLyrics(context, provider);
+        return;
+    }
+  }
+
+  Future<void> _editLyrics(
+    BuildContext context,
+    LyricsProvider provider,
+  ) async {
+    final controller = TextEditingController(text: provider.unsyncedLyrics);
+    final lyrics = await showDialog<String>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Edit lyrics'),
+            content: SizedBox(
+              width: 640,
+              child: TextField(
+                controller: controller,
+                minLines: 12,
+                maxLines: 24,
+                decoration: const InputDecoration(
+                  hintText: 'Paste synced or plain lyrics',
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, controller.text),
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+    );
+    controller.dispose();
+    if (lyrics == null || lyrics.trim().isEmpty || !context.mounted) return;
+    final saved = await provider.updateLyrics(lyrics);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(saved ? 'Lyrics updated' : 'Could not update lyrics'),
+      ),
+    );
   }
 }
+
+enum _LyricsAction { incorrect, saveLocally, edit }

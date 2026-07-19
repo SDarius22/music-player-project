@@ -54,6 +54,26 @@ void main() {
     expect(service.getLyrics(songPath), '');
   });
 
+  test('saves lyrics beside plain and file-URI song paths', () async {
+    final songPath = '${directory.path}/track.mp3';
+
+    expect(await service.saveLyrics(songPath, 'plain lyrics'), isTrue);
+    expect(
+      File('${directory.path}/track.lrc').readAsStringSync(),
+      'plain lyrics',
+    );
+
+    expect(
+      await service.saveLyrics(Uri.file(songPath).toString(), 'uri lyrics'),
+      isTrue,
+    );
+    expect(
+      File('${directory.path}/track.lrc').readAsStringSync(),
+      'uri lyrics',
+    );
+    expect(await service.saveLyrics('content://media/42', 'lyrics'), isFalse);
+  });
+
   test('exports an M3U playlist and checks file existence', () {
     final path = '${directory.path}/playlist.m3u';
     expect(service.fileExists(path), isFalse);

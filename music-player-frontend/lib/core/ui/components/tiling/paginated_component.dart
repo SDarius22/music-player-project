@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/ui/components/app_layout.dart';
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/custom_tile_component.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
@@ -146,7 +147,9 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
 
     if (widget.type == TileType.list) {
       return SliverPadding(
-        padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppLayout.contentInset(width),
+        ),
         sliver: CustomTileComponent(
           tileType: TileType.list,
           items: state.items,
@@ -164,7 +167,7 @@ class _PaginatedComponentState extends State<PaginatedComponent> {
     }
 
     return SliverPadding(
-      padding: EdgeInsets.only(left: width * 0.01, right: width * 0.01),
+      padding: EdgeInsets.symmetric(horizontal: AppLayout.contentInset(width)),
       sliver: CustomTileComponent(
         tileType: widget.type,
         items: state.items,

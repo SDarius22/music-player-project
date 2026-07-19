@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/components/app_layout.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/app_bar_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/drawer_widget.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/song_player_widget.dart';
@@ -189,15 +190,19 @@ class _MainScaffoldState extends State<MainScaffold> {
     final isMobile = ResponsiveBreakpoints.of(context).isMobile;
     final width = MediaQuery.of(context).size.width;
     if (isMobile) {
+      final inset = AppLayout.pageInset(width, mobile: true);
       return EdgeInsets.only(
-        top: width * 0.02 + MediaQuery.of(context).padding.top,
-        left: width * 0.02,
-        right: width * 0.02,
-        bottom: width * 0.02 + MediaQuery.of(context).padding.bottom,
+        top: inset + MediaQuery.of(context).padding.top,
+        left: inset,
+        right: inset,
+        bottom: inset + MediaQuery.of(context).padding.bottom,
       );
     }
 
-    return EdgeInsets.all(width * 0.015);
+    return AppLayout.mainScaffoldPadding(
+      MediaQuery.sizeOf(context),
+      mobile: false,
+    );
   }
 
   Drawer buildDrawer() {
@@ -249,7 +254,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DrawerWidget(),
-            SizedBox(width: width * 0.015),
+            SizedBox(width: AppLayout.contentGap(width)),
             Expanded(child: navigatorWidget),
           ],
         ),

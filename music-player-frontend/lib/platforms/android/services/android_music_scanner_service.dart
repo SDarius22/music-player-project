@@ -53,10 +53,11 @@ class AndroidMusicScannerService implements AbstractMusicScannerService {
       if (_cancelRequested) break;
       final item = mediaItems[index];
       final sourceKey = 'android:${item.id}';
-      final sourceUri =
-          item.uri?.toString().isNotEmpty == true
-              ? item.uri.toString()
-              : item.data.toString();
+      final sourceUri = item.data.toString();
+      if (sourceUri.isEmpty) {
+        _logger.fine('Skipping Android media item without a data source');
+        continue;
+      }
       discoveredKeys.add(sourceKey);
 
       int? fileSize;

@@ -395,6 +395,64 @@ paths:
         '404':
           description: Song or cover not found
 
+  /songs/{fileHash}/lyrics:
+    get:
+      summary: Get saved lyrics for a song
+      operationId: getSongLyrics
+      tags:
+        - Songs
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: fileHash
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saved song lyrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LyricsDto'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Song or lyrics not found
+    put:
+      summary: Upsert lyrics for a song
+      operationId: upsertSongLyrics
+      tags:
+        - Songs
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: fileHash
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LyricsDto'
+      responses:
+        '200':
+          description: Lyrics saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LyricsDto'
+        '400':
+          description: Lyrics are empty or too large
+        '401':
+          description: Unauthorized
+        '404':
+          description: Song not found
+
   /songs/{fileHash}/chunks/{chunkIndex}:
     post:
       summary: Upload a missing chunk
@@ -1485,6 +1543,16 @@ components:
           format: int64
           nullable: true
           minimum: 0
+
+    LyricsDto:
+      type: object
+      required:
+        - lyrics
+      properties:
+        lyrics:
+          type: string
+          minLength: 1
+          maxLength: 500000
 
     SongUploadDto:
       type: object

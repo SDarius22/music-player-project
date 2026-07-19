@@ -10,6 +10,7 @@ import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/rest_clients/album_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/artist_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/backend_lyrics_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/lyrics_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
 import 'package:music_player_frontend/core/rest_clients/statistics_rest_client.dart';
@@ -289,6 +290,62 @@ void main() {
       await http.runWithClient(() async {
         expect(await rest.fetchLyrics(_song('Song')), isNull);
       }, () => MockClient((_) async => http.Response('', 500)));
+    });
+
+    test('can select the next usable external lyrics result', () async {
+      final rest = LyricsRestClient();
+      await http.runWithClient(
+        () async {
+          expect(
+            await rest.fetchLyrics(_song('Song'), resultIndex: 1),
+            'second',
+          );
+        },
+        () => MockClient(
+          (_) async => _json([
+            {'syncedLyrics': 'first'},
+            {'syncedLyrics': null, 'plainLyrics': 'second'},
+          ]),
+        ),
+      );
+    });
+  });
+
+  group('BackendLyricsRestClient', () {
+    test('gets and upserts lyrics through the application API', () async {
+      final methods = <String>[];
+      await http.runWithClient(
+        () async {
+          final rest = BackendLyricsRestClient(
+            baseUrl: 'http://test',
+            authService: auth,
+          );
+          expect(await rest.fetchLyrics('hash'), '[00:00] backend');
+          expect(await rest.upsertLyrics('hash', '[00:00] changed'), isTrue);
+        },
+        () => MockClient((request) async {
+          methods.add(request.method);
+          expect(request.url.path, '/songs/hash/lyrics');
+          expect(request.headers['authorization'], 'Bearer token');
+          if (request.method == 'PUT') {
+            expect(jsonDecode(request.body), {'lyrics': '[00:00] changed'});
+          }
+          return _json({'lyrics': '[00:00] backend'});
+        }),
+      );
+      expect(methods, ['GET', 'PUT']);
+    });
+
+    test('returns safe values when backend lyrics are unavailable', () async {
+      await http.runWithClient(() async {
+        final rest = BackendLyricsRestClient(
+          baseUrl: 'http://test',
+          authService: auth,
+        );
+        expect(await rest.fetchLyrics('hash'), isNull);
+        expect(await rest.upsertLyrics('hash', 'lyrics'), isFalse);
+        expect(await rest.fetchLyrics(''), isNull);
+      }, () => MockClient((_) async => http.Response('', 404)));
     });
   });
 }

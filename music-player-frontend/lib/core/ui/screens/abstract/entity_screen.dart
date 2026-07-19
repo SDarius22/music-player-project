@@ -17,8 +17,13 @@ abstract class EntityScreen<T extends QueryableProvider>
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
     return GlassScaffold(
       appBar: buildAppBar(context, entity),
+      floatingActionButtonLocation:
+          isCompact
+              ? FloatingActionButtonLocation.centerFloat
+              : FloatingActionButtonLocation.endFloat,
       floatingActionButton: Selector<SelectionProvider, Set<BaseEntity>>(
         selector: (context, selection) => selection.selectedEntities,
         builder: (context, selected, child) {

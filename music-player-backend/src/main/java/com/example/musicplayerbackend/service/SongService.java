@@ -4,6 +4,7 @@ import com.example.musicplayerbackend.data.AlbumRepository;
 import com.example.musicplayerbackend.data.ArtistRepository;
 import com.example.musicplayerbackend.data.ChunkRepository;
 import com.example.musicplayerbackend.data.SongChunkRepository;
+import com.example.musicplayerbackend.data.SongLyricsRepository;
 import com.example.musicplayerbackend.data.SongRepository;
 import com.example.musicplayerbackend.data.UserLibraryRepository;
 import com.example.musicplayerbackend.data.specification.SongSpecification;
@@ -16,6 +17,7 @@ import com.example.musicplayerbackend.domain.NegotiationResponseDto;
 import com.example.musicplayerbackend.domain.Role;
 import com.example.musicplayerbackend.domain.Song;
 import com.example.musicplayerbackend.domain.SongChunk;
+import com.example.musicplayerbackend.domain.SongLyrics;
 import com.example.musicplayerbackend.domain.SongDto;
 import com.example.musicplayerbackend.domain.UpdateUserSongDto;
 import com.example.musicplayerbackend.domain.User;
@@ -60,6 +62,7 @@ public class SongService {
   private final AlbumRepository albumRepository;
   private final ChunkRepository chunkRepository;
   private final SongChunkRepository songChunkRepository;
+  private final SongLyricsRepository songLyricsRepository;
   private final UserLibraryRepository userLibraryRepository;
   private final SongMapper songMapper;
   private final SongEnrichmentService songEnrichmentService;
@@ -179,6 +182,34 @@ public class SongService {
       return CoverDecoder.decodeCoverImage(song.getAlbum().getCoverImage());
     }
     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cover not found");
+  }
+
+  @Transactional(readOnly = true)
+  public String getSongLyrics(String fileHash, User user) {
+    Song song = findSongByFileHash(fileHash);
+    ensureSongVisible(song, user);
+    return songLyricsRepository
+        .findById(song.getId())
+        .map(SongLyrics::getLyrics)
+        .filter(lyrics -> !lyrics.isBlank())
+        .orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lyrics not found"));
+  }
+
+  @Transactional
+  public String upsertSongLyrics(String fileHash, String lyrics, User user) {
+    Song song = findSongByFileHash(fileHash);
+    ensureSongVisible(song, user);
+    if (lyrics == null || lyrics.isBlank() || lyrics.length() > 500_000) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid lyrics");
+    }
+    SongLyrics songLyrics =
+        songLyricsRepository
+            .findById(song.getId())
+            .orElseGet(() -> SongLyrics.builder().song(song).build());
+    songLyrics.setLyrics(lyrics);
+    songLyricsRepository.save(songLyrics);
+    return lyrics;
   }
 
   @Transactional

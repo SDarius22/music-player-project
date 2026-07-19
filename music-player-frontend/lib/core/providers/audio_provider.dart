@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:audio_service/audio_service.dart';
@@ -68,6 +67,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   VoidCallback? _playerVersionListener;
   VoidCallback? _queueMutationListener;
   final Set<String> _colorExtractionInProgress = <String>{};
+  int _mediaItemGeneration = 0;
 
   AudioProvider(this._audioService, this._fileService) {
     repeatNotifier.value = _currentAudioSettings.repeat;
@@ -94,7 +94,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
     _audioService.queueMutationNotifier.addListener(_queueMutationListener!);
 
     unawaited(_setColors());
-    _changeMediaItem();
+    unawaited(_changeMediaItem());
     notifyListeners();
   }
 
@@ -245,20 +245,31 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   Future<void> _changeMediaItem() async {
-    if (currentSong == null) return;
+    final song = currentSong;
+    if (song == null) return;
+    final generation = ++_mediaItemGeneration;
+    final identity = song.getHash();
+    final item = MediaItem(
+      id: identity,
+      album: song.album.target?.getName() ?? 'Unknown Album',
+      title: song.getName(),
+      artist: song.artist.target?.getName() ?? 'Unknown Artist',
+      duration: Duration(seconds: song.durationInSeconds),
+    );
+
+    // Metadata must not depend on optional artwork. Publishing this first also
+    // makes the Android notification update immediately on a track change.
+    mediaItem.add(item);
     try {
-      File tempFile = await _fileService.createWorkaroundFile(currentSong);
-      MediaItem item = MediaItem(
-        id: currentSong!.id.toString(),
-        album: currentSong!.album.target?.getName() ?? 'Unknown Album',
-        title: currentSong!.getName(),
-        artist: currentSong!.artist.target?.getName() ?? 'Unknown Artist',
-        duration: Duration(seconds: currentSong!.durationInSeconds),
-        artUri: tempFile.uri,
-      );
-      mediaItem.add(item);
+      final tempFile = await _fileService.createWorkaroundFile(song);
+      if (tempFile.path.isEmpty || !await tempFile.exists()) return;
+      if (generation != _mediaItemGeneration ||
+          currentSong?.getHash() != identity) {
+        return;
+      }
+      mediaItem.add(item.copyWith(artUri: tempFile.uri));
     } catch (e) {
-      _logger.warning('Error creating media item', e);
+      _logger.fine('Media artwork is unavailable for ${song.getName()}: $e');
     }
   }
 
@@ -272,28 +283,65 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
   }
 
   bool _entityBelongsToCurrentSong(BaseEntity entity, Song song) {
-    if (entity is Song) return entity == song;
+    if (entity is Song) {
+      return entity == song ||
+          (entity.potentialIdentityKey?.isNotEmpty == true &&
+              entity.potentialIdentityKey == song.potentialIdentityKey);
+    }
     if (entity is Album) {
-      return song.album.target?.getHash() == entity.getHash();
+      final album = song.album.target;
+      if (album == null) return false;
+      return _sameEntitySource(album, entity) ||
+          (_normalized(album.name) == _normalized(entity.name) &&
+              _normalized(album.artist.target?.name) ==
+                  _normalized(entity.artist.target?.name));
     }
     if (entity is Artist) {
-      return song.artist.target?.getHash() == entity.getHash();
+      final artist = song.artist.target;
+      return artist != null &&
+          (_sameEntitySource(artist, entity) ||
+              _normalized(artist.name) == _normalized(entity.name));
     }
     return false;
   }
 
+  bool _sameEntitySource(BaseEntity first, BaseEntity second) {
+    if (first.getHash() == second.getHash()) return true;
+    final firstRemote = switch (first) {
+      Album album => album.remoteSourceHashes,
+      Artist artist => artist.remoteSourceHashes,
+      _ => const <String>[],
+    };
+    final secondRemote = switch (second) {
+      Album album => album.remoteSourceHashes,
+      Artist artist => artist.remoteSourceHashes,
+      _ => const <String>[],
+    };
+    return firstRemote.contains(second.getHash()) ||
+        secondRemote.contains(first.getHash()) ||
+        firstRemote.any(secondRemote.contains);
+  }
+
+  String _normalized(String? value) => value?.trim().toLowerCase() ?? '';
+
   Future<void> _setColors() async {
     final song = currentSong;
-    final coverArt = song?.getCoverArt();
-
-    if (song == null ||
-        coverArt == null ||
-        coverArt.isEmpty ||
-        song.getColors().length == 4) {
+    if (song == null || song.getColors().length == 4) {
       _logger.fine('Skipping color extraction');
       return;
     }
 
+    var coverArt = song.getCoverArt();
+    if ((coverArt == null || coverArt.isEmpty) && song.hasLocalFile) {
+      try {
+        coverArt = await _fileService.getImage(
+          song.localSourceKey ?? song.path,
+        );
+      } catch (e) {
+        _logger.fine('Local cover unavailable for ${song.getName()}: $e');
+      }
+    }
+    if (coverArt == null || coverArt.isEmpty) return;
     await _extractColorsForSong(song, coverArt);
   }
 
@@ -337,7 +385,7 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
       autoPlayNotifier.value = _audioService.currentAudioSettings.autoPlay;
       totalDurationNotifier.value = Duration(seconds: currentSongDuration);
       unawaited(_setColors());
-      _changeMediaItem();
+      unawaited(_changeMediaItem());
       notifyListeners();
     });
 

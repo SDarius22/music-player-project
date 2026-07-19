@@ -5,6 +5,7 @@ import 'package:music_player_frontend/core/providers/song_provider.dart';
 import 'package:music_player_frontend/core/providers/user_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/abstract_music_scanner_service.dart';
 import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/core/ui/components/app_layout.dart';
 import 'package:music_player_frontend/core/ui/screens/albums.dart';
 import 'package:music_player_frontend/core/ui/screens/artists.dart';
 import 'package:music_player_frontend/core/ui/screens/home_screen.dart';
@@ -238,7 +239,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
       width:
           widget.mobileDrawer
               ? width * 0.75
-              : (isDrawerOpen ? width * 0.125 : width * 0.075),
+              : AppLayout.drawerWidth(width, expanded: isDrawerOpen),
       curve: Curves.easeInOut,
       alignment: Alignment.center,
       child: GlassContainer(

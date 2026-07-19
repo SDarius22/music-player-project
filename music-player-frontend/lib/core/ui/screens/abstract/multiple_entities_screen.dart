@@ -4,6 +4,7 @@ import 'package:music_player_frontend/core/providers/abstract/abstract_app_state
 import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
 import 'package:music_player_frontend/core/providers/selection_provider.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/paginated_component.dart';
+import 'package:music_player_frontend/core/ui/components/app_layout.dart';
 import 'package:music_player_frontend/core/ui/components/tiling/tile_type.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/search_header.dart';
 import 'package:music_player_frontend/core/ui/components/widgets/selection_action_button.dart';
@@ -136,8 +137,12 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
         preferredSize: Size.fromHeight(kToolbarHeight),
         child: Container(
           height: kToolbarHeight,
-          padding: EdgeInsets.symmetric(horizontal: width * 0.01),
-          margin: EdgeInsets.symmetric(vertical: width * 0.005),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppLayout.contentInset(width),
+          ),
+          margin: EdgeInsets.symmetric(
+            vertical: (width * 0.005).clamp(6.0, 16.0),
+          ),
           child: SearchHeader(
             title: widget.screenTitle,
             sortFields: widget.provider.sortFields,
@@ -154,6 +159,10 @@ class _MultipleEntitiesScreenState<T extends QueryableProvider>
         ),
       ),
       body: _buildGrid(context),
+      floatingActionButtonLocation:
+          width < 600
+              ? FloatingActionButtonLocation.centerFloat
+              : FloatingActionButtonLocation.endFloat,
       floatingActionButton: Selector<SelectionProvider, Set<BaseEntity>>(
         selector: (context, provider) => provider.selectedEntities,
         builder: (context, selected, child) {

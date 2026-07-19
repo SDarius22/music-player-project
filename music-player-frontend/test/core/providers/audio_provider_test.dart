@@ -3,8 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as image_lib;
 import 'package:just_audio/just_audio.dart';
 import 'package:mockito/mockito.dart';
+import 'package:music_player_frontend/core/entities/album.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
@@ -14,6 +17,8 @@ import 'package:music_player_frontend/core/services/chunk_service.dart';
 import '../services/app_audio_service_playback_test.mocks.dart';
 
 class _FakeFileService extends Fake implements AbstractFileService {
+  Object? workaroundError;
+
   @override
   List<String> get supportedAudioExtensions => const ['mp3'];
 
@@ -36,7 +41,10 @@ class _FakeFileService extends Fake implements AbstractFileService {
   }
 
   @override
-  Future<File> createWorkaroundFile(Song? song) async => File('');
+  Future<File> createWorkaroundFile(Song? song) async {
+    if (workaroundError case final error?) throw error;
+    return File('');
+  }
 }
 
 class _TrackingAudioService extends AppAudioService {
@@ -201,6 +209,7 @@ void main() {
     late MockAudioPlayer mockAudioPlayer;
     late _TrackingAudioService service;
     late AudioProvider provider;
+    late _FakeFileService fileService;
     late StreamController<Duration?> durationController;
     late StreamController<Duration> positionController;
     late StreamController<Duration> bufferedController;
@@ -251,7 +260,8 @@ void main() {
         autoPlay: true,
         volume: 0.8,
       );
-      provider = AudioProvider(service, _FakeFileService());
+      fileService = _FakeFileService();
+      provider = AudioProvider(service, fileService);
     });
 
     tearDown(() async {
@@ -415,6 +425,46 @@ void main() {
         provider.songPeerCountNotifier,
         same(service.songPeerCountNotifier),
       );
+    });
+
+    test('publishes notification metadata when cover creation fails', () async {
+      fileService.workaroundError = StateError('no embedded artwork');
+      final song =
+          Song('remote-hash')
+            ..name = 'Notification title'
+            ..durationInSeconds = 123;
+
+      service.currentSongNotifier.value = song;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(provider.mediaItem.value?.id, 'remote-hash');
+      expect(provider.mediaItem.value?.title, 'Notification title');
+      expect(provider.mediaItem.value?.duration, const Duration(seconds: 123));
+      expect(provider.mediaItem.value?.artUri, isNull);
+    });
+
+    test('accepts colors from a merged version of the current album', () async {
+      final artist = Artist('local-artist', 'Artist');
+      final currentAlbum = Album('local-album', 'Album')
+        ..artist.target = artist;
+      final remoteAlbum =
+          Album('remote-album', 'Album')
+            ..artist.target = Artist('remote-artist', 'Artist')
+            ..remoteSourceHashes = <String>['remote-album'];
+      final song =
+          Song('song-hash')
+            ..artist.target = artist
+            ..album.target = currentAlbum;
+      final image = image_lib.Image(width: 1, height: 1)
+        ..setPixelRgba(0, 0, 255, 0, 0, 255);
+
+      service.currentSongNotifier.value = song;
+      await provider.updateColorsFromCover(
+        remoteAlbum,
+        Uint8List.fromList(image_lib.encodePng(image)),
+      );
+
+      expect(currentAlbum.colors, hasLength(4));
     });
   });
 }

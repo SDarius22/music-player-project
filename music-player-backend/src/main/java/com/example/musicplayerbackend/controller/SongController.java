@@ -1,5 +1,6 @@
 package com.example.musicplayerbackend.controller;
 
+import com.example.musicplayerbackend.domain.LyricsDto;
 import com.example.musicplayerbackend.domain.NegotiationRequestDto;
 import com.example.musicplayerbackend.domain.NegotiationResponseDto;
 import com.example.musicplayerbackend.domain.SongDto;
@@ -144,6 +145,19 @@ public class SongController implements SongsApi {
         .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
         .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
         .body(new ByteArrayResource(bytes));
+  }
+
+  @Override
+  public ResponseEntity<LyricsDto> getSongLyrics(String fileHash) {
+    return ResponseEntity.ok(
+        new LyricsDto(songService.getSongLyrics(fileHash, getCurrentUser())));
+  }
+
+  @Override
+  public ResponseEntity<LyricsDto> upsertSongLyrics(String fileHash, LyricsDto lyricsDto) {
+    String lyrics =
+        songService.upsertSongLyrics(fileHash, lyricsDto.getLyrics(), getCurrentUser());
+    return ResponseEntity.ok(new LyricsDto(lyrics));
   }
 
   @Override

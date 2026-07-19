@@ -24,9 +24,11 @@ abstract class AbstractFileService {
   });
 
   String getLyricsPath(String songPath) {
-    var lyrPath = songPath.replaceRange(
-      songPath.lastIndexOf("."),
-      songPath.length,
+    final localPath = _filePath(songPath);
+    if (localPath == null || !localPath.contains('.')) return '';
+    var lyrPath = localPath.replaceRange(
+      localPath.lastIndexOf("."),
+      localPath.length,
       ".lrc",
     );
     if (File(lyrPath).existsSync()) {
@@ -55,8 +57,10 @@ abstract class AbstractFileService {
       return "";
     }
     try {
+      final localPath = _filePath(songPath);
+      if (localPath == null || !localPath.contains('.')) return '';
       String lyricsPath =
-          '${songPath.split('.').sublist(0, songPath.split('.').length - 1).join('.')}.lrc';
+          '${localPath.split('.').sublist(0, localPath.split('.').length - 1).join('.')}.lrc';
       if (File(lyricsPath).existsSync()) {
         String lyricsContent = File(lyricsPath).readAsStringSync();
         if (lyricsContent.isNotEmpty) {
@@ -69,6 +73,29 @@ abstract class AbstractFileService {
       _logger.warning('Error fetching lyrics', e);
     }
     return "";
+  }
+
+  Future<bool> saveLyrics(String? songPath, String lyrics) async {
+    if (songPath == null || songPath.isEmpty || lyrics.trim().isEmpty) {
+      return false;
+    }
+    try {
+      final localPath = _filePath(songPath);
+      if (localPath == null || !localPath.contains('.')) return false;
+      final dot = localPath.lastIndexOf('.');
+      await File('${localPath.substring(0, dot)}.lrc').writeAsString(lyrics);
+      return true;
+    } catch (e) {
+      _logger.warning('Error saving lyrics next to $songPath', e);
+      return false;
+    }
+  }
+
+  String? _filePath(String path) {
+    final uri = Uri.tryParse(path);
+    if (uri == null || !uri.hasScheme) return path;
+    if (uri.scheme == 'file') return uri.toFilePath();
+    return null;
   }
 
   Future<File> createWorkaroundFile(Song? song) async {

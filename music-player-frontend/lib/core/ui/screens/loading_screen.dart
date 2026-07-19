@@ -92,10 +92,11 @@ class _LoadingScreenState extends State<LoadingScreen>
     await context.read<AppAudioService>().initializeAppAudio();
 
     if (context.mounted) {
+      // Starting the scan does not block navigation. Trigger it while this
+      // provider context is still alive; a callback attached to the replaced
+      // loading route is not reliable on mobile.
+      songProvider.startBackgroundScan();
       Navigator.pushReplacement(context, MainScaffold.route());
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        songProvider.startBackgroundScan();
-      });
     }
   }
 }
