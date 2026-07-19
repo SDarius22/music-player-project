@@ -26,16 +26,15 @@ class InMemorySongRepository implements SongRepository {
 
   @override
   Stream watchSongs() {
-    return _controller.stream.transform(
-      StreamTransformer.fromHandlers(
-        handleData: (songs, sink) {
-          sink.add(songs);
-        },
-        handleDone: (sink) {
-          sink.close();
-        },
-      ),
-    );
+    return Stream<List<Song>>.multi((controller) {
+      controller.add(getAllSongs());
+      final subscription = _controller.stream.listen(
+        controller.add,
+        onError: controller.addError,
+        onDone: controller.close,
+      );
+      controller.onCancel = subscription.cancel;
+    });
   }
 
   @override
@@ -49,6 +48,8 @@ class InMemorySongRepository implements SongRepository {
   Song saveSong(Song song) {
     if (song.id == 0) {
       song.id = _nextId++;
+    } else if (song.id >= _nextId) {
+      _nextId = song.id + 1;
     }
     _byId[song.id] = song;
     _emit();
@@ -58,8 +59,14 @@ class InMemorySongRepository implements SongRepository {
   @override
   List<Song> saveSongs(List<Song> songs) {
     for (final s in songs) {
-      saveSong(s);
+      if (s.id == 0) {
+        s.id = _nextId++;
+      } else if (s.id >= _nextId) {
+        _nextId = s.id + 1;
+      }
+      _byId[s.id] = s;
     }
+    _emit();
     return songs;
   }
 
@@ -137,12 +144,14 @@ class InMemorySongRepository implements SongRepository {
     bool ascending,
     bool localOnly,
   ) {
-    // localOnly is ignored in this in-memory implementation, as this repo only works on web, where all songs are remote
     final q = query.toLowerCase();
     final filtered =
         _byId.values
             .where(
-              (s) => s.getName().toLowerCase().contains(q) && s.fullyLoaded,
+              (s) =>
+                  s.getName().toLowerCase().contains(q) &&
+                  s.fullyLoaded &&
+                  (!localOnly || _isLocalSong(s)),
             )
             .toList();
 
@@ -340,15 +349,11 @@ class InMemorySongRepository implements SongRepository {
 
   @override
   void updateSong(Song song) {
-    _byId[song.id] = song;
-    _emit();
+    saveSong(song);
   }
 
   @override
   void updateSongs(List<Song> songs) {
-    for (final s in songs) {
-      _byId[s.id] = s;
-    }
-    _emit();
+    saveSongs(songs);
   }
 }

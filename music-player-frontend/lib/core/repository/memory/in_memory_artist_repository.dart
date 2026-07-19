@@ -12,6 +12,8 @@ class InMemoryArtistRepository implements ArtistRepository {
   Artist saveArtist(Artist artist) {
     if (artist.id == 0) {
       artist.id = _nextId++;
+    } else if (artist.id >= _nextId) {
+      _nextId = artist.id + 1;
     }
     _byId[artist.id] = artist;
     return artist;
@@ -37,18 +39,33 @@ class InMemoryArtistRepository implements ArtistRepository {
   int getArtistCount(String query, bool containLocalOnly) {
     final q = query.toLowerCase();
     return _byId.values
-        .where((a) => a.getName().toLowerCase().contains(q))
+        .where(
+          (artist) =>
+              artist.getName().toLowerCase().contains(q) &&
+              (!containLocalOnly || artist.isLocal),
+        )
         .length;
   }
 
-  List<Artist> getArtists(String query, String sortField, bool ascending) {
+  List<Artist> getArtists(
+    String query,
+    String sortField,
+    bool ascending, {
+    bool localOnly = false,
+  }) {
     final q = query.toLowerCase();
     final list =
         _byId.values
-            .where((a) => a.getName().toLowerCase().contains(q))
+            .where(
+              (artist) =>
+                  artist.getName().toLowerCase().contains(q) &&
+                  (!localOnly || artist.isLocal),
+            )
             .toList();
-    list.sort((a, b) => a.getName().compareTo(b.getName()));
-    if (!ascending) list.reversed;
+    list.sort((a, b) {
+      final result = a.getName().compareTo(b.getName());
+      return ascending ? result : -result;
+    });
     return list;
   }
 
@@ -61,13 +78,18 @@ class InMemoryArtistRepository implements ArtistRepository {
     int offset,
     int limit,
   ) {
-    final all = getArtists(query, sortField, ascending);
+    final all = getArtists(
+      query,
+      sortField,
+      ascending,
+      localOnly: containLocalOnly,
+    );
     if (offset >= all.length) return [];
     return all.sublist(offset, (offset + limit).clamp(0, all.length));
   }
 
   @override
   void updateArtist(Artist artist) {
-    _byId[artist.id] = artist;
+    saveArtist(artist);
   }
 }

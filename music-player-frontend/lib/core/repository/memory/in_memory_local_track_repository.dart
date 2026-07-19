@@ -5,6 +5,7 @@ import 'package:music_player_frontend/core/repository/interfaces/local_track_rep
 
 class InMemoryLocalTrackRepository implements LocalTrackRepository {
   final Map<String, LocalTrack> _tracks = {};
+  int _nextId = 1;
   final StreamController<List<LocalTrack>> _changes =
       StreamController<List<LocalTrack>>.broadcast();
 
@@ -18,6 +19,11 @@ class InMemoryLocalTrackRepository implements LocalTrackRepository {
 
   @override
   void save(LocalTrack track) {
+    if (track.id == 0) {
+      track.id = _nextId++;
+    } else if (track.id >= _nextId) {
+      _nextId = track.id + 1;
+    }
     _tracks[track.sourceKey] = track;
     _notify();
   }
@@ -25,6 +31,11 @@ class InMemoryLocalTrackRepository implements LocalTrackRepository {
   @override
   void saveMany(List<LocalTrack> tracks) {
     for (final track in tracks) {
+      if (track.id == 0) {
+        track.id = _nextId++;
+      } else if (track.id >= _nextId) {
+        _nextId = track.id + 1;
+      }
       _tracks[track.sourceKey] = track;
     }
     _notify();

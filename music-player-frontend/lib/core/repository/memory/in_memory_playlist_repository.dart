@@ -15,6 +15,8 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   Playlist savePlaylist(Playlist playlist) {
     if (playlist.id == 0) {
       playlist.id = _nextId++;
+    } else if (playlist.id >= _nextId) {
+      _nextId = playlist.id + 1;
     }
     _byId[playlist.id] = playlist;
     return playlist;
@@ -42,7 +44,11 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   int getPlaylistCount(String query, bool containLocalOnly) {
     final q = query.toLowerCase();
     return _byId.values
-        .where((p) => p.getName().toLowerCase().contains(q))
+        .where(
+          (playlist) =>
+              playlist.getName().toLowerCase().contains(q) &&
+              (!containLocalOnly || playlist.isLocal),
+        )
         .length;
   }
 
@@ -63,7 +69,9 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   @override
   List<Playlist> getNormalPlaylists(int offset, int limit) {
     final all =
-        _byId.values.where((p) => p.indestructible != true).toList()
+        _byId.values
+            .where((p) => !p.indestructible || p.getName() == 'Queue')
+            .toList()
           ..sort((a, b) => a.getName().compareTo(b.getName()));
     if (offset >= all.length) return [];
     return all.sublist(offset, (offset + limit).clamp(0, all.length));
@@ -71,7 +79,9 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
 
   @override
   int getNormalPlaylistCount() {
-    return _byId.values.where((p) => p.indestructible != true).length;
+    return _byId.values
+        .where((p) => !p.indestructible || p.getName() == 'Queue')
+        .length;
   }
 
   @override
@@ -85,14 +95,32 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
     return list;
   }
 
-  List<Playlist> getPlaylists(String query, String sortField, bool ascending) {
+  List<Playlist> getPlaylists(
+    String query,
+    String sortField,
+    bool ascending, {
+    bool localOnly = false,
+  }) {
     final q = query.toLowerCase();
     final list =
         _byId.values
-            .where((p) => p.getName().toLowerCase().contains(q))
+            .where(
+              (playlist) =>
+                  playlist.getName().toLowerCase().contains(q) &&
+                  (!localOnly || playlist.isLocal),
+            )
             .toList();
-    list.sort((a, b) => a.getName().compareTo(b.getName()));
-    if (!ascending) list.reversed;
+    list.sort((a, b) {
+      final indestructible =
+          (b.indestructible ? 1 : 0) - (a.indestructible ? 1 : 0);
+      if (indestructible != 0) return indestructible;
+
+      final result =
+          sortField == 'Created At'
+              ? a.createdAt.compareTo(b.createdAt)
+              : a.getName().compareTo(b.getName());
+      return ascending ? result : -result;
+    });
     return list;
   }
 
@@ -105,7 +133,12 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
     int offset,
     int limit,
   ) {
-    final all = getPlaylists(query, sortField, ascending);
+    final all = getPlaylists(
+      query,
+      sortField,
+      ascending,
+      localOnly: containLocalOnly,
+    );
     if (offset >= all.length) return [];
     return all.sublist(offset, (offset + limit).clamp(0, all.length));
   }

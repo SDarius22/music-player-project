@@ -13,6 +13,8 @@ class InMemoryAlbumRepository implements AlbumRepository {
   Album saveAlbum(Album album) {
     if (album.id == 0) {
       album.id = _nextId++;
+    } else if (album.id >= _nextId) {
+      _nextId = album.id + 1;
     }
     _byId[album.id] = album;
     return album;
@@ -39,18 +41,33 @@ class InMemoryAlbumRepository implements AlbumRepository {
   int getAlbumCount(String query, bool containLocalOnly) {
     final q = query.toLowerCase();
     return _byId.values
-        .where((a) => a.getName().toLowerCase().contains(q))
+        .where(
+          (album) =>
+              album.getName().toLowerCase().contains(q) &&
+              (!containLocalOnly || album.isLocal),
+        )
         .length;
   }
 
-  List<Album> getAlbums(String query, String sortField, bool ascending) {
+  List<Album> getAlbums(
+    String query,
+    String sortField,
+    bool ascending, {
+    bool localOnly = false,
+  }) {
     final q = query.toLowerCase();
     final list =
         _byId.values
-            .where((a) => a.getName().toLowerCase().contains(q))
+            .where(
+              (album) =>
+                  album.getName().toLowerCase().contains(q) &&
+                  (!localOnly || album.isLocal),
+            )
             .toList();
-    list.sort((a, b) => a.getName().compareTo(b.getName()));
-    if (!ascending) list.reversed;
+    list.sort((a, b) {
+      final result = a.getName().compareTo(b.getName());
+      return ascending ? result : -result;
+    });
     return list;
   }
 
@@ -63,13 +80,18 @@ class InMemoryAlbumRepository implements AlbumRepository {
     int offset,
     int limit,
   ) {
-    final all = getAlbums(query, sortField, ascending);
+    final all = getAlbums(
+      query,
+      sortField,
+      ascending,
+      localOnly: containLocalOnly,
+    );
     if (offset >= all.length) return [];
     return all.sublist(offset, (offset + limit).clamp(0, all.length));
   }
 
   @override
   void updateAlbum(Album album) {
-    _byId[album.id] = album;
+    saveAlbum(album);
   }
 }

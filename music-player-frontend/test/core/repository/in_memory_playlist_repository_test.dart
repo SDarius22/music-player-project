@@ -18,18 +18,22 @@ void main() {
     test('indestructible and normal playlist filters work', () {
       final repo = InMemoryPlaylistRepository();
       final special = Playlist('Special')..indestructible = true;
+      final queue = Playlist('Queue')..indestructible = true;
       final regular = Playlist('Regular');
       repo.savePlaylist(special);
+      repo.savePlaylist(queue);
       repo.savePlaylist(regular);
 
       expect(repo.getIndestructiblePlaylists(0, 10).map((p) => p.getName()), [
+        'Queue',
         'Special',
       ]);
       expect(repo.getNormalPlaylists(0, 10).map((p) => p.getName()), [
+        'Queue',
         'Regular',
       ]);
-      expect(repo.getIndestructiblePlaylistCount(), 1);
-      expect(repo.getNormalPlaylistCount(), 1);
+      expect(repo.getIndestructiblePlaylistCount(), 2);
+      expect(repo.getNormalPlaylistCount(), 2);
       expect(repo.getPlaylistCount('reg', false), 1);
       expect(repo.sortFields.keys, ['Name', 'Created At']);
       expect(repo.getIndestructiblePlaylists(5, 10), isEmpty);
@@ -49,7 +53,7 @@ void main() {
       ]);
       expect(
         repo.getPlaylistsPaged('', 'Name', true, false, 1, 1).single.name,
-        'Pinned',
+        'Alpha',
       );
       expect(repo.getPlaylistsPaged('', 'Name', true, false, 9, 1), isEmpty);
       repo.deletePlaylist(zebra);

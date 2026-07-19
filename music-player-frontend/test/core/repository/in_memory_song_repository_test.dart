@@ -19,10 +19,11 @@ void main() {
       expect(repo.getSongCount('', false), 1);
     });
 
-    test('watchSongs emits after save', () async {
+    test('watchSongs emits an initial snapshot and then changes', () async {
       final repo = InMemorySongRepository();
 
-      final future = repo.watchSongs().first;
+      expect(await repo.watchSongs().first, isEmpty);
+      final future = repo.watchSongs().skip(1).first;
       repo.saveSong(Song('new-song')..name = 'New Song');
 
       final emitted = await future as List<Song>;

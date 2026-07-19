@@ -293,7 +293,10 @@ void main() {
       expect(protected.totalPages, 2);
       expect(normal.totalPages, 2);
       expect(protected.content.single.name, 'Queue');
-      expect(normal.content.single.name, 'Normal');
+      expect(normal.content.map((playlist) => playlist.name), [
+        'Normal',
+        'Queue',
+      ]);
     });
 
     test('gets details and playlist songs from server', () async {

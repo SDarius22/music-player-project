@@ -24,9 +24,13 @@ void main() {
   late MockStreamingRestClient mockStreamingClient;
   late MockWebRTCService mockWebRtc;
 
-  ChunkManifestDto buildManifest({int totalChunks = 10, List<String>? hashes}) {
+  ChunkManifestDto buildManifest({
+    int totalChunks = 10,
+    List<String>? hashes,
+    String fileHash = 'song-hash',
+  }) {
     return ChunkManifestDto.fromJson({
-      'fileHash': 'song-hash',
+      'fileHash': fileHash,
       'totalChunks': totalChunks,
       'chunkSize': 4,
       'totalBytes': totalChunks * 4,
@@ -113,22 +117,24 @@ void main() {
     () async {
       final first = Uint8List.fromList([1, 2, 3, 4]);
       final second = Uint8List.fromList([5, 6, 7, 8]);
-      when(mockStreamingClient.fetchManifest('song-hash')).thenAnswer(
+      final fileHash = hashOf([...first, ...second]);
+      when(mockStreamingClient.fetchManifest(fileHash)).thenAnswer(
         (_) async => buildManifest(
           totalChunks: 2,
           hashes: [hashOf(first), hashOf(second)],
+          fileHash: fileHash,
         ),
       );
       when(
-        mockStreamingClient.downloadChunkFallback('song-hash', 0),
+        mockStreamingClient.downloadChunkFallback(fileHash, 0),
       ).thenAnswer((_) async => first);
       when(
-        mockStreamingClient.downloadChunkFallback('song-hash', 1),
+        mockStreamingClient.downloadChunkFallback(fileHash, 1),
       ).thenAnswer((_) async => second);
       final cache = InMemoryChunkCacheRepository();
       int? completedCount;
       final service = ChunkService(
-        fileHash: 'song-hash',
+        fileHash: fileHash,
         cacheRepo: cache,
         streamingClient: mockStreamingClient,
         webrtcManager: mockWebRtc,
@@ -137,7 +143,7 @@ void main() {
 
       await service.downloadAll();
 
-      expect(await cache.getAvailableChunkIndices('song-hash'), [0, 1]);
+      expect(await cache.getAvailableChunkIndices(fileHash), [0, 1]);
       expect(completedCount, 2);
     },
   );

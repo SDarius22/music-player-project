@@ -5,6 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
+import 'package:music_player_frontend/core/repository/memory/in_memory_playlist_repository.dart';
+import 'package:music_player_frontend/core/repository/memory/in_memory_song_repository.dart';
+import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';
+import 'package:music_player_frontend/core/services/playlist_service.dart';
+import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/playlist_provider.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/features/library/presentation/screens/add_or_export_screen.dart';
@@ -39,6 +46,31 @@ class _Cover implements CoverService {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
+
+class _OfflinePlaylistRestClient extends PlaylistRestClient {
+  _OfflinePlaylistRestClient()
+    : super(
+        baseUrl: 'http://localhost',
+        authService: AuthService(baseUrl: 'http://localhost'),
+      );
+
+  @override
+  Future<PlaylistPageDto> getPlaylistsPage({
+    String? query,
+    bool? filterIndestructible,
+    bool? includeQueue,
+    int page = 0,
+    int size = 50,
+  }) async => PlaylistPageDto(
+    content: const [],
+    page: page,
+    size: size,
+    totalPages: 0,
+    totalElements: 0,
+  );
+}
+
+class _UnusedSongService extends Fake implements SongService {}
 
 Widget _host(PlaylistProvider provider, AddOrExportScreen child) =>
     MultiProvider(
@@ -80,6 +112,30 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('No playlists found'), findsOneWidget);
+  });
+
+  testWidgets('web repository-backed add screen includes Queue', (
+    tester,
+  ) async {
+    _useWideSurface(tester);
+    final repository = InMemoryPlaylistRepository();
+    repository.savePlaylist(Playlist('Queue')..indestructible = true);
+    repository.savePlaylist(Playlist('Road Trip'));
+    final provider = PlaylistProvider(
+      PlaylistService(
+        repository,
+        _OfflinePlaylistRestClient(),
+        InMemorySongRepository(),
+        _UnusedSongService(),
+      ),
+    );
+
+    await tester.pumpWidget(_host(provider, const AddOrExportScreen()));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Queue'), findsWidgets);
+    expect(find.text('Road Trip'), findsWidgets);
   });
 
   testWidgets('shows an error and retries loading', (tester) async {
