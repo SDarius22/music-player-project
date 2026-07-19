@@ -1,7 +1,7 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/providers/audio_provider.dart';
+import 'package:music_player_frontend/app/state/app_state_provider.dart';
+import 'package:music_player_frontend/features/player/presentation/providers/audio_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
@@ -28,17 +28,17 @@ import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/local_track_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
-import 'package:music_player_frontend/core/services/web_p2p_bridge.dart';
-import 'package:music_player_frontend/core/services/webrtc_service.dart';
-import 'package:music_player_frontend/core/ui/abstract_app.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
-import 'package:music_player_frontend/core/ui/screens/loading_screen.dart';
+import 'package:music_player_frontend/core/p2p/web_p2p_bridge.dart';
+import 'package:music_player_frontend/core/p2p/webrtc_service.dart';
+import 'package:music_player_frontend/app/music_player_app.dart';
+import 'package:music_player_frontend/app/theme/music_player_theme.dart';
+import 'package:music_player_frontend/app/widgets/loading_screen.dart';
 import 'package:music_player_frontend/platforms/web/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/web/services/web_file_service.dart';
 import 'package:music_player_frontend/platforms/web/services/web_music_scanner_service.dart';
 import 'package:provider/provider.dart';
 
-class WebApp extends AbstractApp {
+class WebApp extends MusicPlayerApp {
   const WebApp({super.key});
 
   @override

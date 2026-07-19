@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image_lib;
 import 'package:music_player_frontend/core/services/worker_service.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/app/theme/music_player_theme.dart';
 
 void main() {
   group('WorkerService', () {

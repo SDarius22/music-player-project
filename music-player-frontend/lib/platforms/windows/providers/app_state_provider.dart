@@ -1,7 +1,7 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
+import 'package:music_player_frontend/app/state/app_state_provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 
 class AppStateProvider extends AbstractAppStateProvider with TrayListener {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:music_player_frontend/core/providers/abstract/abstract_app_state_provider.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/end_drawer_widget.dart';
+import 'package:music_player_frontend/app/state/app_state_provider.dart';
+import 'package:music_player_frontend/features/navigation/presentation/widgets/playback_drawer.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class AppStateProvider extends AbstractAppStateProvider {
@@ -16,7 +16,7 @@ class AppStateProvider extends AbstractAppStateProvider {
     return Drawer(
       backgroundColor: Colors.transparent,
       width: !ResponsiveBreakpoints.of(context).isMobile ? width * 0.5 : null,
-      child: EndDrawerWidget(),
+      child: PlaybackDrawer(),
     );
   }
 }

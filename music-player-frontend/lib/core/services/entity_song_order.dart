@@ -3,7 +3,7 @@ import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
+import 'package:music_player_frontend/features/library/presentation/providers/queryable_provider.dart';
 
 class EntitySongOrder {
   // The server clamps song pages to 200. Keeping the client at the same size

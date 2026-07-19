@@ -2,7 +2,7 @@ import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
+import 'package:music_player_frontend/features/library/presentation/providers/queryable_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/artist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';

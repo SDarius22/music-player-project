@@ -47,7 +47,7 @@ import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.da
 import 'package:music_player_frontend/core/services/active_router_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
-import 'package:music_player_frontend/core/services/webrtc_service.dart';
+import 'package:music_player_frontend/core/p2p/webrtc_service.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 final _log = Logger('eval');

@@ -14,7 +14,7 @@ import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
 import 'package:music_player_frontend/core/services/chunk_stats_service.dart';
-import 'package:music_player_frontend/core/services/p2p_chunked_source.dart';
+import 'package:music_player_frontend/core/p2p/p2p_chunked_source.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';

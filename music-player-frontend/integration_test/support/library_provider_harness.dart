@@ -13,10 +13,10 @@ import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart
 import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
-import 'package:music_player_frontend/core/providers/albums_provider.dart';
-import 'package:music_player_frontend/core/providers/artist_provider.dart';
-import 'package:music_player_frontend/core/providers/playlist_provider.dart';
-import 'package:music_player_frontend/core/providers/song_provider.dart';
+import 'package:music_player_frontend/features/library/presentation/providers/album_provider.dart';
+import 'package:music_player_frontend/features/library/presentation/providers/artist_provider.dart';
+import 'package:music_player_frontend/features/library/presentation/providers/playlist_provider.dart';
+import 'package:music_player_frontend/features/library/presentation/providers/song_provider.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_album_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_artist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_playlist_repository.dart';

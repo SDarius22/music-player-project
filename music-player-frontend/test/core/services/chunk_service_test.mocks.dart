@@ -12,14 +12,13 @@ import 'package:http/http.dart' as _i4;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i10;
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart' as _i3;
+import 'package:music_player_frontend/core/p2p/webrtc_service.dart' as _i12;
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart'
     as _i6;
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart'
     as _i2;
 import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart'
     as _i9;
-import 'package:music_player_frontend/core/services/webrtc_service.dart'
-    as _i12;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values

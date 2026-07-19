@@ -15,7 +15,7 @@ import 'package:music_player_frontend/core/services/artist_service.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
-import 'package:music_player_frontend/core/ui/components/widgets/cached_cover_image.dart';
+import 'package:music_player_frontend/shared/presentation/widgets/cached_cover_image.dart';
 
 class _Albums extends Fake implements AlbumService {
   final updated = <Album>[];

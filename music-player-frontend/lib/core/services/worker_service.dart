@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:music_player_frontend/core/ui/components/theme.dart';
+import 'package:music_player_frontend/app/theme/music_player_theme.dart';
 import 'package:dominant_color/dominant_color.dart';
 
 class WorkerService {

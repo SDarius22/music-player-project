@@ -10,7 +10,7 @@ import 'package:music_player_frontend/core/dtos/playlists/playlist_song_position
 import 'package:music_player_frontend/core/dtos/playlists/update_playlist_dto.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
-import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart';
+import 'package:music_player_frontend/features/library/presentation/providers/queryable_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/playlist_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/playlist_rest_client.dart';

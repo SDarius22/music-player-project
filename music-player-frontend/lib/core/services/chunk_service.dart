@@ -8,7 +8,7 @@ import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
 import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
-import 'package:music_player_frontend/core/services/webrtc_service.dart';
+import 'package:music_player_frontend/core/p2p/webrtc_service.dart';
 
 enum _ChunkSource { localCached, p2p, server }
 

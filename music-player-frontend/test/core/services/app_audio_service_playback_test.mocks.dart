@@ -28,8 +28,6 @@ import 'package:music_player_frontend/core/entities/app_settings.dart' as _i6;
 import 'package:music_player_frontend/core/entities/audio_settings.dart' as _i5;
 import 'package:music_player_frontend/core/entities/playlist.dart' as _i7;
 import 'package:music_player_frontend/core/entities/song.dart' as _i2;
-import 'package:music_player_frontend/core/providers/abstract/queryable_provider.dart'
-    as _i4;
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart'
     as _i8;
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart'
@@ -39,6 +37,8 @@ import 'package:music_player_frontend/core/services/playlist_service.dart'
 import 'package:music_player_frontend/core/services/settings_service.dart'
     as _i15;
 import 'package:music_player_frontend/core/services/song_service.dart' as _i11;
+import 'package:music_player_frontend/features/library/presentation/providers/queryable_provider.dart'
+    as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values

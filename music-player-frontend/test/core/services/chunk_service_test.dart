@@ -10,7 +10,7 @@ import 'package:music_player_frontend/core/repository/interfaces/chunk_cache_rep
 import 'package:music_player_frontend/core/repository/memory/in_memory_chunk_cache_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/streaming_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
-import 'package:music_player_frontend/core/services/webrtc_service.dart';
+import 'package:music_player_frontend/core/p2p/webrtc_service.dart';
 
 import 'chunk_service_test.mocks.dart';
 
