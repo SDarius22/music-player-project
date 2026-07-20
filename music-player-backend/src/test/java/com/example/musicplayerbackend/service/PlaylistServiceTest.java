@@ -175,17 +175,22 @@ class PlaylistServiceTest {
   }
 
   @Test
-  void shouldThrow400WhenCreatingPlaylistWithEmptySongs() {
+  void shouldCreateCloudPlaylistWithNoRemotelyAvailableSongs() {
     CreatePlaylistDto req = new CreatePlaylistDto();
     req.setName("Empty Playlist");
     req.setPlaylistSongs(List.of());
 
-    ResponseStatusException ex =
-        assertThrows(ResponseStatusException.class, () -> service.createPlaylist(owner, req));
+    Playlist saved =
+        Playlist.builder().id(99L).user(owner).name("Empty Playlist").build();
+    when(playlistRepository.save(any())).thenReturn(saved);
+    when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(99L))
+        .thenReturn(List.of());
 
-    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-    verify(playlistRepository, never()).save(any());
-    verify(playlistSongRepository, never()).deleteByPlaylist_Id(anyLong());
+    PlaylistExpandedDto result = service.createPlaylist(owner, req);
+
+    assertEquals("Empty Playlist", result.getName());
+    assertTrue(result.getSongFileHashes().isEmpty());
+    verify(playlistSongRepository).deleteByPlaylist_Id(99L);
     verify(playlistSongRepository, never()).saveAll(anyList());
   }
 
@@ -239,6 +244,25 @@ class PlaylistServiceTest {
 
     verify(playlistSongRepository, never()).deleteByPlaylist_Id(1L);
     verify(playlistSongRepository, never()).saveAll(anyList());
+  }
+
+  @Test
+  void shouldClearRemoteSongsWhenUpdateSongHashesIsEmpty() {
+    Playlist playlist =
+        Playlist.builder().id(1L).user(owner).name("Local only now").build();
+    when(playlistRepository.findById(1L)).thenReturn(Optional.of(playlist));
+    when(playlistRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(playlistSongRepository.findByPlaylist_IdOrderById_PositionAsc(1L))
+        .thenReturn(List.of());
+
+    UpdatePlaylistDto req = new UpdatePlaylistDto();
+    req.setPlaylistSongs(List.of());
+
+    PlaylistExpandedDto result = service.updatePlaylist(1L, 1L, req);
+
+    verify(playlistSongRepository).deleteByPlaylist_Id(1L);
+    verify(playlistSongRepository, never()).saveAll(anyList());
+    assertTrue(result.getSongFileHashes().isEmpty());
   }
 
   @Test

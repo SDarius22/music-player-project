@@ -138,4 +138,9 @@ class ObjectBoxPlaylistRepository implements PlaylistRepository {
   void deletePlaylist(Playlist playlist) {
     _playlistBox.remove(playlist.id);
   }
+
+  @override
+  void clearAll() {
+    _playlistBox.removeAll();
+  }
 }

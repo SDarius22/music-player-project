@@ -41,53 +41,36 @@ class PlaylistService {
     Playlist newPlaylist = Playlist(name, songs: songs);
     newPlaylist.imageBytes = coverArt;
 
-    try {
-      final coverBase64 = coverArt != null ? base64Encode(coverArt) : null;
-      final request = CreatePlaylistDto(
-        name: name,
-        playlistSongs: [
-          for (final (index, song) in songs.indexed)
-            if (song.fileHash.isNotEmpty)
-              PlaylistSongPositionDto(
-                songFileHash: song.fileHash,
-                position: index,
-              ),
-        ],
-        coverImageBase64: coverBase64,
-      );
-      final result = await _playlistRestService.createPlaylist(request);
-      if (result != null) {
-        newPlaylist.serverId = result.id;
-      }
-    } catch (e) {
-      _logger.fine('failed to create playlist on server: $e');
+    final coverBase64 = coverArt != null ? base64Encode(coverArt) : null;
+    final request = CreatePlaylistDto(
+      name: name,
+      playlistSongs: _toServerSongPositions(songs),
+      coverImageBase64: coverBase64,
+    );
+    final result = await _playlistRestService.createPlaylist(request);
+    if (result == null || result.id <= 0) {
+      throw StateError('The playlist could not be created in the cloud');
     }
+    newPlaylist.serverId = result.id;
 
     return _playlistRepository.savePlaylist(newPlaylist);
   }
 
   Future<Playlist> updatePlaylist(Playlist playlist) async {
     if (playlist.serverId > 0) {
-      try {
-        final request = UpdatePlaylistDto(
-          name: playlist.getName(),
-          playlistSongs:
-              playlist
-                  .getSongs()
-                  .asMap()
-                  .entries
-                  .map(
-                    (e) => PlaylistSongPositionDto(
-                      songFileHash: e.value.getHash(),
-                      position: e.key,
-                    ),
-                  )
-                  .toList(),
-        );
-        await _playlistRestService.updatePlaylist(playlist.serverId, request);
-      } catch (e) {
-        _logger.fine('failed to update playlist on server: $e');
+      final request = UpdatePlaylistDto(
+        name: playlist.getName(),
+        playlistSongs: _toServerPlaylistPositions(playlist),
+      );
+      final updated = await _playlistRestService.updatePlaylist(
+        playlist.serverId,
+        request,
+      );
+      if (!updated) {
+        throw StateError('The playlist could not be updated in the cloud');
       }
+    } else if (!playlist.indestructible) {
+      throw StateError('The playlist does not exist in the cloud');
     }
 
     return _playlistRepository.savePlaylist(playlist);
@@ -292,19 +275,33 @@ class PlaylistService {
   }
 
   Future<Playlist> addToPlaylist(Playlist playlist, List<Song> songs) async {
-    for (var song in songs) {
-      playlist.addSong(song);
+    final previousHashes = List<String>.from(playlist.songFileHashes);
+    final previousDuration = playlist.duration;
+    try {
+      for (var song in songs) {
+        playlist.addSong(song);
+      }
+      _logger.fine('Updating playlist "$playlist');
+      return await updatePlaylist(playlist);
+    } catch (_) {
+      _restoreMembership(playlist, previousHashes, previousDuration);
+      rethrow;
     }
-    _logger.fine('Updating playlist "$playlist');
-    return await updatePlaylist(playlist);
   }
 
   Future<void> deleteFromPlaylist(Song song, Playlist playlist) async {
-    playlist.removeSong(song);
-    _logger.fine(
-      'Updating playlist "$playlist after removing song ${song.getName()}',
-    );
-    await updatePlaylist(playlist);
+    final previousHashes = List<String>.from(playlist.songFileHashes);
+    final previousDuration = playlist.duration;
+    try {
+      playlist.removeSong(song);
+      _logger.fine(
+        'Updating playlist "$playlist after removing song ${song.getName()}',
+      );
+      await updatePlaylist(playlist);
+    } catch (_) {
+      _restoreMembership(playlist, previousHashes, previousDuration);
+      rethrow;
+    }
   }
 
   Future<void> deletePlaylist(Playlist playlist) async {
@@ -315,11 +312,14 @@ class PlaylistService {
       return;
     }
     if (playlist.serverId > 0) {
-      try {
-        await _playlistRestService.deletePlaylist(playlist.serverId);
-      } catch (e) {
-        _logger.fine('failed to delete playlist on server: $e');
+      final deleted = await _playlistRestService.deletePlaylist(
+        playlist.serverId,
+      );
+      if (!deleted) {
+        throw StateError('The playlist could not be deleted from the cloud');
       }
+    } else {
+      throw StateError('The playlist does not exist in the cloud');
     }
     _playlistRepository.deletePlaylist(playlist);
   }
@@ -339,12 +339,7 @@ class PlaylistService {
     cachedPlaylist.serverId = serverPlaylist.id;
     cachedPlaylist.indestructible = serverPlaylist.indestructible;
 
-    for (final hash in serverPlaylist.songFileHashes) {
-      final song = _songService.getOrCreateSong(hash);
-      if (!cachedPlaylist.getSongs().contains(song)) {
-        cachedPlaylist.addSong(song);
-      }
-    }
+    _mergeServerMembership(cachedPlaylist, serverPlaylist.songFileHashes);
 
     return _playlistRepository.savePlaylist(cachedPlaylist);
   }
@@ -359,13 +354,7 @@ class PlaylistService {
     );
     cachedPlaylist.serverId = serverPlaylist.id;
     cachedPlaylist.indestructible = serverPlaylist.indestructible;
-    cachedPlaylist.clearSongs();
-
-    for (var songHash in serverPlaylist.songFileHashes) {
-      var cachedSong = _songRepository.getOrCreateSong(songHash);
-
-      cachedPlaylist.addSong(cachedSong);
-    }
+    _mergeServerMembership(cachedPlaylist, serverPlaylist.songFileHashes);
 
     return _playlistRepository.savePlaylist(cachedPlaylist);
   }
@@ -398,7 +387,10 @@ class PlaylistService {
       );
     }
 
-    if (serverSongs != null) {
+    final localPlaylist =
+        _playlistRepository.getPlaylistByName(playlist.getName()) ?? playlist;
+    final hasDeviceOnlySongs = _deviceOnlyHashes(localPlaylist).isNotEmpty;
+    if (serverSongs != null && !hasDeviceOnlySongs) {
       return PageResult(
         content: serverSongs,
         totalPages: serverTotalPages ?? 1,
@@ -406,8 +398,6 @@ class PlaylistService {
       );
     }
 
-    final localPlaylist =
-        _playlistRepository.getPlaylistByName(playlist.getName()) ?? playlist;
     final ordered = _resolvePlaylistSongs(
       localPlaylist.songFileHashes,
       localOnly,
@@ -432,14 +422,141 @@ class PlaylistService {
     final byHash = <String, Song>{};
     for (final song in _songService.getAllLocalCandidates()) {
       if (!song.fullyLoaded) continue;
-      final hash = song.getHash();
-      if (!wanted.contains(hash)) continue;
       if (localOnly && !song.isAvailableOffline) continue;
-      byHash.putIfAbsent(hash, () => song);
+      final identities = <String>{
+        song.getHash(),
+        if (song.fileHash.isNotEmpty) song.fileHash,
+        ...song.potentialRemoteHashes.where((hash) => hash.isNotEmpty),
+      };
+      for (final hash in identities.where(wanted.contains)) {
+        final existing = byHash[hash];
+        if (existing == null ||
+            (!existing.isAvailableOffline && song.isAvailableOffline)) {
+          byHash[hash] = song;
+        }
+      }
     }
     return [
       for (final hash in songFileHashes)
         if (byHash[hash] != null) byHash[hash]!,
     ];
+  }
+
+  List<PlaylistSongPositionDto> _toServerSongPositions(List<Song> songs) {
+    final hashes = <String>[];
+    for (final song in songs) {
+      final hash = _remoteHashFor(song);
+      if (hash != null && !hashes.contains(hash)) hashes.add(hash);
+    }
+    return [
+      for (final (position, hash) in hashes.indexed)
+        PlaylistSongPositionDto(songFileHash: hash, position: position),
+    ];
+  }
+
+  List<PlaylistSongPositionDto> _toServerPlaylistPositions(
+    Playlist playlist,
+  ) {
+    final byIdentity = <String, Song>{};
+    for (final song in _songService.getAllLocalCandidates()) {
+      byIdentity[song.getHash()] = song;
+      if (song.fileHash.isNotEmpty) byIdentity[song.fileHash] = song;
+      for (final hash in song.potentialRemoteHashes) {
+        if (hash.isNotEmpty) byIdentity[hash] = song;
+      }
+    }
+
+    final hashes = <String>[];
+    for (final storedHash in playlist.songFileHashes) {
+      final song = byIdentity[storedHash];
+      final remoteHash =
+          song == null
+              ? (storedHash.startsWith('local:') ? null : storedHash)
+              : _remoteHashFor(song);
+      if (remoteHash != null && !hashes.contains(remoteHash)) {
+        hashes.add(remoteHash);
+      }
+    }
+    return [
+      for (final (position, hash) in hashes.indexed)
+        PlaylistSongPositionDto(songFileHash: hash, position: position),
+    ];
+  }
+
+  String? _remoteHashFor(Song song) {
+    if (song.localSourceKey == null && song.fileHash.isNotEmpty) {
+      return song.fileHash;
+    }
+    return song.potentialRemoteHashes
+        .where((hash) => hash.isNotEmpty)
+        .firstOrNull;
+  }
+
+  Set<String> _deviceOnlyHashes(Playlist playlist) {
+    final candidates = {
+      for (final song in _songService.getAllLocalCandidates())
+        song.getHash(): song,
+    };
+    return {
+      for (final hash in playlist.songFileHashes)
+        if (candidates[hash] != null &&
+            _remoteHashFor(candidates[hash]!) == null)
+          hash,
+    };
+  }
+
+  void _mergeServerMembership(Playlist playlist, List<String> serverHashes) {
+    final candidates = {
+      for (final song in _songService.getAllLocalCandidates())
+        song.getHash(): song,
+    };
+    final deviceOnly = _deviceOnlyHashes(playlist);
+    final serverRemaining = serverHashes.toSet();
+    final merged = <Song>[];
+
+    for (final existingHash in playlist.songFileHashes) {
+      final local = candidates[existingHash];
+      if (deviceOnly.contains(existingHash) && local != null) {
+        merged.add(local);
+        continue;
+      }
+      final remoteHash = local == null ? existingHash : _remoteHashFor(local);
+      if (remoteHash != null && serverRemaining.remove(remoteHash)) {
+        merged.add(_songRepository.getOrCreateSong(remoteHash));
+      }
+    }
+    for (final hash in serverHashes.where(serverRemaining.remove)) {
+      merged.add(_songRepository.getOrCreateSong(hash));
+    }
+
+    playlist.clearSongs();
+    for (final song in merged) {
+      playlist.addSong(song);
+    }
+  }
+
+  void _restoreMembership(
+    Playlist playlist,
+    List<String> hashes,
+    int duration,
+  ) {
+    final byIdentity = <String, Song>{};
+    for (final song in _songService.getAllLocalCandidates()) {
+      byIdentity[song.getHash()] = song;
+      if (song.fileHash.isNotEmpty) byIdentity[song.fileHash] = song;
+      for (final hash in song.potentialRemoteHashes) {
+        if (hash.isNotEmpty) byIdentity[hash] = song;
+      }
+    }
+    playlist.clearSongs();
+    for (final hash in hashes) {
+      final song = byIdentity[hash];
+      if (song != null) {
+        playlist.addSong(song);
+      } else if (!hash.startsWith('local:')) {
+        playlist.addSong(_songRepository.getOrCreateSong(hash));
+      }
+    }
+    playlist.duration = duration;
   }
 }

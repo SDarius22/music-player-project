@@ -1417,7 +1417,6 @@ components:
           type: string
         playlistSongs:
           type: array
-          minItems: 1
           items:
             $ref: '#/components/schemas/PlaylistSongPositionDto'
           default: [ ]

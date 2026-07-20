@@ -72,4 +72,9 @@ class ObjectBoxArtistRepository implements ArtistRepository {
   void updateArtist(Artist artist) {
     _artistBox.put(artist);
   }
+
+  @override
+  void clearAll() {
+    _artistBox.removeAll();
+  }
 }

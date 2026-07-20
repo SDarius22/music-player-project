@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player_frontend/core/dtos/albums/album_dto.dart';
 import 'package:music_player_frontend/core/dtos/artists/artist_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/create_playlist_dto.dart';
+import 'package:music_player_frontend/core/dtos/playlists/playlist_detail_dto.dart';
 import 'package:music_player_frontend/core/dtos/playlists/playlist_page_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
@@ -72,6 +74,22 @@ class _FakePlaylistRestClient extends PlaylistRestClient {
       size: size,
       totalPages: 0,
       totalElements: 0,
+    );
+  }
+
+  @override
+  Future<PlaylistExpandedDto?> createPlaylist(
+    CreatePlaylistDto createPlaylistDto,
+  ) async {
+    return PlaylistExpandedDto(
+      id: 1,
+      name: createPlaylistDto.name,
+      songFileHashes:
+          createPlaylistDto.playlistSongs
+              .map((entry) => entry.songFileHash)
+              .toList(),
+      indestructible: false,
+      durationSeconds: 0,
     );
   }
 }

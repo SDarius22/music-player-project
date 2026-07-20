@@ -378,7 +378,29 @@ class AudioProvider extends BaseAudioHandler with SeekHandler, ChangeNotifier {
 
   void _startListeners() {
     _audioService.currentSongNotifier.addListener(() {
-      if (currentSong == null) return;
+      if (currentSong == null) {
+        playingNotifier.value = false;
+        processingState.value = ProcessingState.idle;
+        repeatNotifier.value = false;
+        shuffleNotifier.value = false;
+        autoPlayNotifier.value = false;
+        sliderNotifier.value = 0;
+        bufferedPositionNotifier.value = 0;
+        totalDurationNotifier.value = Duration.zero;
+        volumeNotifier.value = 1.0;
+        playbackSpeedNotifier.value = 1.0;
+        mediaItem.add(null);
+        queue.add(const []);
+        playbackState.add(
+          playbackState.value.copyWith(
+            playing: false,
+            processingState: AudioProcessingState.idle,
+            controls: const [MediaControl.play],
+          ),
+        );
+        notifyListeners();
+        return;
+      }
       var currentSongDuration = currentSong?.durationInSeconds ?? 0;
       shuffleNotifier.value = _audioService.currentAudioSettings.shuffle;
       repeatNotifier.value = _audioService.currentAudioSettings.repeat;

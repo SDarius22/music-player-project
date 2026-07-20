@@ -281,4 +281,9 @@ class ObjectBoxSongRepository implements SongRepository {
   void updateSongs(List<Song> songs) {
     _songBox.putMany(songs);
   }
+
+  @override
+  void clearAll() {
+    _songBox.removeAll();
+  }
 }

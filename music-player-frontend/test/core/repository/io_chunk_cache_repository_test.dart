@@ -97,5 +97,9 @@ void main() {
     await File('${invalidDirectory.path}/layout.json').writeAsString('broken');
     final malformed = IOChunkCacheRepository(baseDirectory: directory);
     expect(await malformed.finalizeSong('invalid'), isFalse);
+
+    await malformed.clearAll();
+    expect(await malformed.getCachedFileHashes(), isEmpty);
+    expect(await directory.list().toList(), isEmpty);
   });
 }

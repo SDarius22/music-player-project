@@ -4,7 +4,6 @@ import 'package:music_player_frontend/app/state/app_state_provider.dart';
 import 'package:music_player_frontend/features/player/presentation/providers/audio_provider.dart';
 import 'package:music_player_frontend/features/auth/presentation/providers/user_provider.dart';
 import 'package:music_player_frontend/app/theme/music_player_theme.dart';
-import 'package:music_player_frontend/app/widgets/loading_screen.dart';
 import 'package:music_player_frontend/features/auth/presentation/screens/login_screen.dart';
 import 'package:music_player_frontend/features/library/presentation/playlist_import_actions.dart';
 import 'package:music_player_frontend/features/library/presentation/screens/add_or_export_screen.dart';
@@ -64,13 +63,6 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
               return FilledButton(
                 onPressed: () async {
                   await context.read<UserProvider>().logout();
-                  if (context.mounted) {
-                    await context
-                        .read<AbstractAppStateProvider>()
-                        .outerNavigatorKey
-                        .currentState
-                        ?.pushReplacement(LoadingScreen.route());
-                  }
                 },
                 child: const Text("Logout"),
               );

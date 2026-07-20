@@ -37,4 +37,10 @@ class ObjectBoxSettingsRepository implements SettingsRepository {
     }
     return _appSettingsBox.query().build().findFirst()!;
   }
+
+  @override
+  void clearAll() {
+    _audioSettingsBox.removeAll();
+    _appSettingsBox.removeAll();
+  }
 }

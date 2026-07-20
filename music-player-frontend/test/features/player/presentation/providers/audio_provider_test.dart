@@ -443,6 +443,27 @@ void main() {
       expect(provider.mediaItem.value?.artUri, isNull);
     });
 
+    test('clears all presented playback state when the session ends', () async {
+      service.currentSongNotifier.value =
+          Song('private-song')
+            ..name = 'Private song'
+            ..durationInSeconds = 123;
+      await Future<void>.delayed(Duration.zero);
+      provider.sliderNotifier.value = 9000;
+      provider.bufferedPositionNotifier.value = 10;
+
+      service.currentSongNotifier.value = null;
+
+      expect(provider.currentSong, isNull);
+      expect(provider.mediaItem.value, isNull);
+      expect(provider.queue.value, isEmpty);
+      expect(provider.playingNotifier.value, isFalse);
+      expect(provider.processingState.value, ProcessingState.idle);
+      expect(provider.sliderNotifier.value, 0);
+      expect(provider.bufferedPositionNotifier.value, 0);
+      expect(provider.totalDurationNotifier.value, Duration.zero);
+    });
+
     test('accepts colors from a merged version of the current album', () async {
       final artist = Artist('local-artist', 'Artist');
       final currentAlbum = Album('local-album', 'Album')

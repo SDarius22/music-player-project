@@ -21,4 +21,6 @@ abstract class ArtistRepository {
   );
 
   void updateArtist(Artist artist);
+
+  void clearAll();
 }

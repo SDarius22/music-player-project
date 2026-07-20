@@ -147,4 +147,10 @@ class InMemoryPlaylistRepository implements PlaylistRepository {
   void deletePlaylist(Playlist playlist) {
     _byId.remove(playlist.id);
   }
+
+  @override
+  void clearAll() {
+    _byId.clear();
+    _nextId = 1;
+  }
 }

@@ -29,4 +29,9 @@ class ObjectBoxLocalTrackRepository implements LocalTrackRepository {
   @override
   Stream<List<LocalTrack>> watch() =>
       _box.query().watch(triggerImmediately: true).map((query) => query.find());
+
+  @override
+  void clearAll() {
+    _box.removeAll();
+  }
 }

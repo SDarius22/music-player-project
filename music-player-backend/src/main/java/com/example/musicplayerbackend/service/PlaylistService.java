@@ -121,9 +121,9 @@ public class PlaylistService {
 
   @Transactional
   public PlaylistExpandedDto createPlaylist(User user, CreatePlaylistDto req) {
-    if (req.getPlaylistSongs() == null || req.getPlaylistSongs().isEmpty()) {
+    if (req.getPlaylistSongs() == null) {
       throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "Playlist must contain at least one song");
+          HttpStatus.BAD_REQUEST, "Playlist songs are required");
     }
 
     if (req.getName() == null || req.getName().isBlank()) {
@@ -165,7 +165,7 @@ public class PlaylistService {
       playlist.setName(requestedName);
     }
     List<PlaylistSongPositionDto> requestedSongs = req.getPlaylistSongs();
-    if (requestedSongs != null && !requestedSongs.isEmpty()) {
+    if (requestedSongs != null) {
       replacePlaylistSongs(playlist, requestedSongs);
     }
     String requestedCoverImage = req.getCoverImage();
@@ -287,9 +287,14 @@ public class PlaylistService {
   }
 
   private void replacePlaylistSongs(Playlist playlist, List<PlaylistSongPositionDto> items) {
-    if (items == null || items.isEmpty()) {
+    if (items == null) {
       throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "Playlist must contain at least one song");
+          HttpStatus.BAD_REQUEST, "Playlist songs are required");
+    }
+
+    if (items.isEmpty()) {
+      playlistSongRepository.deleteByPlaylist_Id(playlist.getId());
+      return;
     }
 
     Set<Integer> usedPositions = new HashSet<>();

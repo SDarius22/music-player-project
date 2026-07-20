@@ -243,6 +243,22 @@ void main() {
       playlist.addSong(Song('remote'));
       expect(playlist.isLocal, isTrue);
     });
+
+    test('remote and local projections share one playlist membership', () {
+      final playlist = Playlist('Everywhere', songs: [Song('remote-hash')]);
+      final localProjection =
+          Song('local-content')
+            ..localSourceKey = '/music/song.flac'
+            ..potentialRemoteHashes = ['remote-hash'];
+
+      playlist.addSong(localProjection);
+      expect(playlist.songFileHashes, ['remote-hash']);
+      expect(playlist.getSecondaryText(), '1 Songs');
+
+      playlist.removeSong(localProjection);
+      expect(playlist.songFileHashes, isEmpty);
+      expect(playlist.getSecondaryText(), '0 Songs');
+    });
   });
 
   group('LocalTrack', () {

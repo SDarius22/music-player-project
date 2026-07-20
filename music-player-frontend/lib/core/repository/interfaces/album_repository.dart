@@ -22,4 +22,6 @@ abstract class AlbumRepository {
   );
 
   void updateAlbum(Album album);
+
+  void clearAll();
 }

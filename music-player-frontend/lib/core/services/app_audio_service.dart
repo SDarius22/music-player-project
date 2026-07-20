@@ -339,6 +339,34 @@ class AppAudioService {
 
   Future<void> stop() => audioPlayer.stop();
 
+  Future<void> resetSession() async {
+    _playStartTime = null;
+    _positionSaveTimer?.cancel();
+    _positionSaveTimer = null;
+    await _processingStateSubscription?.cancel();
+    await _playerStateSubscription?.cancel();
+    await _positionSubscription?.cancel();
+    await _errorSubscription?.cancel();
+    _processingStateSubscription = null;
+    _playerStateSubscription = null;
+    _positionSubscription = null;
+    _errorSubscription = null;
+    if (_boundPeerStateNotifier != null && _boundPeerStateListener != null) {
+      _boundPeerStateNotifier!.removeListener(_boundPeerStateListener!);
+    }
+    _boundPeerStateNotifier = null;
+    _boundPeerStateListener = null;
+    await audioPlayer.stop();
+    _normalQueue.clear();
+    _shuffledQueue.clear();
+    _currentIndex = 0;
+    _currentAudioSettings = AudioSettings();
+    currentSong = null;
+    songPeerCountNotifier.value = 0;
+    _initialized = false;
+    _notifyQueueMutation();
+  }
+
   void setVolume(double volume) {
     _currentAudioSettings.volume = volume;
     settingsService.updateAudioSettings(_currentAudioSettings);

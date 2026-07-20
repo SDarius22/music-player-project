@@ -29,6 +29,14 @@ class LocalTrackService {
 
   void saveMany(List<LocalTrack> tracks) => _repository.saveMany(tracks);
 
+  void setResolvedSongHash(String sourceKey, String songHash) {
+    if (songHash.isEmpty) return;
+    final track = _repository.getBySourceKey(sourceKey);
+    if (track == null || track.resolvedSongHash == songHash) return;
+    track.resolvedSongHash = songHash;
+    _repository.save(track);
+  }
+
   LocalTrack discover({
     required String sourceKey,
     required String sourceUri,
@@ -121,6 +129,9 @@ class LocalTrackService {
           ..playCount = track.playCount
           ..artist.target = artist
           ..album.target = album;
+    if (track.resolvedSongHash?.isNotEmpty == true) {
+      song.potentialRemoteHashes = [track.resolvedSongHash!];
+    }
     album.addSong(song);
     artist.addSong(song);
     return song;

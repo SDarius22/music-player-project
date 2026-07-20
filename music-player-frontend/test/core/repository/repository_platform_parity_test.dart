@@ -232,6 +232,8 @@ void main() {
 
           final initial = await repository.watchSongs().first;
           expect(initial, isNotEmpty);
+          repository.clearAll();
+          expect(repository.getAllSongs(), isEmpty);
         },
       );
 
@@ -284,6 +286,10 @@ void main() {
         );
         zuluAlbum.duration = 42;
         albumRepository.updateAlbum(zuluAlbum);
+        albumRepository.clearAll();
+        artistRepository.clearAll();
+        expect(albumRepository.getAlbumCount('', false), 0);
+        expect(artistRepository.getArtistCount('', false), 0);
       });
 
       test('native playlist repository covers Queue, paging, and deletion', () {
@@ -336,6 +342,8 @@ void main() {
 
         final duplicate = repository.savePlaylist(Playlist('Local'));
         expect(duplicate.id, 0);
+        repository.clearAll();
+        expect(repository.getAllPlaylists(), isEmpty);
       });
 
       test(
@@ -353,6 +361,8 @@ void main() {
             'Beta',
           ]);
           expect(await repository.watch().first, hasLength(2));
+          repository.clearAll();
+          expect(repository.getAll(), isEmpty);
         },
       );
     },

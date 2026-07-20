@@ -46,4 +46,11 @@ class InMemoryLocalTrackRepository implements LocalTrackRepository {
     yield getAll();
     yield* _changes.stream;
   }
+
+  @override
+  void clearAll() {
+    _tracks.clear();
+    _nextId = 1;
+    _notify();
+  }
 }

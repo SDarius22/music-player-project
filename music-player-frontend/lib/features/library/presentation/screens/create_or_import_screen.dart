@@ -414,11 +414,16 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
     }
 
     final playlistProvider = context.read<PlaylistProvider>();
-    await playlistProvider.addPlaylist(
-      playlistName.value.trim(),
-      selected.value,
-      coverArt.value,
-    );
+    try {
+      await playlistProvider.addPlaylist(
+        playlistName.value.trim(),
+        selected.value,
+        coverArt.value,
+      );
+    } catch (_) {
+      _showToast("The playlist could not be saved to the cloud");
+      return;
+    }
 
     if (!context.mounted) return;
 

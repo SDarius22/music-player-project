@@ -330,6 +330,13 @@ class SongService {
       if (candidate.fileHash.isNotEmpty &&
           !current.potentialRemoteHashes.contains(candidate.fileHash)) {
         current.potentialRemoteHashes.add(candidate.fileHash);
+        final sourceKey = current.localSourceKey;
+        if (sourceKey != null) {
+          _localTrackService?.setResolvedSongHash(
+            sourceKey,
+            candidate.fileHash,
+          );
+        }
       }
       if (current.fileHash.isNotEmpty &&
           !candidate.potentialRemoteHashes.contains(current.fileHash)) {
@@ -349,6 +356,10 @@ class SongService {
             }.toList();
         candidate.localSourceUris =
             <String>{...current.localSourceUris, candidate.path!}.toList();
+        final sourceKey = candidate.localSourceKey;
+        if (sourceKey != null && current.fileHash.isNotEmpty) {
+          _localTrackService?.setResolvedSongHash(sourceKey, current.fileHash);
+        }
         grouped[identity] = candidate;
       }
     }

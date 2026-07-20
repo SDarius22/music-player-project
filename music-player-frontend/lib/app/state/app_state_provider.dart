@@ -74,6 +74,15 @@ abstract class AbstractAppStateProvider with ChangeNotifier {
     refreshRequestNotifier.value++;
   }
 
+  void resetSessionState() {
+    appSettings = AppSettings();
+    currentDrawerIndex = 0;
+    shouldDisplayLocalOnly.value = false;
+    isPanelOpen.value = false;
+    requestRefresh();
+    notifyListeners();
+  }
+
   Future<void> _initialize() async {
     if (_isInitialized) return;
     _isInitialized = true;

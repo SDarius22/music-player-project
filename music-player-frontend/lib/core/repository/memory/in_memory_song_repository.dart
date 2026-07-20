@@ -356,4 +356,11 @@ class InMemorySongRepository implements SongRepository {
   void updateSongs(List<Song> songs) {
     saveSongs(songs);
   }
+
+  @override
+  void clearAll() {
+    _byId.clear();
+    _nextId = 1;
+    _emit();
+  }
 }

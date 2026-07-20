@@ -31,4 +31,6 @@ abstract class PlaylistRepository {
   );
 
   void deletePlaylist(Playlist playlist);
+
+  void clearAll();
 }

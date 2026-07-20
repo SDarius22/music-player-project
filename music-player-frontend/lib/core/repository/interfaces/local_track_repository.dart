@@ -10,4 +10,6 @@ abstract class LocalTrackRepository {
   void saveMany(List<LocalTrack> tracks);
 
   Stream<List<LocalTrack>> watch();
+
+  void clearAll();
 }

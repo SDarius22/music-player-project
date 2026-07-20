@@ -292,6 +292,12 @@ void main() {
         expect(both.content.single.hasLocalFile, isTrue);
         expect(both.content.single.isAvailableToStream, isTrue);
         expect(both.content.single.potentialRemoteHashes, ['remote-shared']);
+        expect(
+          localRepository
+              .getBySourceKey('/music/shared.flac')
+              ?.resolvedSongHash,
+          'remote-shared',
+        );
       },
     );
 

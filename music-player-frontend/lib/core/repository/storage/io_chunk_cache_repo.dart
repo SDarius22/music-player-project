@@ -245,4 +245,18 @@ class IOChunkCacheRepository implements ChunkCacheRepository {
       return [];
     }
   }
+
+  @override
+  Future<void> clearAll() async {
+    final base = await _getBaseDir();
+    _layouts.clear();
+    if (!await base.exists()) return;
+    await for (final entity in base.list(followLinks: false)) {
+      if (entity is Directory) {
+        await entity.delete(recursive: true);
+      } else {
+        await entity.delete();
+      }
+    }
+  }
 }

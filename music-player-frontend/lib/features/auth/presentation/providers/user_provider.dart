@@ -1,25 +1,38 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:music_player_frontend/core/entities/user.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
+import 'package:music_player_frontend/core/services/session_cleanup_service.dart';
 
 enum AuthStatus { unknown, unauthenticated, authenticating, authenticated }
 
 class UserProvider with ChangeNotifier {
   final AuthService _authService;
+  final SessionCleanupService? _sessionCleanupService;
 
   AuthStatus _status = AuthStatus.unknown;
   User? _currentUser;
   String? _pendingEmail;
+  Future<void>? _sessionCleanupFuture;
 
-  UserProvider(this._authService) {
+  UserProvider(this._authService, [this._sessionCleanupService]) {
     _authService.addListener(_handleAuthChange);
   }
 
   void _handleAuthChange() {
     if (!_authService.isLoggedIn && _status == AuthStatus.authenticated) {
-      _currentUser = null;
-      _status = AuthStatus.unauthenticated;
-      notifyListeners();
+      unawaited(_finishUnexpectedLogout());
+    }
+  }
+
+  Future<void> _finishUnexpectedLogout() async {
+    try {
+      await _clearSessionData();
+    } catch (_) {
+      // Authentication is already gone; still remove the in-memory identity.
+    } finally {
+      _markUnauthenticated();
     }
   }
 
@@ -104,6 +117,22 @@ class UserProvider with ChangeNotifier {
 
   Future<void> logout() async {
     await _authService.logout();
+    try {
+      await _clearSessionData();
+    } finally {
+      _markUnauthenticated();
+    }
+  }
+
+  Future<void> _clearSessionData() {
+    final cleanupService = _sessionCleanupService;
+    if (cleanupService == null) return Future.value();
+    return _sessionCleanupFuture ??= cleanupService.clear().whenComplete(() {
+      _sessionCleanupFuture = null;
+    });
+  }
+
+  void _markUnauthenticated() {
     _currentUser = null;
     _pendingEmail = null;
     _status = AuthStatus.unauthenticated;

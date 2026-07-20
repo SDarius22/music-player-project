@@ -9,4 +9,6 @@ abstract class SettingsRepository {
   AppSettings getAppSettings();
 
   AppSettings saveAppSettings(AppSettings settings);
+
+  void clearAll();
 }

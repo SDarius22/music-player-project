@@ -68,4 +68,6 @@ abstract class SongRepository {
   void updateSong(Song song);
 
   void updateSongs(List<Song> songs);
+
+  void clearAll();
 }

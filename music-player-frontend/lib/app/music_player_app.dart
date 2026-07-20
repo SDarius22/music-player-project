@@ -49,6 +49,7 @@ import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/local_track_service.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
+import 'package:music_player_frontend/core/services/session_cleanup_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/p2p/webrtc_service.dart';
 import 'package:music_player_frontend/features/auth/presentation/screens/welcome_screen.dart';
@@ -411,7 +412,25 @@ abstract class MusicPlayerApp extends StatelessWidget {
       ),
 
       ChangeNotifierProvider<UserProvider>(
-        create: (context) => UserProvider(context.read<AuthService>()),
+        create:
+            (context) => UserProvider(
+              context.read<AuthService>(),
+              SessionCleanupService(
+                resetPlayback: context.read<AppAudioService>().resetSession,
+                stopBackgroundWork:
+                    context.read<SongProvider>().cancelBackgroundScan,
+                resetSelection:
+                    context.read<SelectionProvider>().clearSelection,
+                albumRepository: context.read<AlbumRepository>(),
+                artistRepository: context.read<ArtistRepository>(),
+                songRepository: context.read<SongRepository>(),
+                playlistRepository: context.read<PlaylistRepository>(),
+                localTrackRepository: context.read<LocalTrackRepository>(),
+                chunkCacheRepository: context.read<ChunkCacheRepository>(),
+                chunkStatRepository: context.read<ChunkStatRepository>(),
+                settingsRepository: context.read<SettingsRepository>(),
+              ),
+            ),
       ),
       ChangeNotifierProvider<AbstractAppStateProvider>(
         create: (context) => buildAppStateProvider(context),
@@ -466,6 +485,7 @@ class _AuthSessionGuardState extends State<_AuthSessionGuard> {
         status == AuthStatus.unauthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        context.read<AbstractAppStateProvider>().resetSessionState();
         context
             .read<AbstractAppStateProvider>()
             .outerNavigatorKey

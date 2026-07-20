@@ -92,4 +92,10 @@ class InMemoryArtistRepository implements ArtistRepository {
   void updateArtist(Artist artist) {
     saveArtist(artist);
   }
+
+  @override
+  void clearAll() {
+    _byId.clear();
+    _nextId = 1;
+  }
 }

@@ -144,6 +144,13 @@ void main() {
       songRepo = InMemorySongRepository();
       songService = FakeSongService(songRepo);
       restClient = FakePlaylistRestClient();
+      restClient.createResult = PlaylistExpandedDto(
+        id: 1,
+        name: 'Created',
+        songFileHashes: const [],
+        indestructible: false,
+        durationSeconds: 0,
+      );
       service = PlaylistService(
         playlistRepo,
         restClient,
@@ -177,6 +184,40 @@ void main() {
         expect(restClient.lastCreateRequest, isNotNull);
       },
     );
+
+    test('addPlaylist requires cloud creation and maps local remote copies', () async {
+      final localWithRemote =
+          Song('local-content')
+            ..localSourceKey = '/music/shared.flac'
+            ..potentialRemoteHashes = ['remote-copy']
+            ..fullyLoaded = true;
+      final deviceOnly =
+          Song('')
+            ..localSourceKey = '/music/private.flac'
+            ..fullyLoaded = true;
+
+      final saved = await service.addPlaylist('Everywhere', [
+        deviceOnly,
+        localWithRemote,
+      ], null);
+
+      expect(saved.songFileHashes, [
+        deviceOnly.getHash(),
+        localWithRemote.getHash(),
+      ]);
+      expect(
+        restClient.lastCreateRequest!.playlistSongs
+            .map((entry) => (entry.songFileHash, entry.position)),
+        [('remote-copy', 0)],
+      );
+
+      restClient.createResult = null;
+      await expectLater(
+        service.addPlaylist('Not local only', [deviceOnly], null),
+        throwsStateError,
+      );
+      expect(playlistRepo.getPlaylistByName('Not local only'), isNull);
+    });
 
     test('cacheServerPlaylist creates/reuses playlist and links songs', () {
       final cached = service.cacheServerPlaylist(
@@ -229,6 +270,31 @@ void main() {
       expect(cached.getSongs().map((s) => s.getHash()).toList(), ['a', 'b']);
     });
 
+    test('server refresh retains only this device local-only songs', () {
+      final localOnly =
+          Song('')
+            ..localSourceKey = '/music/private.flac'
+            ..fullyLoaded = true;
+      final removedRemote = Song('removed')..fullyLoaded = true;
+      songService.localCandidates.add(localOnly);
+      songRepo.saveSong(removedRemote);
+      playlistRepo.savePlaylist(
+        Playlist('Mixed', songs: [removedRemote, localOnly])..serverId = 9,
+      );
+
+      final cached = service.cacheServerPlaylistDetails(
+        PlaylistExpandedDto(
+          id: 9,
+          name: 'Mixed',
+          songFileHashes: const ['kept'],
+          indestructible: false,
+          durationSeconds: 0,
+        ),
+      );
+
+      expect(cached.songFileHashes, [localOnly.getHash(), 'kept']);
+    });
+
     test(
       'deletePlaylist removes normal playlist and hits server when needed',
       () async {
@@ -257,6 +323,26 @@ void main() {
         expect(restClient.updateCalls, 2);
       },
     );
+
+    test('failed cloud updates restore local playlist membership', () async {
+      final original = Song('original')..fullyLoaded = true;
+      final added = Song('added')..fullyLoaded = true;
+      songRepo.saveSongs([original, added]);
+      final playlist =
+          Playlist('Cloud', songs: [original])
+            ..serverId = 4
+            ..duration = 12;
+      playlistRepo.savePlaylist(playlist);
+      restClient.updateResult = false;
+
+      await expectLater(
+        service.addToPlaylist(playlist, [added]),
+        throwsStateError,
+      );
+
+      expect(playlist.songFileHashes, ['original']);
+      expect(playlist.duration, 12);
+    });
 
     test('returns recent song or null', () async {
       final song = Song('recent');

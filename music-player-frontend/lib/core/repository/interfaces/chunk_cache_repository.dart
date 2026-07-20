@@ -19,4 +19,6 @@ abstract class ChunkCacheRepository {
   Future<List<int>> getAvailableChunkIndices(String fileHash);
 
   Future<List<String>> getCachedFileHashes();
+
+  Future<void> clearAll();
 }

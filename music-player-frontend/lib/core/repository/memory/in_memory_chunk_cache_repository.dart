@@ -104,6 +104,11 @@ class InMemoryChunkCacheRepository implements ChunkCacheRepository {
   Future<List<String>> getCachedFileHashes() async {
     return _songs.keys.toList();
   }
+
+  @override
+  Future<void> clearAll() async {
+    _songs.clear();
+  }
 }
 
 class _CachedSong {

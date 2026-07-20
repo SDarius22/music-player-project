@@ -44,4 +44,10 @@ class LocalStorageSettingsRepository implements SettingsRepository {
     window.localStorage.setItem(_audioKey, jsonEncode(settings.toJson()));
     return settings;
   }
+
+  @override
+  void clearAll() {
+    window.localStorage.removeItem(_appKey);
+    window.localStorage.removeItem(_audioKey);
+  }
 }

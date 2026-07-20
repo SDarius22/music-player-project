@@ -94,4 +94,10 @@ class InMemoryAlbumRepository implements AlbumRepository {
   void updateAlbum(Album album) {
     saveAlbum(album);
   }
+
+  @override
+  void clearAll() {
+    _byId.clear();
+    _nextId = 1;
+  }
 }

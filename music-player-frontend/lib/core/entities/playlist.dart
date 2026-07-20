@@ -35,7 +35,7 @@ class Playlist implements BaseEntity {
   }
 
   void addSong(Song song) {
-    if (songFileHashes.contains(song.getHash())) {
+    if (_containsSongIdentity(song)) {
       return;
     }
     if (_isPersistable(song)) songs.add(song);
@@ -44,7 +44,7 @@ class Playlist implements BaseEntity {
   }
 
   void insertSongAt(Song song, int index) {
-    if (songFileHashes.contains(song.getHash())) {
+    if (_containsSongIdentity(song)) {
       return;
     }
     if (_isPersistable(song)) songs.add(song);
@@ -57,9 +57,21 @@ class Playlist implements BaseEntity {
 
   void removeSong(Song song) {
     songs.remove(song);
-    songFileHashes.remove(song.getHash());
-    duration -= song.durationInSeconds;
+    final removed = songFileHashes.remove(song.getHash());
+    final removedRemote = song.potentialRemoteHashes.any(
+      songFileHashes.contains,
+    );
+    songFileHashes.removeWhere(
+      song.potentialRemoteHashes.contains,
+    );
+    if (removed || removedRemote) {
+      duration -= song.durationInSeconds;
+    }
   }
+
+  bool _containsSongIdentity(Song song) =>
+      songFileHashes.contains(song.getHash()) ||
+      song.potentialRemoteHashes.any(songFileHashes.contains);
 
   void clearSongs() {
     songs.clear();
@@ -82,7 +94,7 @@ class Playlist implements BaseEntity {
 
   @override
   String getSecondaryText() {
-    return "${songs.length} Songs";
+    return "${songFileHashes.length} Songs";
   }
 
   void setName(String value) {

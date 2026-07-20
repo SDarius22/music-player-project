@@ -109,6 +109,23 @@ class PlaylistControllerIntegrationTest extends BaseIntegrationTest {
   }
 
   @Test
+  void shouldCreatePlaylistWhenNoSongsAreAvailableRemotely() throws Exception {
+    CreatePlaylistDto req = new CreatePlaylistDto();
+    req.setName("Device-only songs");
+    req.setPlaylistSongs(List.of());
+
+    mockMvc
+        .perform(
+            post("/api/v1/playlists")
+                .with(user(testUser))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.name").value("Device-only songs"))
+        .andExpect(jsonPath("$.songFileHashes", empty()));
+  }
+
+  @Test
   void shouldReturn200ForPlaylistById() throws Exception {
     Playlist playlist =
         playlistRepository.save(

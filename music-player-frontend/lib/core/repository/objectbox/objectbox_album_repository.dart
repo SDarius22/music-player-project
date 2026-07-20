@@ -71,4 +71,9 @@ class ObjectBoxAlbumRepository implements AlbumRepository {
   void updateAlbum(Album album) {
     _albumBox.put(album);
   }
+
+  @override
+  void clearAll() {
+    _albumBox.removeAll();
+  }
 }
