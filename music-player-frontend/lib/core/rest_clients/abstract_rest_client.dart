@@ -9,16 +9,20 @@ abstract class AbstractRestClient {
   late final String baseUrl;
   late final AuthService authService;
 
+  static const requestTimeout = Duration(seconds: 15);
+
   Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
     Future<http.Response> perform(String t) {
-      return http.post(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $t',
-        },
-        body: jsonEncode(body),
-      );
+      return http
+          .post(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $t',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(requestTimeout);
     }
 
     String? token = authService.accessToken;
@@ -39,7 +43,9 @@ abstract class AbstractRestClient {
   }) async {
     Future<http.Response> perform(String t) {
       final fullHeaders = {...headers, 'Authorization': 'Bearer $t'};
-      return http.get(Uri.parse('$baseUrl$endpoint'), headers: fullHeaders);
+      return http
+          .get(Uri.parse('$baseUrl$endpoint'), headers: fullHeaders)
+          .timeout(requestTimeout);
     }
 
     String? token = authService.accessToken;
@@ -59,14 +65,16 @@ abstract class AbstractRestClient {
     Map<String, dynamic> body,
   ) async {
     Future<http.Response> perform(String t) {
-      return http.patch(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $t',
-        },
-        body: jsonEncode(body),
-      );
+      return http
+          .patch(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $t',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(requestTimeout);
     }
 
     String? token = authService.accessToken;
@@ -83,14 +91,16 @@ abstract class AbstractRestClient {
 
   Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
     Future<http.Response> perform(String t) {
-      return http.put(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $t',
-        },
-        body: jsonEncode(body),
-      );
+      return http
+          .put(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $t',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(requestTimeout);
     }
 
     String? token = authService.accessToken;
@@ -107,13 +117,15 @@ abstract class AbstractRestClient {
 
   Future<http.Response> delete(String endpoint) async {
     Future<http.Response> perform(String t) {
-      return http.delete(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $t',
-        },
-      );
+      return http
+          .delete(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $t',
+            },
+          )
+          .timeout(requestTimeout);
     }
 
     String? token = authService.accessToken;

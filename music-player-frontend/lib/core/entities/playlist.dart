@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
 import 'package:music_player_frontend/core/database/persistence/objectbox_annotations.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
@@ -39,7 +38,7 @@ class Playlist implements BaseEntity {
     if (songFileHashes.contains(song.getHash())) {
       return;
     }
-    songs.add(song);
+    if (_isPersistable(song)) songs.add(song);
     songFileHashes.add(song.getHash());
     duration += song.durationInSeconds;
   }
@@ -48,10 +47,13 @@ class Playlist implements BaseEntity {
     if (songFileHashes.contains(song.getHash())) {
       return;
     }
-    songs.add(song);
+    if (_isPersistable(song)) songs.add(song);
     songFileHashes.insert(index, song.getHash());
     duration += song.durationInSeconds;
   }
+
+  static bool _isPersistable(Song song) =>
+      song.fileHash.isNotEmpty && song.localSourceKey == null;
 
   void removeSong(Song song) {
     songs.remove(song);
@@ -66,14 +68,11 @@ class Playlist implements BaseEntity {
   }
 
   List<Song> getSongs() {
-    debugPrint(
-      "Getting songs for playlist '$name' with ${songFileHashes.length} song hashes",
-    );
-    return List.unmodifiable(
-      songFileHashes.map(
-        (hash) => songs.firstWhere((song) => song.getHash() == hash),
-      ),
-    );
+    final byHash = {for (final song in songs) song.getHash(): song};
+    return List.unmodifiable([
+      for (final hash in songFileHashes)
+        if (byHash[hash] != null) byHash[hash]!,
+    ]);
   }
 
   @override

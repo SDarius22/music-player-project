@@ -6,6 +6,7 @@ import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/app/state/app_state_provider.dart';
+import 'package:music_player_frontend/features/library/application/playlist_transfer_service.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/playlist_provider.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/song_provider.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/paginated_component.dart';
@@ -26,6 +27,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
     List<String> songFileHashes = const [],
     List<Song> initialSongs = const [],
     bool import = false,
+    PlaylistImportRequest? importRequest,
   }) {
     final draftPlaylist = Playlist(playlistName);
     return buildFadeRoute(
@@ -35,6 +37,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
         songFileHashes: songFileHashes,
         initialSongs: initialSongs,
         import: import,
+        importRequest: importRequest,
       ),
       settings: RouteSettings(name: import ? "/import" : "/create"),
     );
@@ -43,6 +46,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
   final List<String> songFileHashes;
   final List<Song> initialSongs;
   final bool import;
+  final PlaylistImportRequest? importRequest;
 
   final ValueNotifier<List<Song>> selected = ValueNotifier<List<Song>>([]);
   final ValueNotifier<Uint8List?> coverArt = ValueNotifier<Uint8List?>(null);
@@ -58,6 +62,7 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
     required this.songFileHashes,
     this.initialSongs = const [],
     required this.import,
+    this.importRequest,
   }) : playlistName = ValueNotifier<String>(entity.name);
 
   @override
@@ -66,6 +71,12 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
       return entity;
     }
     _initialized.value = true;
+
+    if (importRequest != null) {
+      await _runImport(context, importRequest!);
+      reloadToken.value++;
+      return entity;
+    }
 
     if (initialSongs.isNotEmpty) {
       selected.value = List<Song>.from(initialSongs);
@@ -357,6 +368,39 @@ class CreateOrImportScreen extends EntityScreen<SongProvider> {
         ],
       ),
     );
+  }
+
+  Future<void> _runImport(
+    BuildContext context,
+    PlaylistImportRequest request,
+  ) async {
+    final service = context.read<PlaylistTransferService>();
+    final PlaylistImportResult result;
+    try {
+      result = await service.importPlaylist(
+        bytes: request.bytes,
+        sourceName: request.sourceName,
+        sourcePath: request.sourcePath,
+      );
+    } catch (_) {
+      _showToast('Could not read ${request.sourceName} as an M3U playlist');
+      return;
+    }
+
+    playlistName.value = result.playlistName;
+    selected.value = List<Song>.from(result.songs);
+    if (result.songs.isNotEmpty) {
+      coverArt.value ??= result.songs.first.getCoverArt();
+    }
+
+    if (result.songs.isEmpty) {
+      _showToast('No songs from this playlist could be matched');
+    } else if (result.unresolvedEntries.isNotEmpty) {
+      _showToast(
+        'Matched ${result.songs.length} songs; '
+        '${result.unresolvedEntries.length} could not be found',
+      );
+    }
   }
 
   Future<void> _handleCreatePlaylist(BuildContext context) async {

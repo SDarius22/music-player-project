@@ -1,5 +1,6 @@
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:mesh_gradient/mesh_gradient.dart';
 import 'package:music_player_frontend/app/state/app_state_provider.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/song_provider.dart';
@@ -13,6 +14,8 @@ import 'package:music_player_frontend/shared/presentation/scaffolds/animated_bac
 import 'package:music_player_frontend/shared/presentation/scaffolds/glass_animated_scaffold.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_platform/universal_platform.dart';
+
+final _logger = Logger('LoadingScreen');
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -89,7 +92,15 @@ class _LoadingScreenState extends State<LoadingScreen>
 
     if (!context.mounted) return;
 
-    await context.read<AppAudioService>().initializeAppAudio();
+    try {
+      await context.read<AppAudioService>().initializeAppAudio();
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Audio initialization failed; continuing into the app',
+        e,
+        stackTrace,
+      );
+    }
 
     if (context.mounted) {
       // Starting the scan does not block navigation. Trigger it while this

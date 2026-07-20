@@ -18,13 +18,23 @@ import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 
 class FakeSongService extends Fake implements SongService {
+  FakeSongService([this._repo]);
+
+  final InMemorySongRepository? _repo;
   final Map<String, Song> _songs = {};
+  final List<Song> localCandidates = [];
   List<Song> recent = [];
 
   @override
   Song getOrCreateSong(String fileHash) {
     return _songs.putIfAbsent(fileHash, () => Song(fileHash));
   }
+
+  @override
+  List<Song> getAllLocalCandidates() => [
+    ...?_repo?.getAllSongs(),
+    ...localCandidates,
+  ];
 
   @override
   List<Song> cacheServerSongs(List<SongDto> serverSongs) {
@@ -132,7 +142,7 @@ void main() {
     setUp(() {
       playlistRepo = InMemoryPlaylistRepository();
       songRepo = InMemorySongRepository();
-      songService = FakeSongService();
+      songService = FakeSongService(songRepo);
       restClient = FakePlaylistRestClient();
       service = PlaylistService(
         playlistRepo,
@@ -371,6 +381,25 @@ void main() {
         (await service.getPlaylistSongsPageByHash('missing')).content,
         isEmpty,
       );
+    });
+
+    test('keeps local-only tracks out of the persisted relation but '
+        'resolves them on read', () async {
+      final local =
+          Song('')
+            ..localSourceKey = 'file:///music/Eminem - Kamikaze/01. Ringer.flac'
+            ..path = '/music/Eminem - Kamikaze/01. Ringer.flac'
+            ..name = 'The Ringer'
+            ..fullyLoaded = true;
+      songService.localCandidates.add(local);
+
+      final saved = await service.addPlaylist('Kamikaze', [local], null);
+
+      expect(saved.songs, isEmpty);
+      expect(saved.songFileHashes, [local.getHash()]);
+
+      final page = await service.getPlaylistSongsPage(saved, size: 10);
+      expect(page.content, [local]);
     });
 
     test(

@@ -45,17 +45,14 @@ class PlaylistService {
       final coverBase64 = coverArt != null ? base64Encode(coverArt) : null;
       final request = CreatePlaylistDto(
         name: name,
-        playlistSongs:
-            songs
-                .asMap()
-                .entries
-                .map(
-                  (e) => PlaylistSongPositionDto(
-                    songFileHash: e.value.getHash(),
-                    position: e.key,
-                  ),
-                )
-                .toList(),
+        playlistSongs: [
+          for (final (index, song) in songs.indexed)
+            if (song.fileHash.isNotEmpty)
+              PlaylistSongPositionDto(
+                songFileHash: song.fileHash,
+                position: index,
+              ),
+        ],
         coverImageBase64: coverBase64,
       );
       final result = await _playlistRestService.createPlaylist(request);
@@ -411,22 +408,38 @@ class PlaylistService {
 
     final localPlaylist =
         _playlistRepository.getPlaylistByName(playlist.getName()) ?? playlist;
-    final localSongs = _songRepository.getPlaylistSongsPaged(
+    final ordered = _resolvePlaylistSongs(
       localPlaylist.songFileHashes,
       localOnly,
-      page * size,
-      size,
     );
 
-    final totalPages = ((_songRepository.getPlaylistSongCount(
-                  localPlaylist.songFileHashes,
-                  localOnly,
-                ) +
-                size -
-                1) ~/
-            size)
-        .clamp(1, double.maxFinite.toInt());
+    final total = ordered.length;
+    final start = page * size;
+    final content =
+        start >= total
+            ? const <Song>[]
+            : ordered.sublist(start, (start + size).clamp(0, total));
+    final totalPages = ((total + size - 1) ~/ size).clamp(
+      1,
+      double.maxFinite.toInt(),
+    );
 
-    return PageResult(content: localSongs, totalPages: totalPages, page: page);
+    return PageResult(content: content, totalPages: totalPages, page: page);
+  }
+
+  List<Song> _resolvePlaylistSongs(List<String> songFileHashes, bool localOnly) {
+    final wanted = songFileHashes.toSet();
+    final byHash = <String, Song>{};
+    for (final song in _songService.getAllLocalCandidates()) {
+      if (!song.fullyLoaded) continue;
+      final hash = song.getHash();
+      if (!wanted.contains(hash)) continue;
+      if (localOnly && !song.isAvailableOffline) continue;
+      byHash.putIfAbsent(hash, () => song);
+    }
+    return [
+      for (final hash in songFileHashes)
+        if (byHash[hash] != null) byHash[hash]!,
+    ];
   }
 }

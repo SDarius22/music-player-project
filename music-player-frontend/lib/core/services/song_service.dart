@@ -208,6 +208,14 @@ class SongService {
 
   List<Song> getAllLocalSongs() => _songRepository.getAllSongs();
 
+  List<Song> getAllLocalCandidates() {
+    final service = _localTrackService;
+    return <Song>[
+      ..._songRepository.getAllSongs(),
+      if (service != null) ...service.getAll().map(service.toSongProjection),
+    ];
+  }
+
   void reconcileMissingLocalFiles(Set<String> discoveredPaths) {
     final missing =
         _songRepository

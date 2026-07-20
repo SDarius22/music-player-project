@@ -31,6 +31,18 @@ class PlaylistImportResult {
   final List<M3uEntry> unresolvedEntries;
 }
 
+class PlaylistImportRequest {
+  const PlaylistImportRequest({
+    required this.bytes,
+    required this.sourceName,
+    this.sourcePath,
+  });
+
+  final Uint8List bytes;
+  final String sourceName;
+  final String? sourcePath;
+}
+
 class PlaylistTransferService {
   const PlaylistTransferService(
     this._songService, {
@@ -97,13 +109,17 @@ class PlaylistTransferService {
     final unresolved = <M3uEntry>[];
     final seen = <String>{};
 
+    await Future<void>.delayed(Duration.zero);
+    final index = _LibraryIndex(_songService.getAllLocalCandidates());
+
     for (final entry in parsed.entries) {
-      final song = await _resolve(entry, sourcePath);
+      final song = await _resolve(entry, sourcePath, index);
       if (song == null) {
         unresolved.add(entry);
       } else if (seen.add(song.getHash())) {
         songs.add(song);
       }
+      await Future<void>.delayed(Duration.zero);
     }
 
     return PlaylistImportResult(
@@ -116,7 +132,11 @@ class PlaylistTransferService {
     );
   }
 
-  Future<Song?> _resolve(M3uEntry entry, String? sourcePath) async {
+  Future<Song?> _resolve(
+    M3uEntry entry,
+    String? sourcePath,
+    _LibraryIndex index,
+  ) async {
     final taggedHash = entry.fileHash?.trim();
     if (taggedHash?.isNotEmpty == true) {
       final byHash = await _songService.fetchSongByFileHash(taggedHash!);
@@ -133,40 +153,51 @@ class PlaylistTransferService {
     if (resolvedPath != null) {
       final exact = _songService.getLocalSongByPath(resolvedPath);
       if (exact != null) return exact;
-      final normalizedPath = _normalizePath(resolvedPath);
-      for (final candidate in _songService.getAllLocalSongs()) {
-        if (candidate.path != null &&
-            _normalizePath(candidate.path!) == normalizedPath) {
-          return candidate;
-        }
-      }
     }
 
-    final candidates = _songService.getAllLocalSongs().where(
-      (song) => _metadataMatches(song, entry),
-    );
-    return candidates.length == 1 ? candidates.single : null;
+    return _matchByPathSuffix(entry.location, resolvedPath, index);
   }
 
-  bool _metadataMatches(Song song, M3uEntry entry) {
-    final entryTitle = _normalize(entry.title ?? _fileStem(entry.location));
-    if (entryTitle.isEmpty || _normalize(song.name) != entryTitle) return false;
+  Song? _matchByPathSuffix(
+    String location,
+    String? resolvedPath,
+    _LibraryIndex index,
+  ) {
+    for (final candidatePath in {location, if (resolvedPath != null) resolvedPath}) {
+      final segments = _normalizedPathSegments(candidatePath);
+      if (segments.isEmpty) continue;
+      final candidates = index.byBasename[segments.last];
+      if (candidates == null || candidates.isEmpty) continue;
+      if (candidates.length == 1) return candidates.single.song;
 
-    final entryArtist = _normalize(entry.artist ?? '');
-    if (entryArtist.isNotEmpty &&
-        _normalize(song.artist.target?.name ?? '') != entryArtist) {
-      return false;
+      var bestCount = -1;
+      _PathEntry? best;
+      var ambiguous = false;
+      for (final candidate in candidates) {
+        final common = _commonSuffixLength(segments, candidate.segments);
+        if (common > bestCount) {
+          bestCount = common;
+          best = candidate;
+          ambiguous = false;
+        } else if (common == bestCount) {
+          ambiguous = true;
+        }
+      }
+      if (best != null && !ambiguous) return best.song;
     }
-    final entryAlbum = _normalize(entry.album ?? '');
-    if (entryAlbum.isNotEmpty &&
-        _normalize(song.album.target?.name ?? '') != entryAlbum) {
-      return false;
+    return null;
+  }
+
+  int _commonSuffixLength(List<String> a, List<String> b) {
+    var i = a.length - 1;
+    var j = b.length - 1;
+    var count = 0;
+    while (i >= 0 && j >= 0 && a[i] == b[j]) {
+      count++;
+      i--;
+      j--;
     }
-    final duration = entry.durationInSeconds;
-    return duration == null ||
-        duration < 0 ||
-        song.durationInSeconds <= 0 ||
-        (song.durationInSeconds - duration).abs() <= 2;
+    return count;
   }
 
   String? _hashFromAppUri(String location) {
@@ -187,7 +218,7 @@ class PlaylistTransferService {
           windows: uri.pathSegments.firstOrNull?.contains(':') == true,
         );
       } catch (_) {
-        return Uri.decodeComponent(uri.path);
+        return _safeDecode(uri.path);
       }
     }
     if (_isAbsolutePath(value) || sourcePath == null) return value;
@@ -206,27 +237,6 @@ class PlaylistTransferService {
       value.startsWith('\\\\') ||
       RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(value);
 
-  String _normalizePath(String value) {
-    final decoded = Uri.decodeComponent(value).replaceAll('\\', '/');
-    final parts = <String>[];
-    for (final part in decoded.split('/')) {
-      if (part.isEmpty || part == '.') continue;
-      if (part == '..' && parts.isNotEmpty && parts.last != '..') {
-        parts.removeLast();
-      } else if (part != '..' || !decoded.startsWith('/')) {
-        parts.add(part);
-      }
-    }
-    final prefix = decoded.startsWith('/') ? '/' : '';
-    return '$prefix${parts.join('/')}'.toLowerCase();
-  }
-
-  String _normalize(String value) => value
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .replaceAll(RegExp(r'[^\p{L}\p{N} ]', unicode: true), '');
-
   static String safeFileName(String value) {
     final safe = value.replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_').trim();
     return safe.isEmpty ? 'playlist' : safe;
@@ -237,4 +247,50 @@ class PlaylistTransferService {
     final dot = name.lastIndexOf('.');
     return dot > 0 ? name.substring(0, dot) : name;
   }
+}
+
+String _safeDecode(String value) {
+  try {
+    return Uri.decodeComponent(value);
+  } on ArgumentError {
+    return value;
+  }
+}
+
+List<String> _normalizedPathSegments(String value) {
+  final decoded = _safeDecode(value).replaceAll('\\', '/');
+  final isAbsolute = decoded.startsWith('/');
+  final parts = <String>[];
+  for (final part in decoded.split('/')) {
+    if (part.isEmpty || part == '.') continue;
+    if (part == '..' && parts.isNotEmpty && parts.last != '..') {
+      parts.removeLast();
+    } else if (part != '..' || !isAbsolute) {
+      parts.add(part.toLowerCase());
+    }
+  }
+  return parts;
+}
+
+class _LibraryIndex {
+  _LibraryIndex(List<Song> songs) {
+    for (final song in songs) {
+      final path = song.path;
+      if (path == null || path.isEmpty) continue;
+      final segments = _normalizedPathSegments(path);
+      if (segments.isEmpty) continue;
+      byBasename.putIfAbsent(segments.last, () => []).add(
+        _PathEntry(song, segments),
+      );
+    }
+  }
+
+  final Map<String, List<_PathEntry>> byBasename = {};
+}
+
+class _PathEntry {
+  const _PathEntry(this.song, this.segments);
+
+  final Song song;
+  final List<String> segments;
 }

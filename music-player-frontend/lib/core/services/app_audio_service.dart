@@ -24,6 +24,8 @@ import 'package:universal_platform/universal_platform.dart';
 class AppAudioService {
   static final _logger = Logger('AppAudioService');
 
+  static const _sessionRestoreTimeout = Duration(seconds: 10);
+
   AudioPlayer _audioPlayer;
 
   AudioPlayer get audioPlayer => _audioPlayer;
@@ -540,10 +542,20 @@ class AppAudioService {
       final idx = _activeQueue.indexWhere((s) => s == currentSong);
       _currentIndex = idx < 0 ? 0 : idx;
       if (!UniversalPlatform.isWeb) {
-        await _loadIndex(
+        final restore = _loadIndex(
           _currentIndex,
           position: _currentAudioSettings.sliderInSeconds,
         );
+        try {
+          await restore.timeout(_sessionRestoreTimeout);
+        } catch (e) {
+          _logger.warning('Could not restore last played song at startup: $e');
+          unawaited(
+            restore.catchError((Object error) {
+              _logger.fine('Deferred session restore failure: $error');
+            }),
+          );
+        }
       }
     }
   }

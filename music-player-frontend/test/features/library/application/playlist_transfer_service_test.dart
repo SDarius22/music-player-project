@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -27,6 +28,9 @@ class _Songs extends Fake implements SongService {
 
   @override
   List<Song> getAllLocalSongs() => byHash.values.toList();
+
+  @override
+  List<Song> getAllLocalCandidates() => byHash.values.toList();
 }
 
 Song _song(
@@ -176,68 +180,166 @@ void main() {
       expect(text, contains('music-player://song/remote'));
     });
 
-    test(
-      'imports by hash, relative path, file URI, and metadata fallback',
-      () async {
-        final hashed = _song('hash-song', 'Hashed');
-        final relative = _song(
-          'relative',
-          'Relative',
-          path: '/playlists/music/relative.mp3',
-        );
-        final fileUri = _song('uri', 'URI', path: '/music/uri.mp3');
-        final metadata = _song(
-          'metadata',
-          'Metadata Song',
-          artist: 'Metadata Artist',
-          album: 'Metadata Album',
-          duration: 180,
-        );
-        for (final song in [hashed, relative, fileUri, metadata]) {
-          songs.add(song);
-        }
-        final content = '''#EXTM3U
+    test('imports by hash, relative path, and file URI', () async {
+      final hashed = _song('hash-song', 'Hashed');
+      final relative = _song(
+        'relative',
+        'Relative',
+        path: '/playlists/music/relative.mp3',
+      );
+      final fileUri = _song('uri', 'URI', path: '/music/uri.mp3');
+      for (final song in [hashed, relative, fileUri]) {
+        songs.add(song);
+      }
+      final content = '''#EXTM3U
 #PLAYLIST:Recovered
 #MPM-HASH:hash-song
 music-player://song/hash-song
 ../music/relative.mp3
 file:///music/uri.mp3
-#EXTINF:181,Metadata Artist - Metadata Song
-#EXTALB:Metadata Album
-missing-location.mp3
 /not/found.mp3
 ''';
 
-        final result = await service.importPlaylist(
-          bytes: Uint8List.fromList(utf8.encode(content)),
-          sourceName: 'fallback.m3u8',
-          sourcePath: '/playlists/export/list.m3u8',
-        );
+      final result = await service.importPlaylist(
+        bytes: Uint8List.fromList(utf8.encode(content)),
+        sourceName: 'fallback.m3u8',
+        sourcePath: '/playlists/export/list.m3u8',
+      );
 
-        expect(result.playlistName, 'Recovered');
-        expect(result.songs, [hashed, relative, fileUri, metadata]);
-        expect(result.unresolvedEntries, hasLength(1));
-        expect(result.unresolvedEntries.single.location, '/not/found.mp3');
-      },
-    );
+      expect(result.playlistName, 'Recovered');
+      expect(result.songs, [hashed, relative, fileUri]);
+      expect(result.unresolvedEntries, hasLength(1));
+      expect(result.unresolvedEntries.single.location, '/not/found.mp3');
+    });
 
-    test(
-      'uses the source filename and avoids ambiguous metadata matches',
-      () async {
-        songs.add(_song('one', 'Duplicate'));
-        songs.add(_song('two', 'Duplicate'));
+    test('imports a real-world playlist with accented paths without '
+        'throwing', () async {
+      final result = await service.importPlaylist(
+        bytes: File('test/Eminem-newest.m3u').readAsBytesSync(),
+        sourceName: 'Eminem-newest.m3u',
+        sourcePath: '/playlists/Eminem-newest.m3u',
+      );
 
-        final result = await service.importPlaylist(
-          bytes: Uint8List.fromList(
-            utf8.encode('#EXTINF:-1,Artist - Duplicate\nunknown.mp3\n'),
+      expect(result.playlistName, 'Eminem-newest');
+      expect(result.songs, isEmpty);
+      expect(result.unresolvedEntries, isNotEmpty);
+    });
+
+    test('matches songs by path suffix when the absolute prefix differs', () async {
+      final renaissance = _song(
+        'r',
+        'Renaissance',
+        path:
+            '/home/darius/Music/Eminem - The Death of Slim Shady (Coup De Grâce)/01. Renaissance.flac',
+      );
+      final habits = _song(
+        'h',
+        'Habits',
+        path:
+            '/home/darius/Music/Eminem - The Death of Slim Shady (Coup De Grâce)/02. Habits.flac',
+      );
+      for (final song in [renaissance, habits]) {
+        songs.add(song);
+      }
+
+      const dir =
+          '/home/sala/Music/Music/Eminem - The Death of Slim Shady (Coup De Grâce)';
+      final result = await service.importPlaylist(
+        bytes: Uint8List.fromList(
+          utf8.encode(
+            '#EXTM3U\n'
+            '$dir/01. Renaissance.flac\n'
+            '$dir/02. Habits.flac\n',
           ),
-          sourceName: 'My Mix.m3u',
-        );
+        ),
+        sourceName: 'Eminem-newest.m3u',
+      );
 
-        expect(result.playlistName, 'My Mix');
-        expect(result.songs, isEmpty);
-        expect(result.unresolvedEntries, hasLength(1));
-      },
-    );
+      expect(result.songs, [renaissance, habits]);
+      expect(result.unresolvedEntries, isEmpty);
+    });
+
+    test('disambiguates identical file names by the longer path suffix', () async {
+      final introA = _song('a', 'Intro', path: '/lib/Album A/01. Intro.flac');
+      final introB = _song('b', 'Intro', path: '/lib/Album B/01. Intro.flac');
+      songs.add(introA);
+      songs.add(introB);
+
+      final result = await service.importPlaylist(
+        bytes: Uint8List.fromList(
+          utf8.encode('#EXTM3U\n/elsewhere/Album B/01. Intro.flac\n'),
+        ),
+        sourceName: 'x.m3u',
+      );
+
+      expect(result.songs, [introB]);
+      expect(result.unresolvedEntries, isEmpty);
+    });
+
+    test('leaves entries unresolved when no local file path matches', () async {
+      songs.add(_song('r', 'Renaissance', artist: 'Eminem', album: 'Album'));
+
+      final result = await service.importPlaylist(
+        bytes: Uint8List.fromList(
+          utf8.encode(
+            '#EXTM3U\n'
+            '/home/sala/Music/Eminem/01. Renaissance.flac\n',
+          ),
+        ),
+        sourceName: 'Eminem.m3u',
+      );
+
+      expect(result.songs, isEmpty);
+      expect(result.unresolvedEntries, hasLength(1));
+    });
+
+    test('imports non-ASCII and percent-containing paths without '
+        'throwing', () async {
+      final accented = _song(
+        'accented',
+        'Renaissance',
+        path: '/music/Coup De Grâce/01. Renaissance.flac',
+      );
+      final percent = _song(
+        'percent',
+        '100% Legit',
+        path: '/music/100% Legit.mp3',
+      );
+      songs.add(accented);
+      songs.add(percent);
+
+      final result = await service.importPlaylist(
+        bytes: Uint8List.fromList(
+          utf8.encode(
+            '#EXTM3U\n'
+            '/music/COUP DE GRÂCE/01. RENAISSANCE.flac\n'
+            '/music/100% LEGIT.mp3\n'
+            '/music/Alfred’s Theme.flac\n',
+          ),
+        ),
+        sourceName: 'Eminem-newest.m3u',
+      );
+
+      expect(result.playlistName, 'Eminem-newest');
+      expect(result.songs, [accented, percent]);
+      expect(result.unresolvedEntries, hasLength(1));
+      expect(
+        result.unresolvedEntries.single.location,
+        '/music/Alfred’s Theme.flac',
+      );
+    });
+
+    test('falls back to the source file name for the playlist name', () async {
+      final result = await service.importPlaylist(
+        bytes: Uint8List.fromList(
+          utf8.encode('#EXTINF:-1,Artist - Duplicate\nunknown.mp3\n'),
+        ),
+        sourceName: 'My Mix.m3u',
+      );
+
+      expect(result.playlistName, 'My Mix');
+      expect(result.songs, isEmpty);
+      expect(result.unresolvedEntries, hasLength(1));
+    });
   });
 }

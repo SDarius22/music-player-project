@@ -16,6 +16,7 @@ class AuthService extends ChangeNotifier {
   bool _sessionExpired = false;
 
   static const _refreshInterval = Duration(minutes: 10);
+  static const _requestTimeout = Duration(seconds: 8);
 
   AuthService({required this.baseUrl});
 
@@ -104,11 +105,13 @@ class AuthService extends ChangeNotifier {
 
   Future<bool> sendLoginCode(String email) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/send-code'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/send-code'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(_requestTimeout);
       return response.statusCode == 200;
     } catch (e) {
       _logger.warning('Send Login Code Error', e);
@@ -118,11 +121,13 @@ class AuthService extends ChangeNotifier {
 
   Future<bool> verifyCode(String email, String code) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/verify'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'code': code}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/verify'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'code': code}),
+          )
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -146,11 +151,13 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refresh}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': refresh}),
+          )
+          .timeout(_requestTimeout);
 
       _logger.fine(
         "Refresh token response: ${response.statusCode} - ${response.body}",
