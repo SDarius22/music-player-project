@@ -259,22 +259,25 @@ file:///music/uri.mp3
       expect(result.unresolvedEntries, isEmpty);
     });
 
-    test('disambiguates identical file names by the longer path suffix', () async {
-      final introA = _song('a', 'Intro', path: '/lib/Album A/01. Intro.flac');
-      final introB = _song('b', 'Intro', path: '/lib/Album B/01. Intro.flac');
-      songs.add(introA);
-      songs.add(introB);
+    test(
+      'disambiguates identical file names by the longer path suffix',
+      () async {
+        final introA = _song('a', 'Intro', path: '/lib/Album A/01. Intro.flac');
+        final introB = _song('b', 'Intro', path: '/lib/Album B/01. Intro.flac');
+        songs.add(introA);
+        songs.add(introB);
 
-      final result = await service.importPlaylist(
-        bytes: Uint8List.fromList(
-          utf8.encode('#EXTM3U\n/elsewhere/Album B/01. Intro.flac\n'),
-        ),
-        sourceName: 'x.m3u',
-      );
+        final result = await service.importPlaylist(
+          bytes: Uint8List.fromList(
+            utf8.encode('#EXTM3U\n/elsewhere/Album B/01. Intro.flac\n'),
+          ),
+          sourceName: 'x.m3u',
+        );
 
-      expect(result.songs, [introB]);
-      expect(result.unresolvedEntries, isEmpty);
-    });
+        expect(result.songs, [introB]);
+        expect(result.unresolvedEntries, isEmpty);
+      },
+    );
 
     test('leaves entries unresolved when no local file path matches', () async {
       songs.add(_song('r', 'Renaissance', artist: 'Eminem', album: 'Album'));

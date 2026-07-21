@@ -60,6 +60,8 @@ class _FakePlaylistRestClient extends PlaylistRestClient {
         authService: AuthService(baseUrl: 'http://localhost'),
       );
 
+  List<String> createdSongHashes = [];
+
   @override
   Future<PlaylistPageDto> getPlaylistsPage({
     String? query,
@@ -81,15 +83,33 @@ class _FakePlaylistRestClient extends PlaylistRestClient {
   Future<PlaylistExpandedDto?> createPlaylist(
     CreatePlaylistDto createPlaylistDto,
   ) async {
+    createdSongHashes =
+        createPlaylistDto.playlistSongs
+            .map((entry) => entry.songFileHash)
+            .toList();
     return PlaylistExpandedDto(
       id: 1,
       name: createPlaylistDto.name,
-      songFileHashes:
-          createPlaylistDto.playlistSongs
-              .map((entry) => entry.songFileHash)
-              .toList(),
+      songFileHashes: createdSongHashes,
       indestructible: false,
       durationSeconds: 0,
+    );
+  }
+
+  @override
+  Future<SongPageDto> getPlaylistSongsPage({
+    required int playlistId,
+    int page = 0,
+    int size = 50,
+  }) async {
+    return SongPageDto(
+      content: [
+        for (final hash in createdSongHashes) _songDto(hash, 'Song $hash'),
+      ],
+      page: page,
+      size: size,
+      totalPages: 1,
+      totalElements: createdSongHashes.length,
     );
   }
 }

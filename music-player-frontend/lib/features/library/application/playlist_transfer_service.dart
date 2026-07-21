@@ -163,7 +163,10 @@ class PlaylistTransferService {
     String? resolvedPath,
     _LibraryIndex index,
   ) {
-    for (final candidatePath in {location, if (resolvedPath != null) resolvedPath}) {
+    for (final candidatePath in {
+      location,
+      if (resolvedPath != null) resolvedPath,
+    }) {
       final segments = _normalizedPathSegments(candidatePath);
       if (segments.isEmpty) continue;
       final candidates = index.byBasename[segments.last];
@@ -279,9 +282,9 @@ class _LibraryIndex {
       if (path == null || path.isEmpty) continue;
       final segments = _normalizedPathSegments(path);
       if (segments.isEmpty) continue;
-      byBasename.putIfAbsent(segments.last, () => []).add(
-        _PathEntry(song, segments),
-      );
+      byBasename
+          .putIfAbsent(segments.last, () => [])
+          .add(_PathEntry(song, segments));
     }
   }
 

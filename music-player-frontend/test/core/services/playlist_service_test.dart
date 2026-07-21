@@ -185,39 +185,43 @@ void main() {
       },
     );
 
-    test('addPlaylist requires cloud creation and maps local remote copies', () async {
-      final localWithRemote =
-          Song('local-content')
-            ..localSourceKey = '/music/shared.flac'
-            ..potentialRemoteHashes = ['remote-copy']
-            ..fullyLoaded = true;
-      final deviceOnly =
-          Song('')
-            ..localSourceKey = '/music/private.flac'
-            ..fullyLoaded = true;
+    test(
+      'addPlaylist requires cloud creation and maps local remote copies',
+      () async {
+        final localWithRemote =
+            Song('local-content')
+              ..localSourceKey = '/music/shared.flac'
+              ..potentialRemoteHashes = ['remote-copy']
+              ..fullyLoaded = true;
+        final deviceOnly =
+            Song('')
+              ..localSourceKey = '/music/private.flac'
+              ..fullyLoaded = true;
 
-      final saved = await service.addPlaylist('Everywhere', [
-        deviceOnly,
-        localWithRemote,
-      ], null);
+        final saved = await service.addPlaylist('Everywhere', [
+          deviceOnly,
+          localWithRemote,
+        ], null);
 
-      expect(saved.songFileHashes, [
-        deviceOnly.getHash(),
-        localWithRemote.getHash(),
-      ]);
-      expect(
-        restClient.lastCreateRequest!.playlistSongs
-            .map((entry) => (entry.songFileHash, entry.position)),
-        [('remote-copy', 0)],
-      );
+        expect(saved.songFileHashes, [
+          deviceOnly.getHash(),
+          localWithRemote.getHash(),
+        ]);
+        expect(
+          restClient.lastCreateRequest!.playlistSongs.map(
+            (entry) => (entry.songFileHash, entry.position),
+          ),
+          [('remote-copy', 0)],
+        );
 
-      restClient.createResult = null;
-      await expectLater(
-        service.addPlaylist('Not local only', [deviceOnly], null),
-        throwsStateError,
-      );
-      expect(playlistRepo.getPlaylistByName('Not local only'), isNull);
-    });
+        restClient.createResult = null;
+        await expectLater(
+          service.addPlaylist('Not local only', [deviceOnly], null),
+          throwsStateError,
+        );
+        expect(playlistRepo.getPlaylistByName('Not local only'), isNull);
+      },
+    );
 
     test('cacheServerPlaylist creates/reuses playlist and links songs', () {
       final cached = service.cacheServerPlaylist(

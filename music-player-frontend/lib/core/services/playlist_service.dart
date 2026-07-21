@@ -417,7 +417,10 @@ class PlaylistService {
     return PageResult(content: content, totalPages: totalPages, page: page);
   }
 
-  List<Song> _resolvePlaylistSongs(List<String> songFileHashes, bool localOnly) {
+  List<Song> _resolvePlaylistSongs(
+    List<String> songFileHashes,
+    bool localOnly,
+  ) {
     final wanted = songFileHashes.toSet();
     final byHash = <String, Song>{};
     for (final song in _songService.getAllLocalCandidates()) {
@@ -454,9 +457,7 @@ class PlaylistService {
     ];
   }
 
-  List<PlaylistSongPositionDto> _toServerPlaylistPositions(
-    Playlist playlist,
-  ) {
+  List<PlaylistSongPositionDto> _toServerPlaylistPositions(Playlist playlist) {
     final byIdentity = <String, Song>{};
     for (final song in _songService.getAllLocalCandidates()) {
       byIdentity[song.getHash()] = song;

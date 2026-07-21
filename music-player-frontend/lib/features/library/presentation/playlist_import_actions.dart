@@ -12,7 +12,10 @@ class PlaylistImportActions {
     final file = await context.read<PlaylistFileGateway>().pickPlaylist();
     if (file == null || !context.mounted) return;
 
-    context.read<AbstractAppStateProvider>().innerNavigatorKey.currentState
+    context
+        .read<AbstractAppStateProvider>()
+        .innerNavigatorKey
+        .currentState
         ?.push(
           CreateOrImportScreen.route(
             import: true,

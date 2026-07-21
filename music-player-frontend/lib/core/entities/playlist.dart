@@ -61,9 +61,7 @@ class Playlist implements BaseEntity {
     final removedRemote = song.potentialRemoteHashes.any(
       songFileHashes.contains,
     );
-    songFileHashes.removeWhere(
-      song.potentialRemoteHashes.contains,
-    );
+    songFileHashes.removeWhere(song.potentialRemoteHashes.contains);
     if (removed || removedRemote) {
       duration -= song.durationInSeconds;
     }

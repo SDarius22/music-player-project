@@ -28,8 +28,7 @@ class _MemorySettingsRepository implements SettingsRepository {
   AudioSettings getAudioSettings() => audioSettings ??= AudioSettings();
 
   @override
-  AppSettings saveAppSettings(AppSettings settings) =>
-      appSettings = settings;
+  AppSettings saveAppSettings(AppSettings settings) => appSettings = settings;
 
   @override
   AudioSettings saveAudioSettings(AudioSettings settings) =>
@@ -109,10 +108,12 @@ void main() {
   });
 
   test('cleanup attempts every source and reports partial failures', () async {
-    final playlists = InMemoryPlaylistRepository()
-      ..savePlaylist(Playlist('Still must be cleared'));
-    final settings = _MemorySettingsRepository()
-      ..saveAppSettings(AppSettings()..firstTime = false);
+    final playlists =
+        InMemoryPlaylistRepository()
+          ..savePlaylist(Playlist('Still must be cleared'));
+    final settings =
+        _MemorySettingsRepository()
+          ..saveAppSettings(AppSettings()..firstTime = false);
 
     final service = SessionCleanupService(
       resetPlayback: () async => throw StateError('player failed'),
