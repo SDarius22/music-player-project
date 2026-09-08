@@ -94,3 +94,12 @@ User request: commit, push, and start the GitHub Android build for device testin
 
 - [x] T029 Add APK-only selection and an explicit server-publish switch to `.github/workflows/build-publish.yml`, preserving release/all-platform behavior. Pin the tested Flutter version and Android Java runtime; fail artifact upload when the APK is absent. Workflow validated with actionlint 1.7.7; dispatch tracked by T030.
 - [ ] T030 Commit only this feature's source/tests/specification/workflow changes, push to origin, dispatch the Android build on the pushed commit, monitor automatic frontend deployment and requested build, and report links/results. Pre-existing unrelated `.gitignore`, `.gitattributes`, governance, and tool configuration changes remain unstaged.
+
+## Phase 8: Coverage Pause and Mobile Grid
+
+User explicitly authorized temporarily removing coverage enforcement after both
+CI runs passed tests but failed the 85% line coverage threshold (~58.6%).
+
+- [x] T031 Replace threshold enforcement with coverage reporting in `.github/workflows/build-publish.yml` and `deploy-frontend.yml`; preserve tests, coverage generation/merge, analysis, and vulnerability scans. Backend enforcement remains unchanged. Record the user-approved temporary quality-policy exception in the plan.
+- [x] T032 Use exactly three columns for mobile-width song grids in `music-player-frontend/lib/shared/presentation/tiling/custom_tile_component.dart`, retaining wider viewport and non-song/wide/list behavior. Add width, geometry, and tap regression coverage in `test/shared/presentation/tiling/paginated_and_tile_widget_test.dart`.
+- [ ] T033 Validate YAML, Dart analysis/format/tests, update Graphify, commit/push only these changes, and dispatch a fresh APK-only workflow (`publish=false`) against the new commit. Monitor both it and automatic frontend deployment, reporting artifact URLs or concrete failures.

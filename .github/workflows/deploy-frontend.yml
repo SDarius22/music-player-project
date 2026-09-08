@@ -63,19 +63,10 @@ jobs:
           done
           lcov "${trace_args[@]}" --output-file coverage/lcov.info
 
-      - name: Enforce 85% line coverage
+      # Coverage is temporarily informational while mobile testing is underway.
+      - name: Report line coverage
         working-directory: ./music-player-frontend
-        run: |
-          awk -F: '
-            /^LF:/ { total += $2 }
-            /^LH:/ { covered += $2 }
-            END {
-              if (total == 0) exit 1
-              coverage = covered * 100 / total
-              printf "Frontend line coverage: %.2f%% (%d/%d)\n", coverage, covered, total
-              if (coverage < 85) exit 1
-            }
-          ' coverage/lcov.info
+        run: lcov --summary coverage/lcov.info
 
       - name: Scan frontend dependencies for CVEs
         uses: aquasecurity/trivy-action@v0.36.0

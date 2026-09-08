@@ -119,6 +119,21 @@ music-player-frontend/
 
 ## Complexity Tracking
 
+### Approved Temporary Coverage Exception
+
+The user explicitly approved pausing frontend percentage enforcement on 2026-09-08
+after GitHub runs 34245815217 and 34245805321 passed tests but failed coverage at
+58.61% and 58.60%. This is a scoped, user-approved exception to the existing
+quality-gate policy, not permission to skip tests or scans. Both frontend workflows
+keep collecting/merging/reporting coverage. Backend gates are unchanged. Restore
+the frontend percentage gate in a separately approved follow-up; do not invent an
+automatic expiry date. This supersedes the original T029 coverage-gate constraint.
+
+Mobile layout: the shared square-grid delegate uses a fixed three-column count
+only for song items at viewport widths below 600px, matching existing mobile
+breakpoints. Keep the current max-extent delegate elsewhere. Verify rendered tile
+positions, width, row wrapping and taps using existing fake audio/cover providers.
+
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
 | None planned | The design uses existing modules and boundaries. | No exception requested. |

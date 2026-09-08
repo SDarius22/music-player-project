@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/grid_tile.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/list_tile.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/tile_type.dart';
@@ -98,6 +99,16 @@ class CustomTileComponent extends StatelessWidget {
 
   SliverGridDelegate _gridDelegate(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    if (tileType == TileType.grid &&
+        size.width < 600 &&
+        items.isNotEmpty &&
+        items.every((item) => item is Song)) {
+      return SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: size.width * 0.005,
+        mainAxisSpacing: size.width * 0.005,
+      );
+    }
     return SliverGridDelegateWithMaxCrossAxisExtent(
       maxCrossAxisExtent: size.height * 0.2,
       crossAxisSpacing: size.width * 0.005,

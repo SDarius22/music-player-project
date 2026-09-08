@@ -3,11 +3,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_player_frontend/core/entities/abstract/base_entity.dart';
+import 'package:music_player_frontend/core/entities/album.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/features/player/presentation/providers/audio_provider.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/queryable_provider.dart';
 import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/custom_tile_component.dart';
+import 'package:music_player_frontend/shared/presentation/tiling/grid_tile.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/paginated_component.dart';
 import 'package:music_player_frontend/shared/presentation/tiling/tile_type.dart';
 import 'package:fluenticons/fluenticons.dart';
@@ -64,6 +66,86 @@ void main() {
       coverService = _FakeCoverService();
       audioProvider.currentSongValue = null;
     });
+
+    for (final width in [320.0, 390.0, 599.0]) {
+      testWidgets('mobile song grid has three columns at ${width}px', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(width, 900);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final songs = List.generate(6, (i) => _song('grid-$i', 'Track $i'));
+        final tapped = <BaseEntity>[];
+        await tester.pumpWidget(
+          _withProviders(
+            audioProvider: audioProvider,
+            coverService: coverService,
+            child: PaginatedComponent(
+              type: TileType.grid,
+              fetchPage:
+                  (_, _) async =>
+                      PageResult<Song>(content: songs, totalPages: 1, page: 0),
+              onTap: (entity, _) async => tapped.add(entity),
+              onLongPress: (_, _) {},
+              isSelected: (_) => false,
+              reloadToken: 0,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final tiles = find.byType(CustomGridTile);
+        final first = tester.getRect(tiles.at(0));
+        final third = tester.getRect(tiles.at(2));
+        final fourth = tester.getRect(tiles.at(3));
+        expect(third.top, first.top);
+        expect(third.left, greaterThan(first.left));
+        expect(fourth.top, greaterThan(first.bottom));
+        expect(fourth.left, first.left);
+        expect(first.width, closeTo(first.height, 0.01));
+        expect(third.right, lessThanOrEqualTo(width));
+        await tester.tap(tiles.at(2));
+        expect(tapped, [songs[2]]);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    for (final variant in ['desktop', 'albums', 'wide']) {
+      testWidgets('$variant grid retains its existing max-extent layout', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(variant == 'desktop' ? 1200 : 390, 900);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(
+          _withProviders(
+            audioProvider: audioProvider,
+            coverService: coverService,
+            child: CustomScrollView(
+              slivers: [
+                CustomTileComponent(
+                  tileType: variant == 'wide' ? TileType.wide : TileType.grid,
+                  items:
+                      variant == 'albums'
+                          ? [Album('album', 'Album')]
+                          : [_song('song', 'Song')],
+                  onTap: (_) {},
+                  onLongPress: (_) {},
+                  isSelected: (_) => false,
+                ),
+              ],
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          tester.widget<SliverGrid>(find.byType(SliverGrid)).gridDelegate,
+          isA<SliverGridDelegateWithMaxCrossAxisExtent>(),
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
 
     testWidgets('shows empty message when first page has no content', (
       tester,

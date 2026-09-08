@@ -119,6 +119,14 @@ build for testing. A manual APK-only dispatch must not build unrelated platforms
 or publish to the download server. Existing all-platform/release behavior and
 test/coverage/security gates remain intact. Delivery is tracked by T029-T030.
 
+The subsequent user request supersedes the coverage-threshold clause: frontend
+coverage is temporarily informational, while tests, analysis and security checks
+remain mandatory. Mobile-width (under 600 logical pixels) square song grids show
+three songs per row. Desktop, non-song grids and wide/list layouts are unchanged.
+Acceptance: test builds proceed below 85% when remaining gates pass; rendered song
+tiles at 320, 390 and 599px have three columns without layout exceptions and retain
+tap behavior. Tasks T031-T033 cover this follow-up.
+
 - iOS system music-library access.
 - Full cloud logical-recording migration.
 - A new content fingerprint or hashing protocol.

@@ -70,3 +70,17 @@ report regeneration is separate from this incremental source-index update.
   cryptographic proof. Server/peer bytes still require exact chunk digests.
 - Broader recording IDs, upload/download provenance persistence, faster native
   whole-file hashing, and confirmation UI remain future architecture work.
+
+## Coverage Pause and Three-column Grid
+
+On user request, percentage enforcement is temporarily replaced with `lcov
+--summary` in both frontend workflows. Tests, coverage reports and security scans
+remain required. Runs 34245815217 and 34245805321 confirmed that all host and Linux
+integration tests passed before the 85% gate rejected coverage of approximately
+58.6%. Backend gates are untouched.
+
+Mobile square song grids now use three columns below 600 logical pixels. Six new
+widget tests cover geometry/taps at 320, 390 and 599px and preservation of desktop,
+album and wide-grid delegates. Local verification: `flutter test --no-pub` reports
+443 passed and 9 existing native-library skips; `flutter analyze --no-pub` is
+clean. Both workflow YAML files pass actionlint 1.7.7.
