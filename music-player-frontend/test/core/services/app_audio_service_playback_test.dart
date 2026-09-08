@@ -9,6 +9,7 @@ import 'package:mockito/mockito.dart';
 import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
+import 'package:music_player_frontend/core/entities/playback_source_selection.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
@@ -17,6 +18,7 @@ import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
+import 'package:music_player_frontend/core/p2p/p2p_chunked_source.dart';
 
 import 'app_audio_service_playback_test.mocks.dart';
 
@@ -51,13 +53,32 @@ void main() {
       mockSettingsService,
       mockPlaylistService,
       mockAuthService,
-      (_) => throw UnimplementedError(),
+      (_) => _FakeChunkService(),
       mockPlaybackRestService,
       audioPlayer: mockAudioPlayer,
+      createAudioPlayer: () => mockAudioPlayer,
     );
   });
 
   group('basic playback setting interactions', () {
+    test(
+      'remote fallback uses associated asset, not a local encoding hash',
+      () {
+        final local =
+            Song('local-encoding')
+              ..localSourceKey = 'android:42'
+              ..potentialRemoteHashes = ['server-encoding'];
+        expect(
+          PlaybackSourceSelection.remote(local, 'fallback').remoteAssetHash,
+          'server-encoding',
+        );
+        local.potentialRemoteHashes = [];
+        expect(
+          PlaybackSourceSelection.remote(local, 'fallback').kind,
+          PlaybackSourceKind.unavailable,
+        );
+      },
+    );
     test('updateSliderInSeconds forwards updated settings', () async {
       service.updateSliderInSeconds(42);
       await Future<void>.delayed(Duration.zero);
@@ -200,6 +221,137 @@ void main() {
       await service.initializeAppAudio();
       return queuePlaylist;
     }
+
+    test('loading fetched metadata does not replace queued identity', () async {
+      await initService();
+      final queued = Song('remote')..name = 'Queued';
+      final fetched =
+          Song('remote')
+            ..name = 'Fetched metadata'
+            ..fullyLoaded = true;
+      when(
+        mockSongService.fullyFetchSong(queued),
+      ).thenAnswer((_) async => fetched);
+      when(
+        mockSongService.resolvePlaybackSource(queued),
+      ).thenReturn(PlaybackSourceSelection.remote(queued, 'test remote'));
+      when(mockSongService.updateSong(any)).thenAnswer((_) async {});
+      when(mockAudioPlayer.processingState).thenReturn(ProcessingState.ready);
+      when(mockAudioPlayer.position).thenReturn(Duration.zero);
+      when(mockAudioPlayer.duration).thenReturn(const Duration(seconds: 120));
+
+      await service.setQueueAndPlay([queued], queued);
+
+      expect(service.normalQueue, [same(queued)]);
+      expect(service.currentSong, same(queued));
+      expect(service.currentSong!.name, 'Fetched metadata');
+      expect(service.queue.map((song) => song.getHash()), ['remote']);
+    });
+
+    test(
+      'failed local source load falls back once to the remote source',
+      () async {
+        await initService();
+        final queued = Song('remote')..name = 'Queued';
+        when(
+          mockSongService.fullyFetchSong(queued),
+        ).thenAnswer((_) async => queued);
+        when(mockSongService.resolvePlaybackSource(queued)).thenReturn(
+          const PlaybackSourceSelection(
+            kind: PlaybackSourceKind.local,
+            strength: SourceMatchStrength.metadata,
+            sourceKey: 'local-key',
+            sourceUri: '/local/queued.mp3',
+            reason: 'test local',
+          ),
+        );
+        when(mockSongService.updateSong(any)).thenAnswer((_) async {});
+        when(mockAudioPlayer.processingState).thenReturn(ProcessingState.ready);
+        when(mockAudioPlayer.position).thenReturn(Duration.zero);
+        when(mockAudioPlayer.duration).thenReturn(const Duration(seconds: 120));
+        var attempts = 0;
+        when(
+          mockAudioPlayer.setAudioSource(
+            any,
+            initialPosition: anyNamed('initialPosition'),
+            preload: anyNamed('preload'),
+            initialIndex: anyNamed('initialIndex'),
+          ),
+        ).thenAnswer((_) async {
+          attempts++;
+          if (attempts == 1) throw PlayerException(0, 'local failed', 0);
+          return;
+        });
+
+        await service.setQueueAndPlay([queued], queued);
+
+        expect(attempts, 2);
+        final sources =
+            verify(
+              mockAudioPlayer.setAudioSource(
+                captureAny,
+                initialPosition: anyNamed('initialPosition'),
+                preload: anyNamed('preload'),
+                initialIndex: anyNamed('initialIndex'),
+              ),
+            ).captured;
+        expect((sources.first as UriAudioSource).uri.path, '/local/queued.mp3');
+        expect(sources[1], isA<P2PChunkedAudioSource>());
+        expect((sources[1] as P2PChunkedAudioSource).fileHash, 'remote');
+        expect(service.currentSong, same(queued));
+        expect(service.normalQueue, [same(queued)]);
+      },
+    );
+
+    test('player error rejects local source and preserves position', () async {
+      final errors = StreamController<PlayerException>.broadcast();
+      addTearDown(errors.close);
+      when(mockAudioPlayer.errorStream).thenAnswer((_) => errors.stream);
+      when(mockAudioPlayer.dispose()).thenAnswer((_) async {});
+      when(mockAudioPlayer.processingState).thenReturn(ProcessingState.ready);
+      when(mockAudioPlayer.position).thenReturn(const Duration(seconds: 42));
+      when(mockAudioPlayer.duration).thenReturn(const Duration(seconds: 120));
+      when(mockSongService.updateSong(any)).thenAnswer((_) async {});
+      when(mockSongService.fullyFetchSong(any)).thenAnswer((inv) async {
+        return inv.positionalArguments.single as Song;
+      });
+      when(mockSongService.resolvePlaybackSource(any)).thenReturn(
+        const PlaybackSourceSelection(
+          kind: PlaybackSourceKind.local,
+          strength: SourceMatchStrength.metadata,
+          sourceKey: 'local-key',
+          sourceUri: '/local/queued.mp3',
+          reason: 'test local',
+        ),
+      );
+      await initService();
+      verify(mockAudioPlayer.errorStream).called(1);
+      final first = Song('first');
+      final second = Song('second');
+      await service.setQueueAndPlay([first, second], first);
+
+      errors.add(PlayerException(7, 'local failed', 0));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      final captured =
+          verify(
+            mockAudioPlayer.setAudioSource(
+              captureAny,
+              initialPosition: captureAnyNamed('initialPosition'),
+              preload: anyNamed('preload'),
+              initialIndex: anyNamed('initialIndex'),
+            ),
+          ).captured;
+      expect(service.playerInstanceVersion.value, 1);
+      expect(service.currentSong?.getHash(), 'first');
+      expect(service.normalQueue.map((song) => song.getHash()), [
+        'first',
+        'second',
+      ]);
+      expect(captured, contains(const Duration(seconds: 42)));
+      expect(captured.whereType<P2PChunkedAudioSource>(), hasLength(1));
+    });
 
     test(
       'removeFromQueue refuses to remove the last song so queue stays non-empty',

@@ -47,6 +47,7 @@ import 'package:music_player_frontend/core/services/cover_service.dart';
 import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/lyrics_service.dart';
 import 'package:music_player_frontend/core/services/local_track_service.dart';
+import 'package:music_player_frontend/core/services/local_byte_range_reader.dart';
 import 'package:music_player_frontend/core/services/playlist_service.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/core/services/session_cleanup_service.dart';
@@ -59,6 +60,9 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 abstract class MusicPlayerApp extends StatelessWidget {
   const MusicPlayerApp({super.key});
+
+  LocalByteRangeReader createLocalByteRangeReader() =>
+      const FileLocalByteRangeReader();
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
@@ -155,7 +159,7 @@ abstract class MusicPlayerApp extends StatelessWidget {
             (context) => LocalTrackService(
               context.read<LocalTrackRepository>(),
               context.read<SongRepository>(),
-            ),
+            )..byteRangeReader = createLocalByteRangeReader(),
       ),
 
       Provider<CoverRestClient>(

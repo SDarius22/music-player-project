@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -9,6 +8,7 @@ import 'package:music_player_frontend/core/entities/local_track.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/repository/interfaces/local_track_repository.dart';
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
+import 'package:music_player_frontend/core/services/local_byte_range_reader.dart';
 import 'package:music_player_frontend/core/services/potential_identity.dart';
 
 class LocalTrackService {
@@ -16,7 +16,13 @@ class LocalTrackService {
   final SongRepository? _songRepository;
   final Set<String> _rejectedChunkCandidates = {};
 
-  LocalTrackService(this._repository, [this._songRepository]) {
+  /// Injected reader seam for platform sources. The default is the
+  /// filesystem reader; platform composition roots may swap in a reader that
+  /// additionally routes scoped-storage content URIs.
+  LocalByteRangeReader byteRangeReader;
+
+  LocalTrackService(this._repository, [this._songRepository])
+    : byteRangeReader = const FileLocalByteRangeReader() {
     _migrateLegacySongPaths();
   }
 
@@ -43,26 +49,76 @@ class LocalTrackService {
     required String fallbackTitle,
     int? fileSize,
     DateTime? modifiedAt,
+    bool supportsRandomAccess = true,
   }) {
+    final snapshot = LocalSourceSnapshot(
+      sourceKey: sourceKey,
+      sourceUri: sourceUri,
+      size: fileSize,
+      modifiedAt: modifiedAt,
+      supportsRandomAccess: supportsRandomAccess,
+    );
     final existing = _repository.getBySourceKey(sourceKey);
-    final track =
-        existing ??
-        LocalTrack(
-          sourceKey: sourceKey,
-          sourceUri: sourceUri,
-          potentialIdentityKey: PotentialIdentity.create(
-            title: fallbackTitle,
-            artist: 'Unknown Artist',
-            durationInSeconds: 0,
-          ),
-          name: fallbackTitle,
-        );
+    if (existing == null) {
+      final track = LocalTrack(
+        sourceKey: sourceKey,
+        sourceUri: sourceUri,
+        potentialIdentityKey: PotentialIdentity.create(
+          title: fallbackTitle,
+          artist: 'Unknown Artist',
+          durationInSeconds: 0,
+        ),
+        name: fallbackTitle,
+        supportsRandomAccess: supportsRandomAccess,
+      );
+      _applySnapshot(track, snapshot);
+      return track;
+    }
+    if (!isUnchanged(existing, snapshot)) {
+      invalidateChangedSource(existing, snapshot);
+    }
+    _applySnapshot(existing, snapshot);
+    return existing;
+  }
+
+  /// A cheap scan comparison, not proof of content identity.
+  bool isUnchanged(LocalTrack track, LocalSourceSnapshot snapshot) {
+    if (!track.available || track.sourceKey != snapshot.sourceKey) return false;
+    if (track.sourceUri != snapshot.sourceUri) return false;
+    if (snapshot.size != null) {
+      if (track.fileSize != snapshot.size) return false;
+    } else if (track.fileSize != null) {
+      return false;
+    }
+    if (snapshot.modifiedAt != null) {
+      if (track.modifiedAt?.microsecondsSinceEpoch !=
+          snapshot.modifiedAt!.microsecondsSinceEpoch) {
+        return false;
+      }
+    } else if (track.modifiedAt != null) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Invalidates persisted content-linked identities and rejected-reader state
+  /// when a source is observed to have changed, while preserving user metadata
+  /// and listening statistics.
+  void invalidateChangedSource(LocalTrack track, LocalSourceSnapshot snapshot) {
     track
-      ..sourceUri = sourceUri
-      ..fileSize = fileSize
-      ..modifiedAt = modifiedAt
+      ..contentHash = null
+      ..resolvedSongHash = null
+      ..metadataLoaded = false;
+    _rejectedChunkCandidates.clear();
+  }
+
+  void _applySnapshot(LocalTrack track, LocalSourceSnapshot snapshot) {
+    track
+      ..sourceUri = snapshot.sourceUri
+      ..fileSize = snapshot.size
+      ..modifiedAt = snapshot.modifiedAt
+      ..supportsRandomAccess = snapshot.supportsRandomAccess
       ..available = true;
-    return track;
   }
 
   void applyMetadata(
@@ -203,6 +259,11 @@ class LocalTrackService {
         chunkIndex >= manifest.totalChunks) {
       return null;
     }
+    final offset = chunkIndex * manifest.chunkSize;
+    final remaining = manifest.totalBytes - offset;
+    final expectedLength =
+        remaining < manifest.chunkSize ? remaining : manifest.chunkSize;
+    if (expectedLength <= 0) return null;
     final identity = PotentialIdentity.create(
       title: remoteSong.name,
       artist: remoteSong.artist.target?.name ?? 'Unknown Artist',
@@ -218,48 +279,52 @@ class LocalTrackService {
     );
 
     for (final track in candidates) {
-      final uri = Uri.tryParse(track.sourceUri);
-      if (uri != null && uri.hasScheme && uri.scheme != 'file') continue;
-      final path = uri?.scheme == 'file' ? uri!.toFilePath() : track.sourceUri;
+      final sourceUri = track.sourceUri;
+      final modifiedAt = track.modifiedAt;
+      final fileSize = track.fileSize;
       final fingerprint =
-          '${track.sourceKey}|${track.fileSize}|${track.modifiedAt?.microsecondsSinceEpoch}|${remoteSong.fileHash}';
+          '${track.sourceKey}|$sourceUri|$fileSize|${modifiedAt?.microsecondsSinceEpoch}|${remoteSong.fileHash}|${manifest.chunkSize}|$chunkIndex|${manifest.hashes[chunkIndex]}';
       if (_rejectedChunkCandidates.contains(fingerprint)) continue;
 
-      RandomAccessFile? handle;
+      LocalByteRangeResult? result;
       try {
-        final file = File(path);
-        final before = await file.stat();
-        if (before.size != manifest.totalBytes ||
-            (track.modifiedAt != null &&
-                before.modified.microsecondsSinceEpoch !=
-                    track.modifiedAt!.microsecondsSinceEpoch)) {
-          _rejectedChunkCandidates.add(fingerprint);
-          continue;
-        }
-        final offset = chunkIndex * manifest.chunkSize;
-        final expectedLength = (manifest.totalBytes - offset).clamp(
-          0,
-          manifest.chunkSize,
+        result = await byteRangeReader.read(
+          track,
+          LocalByteRange(offset: offset, length: expectedLength),
         );
-        handle = await file.open();
-        await handle.setPosition(offset);
-        final bytes = await handle.read(expectedLength);
-        final after = await file.stat();
-        if (after.size != before.size ||
-            after.modified.microsecondsSinceEpoch !=
-                before.modified.microsecondsSinceEpoch) {
-          _rejectedChunkCandidates.add(fingerprint);
-          continue;
-        }
-        if (sha256.convert(bytes).toString() == manifest.hashes[chunkIndex]) {
-          return bytes;
-        }
-        _rejectedChunkCandidates.add(fingerprint);
       } catch (_) {
-        _rejectedChunkCandidates.add(fingerprint);
-      } finally {
-        await handle?.close();
+        // Transient reader/platform errors are not permanently rejected.
+        continue;
       }
+      if (result == null || !result.sourceStable) continue;
+      if (!track.available ||
+          track.sourceUri != sourceUri ||
+          track.fileSize != fileSize ||
+          track.modifiedAt != modifiedAt ||
+          result.snapshot.sourceKey != track.sourceKey ||
+          result.snapshot.sourceUri != sourceUri) {
+        continue;
+      }
+      if (result.bytes.length != expectedLength) {
+        _rejectedChunkCandidates.add(fingerprint);
+        continue;
+      }
+      if (result.snapshot.size != manifest.totalBytes) {
+        _rejectedChunkCandidates.add(fingerprint);
+        continue;
+      }
+      if (track.modifiedAt != null &&
+          (result.snapshot.modifiedAt == null ||
+              result.snapshot.modifiedAt!.microsecondsSinceEpoch !=
+                  track.modifiedAt!.microsecondsSinceEpoch)) {
+        _rejectedChunkCandidates.add(fingerprint);
+        continue;
+      }
+      if (sha256.convert(result.bytes).toString() ==
+          manifest.hashes[chunkIndex]) {
+        return result.bytes;
+      }
+      _rejectedChunkCandidates.add(fingerprint);
     }
     return null;
   }

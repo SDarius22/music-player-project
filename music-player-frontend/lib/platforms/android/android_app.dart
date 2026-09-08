@@ -5,15 +5,21 @@ import 'package:music_player_frontend/core/services/abstract/abstract_music_scan
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
 import 'package:music_player_frontend/core/services/health_service.dart';
 import 'package:music_player_frontend/core/services/local_track_service.dart';
+import 'package:music_player_frontend/core/services/local_byte_range_reader.dart';
 import 'package:music_player_frontend/core/services/settings_service.dart';
 import 'package:music_player_frontend/features/player/presentation/providers/audio_provider.dart';
 import 'package:music_player_frontend/platforms/android/providers/app_state_provider.dart';
 import 'package:music_player_frontend/platforms/android/services/android_file_service.dart';
+import 'package:music_player_frontend/platforms/android/services/android_local_byte_range_reader.dart';
 import 'package:music_player_frontend/platforms/android/services/android_music_scanner_service.dart';
 import 'package:provider/provider.dart';
 
 class AndroidApp extends NativeMusicPlayerApp {
   const AndroidApp({super.key});
+
+  @override
+  LocalByteRangeReader createLocalByteRangeReader() =>
+      AndroidLocalByteRangeReader();
 
   @override
   bool get useSafeAreaForLoading => true;

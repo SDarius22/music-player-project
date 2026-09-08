@@ -11,6 +11,7 @@ import com.lucasjosino.on_audio_query.types.sorttypes.checkSongSortType
 import com.lucasjosino.on_audio_query.utils.songProjection
 import io.flutter.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -65,8 +66,15 @@ class AudioQuery : ViewModel() {
 
         // Query everything in background for a better performance.
         viewModelScope.launch {
-            val queryResult = loadSongs(projection)
-            result.success(queryResult)
+            try {
+                result.success(loadSongs(projection))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: SecurityException) {
+                result.error("permission_denied", "Audio query not permitted", null)
+            } catch (error: Exception) {
+                result.error("query_failed", "Audio query failed", null)
+            }
         }
     }
 
@@ -74,7 +82,7 @@ class AudioQuery : ViewModel() {
     private suspend fun loadSongs(projection: Array<String>): ArrayList<MutableMap<String, Any?>> =
         withContext(Dispatchers.IO) {
             val cursor = resolver.query(uri, projection, selection, null, sortType)
-                ?: return@withContext ArrayList()
+                ?: throw IllegalStateException("MediaStore query returned no cursor")
 
             Log.d(TAG, "Cursor count: ${cursor.count}")
 

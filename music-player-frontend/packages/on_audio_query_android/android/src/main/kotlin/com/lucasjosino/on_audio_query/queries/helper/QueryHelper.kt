@@ -21,7 +21,10 @@ class QueryHelper {
     //This method will separate [String] from [Int] — uses a pre-resolved column index.
     fun loadSongItem(itemProperty: String, columnIndex: Int, cursor: Cursor): Any? {
         return when (itemProperty) {
-            "_id", "duration", "track", "year" -> cursor.getInt(columnIndex)
+            "duration", "track", "year" -> cursor.getInt(columnIndex)
+            // 64-bit numeric metadata; null values stay null instead of becoming 0.
+            "_id", "_size", "date_modified" ->
+                if (cursor.isNull(columnIndex)) null else cursor.getLong(columnIndex)
             else -> cursor.getString(columnIndex)
         }
     }

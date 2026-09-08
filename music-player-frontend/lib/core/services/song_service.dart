@@ -1,6 +1,8 @@
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/dtos/chunk_manifest_dto.dart';
+import 'package:music_player_frontend/core/entities/local_track.dart';
+import 'package:music_player_frontend/core/entities/playback_source_selection.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/features/library/presentation/providers/queryable_provider.dart';
 import 'package:music_player_frontend/core/repository/interfaces/album_repository.dart';
@@ -8,7 +10,6 @@ import 'package:music_player_frontend/core/repository/interfaces/artist_reposito
 import 'package:music_player_frontend/core/repository/interfaces/song_repository.dart';
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
 import 'package:music_player_frontend/core/services/local_track_service.dart';
-import 'package:music_player_frontend/core/services/potential_identity.dart';
 
 class SongService {
   static final _logger = Logger('SongService');
@@ -81,8 +82,6 @@ class SongService {
   }
 
   Future<Song> fullyFetchSong(Song song) async {
-    song = resolvePreferredLocalSource(song);
-    if (song.hasLocalFile) return song;
     if (song.fileHash.isEmpty) return song;
     if (song.fullyLoaded) return song;
     var localSong = _songRepository.getSongByFileHash(song.getHash());
@@ -91,7 +90,8 @@ class SongService {
     _logger.fine('Fully fetching song ${song.getHash()} from server...');
     try {
       final serverSong = await _songRestService.getServerSong(song.getHash());
-      return _cacheServerSong(serverSong);
+      final fetched = _cacheServerSong(serverSong);
+      return fetched.getHash() == song.getHash() ? fetched : song;
     } catch (e) {
       _logger.fine(
         'SongService: failed to fully fetch song ${song.getHash()} from server: $e',
@@ -100,39 +100,148 @@ class SongService {
     }
   }
 
-  Song resolvePreferredLocalSource(Song song) {
-    if (song.hasLocalFile) return song;
-    final localTracks = _localTrackService?.getAll() ?? const [];
-    final identity =
-        song.potentialIdentityKey ??
-        PotentialIdentity.create(
-          title: song.name,
-          artist: song.artist.target?.name ?? 'Unknown Artist',
-          durationInSeconds: song.durationInSeconds,
+  PlaybackSourceSelection resolvePlaybackSource(Song song) {
+    final localService = _localTrackService;
+    if (song.localSourceKey != null && localService != null) {
+      final managed = localService.getBySourceKey(song.localSourceKey!);
+      if (managed != null) {
+        if (!managed.available ||
+            (song.fileHash.isNotEmpty &&
+                managed.contentHash != song.fileHash)) {
+          return const PlaybackSourceSelection(
+            kind: PlaybackSourceKind.unavailable,
+            strength: SourceMatchStrength.none,
+            reason: 'managed local source is unavailable or stale',
+          );
+        }
+        return _localSelection(
+          managed,
+          SourceMatchStrength.exactSource,
+          'exact managed local source',
         );
-    final local =
-        localTracks
-            .where((track) => track.available)
-            .where(
-              (track) =>
-                  track.sourceKey == song.localSourceKey ||
-                  (song.fileHash.isNotEmpty &&
-                      (track.contentHash == song.fileHash ||
-                          track.resolvedSongHash == song.fileHash)) ||
-                  track.potentialIdentityKey == identity,
-            )
-            .firstOrNull;
-    if (local == null) return song;
+      }
+      return const PlaybackSourceSelection(
+        kind: PlaybackSourceKind.unavailable,
+        strength: SourceMatchStrength.none,
+        reason: 'managed local source was removed',
+      );
+    }
+    if (song.hasLocalFile &&
+        (song.localSourceKey == null ||
+            localService?.getBySourceKey(song.localSourceKey!) == null)) {
+      return PlaybackSourceSelection(
+        kind: PlaybackSourceKind.local,
+        strength: SourceMatchStrength.exactSource,
+        sourceKey: song.localSourceKey,
+        sourceUri: song.path,
+        reason: 'unmanaged imported local source',
+      );
+    }
 
-    final projection = _localTrackService!.toSongProjection(local);
-    projection.potentialRemoteHashes =
-        <String>{
-          ...song.potentialRemoteHashes,
-          if (song.isAvailableToStream && song.fileHash.isNotEmpty)
-            song.fileHash,
-        }.toList();
-    return projection;
+    final available =
+        (localService?.getAll() ?? const <LocalTrack>[])
+            .where((track) => track.available)
+            .toList();
+    LocalTrack? exact;
+    if (song.fileHash.isNotEmpty) {
+      final matches =
+          available
+              .where((track) => track.contentHash == song.fileHash)
+              .toList();
+      // Byte-identical replicas are not ambiguous recordings.
+      if (matches.isNotEmpty) exact = matches.first;
+    }
+    if (exact != null) {
+      return _localSelection(
+        exact,
+        song.localSourceKey == exact.sourceKey
+            ? SourceMatchStrength.exactSource
+            : SourceMatchStrength.exactContent,
+        'exact persisted local identity',
+      );
+    }
+
+    final title = _normalize(song.name);
+    final artist = _normalize(song.artist.target?.name ?? '');
+    final album = _normalize(song.album.target?.name ?? '');
+    final metadataMatches =
+        available.where((track) {
+          if (_isPlaceholder(title) ||
+              _isPlaceholder(artist) ||
+              _normalize(track.name) != title ||
+              _normalize(track.artistName) != artist) {
+            return false;
+          }
+          if (!_durationMatches(
+            song.durationInSeconds,
+            track.durationInSeconds,
+          )) {
+            return false;
+          }
+          final localAlbum = _normalize(track.albumName);
+          return _isPlaceholder(album) ||
+              _isPlaceholder(localAlbum) ||
+              album == localAlbum;
+        }).toList();
+
+    if (metadataMatches.length > 1) {
+      return PlaybackSourceSelection(
+        kind: PlaybackSourceKind.ambiguous,
+        strength: SourceMatchStrength.none,
+        reason: 'multiple conservative metadata candidates',
+        candidateCount: metadataMatches.length,
+      );
+    }
+    if (metadataMatches.length == 1) {
+      return _localSelection(
+        metadataMatches.single,
+        SourceMatchStrength.metadata,
+        'single conservative metadata candidate',
+      );
+    }
+    return const PlaybackSourceSelection(
+      kind: PlaybackSourceKind.unavailable,
+      strength: SourceMatchStrength.none,
+      reason: 'no eligible local source',
+    );
   }
+
+  PlaybackSourceSelection _localSelection(
+    LocalTrack track,
+    SourceMatchStrength strength,
+    String reason,
+  ) {
+    return PlaybackSourceSelection(
+      kind: PlaybackSourceKind.local,
+      strength: strength,
+      sourceKey: track.sourceKey,
+      sourceUri: track.sourceUri,
+      reason: reason,
+    );
+  }
+
+  bool _durationMatches(int expected, int actual) {
+    if (expected <= 0 || actual <= 0) return false;
+    final tolerance = (expected * 0.01).round().clamp(2, 5);
+    return (expected - actual).abs() <= tolerance;
+  }
+
+  String _normalize(String value) =>
+      value
+          .trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^\p{L}\p{N}\s]', unicode: true), '')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+
+  bool _isPlaceholder(String value) =>
+      value.isEmpty ||
+      const {
+        'unknown',
+        'unknown song',
+        'unknown artist',
+        'unknown album',
+      }.contains(value);
 
   Future<void> updateSong(Song song) async {
     if (song.fileHash.isEmpty) {
@@ -308,37 +417,57 @@ class SongService {
           .map(_localTrackService.toSongProjection),
     ];
 
-    final grouped = <String, Song>{};
+    final identities = Map<Song, String>.identity();
+    final identityCounts = <String, List<Song>>{};
     for (final candidate in candidates) {
       final identity =
-          candidate.potentialIdentityKey ??
-          PotentialIdentity.create(
-            title: candidate.name,
-            artist: candidate.artist.target?.name ?? 'Unknown Artist',
-            durationInSeconds: candidate.durationInSeconds,
-          );
-      final current = grouped[identity];
+          '${_normalize(candidate.name)}\u0000${_normalize(candidate.artist.target?.name ?? '')}';
+      identities[candidate] = identity;
+      identityCounts.putIfAbsent(identity, () => []).add(candidate);
+    }
+
+    final grouped = <String, Song>{};
+    for (final candidate in candidates) {
+      final identity = identities[candidate]!;
+      final groupMembers = identityCounts[identity]!;
+      final localCount = groupMembers.where((song) => song.hasLocalFile).length;
+      final remoteCount = groupMembers.length - localCount;
+      final firstAlbum = _normalize(
+        groupMembers.first.album.target?.name ?? '',
+      );
+      final lastAlbum = _normalize(groupMembers.last.album.target?.name ?? '');
+      final uniqueConservativePair =
+          localCount == 1 &&
+          remoteCount == 1 &&
+          !_isPlaceholder(_normalize(candidate.name)) &&
+          !_isPlaceholder(_normalize(candidate.artist.target?.name ?? '')) &&
+          _durationMatches(
+            groupMembers.first.durationInSeconds,
+            groupMembers.last.durationInSeconds,
+          ) &&
+          (_isPlaceholder(firstAlbum) ||
+              _isPlaceholder(lastAlbum) ||
+              firstAlbum == lastAlbum);
+      final groupKey =
+          uniqueConservativePair
+              ? identity
+              : '$identity:${candidate.getHash()}';
+      final current = grouped[groupKey];
       if (current == null) {
-        candidate.potentialIdentityKey = identity;
         candidate.localSourceUris = [
           if (candidate.hasLocalFile) candidate.path!,
         ];
-        grouped[identity] = candidate;
+        grouped[groupKey] = candidate;
         continue;
       }
 
-      if (candidate.fileHash.isNotEmpty &&
+      if (!candidate.hasLocalFile &&
+          candidate.fileHash.isNotEmpty &&
           !current.potentialRemoteHashes.contains(candidate.fileHash)) {
         current.potentialRemoteHashes.add(candidate.fileHash);
-        final sourceKey = current.localSourceKey;
-        if (sourceKey != null) {
-          _localTrackService?.setResolvedSongHash(
-            sourceKey,
-            candidate.fileHash,
-          );
-        }
       }
-      if (current.fileHash.isNotEmpty &&
+      if (!current.hasLocalFile &&
+          current.fileHash.isNotEmpty &&
           !candidate.potentialRemoteHashes.contains(current.fileHash)) {
         candidate.potentialRemoteHashes.add(current.fileHash);
       }
@@ -356,11 +485,7 @@ class SongService {
             }.toList();
         candidate.localSourceUris =
             <String>{...current.localSourceUris, candidate.path!}.toList();
-        final sourceKey = candidate.localSourceKey;
-        if (sourceKey != null && current.fileHash.isNotEmpty) {
-          _localTrackService?.setResolvedSongHash(sourceKey, current.fileHash);
-        }
-        grouped[identity] = candidate;
+        grouped[groupKey] = candidate;
       }
     }
     return grouped.values

@@ -6,10 +6,12 @@ import 'package:music_player_frontend/core/dtos/songs/song_dto.dart';
 import 'package:music_player_frontend/core/dtos/songs/song_page_dto.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/entities/local_track.dart';
+import 'package:music_player_frontend/core/entities/playback_source_selection.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_local_track_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_album_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_artist_repository.dart';
 import 'package:music_player_frontend/core/repository/memory/in_memory_song_repository.dart';
+import 'package:music_player_frontend/core/entities/artist.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/song_rest_client.dart';
 import 'package:music_player_frontend/core/services/song_service.dart';
@@ -226,99 +228,139 @@ void main() {
       expect(page.totalPages, 1);
     });
 
+    test('unique local and remote metadata pair remains grouped', () async {
+      final localRepository = InMemoryLocalTrackRepository();
+      final localTracks = LocalTrackService(localRepository);
+      final identity = PotentialIdentity.create(
+        title: 'Shared Track',
+        artist: 'Artist',
+        durationInSeconds: 120,
+      );
+      localRepository.save(
+        LocalTrack(
+          sourceKey: '/music/shared.flac',
+          sourceUri: '/music/shared.flac',
+          potentialIdentityKey: identity,
+          name: 'Shared Track',
+          artistName: 'Artist',
+          durationInSeconds: 120,
+          metadataLoaded: true,
+        ),
+      );
+      restClient.songsPage = SongPageDto(
+        content: [
+          SongDto(
+            fileHash: 'remote-shared',
+            name: 'Shared Track',
+            durationInSeconds: 120,
+            trackNumber: 1,
+            discNumber: 1,
+            year: 2024,
+            artist: ArtistDto(hash: 'artist', name: 'Artist'),
+            album: AlbumDto(hash: 'album', name: 'Album'),
+            playCount: 0,
+            likedByUser: false,
+          ),
+        ],
+        page: 0,
+        size: 20,
+        totalPages: 1,
+        totalElements: 1,
+      );
+      final unifiedService = SongService(
+        songRepo,
+        artistRepo,
+        albumRepo,
+        restClient,
+        localTracks,
+      );
+
+      final both = await unifiedService.getSongsPage(
+        '',
+        'Title',
+        null,
+        null,
+        null,
+        false,
+        false,
+        0,
+        20,
+        streamOnly: true,
+      );
+
+      expect(both.content, hasLength(1));
+      expect(both.content.single.hasLocalFile, isTrue);
+      expect(both.content.single.potentialRemoteHashes, ['remote-shared']);
+      expect(
+        localRepository.getBySourceKey('/music/shared.flac')?.resolvedSongHash,
+        isNull,
+      );
+    });
+
     test(
-      'offline and stream filters intersect after identity merging',
+      'fullyFetchSong preserves identity while resolver selects local source',
       () async {
         final localRepository = InMemoryLocalTrackRepository();
         final localTracks = LocalTrackService(localRepository);
-        final identity = PotentialIdentity.create(
-          title: 'Shared Track',
-          artist: 'Artist',
-          durationInSeconds: 120,
-        );
         localRepository.save(
           LocalTrack(
-            sourceKey: '/music/shared.flac',
-            sourceUri: '/music/shared.flac',
-            potentialIdentityKey: identity,
-            name: 'Shared Track',
+            sourceKey: '/music/local.flac',
+            sourceUri: '/music/local.flac',
+            potentialIdentityKey: PotentialIdentity.create(
+              title: 'Track',
+              artist: 'Artist',
+              durationInSeconds: 120,
+            ),
+            name: 'Track',
             artistName: 'Artist',
             durationInSeconds: 120,
             metadataLoaded: true,
-          ),
+          )..resolvedSongHash = 'remote-hash',
         );
-        restClient.songsPage = SongPageDto(
-          content: [
-            SongDto(
-              fileHash: 'remote-shared',
-              name: 'Shared Track',
-              durationInSeconds: 120,
-              trackNumber: 1,
-              discNumber: 1,
-              year: 2024,
-              artist: ArtistDto(hash: 'artist', name: 'Artist'),
-              album: AlbumDto(hash: 'album', name: 'Album'),
-              playCount: 0,
-              likedByUser: false,
-            ),
-          ],
-          page: 0,
-          size: 20,
-          totalPages: 1,
-          totalElements: 1,
-        );
-        final unifiedService = SongService(
+        final localAwareService = SongService(
           songRepo,
           artistRepo,
           albumRepo,
           restClient,
           localTracks,
         );
+        final queued =
+            Song('remote-hash')
+              ..name = 'Track'
+              ..durationInSeconds = 120
+              ..artist.target = Artist('artist', 'Artist');
 
-        final both = await unifiedService.getSongsPage(
-          '',
-          'Title',
-          null,
-          null,
-          null,
-          true,
-          true,
-          0,
-          20,
-          streamOnly: true,
-        );
+        final resolved = await localAwareService.fullyFetchSong(queued);
+        final source = localAwareService.resolvePlaybackSource(queued);
 
-        expect(both.content, hasLength(1));
-        expect(both.content.single.hasLocalFile, isTrue);
-        expect(both.content.single.isAvailableToStream, isTrue);
-        expect(both.content.single.potentialRemoteHashes, ['remote-shared']);
-        expect(
-          localRepository
-              .getBySourceKey('/music/shared.flac')
-              ?.resolvedSongHash,
-          'remote-shared',
-        );
+        expect(resolved, same(queued));
+        expect(source.kind, PlaybackSourceKind.local);
+        expect(source.strength, SourceMatchStrength.metadata);
+        expect(source.sourceUri, '/music/local.flac');
       },
     );
 
-    test('fullyFetchSong restores a matching local playback source', () async {
+    test('exact content outranks metadata and resolved hash evidence', () {
       final localRepository = InMemoryLocalTrackRepository();
       final localTracks = LocalTrackService(localRepository);
-      localRepository.save(
+      localRepository.saveMany([
         LocalTrack(
-          sourceKey: '/music/local.flac',
-          sourceUri: '/music/local.flac',
-          potentialIdentityKey: PotentialIdentity.create(
-            title: 'Track',
-            artist: 'Artist',
-            durationInSeconds: 120,
-          ),
+          sourceKey: '/music/metadata.flac',
+          sourceUri: '/music/metadata.flac',
+          potentialIdentityKey: 'metadata',
           name: 'Track',
           artistName: 'Artist',
           durationInSeconds: 120,
-          metadataLoaded: true,
         )..resolvedSongHash = 'remote-hash',
-      );
+        LocalTrack(
+          sourceKey: '/music/exact.flac',
+          sourceUri: '/music/exact.flac',
+          potentialIdentityKey: 'exact',
+          name: 'Other Track',
+          artistName: 'Other Artist',
+          durationInSeconds: 1,
+        )..contentHash = 'remote-hash',
+      ]);
       final localAwareService = SongService(
         songRepo,
         artistRepo,
@@ -326,17 +368,154 @@ void main() {
         restClient,
         localTracks,
       );
-      final queued =
-          Song('remote-hash')
-            ..name = 'Track'
-            ..durationInSeconds = 120;
 
-      final resolved = await localAwareService.fullyFetchSong(queued);
+      final source = localAwareService.resolvePlaybackSource(
+        Song('remote-hash')
+          ..name = 'Track'
+          ..durationInSeconds = 120
+          ..artist.target = Artist('artist', 'Artist'),
+      );
 
-      expect(resolved.path, '/music/local.flac');
-      expect(resolved.hasLocalFile, isTrue);
-      expect(resolved.potentialRemoteHashes, contains('remote-hash'));
+      expect(source.strength, SourceMatchStrength.exactContent);
+      expect(source.sourceKey, '/music/exact.flac');
     });
+
+    test('ambiguous metadata candidates are not substituted', () {
+      final localRepository = InMemoryLocalTrackRepository();
+      final localTracks = LocalTrackService(localRepository);
+      localRepository.saveMany([
+        LocalTrack(
+          sourceKey: '/music/one.flac',
+          sourceUri: '/music/one.flac',
+          potentialIdentityKey: 'one',
+          name: 'Track',
+          artistName: 'Artist',
+          durationInSeconds: 120,
+        ),
+        LocalTrack(
+          sourceKey: '/music/two.flac',
+          sourceUri: '/music/two.flac',
+          potentialIdentityKey: 'two',
+          name: 'Track',
+          artistName: 'Artist',
+          durationInSeconds: 121,
+        ),
+      ]);
+      final localAwareService = SongService(
+        songRepo,
+        artistRepo,
+        albumRepo,
+        restClient,
+        localTracks,
+      );
+
+      final source = localAwareService.resolvePlaybackSource(
+        Song('remote-hash')
+          ..name = 'Track'
+          ..durationInSeconds = 120
+          ..artist.target = Artist('artist', 'Artist'),
+      );
+
+      expect(source.kind, PlaybackSourceKind.ambiguous);
+      expect(source.candidateCount, 2);
+    });
+
+    test(
+      'managed source uses current URI and rejects stale content identity',
+      () {
+        final localRepository = InMemoryLocalTrackRepository();
+        final localTracks = LocalTrackService(localRepository);
+        localRepository.save(
+          LocalTrack(
+            sourceKey: 'managed-key',
+            sourceUri: '/current/track.flac',
+            potentialIdentityKey: 'track',
+            name: 'Track',
+            artistName: 'Artist',
+            durationInSeconds: 120,
+          )..contentHash = 'old-hash',
+        );
+        final localAwareService = SongService(
+          songRepo,
+          artistRepo,
+          albumRepo,
+          restClient,
+          localTracks,
+        );
+
+        final stale = localAwareService.resolvePlaybackSource(
+          Song('new-hash')
+            ..localSourceKey = 'managed-key'
+            ..path = '/stale/track.flac',
+        );
+        expect(stale.kind, PlaybackSourceKind.unavailable);
+
+        localRepository.getBySourceKey('managed-key')!.contentHash = null;
+        expect(
+          localAwareService
+              .resolvePlaybackSource(
+                Song('old-hash')..localSourceKey = 'managed-key',
+              )
+              .kind,
+          PlaybackSourceKind.unavailable,
+        );
+        final current = localAwareService.resolvePlaybackSource(
+          Song('')..localSourceKey = 'managed-key',
+        );
+        expect(current.kind, PlaybackSourceKind.local);
+        expect(current.sourceUri, '/current/track.flac');
+      },
+    );
+
+    test(
+      'metadata requires meaningful names and uses actual duration tolerance',
+      () {
+        final localRepository = InMemoryLocalTrackRepository();
+        final localTracks = LocalTrackService(localRepository);
+        localRepository.saveMany([
+          LocalTrack(
+            sourceKey: 'boundary',
+            sourceUri: '/boundary.flac',
+            potentialIdentityKey: 'boundary',
+            name: 'Real Track',
+            artistName: 'Real Artist',
+            durationInSeconds: 250,
+          ),
+          LocalTrack(
+            sourceKey: 'unknown',
+            sourceUri: '/unknown.flac',
+            potentialIdentityKey: 'unknown',
+            name: 'Unknown Song',
+            artistName: 'Unknown Artist',
+            durationInSeconds: 249,
+          ),
+        ]);
+        final localAwareService = SongService(
+          songRepo,
+          artistRepo,
+          albumRepo,
+          restClient,
+          localTracks,
+        );
+
+        final boundary = localAwareService.resolvePlaybackSource(
+          Song('remote')
+            ..name = 'Real Track'
+            ..durationInSeconds = 249
+            ..artist.target = Artist('artist', 'Real Artist'),
+        );
+        expect(boundary.kind, PlaybackSourceKind.local);
+        expect(boundary.sourceKey, 'boundary');
+
+        final unknown = localAwareService.resolvePlaybackSource(
+          Song('remote')
+            ..name = 'Unknown Song'
+            ..durationInSeconds = 249
+            ..artist.target = Artist('artist', 'Unknown Artist'),
+        );
+        expect(unknown.kind, PlaybackSourceKind.unavailable);
+      },
+    );
 
     test('getOrCreateSong throws on empty hash', () {
       expect(() => service.getOrCreateSong(''), throwsArgumentError);

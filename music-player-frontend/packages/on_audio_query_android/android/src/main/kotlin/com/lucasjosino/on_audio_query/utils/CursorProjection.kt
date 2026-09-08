@@ -1,5 +1,6 @@
 package com.lucasjosino.on_audio_query.utils
 
+import android.os.Build
 import android.provider.MediaStore
 
 // Query songs projection
@@ -8,6 +9,7 @@ fun songProjection(): Array<String> {
         MediaStore.Audio.Media.DATA,
         MediaStore.Audio.Media._ID,
         MediaStore.Audio.Media.SIZE,
+        MediaStore.Audio.Media.DATE_MODIFIED,
         MediaStore.Audio.Media.ALBUM,
         MediaStore.Audio.Media.ARTIST,
         MediaStore.Audio.Media.DURATION,
@@ -16,6 +18,12 @@ fun songProjection(): Array<String> {
         MediaStore.Audio.Media.DISC_NUMBER,
         MediaStore.Audio.Media.YEAR,
     )
+
+    // VOLUME_NAME only exists on Android 10/Q (API 29) and above; querying an
+    // unknown column on older versions would fail the whole cursor.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        tmpProjection.add(MediaStore.Audio.Media.VOLUME_NAME)
+    }
 
     return tmpProjection.toTypedArray()
 }

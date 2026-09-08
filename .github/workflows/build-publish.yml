@@ -4,6 +4,16 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      target:
+        description: Platform to build
+        type: choice
+        options: [all, apk]
+        default: all
+      publish:
+        description: Publish artifacts to the download server
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -18,6 +28,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.44.8'
 
       - name: Install Linux integration test dependencies
         run: |
@@ -86,12 +97,12 @@ jobs:
 
   build:
     needs: test
-    name: Build ${{ matrix.target }} for ${{ matrix.site_name }}
-    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.platform.target }} for ${{ matrix.site_name }}
+    runs-on: ${{ matrix.platform.os }}
     strategy:
       matrix:
         site: [dariussala]
-        target: [apk, linux, windows, macos, ios]
+        platform: ${{ fromJSON(inputs.target == 'apk' && '[{"target":"apk","os":"ubuntu-24.04","build_cmd":"flutter build apk --release","artifact_name":"music-player-android","artifact_path":"music-player-frontend/build/app/outputs/flutter-apk/app-release.apk"}]' || '[{"target":"apk","os":"ubuntu-24.04","build_cmd":"flutter build apk --release","artifact_name":"music-player-android","artifact_path":"music-player-frontend/build/app/outputs/flutter-apk/app-release.apk"},{"target":"linux","os":"ubuntu-24.04","build_cmd":"flutter build linux --release","artifact_name":"music-player-linux","artifact_path":"music-player-frontend/music-player-linux.tar.gz"},{"target":"windows","os":"windows-2022","build_cmd":"flutter build windows --release","artifact_name":"music-player-windows","artifact_path":"music-player-frontend/music-player-windows.zip"},{"target":"macos","os":"macos-14","build_cmd":"flutter build macos --release --config-only","artifact_name":"music-player-macos","artifact_path":"music-player-frontend/music-player-macos.zip"},{"target":"ios","os":"macos-14","build_cmd":"flutter build ipa --release --no-codesign","artifact_name":"music-player-ios","artifact_path":"music-player-frontend/music-player.ipa"}]') }}
         include:
           - site: dariussala
             site_name: dariussala.com
@@ -99,44 +110,21 @@ jobs:
             ws_base_url: wss://wss.dariussala.com/music-player/signaling
             download_base_url: https://music.dariussala.com/downloads
 
-          - target: apk
-            os: ubuntu-24.04
-            build_cmd: flutter build apk --release
-            artifact_name: music-player-android
-            artifact_path: music-player-frontend/build/app/outputs/flutter-apk/app-release.apk
-
-          - target: linux
-            os: ubuntu-24.04
-            build_cmd: flutter build linux --release
-            artifact_name: music-player-linux
-            artifact_path: music-player-frontend/music-player-linux.tar.gz
-
-          - target: windows
-            os: windows-2022
-            build_cmd: flutter build windows --release
-            artifact_name: music-player-windows
-            artifact_path: music-player-frontend/music-player-windows.zip
-
-          - target: macos
-            os: macos-14
-            build_cmd: flutter build macos --release --config-only
-            artifact_name: music-player-macos
-            artifact_path: music-player-frontend/music-player-macos.zip
-
-          - target: ios
-            os: macos-14
-            build_cmd: flutter build ipa --release --no-codesign
-            artifact_name: music-player-ios
-            artifact_path: music-player-frontend/music-player.ipa
-
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        if: matrix.platform.target == 'apk'
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.44.8'
 
-      - if: matrix.target == 'linux'
+      - if: matrix.platform.target == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libjsoncpp-dev libmpv-dev mpv libayatana-appindicator3-dev
@@ -145,27 +133,27 @@ jobs:
         run: flutter pub get
 
       - working-directory: ./music-player-frontend
-        run: ${{ matrix.build_cmd }} --dart-define=API_BASE_URL=${{ matrix.api_base_url }} --dart-define=WS_BASE_URL=${{ matrix.ws_base_url }} --dart-define=DOWNLOAD_BASE_URL=${{ matrix.download_base_url }}
+        run: ${{ matrix.platform.build_cmd }} --dart-define=API_BASE_URL=${{ matrix.api_base_url }} --dart-define=WS_BASE_URL=${{ matrix.ws_base_url }} --dart-define=DOWNLOAD_BASE_URL=${{ matrix.download_base_url }}
 
-      - if: matrix.target == 'macos'
+      - if: matrix.platform.target == 'macos'
         working-directory: ./music-player-frontend
         run: xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Release -derivedDataPath build/macos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE_SPECIFIER="" DEVELOPMENT_TEAM=""
 
-      - if: matrix.target == 'linux'
+      - if: matrix.platform.target == 'linux'
         working-directory: ./music-player-frontend
         run: tar -czvf music-player-linux.tar.gz -C build/linux/x64/release/bundle .
 
-      - if: matrix.target == 'windows'
+      - if: matrix.platform.target == 'windows'
         working-directory: ./music-player-frontend
         run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath music-player-windows.zip
 
-      - if: matrix.target == 'macos'
+      - if: matrix.platform.target == 'macos'
         working-directory: ./music-player-frontend
         run: |
           cd build/macos/Build/Products/Release
           zip -r ../../../../../music-player-macos.zip *.app
 
-      - if: matrix.target == 'ios'
+      - if: matrix.platform.target == 'ios'
         working-directory: ./music-player-frontend
         run: |
           # --no-codesign skips IPA generation, so build it manually from the xcarchive.
@@ -177,11 +165,13 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.site }}-${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_path }}
+          name: ${{ matrix.site }}-${{ matrix.platform.artifact_name }}
+          path: ${{ matrix.platform.artifact_path }}
+          if-no-files-found: error
 
   deploy-to-server-cluj:
     needs: build
+    if: github.event_name == 'release' || inputs.publish
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4

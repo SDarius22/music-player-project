@@ -5,6 +5,7 @@ import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:logging/logging.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
 import 'package:music_player_frontend/core/services/abstract/file_service.dart';
+import 'package:music_player_frontend/platforms/android/services/android_media_item_snapshot.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -29,7 +30,10 @@ class AndroidFileService extends AbstractFileService {
     );
     for (final song in songs) {
       _mediaIdsBySource['android:${song.id}'] = song.id;
-      final data = song.data.toString().trim();
+      final snapshot = AndroidMediaItemSnapshot.fromMediaStoreMap(song.getMap);
+      if (snapshot != null) _mediaIdsBySource[snapshot.sourceUri] = song.id;
+      // Scoped-storage rows may not expose a filesystem path at all.
+      final data = song.getMap['_data']?.toString().trim() ?? '';
       if (data.isNotEmpty) _mediaIdsBySource[data] = song.id;
     }
     return songs;

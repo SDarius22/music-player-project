@@ -10,6 +10,7 @@ import 'package:music_player_frontend/core/entities/audio_settings.dart';
 import 'package:music_player_frontend/core/entities/chunk_stat.dart';
 import 'package:music_player_frontend/core/entities/playlist.dart';
 import 'package:music_player_frontend/core/entities/song.dart';
+import 'package:music_player_frontend/core/entities/playback_source_selection.dart';
 import 'package:music_player_frontend/core/rest_clients/auth_service.dart';
 import 'package:music_player_frontend/core/rest_clients/playback_rest_client.dart';
 import 'package:music_player_frontend/core/services/chunk_service.dart';
@@ -35,6 +36,7 @@ class AppAudioService {
   final AuthService authService;
   final PlaybackRestClient playbackRestService;
   final ChunkService Function(String fileHash) createChunkManager;
+  final AudioPlayer Function() _createAudioPlayer;
 
   ValueNotifier<Song?> currentSongNotifier = ValueNotifier<Song?>(null);
   ValueNotifier<bool> likedNotifier = ValueNotifier<bool>(false);
@@ -62,6 +64,10 @@ class AppAudioService {
   bool _autoPlayFetchInProgress = false;
   bool _autoPlayTailFetchArmed = true;
   int _currentIndex = 0;
+  int _loadRequestVersion = 0;
+  Future<void> _sourceInstallTail = Future<void>.value();
+  String? _activeSourceIntent;
+  PlaybackSourceSelection? _activePlaybackSource;
   Timer? _positionSaveTimer;
   DateTime? _playStartTime;
   DateTime? _ttfaRequestedAt;
@@ -107,7 +113,9 @@ class AppAudioService {
     this.createChunkManager,
     this.playbackRestService, {
     AudioPlayer? audioPlayer,
-  }) : _audioPlayer = audioPlayer ?? AudioPlayer();
+    AudioPlayer Function()? createAudioPlayer,
+  }) : _audioPlayer = audioPlayer ?? AudioPlayer(),
+       _createAudioPlayer = createAudioPlayer ?? AudioPlayer.new;
 
   Future<void> initializeAppAudio() async {
     if (_initialized) return;
@@ -196,10 +204,10 @@ class AppAudioService {
       }
 
       final pos = audioPlayer.position;
-      final rewindSeconds =
-          (pos.inMilliseconds - 1000).clamp(0, 1 << 30) ~/ 1000;
+      final resumeSeconds = pos.inSeconds;
+      _rejectActiveLocalSource();
       _logger.warning(
-        '[AppAudioService] Recovering from player error: rewinding to ${rewindSeconds}s with a fresh AudioPlayer instance',
+        '[AppAudioService] Recovering from player error at ${resumeSeconds}s with a fresh AudioPlayer instance',
       );
 
       await _processingStateSubscription?.cancel();
@@ -212,7 +220,7 @@ class AppAudioService {
         _logger.fine('[AppAudioService] Old player dispose threw: $e');
       }
 
-      _audioPlayer = AudioPlayer();
+      _audioPlayer = _createAudioPlayer();
       _attachPlayerListeners();
       playerInstanceVersion.value++;
 
@@ -222,7 +230,7 @@ class AppAudioService {
         _currentAudioSettings.repeat ? LoopMode.one : LoopMode.off,
       );
 
-      await _loadIndex(_currentIndex, position: rewindSeconds);
+      if (!await _loadIndex(_currentIndex, position: resumeSeconds)) return;
       await play();
     } catch (e, st) {
       _logger.severe('[AppAudioService] Player recovery failed: $e\n$st');
@@ -237,10 +245,12 @@ class AppAudioService {
     );
     if (audioPlayer.processingState == ProcessingState.idle &&
         _activeQueue.isNotEmpty) {
-      await _loadIndex(
+      if (!await _loadIndex(
         _currentIndex,
         position: _currentAudioSettings.sliderInSeconds,
-      );
+      )) {
+        return;
+      }
     }
     _playStartTime ??= DateTime.now();
     final future = audioPlayer.play();
@@ -309,7 +319,7 @@ class AppAudioService {
     _logger.fine(
       '[AppAudioService] Playback stuck for ${maxStuckMs}ms, retrying from ${resumeSeconds}s',
     );
-    await _loadIndex(_currentIndex, position: resumeSeconds);
+    if (!await _loadIndex(_currentIndex, position: resumeSeconds)) return;
     await play();
   }
 
@@ -321,7 +331,7 @@ class AppAudioService {
   Future<void> skipToNext() async {
     if (_activeQueue.isEmpty) return;
     _currentIndex = (_currentIndex + 1) % _activeQueue.length;
-    await _loadIndex(_currentIndex);
+    if (!await _loadIndex(_currentIndex)) return;
     await play();
   }
 
@@ -329,7 +339,7 @@ class AppAudioService {
     if (_activeQueue.isEmpty) return;
     _currentIndex =
         _currentIndex > 0 ? _currentIndex - 1 : _activeQueue.length - 1;
-    await _loadIndex(_currentIndex);
+    if (!await _loadIndex(_currentIndex)) return;
     await play();
   }
 
@@ -340,6 +350,7 @@ class AppAudioService {
   Future<void> stop() => audioPlayer.stop();
 
   Future<void> resetSession() async {
+    _invalidateLoadRequests();
     _playStartTime = null;
     _positionSaveTimer?.cancel();
     _positionSaveTimer = null;
@@ -503,7 +514,7 @@ class AppAudioService {
 
     if (wasCurrentSong) {
       _currentIndex = _currentIndex.clamp(0, _activeQueue.length - 1);
-      await _loadIndex(_currentIndex);
+      if (!await _loadIndex(_currentIndex)) return;
       await play();
     } else if (activeIdx < _currentIndex) {
       _currentIndex--;
@@ -515,7 +526,8 @@ class AppAudioService {
 
     _ttfaRequestedAt = DateTime.now();
     _ttfaLoadingSeen = false;
-    var loadedSong = await songService.fullyFetchSong(song);
+    _invalidateLoadRequests();
+    final requestVersion = _loadRequestVersion;
 
     if (!songs.equals(_normalQueue)) {
       _logger.fine("updating queue with new songs");
@@ -526,13 +538,14 @@ class AppAudioService {
         _queuePlaylist,
         _normalQueue,
       );
+      if (requestVersion != _loadRequestVersion) return;
       _rebuildShuffledQueue(
-        firstSong: _currentAudioSettings.shuffle ? loadedSong : null,
+        firstSong: _currentAudioSettings.shuffle ? song : null,
       );
       _notifyQueueMutation();
     }
 
-    await setCurrentSongAndPlay(loadedSong);
+    await setCurrentSongAndPlay(song);
   }
 
   Future<void> setCurrentSongAndPlay(Song song) async {
@@ -551,7 +564,7 @@ class AppAudioService {
         final idx = _activeQueue.indexWhere((s) => s == song);
         _currentIndex = idx < 0 ? 0 : idx;
       }
-      await _loadIndex(_currentIndex);
+      if (!await _loadIndex(_currentIndex)) return;
       await play();
     } catch (e) {
       _logger.severe("Error setting current song and playing: $e");
@@ -581,6 +594,7 @@ class AppAudioService {
           unawaited(
             restore.catchError((Object error) {
               _logger.fine('Deferred session restore failure: $error');
+              return false;
             }),
           );
         }
@@ -594,13 +608,14 @@ class AppAudioService {
     );
     if (_activeQueue.isEmpty || _isSwitchingSong) return;
     _currentIndex = (_currentIndex + 1) % _activeQueue.length;
-    await _loadIndex(_currentIndex);
+    if (!await _loadIndex(_currentIndex)) return;
     await play();
   }
 
-  Future<void> _loadIndex(int idx, {int? position}) async {
+  Future<bool> _loadIndex(int idx, {int? position}) async {
     _logger.fine('[AppAudioService] _loadAndPlayIndex($idx) called');
-    if (_activeQueue.isEmpty) return;
+    if (_activeQueue.isEmpty) return false;
+    final requestVersion = ++_loadRequestVersion;
     _isSwitchingSong = true;
     _finalizePlayDuration();
     _logger.fine(
@@ -615,25 +630,37 @@ class AppAudioService {
         createChunkManager(outgoing.getHash()).flushStats();
       }
 
-      final song = await _fullyFetchQueueSong(_activeQueue[idx]);
-      currentSong = song;
-      if (UniversalPlatform.isWeb && !song.hasLocalFile) {
+      final queuedSong = _activeQueue[idx];
+      final song = await _fullyFetchQueueSong(queuedSong);
+      if (requestVersion != _loadRequestVersion) return false;
+      song.localSourceKey ??= queuedSong.localSourceKey;
+      final resolvedSource = _sourceForPlayback(song, queuedSong);
+      if (UniversalPlatform.isWeb && !resolvedSource.isLocal) {
         if (_onBeforeWebPlayback == null) {
           _useWebServiceWorkerStream = false;
         } else {
           _useWebServiceWorkerStream = await _onBeforeWebPlayback!.call();
+          if (requestVersion != _loadRequestVersion) return false;
         }
       }
-      if (!UniversalPlatform.isDesktop) {
-        await audioPlayer.stop();
-      }
-      await audioPlayer.setAudioSource(
-        _buildAudioSource(song),
-        initialPosition: Duration(seconds: position ?? 0),
+      final installedSource = await _installSource(
+        requestVersion,
+        song,
+        queuedSong,
+        resolvedSource,
+        position,
       );
+      if (installedSource == null || requestVersion != _loadRequestVersion) {
+        return false;
+      }
+      _activeSourceIntent = queuedSong.getHash();
+      _activePlaybackSource = installedSource;
+      currentSong = song;
+      if (requestVersion != _loadRequestVersion) return false;
       _onSongStarted(song);
+      return true;
     } finally {
-      _isSwitchingSong = false;
+      if (requestVersion == _loadRequestVersion) _isSwitchingSong = false;
     }
   }
 
@@ -646,9 +673,19 @@ class AppAudioService {
         );
         return queuedSong;
       }
-
-      _replaceQueuedSong(queuedSong, fetched);
-      return fetched;
+      if (!identical(queuedSong, fetched)) {
+        // Enrich display metadata without replacing queue identity or its source.
+        queuedSong
+          ..name = fetched.name
+          ..durationInSeconds = fetched.durationInSeconds
+          ..trackNumber = fetched.trackNumber
+          ..discNumber = fetched.discNumber
+          ..year = fetched.year
+          ..fullyLoaded = fetched.fullyLoaded
+          ..artist.target = fetched.artist.target
+          ..album.target = fetched.album.target;
+      }
+      return queuedSong;
     } catch (e) {
       _logger.warning(
         'Failed to fully fetch queued song ${queuedSong.getHash()}',
@@ -658,49 +695,122 @@ class AppAudioService {
     }
   }
 
-  void _replaceQueuedSong(Song queuedSong, Song fetched) {
-    var replaced = false;
-
-    final normalIndex = _normalQueue.indexWhere((s) => s == queuedSong);
-    if (normalIndex >= 0 && !identical(_normalQueue[normalIndex], fetched)) {
-      _normalQueue[normalIndex] = fetched;
-      replaced = true;
+  PlaybackSourceSelection _sourceForPlayback(Song song, Song queuedSong) {
+    final intent = queuedSong.getHash();
+    if (_activeSourceIntent == intent &&
+        _activePlaybackSource?.kind == PlaybackSourceKind.remote) {
+      return _activePlaybackSource!;
     }
-
-    final shuffledIndex = _shuffledQueue.indexWhere((s) => s == queuedSong);
-    if (shuffledIndex >= 0 &&
-        !identical(_shuffledQueue[shuffledIndex], fetched)) {
-      _shuffledQueue[shuffledIndex] = fetched;
-      replaced = true;
-    }
-
-    if (replaced) {
-      _notifyQueueMutation();
+    try {
+      final selection = songService.resolvePlaybackSource(song);
+      if (selection.kind == PlaybackSourceKind.remote ||
+          selection.kind == PlaybackSourceKind.local) {
+        return selection;
+      }
+      return PlaybackSourceSelection.remote(
+        queuedSong,
+        selection.kind == PlaybackSourceKind.ambiguous
+            ? 'ambiguous local source; using remote asset'
+            : 'local source unavailable; using remote asset',
+      );
+    } catch (error) {
+      _logger.fine('Playback source resolution failed: $error');
+      return PlaybackSourceSelection.remote(
+        queuedSong,
+        'source resolution unavailable; using remote asset',
+      );
     }
   }
 
-  AudioSource _buildAudioSource(Song song) {
+  Future<PlaybackSourceSelection?> _installSource(
+    int requestVersion,
+    Song song,
+    Song queuedSong,
+    PlaybackSourceSelection selection,
+    int? position,
+  ) {
+    final previous = _sourceInstallTail;
+    final next = previous.catchError((_) {}).then((_) async {
+      if (requestVersion != _loadRequestVersion) return null;
+      if (!UniversalPlatform.isDesktop) {
+        await audioPlayer.stop();
+        if (requestVersion != _loadRequestVersion) return null;
+      }
+      try {
+        await audioPlayer.setAudioSource(
+          _buildAudioSource(song, selection),
+          initialPosition: Duration(seconds: position ?? 0),
+        );
+        return selection;
+      } catch (error) {
+        if (requestVersion != _loadRequestVersion || !selection.isLocal) {
+          rethrow;
+        }
+        _logger.warning(
+          'Local playback source failed; falling back to remote: $error',
+        );
+        final remote = PlaybackSourceSelection.remote(
+          queuedSong,
+          'local source failed during load',
+        );
+        _rejectActiveLocalSource();
+        if (requestVersion != _loadRequestVersion) return null;
+        await audioPlayer.setAudioSource(
+          _buildAudioSource(song, remote),
+          initialPosition: Duration(seconds: position ?? 0),
+        );
+        return remote;
+      }
+    });
+    _sourceInstallTail = next.catchError((_) => null);
+    return next;
+  }
+
+  void _rejectActiveLocalSource() {
+    if (_activePlaybackSource?.isLocal != true || _activeSourceIntent == null) {
+      return;
+    }
+    _activePlaybackSource = PlaybackSourceSelection.remote(
+      _activeQueue.firstWhere(
+        (song) => song.getHash() == _activeSourceIntent,
+        orElse: () => currentSong!,
+      ),
+      'local source rejected after player error',
+    );
+  }
+
+  void _invalidateLoadRequests() {
+    _loadRequestVersion++;
+    _isSwitchingSong = false;
+    _activeSourceIntent = null;
+    _activePlaybackSource = null;
+  }
+
+  AudioSource _buildAudioSource(Song song, PlaybackSourceSelection selection) {
+    if (selection.kind == PlaybackSourceKind.unavailable ||
+        selection.kind == PlaybackSourceKind.ambiguous) {
+      throw StateError('No eligible playback source');
+    }
     // Offline availability and playback source are separate concepts. A fully
     // cached remote song is offline-playable but still uses the chunk source.
-    final bool isServerTrack = !song.hasLocalFile;
+    final bool isServerTrack = !selection.isLocal;
+    final remoteHash = selection.remoteAssetHash ?? song.getHash();
 
     if (isServerTrack) {
       if (UniversalPlatform.isWeb && _useWebServiceWorkerStream) {
         _onWebSongChange?.call(song.getHash(), song.getName());
         return AudioSource.uri(
-          Uri.parse(
-            '${Uri.base.resolve('p2p-stream/').toString()}${song.getHash()}',
-          ),
+          Uri.parse('${Uri.base.resolve('p2p-stream/').toString()}$remoteHash'),
           tag: Map<String, dynamic>.from({
             "path": song.path,
-            "fileHash": song.getHash(),
+            "fileHash": remoteHash,
             "song": song,
           }),
         );
       }
 
       return P2PChunkedAudioSource(
-        fileHash: song.getHash(),
+        fileHash: remoteHash,
         chunkManagerFactory: (hash) {
           final manager = createChunkManager(hash);
           manager.configureSongInfo(
@@ -711,24 +821,24 @@ class AppAudioService {
         },
         tag: Map<String, dynamic>.from({
           "path": song.path,
-          "fileHash": song.getHash(),
+          "fileHash": remoteHash,
           "song": song,
         }),
       );
     } else {
-      if (song.path == null || song.path!.isEmpty) {
+      if (selection.sourceUri == null || selection.sourceUri!.isEmpty) {
         _logger.warning(
           "Warning: Song ${song.getName()} is marked as local but has no path",
         );
       }
-      final localPath = song.path!;
+      final localPath = selection.sourceUri!;
       final parsed = Uri.tryParse(localPath);
       final localUri =
           parsed != null && parsed.hasScheme ? parsed : Uri.file(localPath);
       return AudioSource.uri(
         localUri,
         tag: Map<String, dynamic>.from({
-          "path": song.path,
+          "path": localPath,
           "fileHash": song.getHash(),
           "song": song,
         }),
@@ -927,6 +1037,7 @@ class AppAudioService {
   }
 
   Future<void> dispose() async {
+    _invalidateLoadRequests();
     if (_boundPeerStateNotifier != null && _boundPeerStateListener != null) {
       _boundPeerStateNotifier!.removeListener(_boundPeerStateListener!);
     }
