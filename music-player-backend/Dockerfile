@@ -3,6 +3,7 @@ FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 RUN apk upgrade --no-cache \
+    && apk add --no-cache curl \
     && mkdir -p /app/STORAGE_ROOT
 
 COPY target/*.jar app.jar

@@ -6,11 +6,21 @@ on:
       - master
     paths:
       - 'music-player-backend/**'
+      - 'deploy/**'
+      - '.github/workflows/deploy-backend.yml'
+  pull_request:
+    paths:
+      - 'music-player-backend/**'
+      - 'deploy/**'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: music-player-backend-production
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -18,6 +28,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Test deployment helpers
+        run: |
+          bash deploy/test-frontend-release.sh
+          bash deploy/test-rollback-swarm-service.sh
+          bash deploy/test-pipeline-contract.sh
 
       - uses: actions/setup-java@v4
         with:
@@ -58,10 +74,13 @@ jobs:
 
   build:
     needs: test
+    outputs:
+      digest: ${{ steps.publish.outputs.digest }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
+    if: github.event_name != 'pull_request'
 
     steps:
       - uses: actions/checkout@v4
@@ -75,29 +94,35 @@ jobs:
       - working-directory: ./music-player-backend
         run: mvn --batch-mode clean package -DskipTests
 
-      - working-directory: ./music-player-backend
-        run: docker build -t ghcr.io/sdarius22/music-player-project/music-player-backend:latest .
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish backend image
+        id: publish
+        uses: docker/build-push-action@v6
+        with:
+          context: ./music-player-backend
+          push: true
+          tags: ghcr.io/sdarius22/music-player-project/music-player-backend:${{ github.sha }}
 
       - name: Scan the publishable backend image for CVEs
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+          image-ref: ghcr.io/sdarius22/music-player-project/music-player-backend:${{ github.sha }}
           scanners: vuln
           vuln-type: os,library
           severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '1'
 
-      - uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - run: docker push ghcr.io/sdarius22/music-player-project/music-player-backend:latest
-
   deploy-cluj:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
 
     steps:
@@ -105,39 +130,59 @@ jobs:
 
       - id: scp_cluj
         uses: appleboy/scp-action@v0.1.7
-        continue-on-error: true
         with:
           host: ${{ secrets.VPS_HOST_CLUJ }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "music-player-backend/docker-compose.yml"
+          source: "music-player-backend/docker-compose.yml,deploy/verify-swarm-rollout.sh,deploy/preflight-swarm.sh,deploy/rollback-swarm-service.sh"
           target: "/home/deployer/music-player/"
           strip_components: 1
 
       - id: ssh_cluj
         uses: appleboy/ssh-action@v1.0.0
-        continue-on-error: true
+        env:
+          MUSIC_PLAYER_IMAGE: ghcr.io/sdarius22/music-player-project/music-player-backend@${{ needs.build.outputs.digest }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MAIL_HOST: ${{ secrets.MAIL_HOST_CLUJ }}
+          MAIL_USER: ${{ secrets.MAIL_USER_CLUJ }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD_CLUJ }}
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
         with:
           host: ${{ secrets.VPS_HOST_CLUJ }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: MUSIC_PLAYER_IMAGE,DB_PASSWORD,MAIL_HOST,MAIL_USER,MAIL_PASSWORD,CORS_ALLOWED_ORIGINS,GHCR_TOKEN,GHCR_USER
           script: |
+            set -eu
             cd /home/deployer/music-player
+            bash preflight-swarm.sh music_storage
 
             mkdir -p goaccess-report
 
-            docker info --format '{{.Swarm.LocalNodeState}}' | grep -q active || docker swarm init
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker pull "$MUSIC_PLAYER_IMAGE"
 
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+            export BACKEND_IMAGE="$MUSIC_PLAYER_IMAGE"
+            export DB_PASSWORD MAIL_HOST MAIL_USER MAIL_PASSWORD CORS_ALLOWED_ORIGINS
 
-            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-            export MAIL_HOST="${{ secrets.MAIL_HOST_CLUJ }}"
-            export MAIL_USER="${{ secrets.MAIL_USER_CLUJ }}"
-            export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD_CLUJ }}"
-            export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
-
+            previous_spec_file=$(mktemp)
+            if docker service inspect music-player_backend --format '{{json .Spec}}' > "$previous_spec_file" 2>/dev/null; then
+              previous_image="$(docker service inspect music-player_backend --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}')"
+            else
+              rm -f "$previous_spec_file"
+              previous_image=
+            fi
             docker stack deploy -c docker-compose.yml --with-registry-auth music-player
+            if ! bash verify-swarm-rollout.sh music-player_backend "$MUSIC_PLAYER_IMAGE" 2 http://127.0.0.1:9000/api/v1/health; then
+              test -n "$previous_image"
+              bash rollback-swarm-service.sh music-player_backend "$previous_image" "$previous_spec_file" 2 http://127.0.0.1:9000/api/v1/health
+              docker service ps music-player_backend --no-trunc
+              docker service logs --tail 100 music-player_backend || true
+              exit 1
+            fi
+            rm -f "$previous_spec_file"
 
       - name: Validate Cluj deployment
         if: always()

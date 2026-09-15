@@ -1,6 +1,6 @@
 services:
   backend:
-    image: ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+    image: ${BACKEND_IMAGE}
     ports:
       - "9000:9000"
     environment:
@@ -23,12 +23,29 @@ services:
       - redis
     deploy:
       replicas: 2
-      restart_policy:
-        condition: on-failure
+      placement:
+        constraints:
+          - node.labels.music_storage == true
       update_config:
         parallelism: 1
         delay: 10s
+        monitor: 60s
         order: start-first
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        monitor: 60s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:9000/api/v1/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 60s
 
   pg-master:
     image: postgres:18
@@ -38,6 +55,10 @@ services:
       - POSTGRES_DB=music_db
     volumes:
       - /home/deployer/music-player/postgres_data:/var/lib/postgresql
+    deploy:
+      placement:
+        constraints:
+          - node.labels.music_storage == true
     restart: unless-stopped
     networks:
       - backend-net
