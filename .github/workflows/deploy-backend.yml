@@ -101,6 +101,11 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-24.04
+    # The GITHUB_TOKEN must be able to pull the private image on servers without saved registry
+    # credentials (server 2); server 1 only worked because an old manual login was still stored.
+    permissions:
+      contents: read
+      packages: read
     concurrency:
       group: music-player-backend-deploy
       cancel-in-progress: false
