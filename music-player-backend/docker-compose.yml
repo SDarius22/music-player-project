@@ -4,23 +4,23 @@ services:
     ports:
       - "9000:9000"
     environment:
-      - DB_HOST=pg-master
-      - DB_PORT=5432
-      - DB_NAME=music_db
+      # Primary on server 2; server 1's hot standby second, for read-only fallback.
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://10.22.0.10:5432,10.22.0.1:5432/music_db?targetServerType=preferPrimary
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=300000
+      # Migrations run only on server 2; server 1 sets LIQUIBASE_ENABLED=false (its DB is read-only).
+      - SPRING_LIQUIBASE_ENABLED=${LIQUIBASE_ENABLED:-true}
       - DB_USER=music_admin
       - DB_PASSWORD=${DB_PASSWORD}
       - MAIL_HOST=${MAIL_HOST}
       - MAIL_USER=${MAIL_USER}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
-      - REDIS_HOST=redis
+      # Shared by both servers so WebRTC signaling reaches peers connected to either one.
+      - REDIS_HOST=10.22.0.10
     volumes:
       - /home/deployer/music-player/music_data:/root/music-server
     networks:
       - backend-net
-    depends_on:
-      - pg-master
-      - redis
     deploy:
       replicas: 2
       restart_policy:
@@ -29,24 +29,6 @@ services:
         parallelism: 1
         delay: 10s
         order: start-first
-
-  pg-master:
-    image: postgres:18
-    environment:
-      - POSTGRES_USER=music_admin
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=music_db
-    volumes:
-      - /home/deployer/music-player/postgres_data:/var/lib/postgresql
-    restart: unless-stopped
-    networks:
-      - backend-net
-
-  redis:
-    image: redis:alpine
-    restart: unless-stopped
-    networks:
-      - backend-net
 
 networks:
   backend-net:

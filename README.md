@@ -187,11 +187,15 @@ The repository ships three GitHub Actions workflows under
 
 - `deploy-backend.yml`: on every push to `master` that touches
   `music-player-backend/`, runs the backend tests, builds the image, pushes
-  it to GHCR, copies `docker-compose.yml` to the VPS over SSH, and runs
-  `docker stack deploy` against a Swarm running there.
+  it to GHCR, joins the deploy WireGuard VPN, and runs `docker stack deploy`
+  on server 2 (10.22.0.10, primary database, runs Liquibase) and then server 1
+  (10.22.0.1, read-only standby, `LIQUIBASE_ENABLED=false`). The backend uses
+  `jdbc:postgresql://10.22.0.10:5432,10.22.0.1:5432/music_db?targetServerType=preferPrimary`,
+  so if server 2 is down, server 1 keeps serving reads and writes fail.
+  Redis is shared on server 2.
 - `deploy-frontend.yml`: on every push to `master` that touches
   `music-player-frontend/`, builds the web target with the production
-  `--dart-define` values and rsync-copies it to the VPS web root.
+  `--dart-define` values and rsyncs it to both servers' web roots over the VPN.
 - `build-publish.yml`: on every release tag, builds the Android, Linux,
   Windows and macOS binaries with the production endpoints and uploads
   them as release artifacts.
