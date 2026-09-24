@@ -160,11 +160,16 @@ jobs:
           path: ${{ matrix.platform.artifact_path }}
           if-no-files-found: error
 
-  deploy-to-server-cluj:
+  deploy-to-servers:
     needs: build
     if: github.event_name == 'release' || inputs.publish
     runs-on: ubuntu-24.04
     steps:
+      # Only for the local deploy-vpn action; first, so it cannot clean downloaded artifacts.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions
+
       - uses: actions/download-artifact@v4
         with:
           pattern: dariussala-*
@@ -190,23 +195,16 @@ jobs:
             cp -R "$artifact_dir/." "./publish/$target_name/"
           done
 
-      - id: scp_cluj
-        uses: appleboy/scp-action@v0.1.7
-        continue-on-error: true
+      - uses: ./.github/actions/deploy-vpn
         with:
-          host: ${{ secrets.VPS_HOST_CLUJ }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "./publish/*"
-          target: "/var/www/music-player-downloads/"
-          strip_components: 1
+          address: 10.22.0.25
+          wg-private-key: ${{ secrets.WG_CI_PRIVATE_KEY_PUBLISH }}
+          ssh-key: ${{ secrets.VPS_SSH_KEY }}
+          ssh-user: ${{ secrets.VPS_USER }}
 
-      - name: Validate Cluj binary publish
-        if: always()
+      - name: Publish binaries to both servers
         run: |
-          if [ "${{ steps.scp_cluj.outcome }}" = "success" ]; then
-            echo "Cluj binary publish upload succeeded."
-          else
-            echo "Cluj binary publish upload failed."
-            exit 1
-          fi
+          set -euo pipefail
+          for host in 10.22.0.10 10.22.0.1; do
+            rsync -a publish/ "$host:/var/www/music-player-downloads/"
+          done

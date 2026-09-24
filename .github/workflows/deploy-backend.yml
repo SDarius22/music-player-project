@@ -96,55 +96,59 @@ jobs:
 
       - run: docker push ghcr.io/sdarius22/music-player-project/music-player-backend:latest
 
-  deploy-cluj:
+  # Server 2 first: it owns the primary database and runs Liquibase. Server 1 follows with
+  # migrations disabled (its database is a read-only standby).
+  deploy:
     needs: build
     runs-on: ubuntu-24.04
+    concurrency:
+      group: music-player-backend-deploy
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
 
-      - id: scp_cluj
-        uses: appleboy/scp-action@v0.1.7
-        continue-on-error: true
+      - uses: ./.github/actions/deploy-vpn
         with:
-          host: ${{ secrets.VPS_HOST_CLUJ }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "music-player-backend/docker-compose.yml"
-          target: "/home/deployer/music-player/"
-          strip_components: 1
+          address: 10.22.0.21
+          wg-private-key: ${{ secrets.WG_CI_PRIVATE_KEY }}
+          ssh-key: ${{ secrets.VPS_SSH_KEY }}
+          ssh-user: ${{ secrets.VPS_USER }}
 
-      - id: ssh_cluj
-        uses: appleboy/ssh-action@v1.0.0
-        continue-on-error: true
-        with:
-          host: ${{ secrets.VPS_HOST_CLUJ }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /home/deployer/music-player
-
-            mkdir -p goaccess-report
-
-            docker info --format '{{.Swarm.LocalNodeState}}' | grep -q active || docker swarm init
-
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
-
-            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-            export MAIL_HOST="${{ secrets.MAIL_HOST_CLUJ }}"
-            export MAIL_USER="${{ secrets.MAIL_USER_CLUJ }}"
-            export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD_CLUJ }}"
-            export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
-
-            docker stack deploy -c docker-compose.yml --with-registry-auth music-player
-
-      - name: Validate Cluj deployment
-        if: always()
+      - name: Deploy to server 2, then server 1
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MAIL_HOST: ${{ secrets.MAIL_HOST_CLUJ }}
+          MAIL_USER: ${{ secrets.MAIL_USER_CLUJ }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD_CLUJ }}
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
         run: |
-          if [ "${{ steps.ssh_cluj.outcome }}" = "success" ]; then
-            echo "Cluj VPS deployment succeeded."
-          else
-            echo "Cluj VPS deployment failed."
-            exit 1
-          fi
+          set -euo pipefail
+          for target in 10.22.0.10:true 10.22.0.1:false; do
+            host=${target%:*} liquibase=${target#*:}
+            echo "::group::$host (LIQUIBASE_ENABLED=$liquibase)"
+            ssh "$host" 'mkdir -p ~/music-player/music_data'
+            scp music-player-backend/docker-compose.yml "$host:music-player/docker-compose.yml"
+            # One session over stdin: %q-quoted exports, then the script. Nothing is written to disk
+            # and no secret appears on a command line.
+            {
+              for v in GHCR_USER GHCR_TOKEN DB_PASSWORD MAIL_HOST MAIL_USER MAIL_PASSWORD CORS_ALLOWED_ORIGINS; do
+                printf 'export %s=%q\n' "$v" "${!v}"
+              done
+              printf 'export LIQUIBASE_ENABLED=%s\n' "$liquibase"
+              cat <<'EOF'
+          set -euo pipefail
+          cd ~/music-player
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
+          docker info --format '{{.Swarm.LocalNodeState}}' | grep -qx active \
+            || docker swarm init --advertise-addr "$(ip -4 -o addr show wg0 | awk '{print $4}' | cut -d/ -f1)"
+          docker pull -q ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+          # Waits until the rolling update converged (server 1 must not start before server 2 migrated).
+          timeout 900 docker stack deploy --detach=false -c docker-compose.yml --with-registry-auth music-player
+          test "$(docker service ls --filter name=music-player_backend --format '{{.Replicas}}')" = 2/2
+          EOF
+            } | ssh "$host" bash -s
+            echo "::endgroup::"
+          done
