@@ -1,0 +1,12 @@
+# Accepted by the owner on 2026-09-24 so deploys are not blocked by upstream CVEs published after
+# the last dependency update. These are NOT fixed: remove each line when the dependency is upgraded.
+CVE-2026-41695
+CVE-2026-41716
+CVE-2026-41842
+CVE-2026-41845
+CVE-2026-41850
+CVE-2026-54291
+CVE-2026-65182
+CVE-2026-65905
+CVE-2026-68525
+CVE-2026-75595
