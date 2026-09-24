@@ -197,7 +197,8 @@ jobs:
 
       - uses: ./.github/actions/deploy-vpn
         with:
-          wg-private-key: ${{ secrets.WG_CI_PRIVATE_KEY }}
+          address: 10.22.0.25
+          wg-private-key: ${{ secrets.WG_CI_PRIVATE_KEY_PUBLISH }}
           ssh-key: ${{ secrets.VPS_SSH_KEY }}
           ssh-user: ${{ secrets.VPS_USER }}
 

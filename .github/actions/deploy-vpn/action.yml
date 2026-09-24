@@ -1,10 +1,15 @@
 name: Join deploy VPN
 description: >-
   Bring up WireGuard to both servers (server 1 = 10.22.0.1, server 2 = 10.22.0.10) and configure
-  SSH for them. Deploy steps then use plain `ssh`/`rsync` to those addresses.
+  SSH for them. Deploy steps then use plain `ssh`/`rsync` to those addresses. Each repository has
+  its own peer address and key, so concurrent runs of different repositories cannot take each
+  other's WireGuard session; deploy jobs in one repository share a `concurrency` group.
 inputs:
+  address:
+    description: This repository's CI peer address (10.22.0.20-23)
+    required: true
   wg-private-key:
-    description: WireGuard private key of the CI peer (10.22.0.20)
+    description: WireGuard private key of that peer
     required: true
   ssh-key:
     description: Deploy SSH private key
@@ -17,15 +22,16 @@ runs:
   steps:
     - shell: bash
       env:
+        WG_ADDRESS: ${{ inputs.address }}
         WG_KEY: ${{ inputs.wg-private-key }}
         SSH_KEY: ${{ inputs.ssh-key }}
         SSH_USER: ${{ inputs.ssh-user }}
       run: |
-        sudo apt-get install -yq wireguard-tools >/dev/null
+        command -v wg-quick >/dev/null || { sudo apt-get update -q >/dev/null && sudo apt-get install -yq wireguard-tools >/dev/null; }
         sudo install -m 600 /dev/null /etc/wireguard/wg0.conf
         sudo tee /etc/wireguard/wg0.conf >/dev/null <<EOF
         [Interface]
-        Address = 10.22.0.20/32
+        Address = $WG_ADDRESS/32
         PrivateKey = $WG_KEY
 
         # server 1
@@ -53,6 +59,7 @@ runs:
           IdentitiesOnly yes
           StrictHostKeyChecking accept-new
           ConnectTimeout 15
+          ServerAliveInterval 15
         EOF
         for host in 10.22.0.10 10.22.0.1; do
           ssh "$host" true && echo "reached $host" || echo "::warning::cannot reach $host over the VPN"

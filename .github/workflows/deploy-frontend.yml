@@ -82,6 +82,9 @@ jobs:
   build-and-deploy:
     needs: test
     runs-on: ubuntu-24.04
+    concurrency:
+      group: music-player-frontend-deploy
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
@@ -98,7 +101,8 @@ jobs:
 
       - uses: ./.github/actions/deploy-vpn
         with:
-          wg-private-key: ${{ secrets.WG_CI_PRIVATE_KEY }}
+          address: 10.22.0.24
+          wg-private-key: ${{ secrets.WG_CI_PRIVATE_KEY_FRONTEND }}
           ssh-key: ${{ secrets.VPS_SSH_KEY }}
           ssh-user: ${{ secrets.VPS_USER }}
 

@@ -101,12 +101,16 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-24.04
+    concurrency:
+      group: music-player-backend-deploy
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/deploy-vpn
         with:
+          address: 10.22.0.21
           wg-private-key: ${{ secrets.WG_CI_PRIVATE_KEY }}
           ssh-key: ${{ secrets.VPS_SSH_KEY }}
           ssh-user: ${{ secrets.VPS_USER }}
@@ -125,30 +129,26 @@ jobs:
           for target in 10.22.0.10:true 10.22.0.1:false; do
             host=${target%:*} liquibase=${target#*:}
             echo "::group::$host (LIQUIBASE_ENABLED=$liquibase)"
-            ssh "$host" 'mkdir -p ~/music-player'
+            ssh "$host" 'mkdir -p ~/music-player/music_data'
             scp music-player-backend/docker-compose.yml "$host:music-player/docker-compose.yml"
-            # Secrets go over stdin as a %q-quoted env file, never on a remote command line.
+            # One session over stdin: %q-quoted exports, then the script. Nothing is written to disk
+            # and no secret appears on a command line.
             {
-              for v in DB_PASSWORD MAIL_HOST MAIL_USER MAIL_PASSWORD CORS_ALLOWED_ORIGINS; do
+              for v in GHCR_USER GHCR_TOKEN DB_PASSWORD MAIL_HOST MAIL_USER MAIL_PASSWORD CORS_ALLOWED_ORIGINS; do
                 printf 'export %s=%q\n' "$v" "${!v}"
               done
               printf 'export LIQUIBASE_ENABLED=%s\n' "$liquibase"
-            } | ssh "$host" 'umask 077; cat > ~/music-player/.deploy.env'
-            printf '%s' "$GHCR_TOKEN" | ssh "$host" "docker login ghcr.io -u '$GHCR_USER' --password-stdin" >/dev/null
-            ssh "$host" bash -s <<'EOF'
+              cat <<'EOF'
           set -euo pipefail
           cd ~/music-player
-          set -a; . ./.deploy.env; set +a; rm -f .deploy.env
-          docker info --format '{{.Swarm.LocalNodeState}}' | grep -qx active || docker swarm init
-          docker pull ghcr.io/sdarius22/music-player-project/music-player-backend:latest
-          docker stack deploy -c docker-compose.yml --with-registry-auth music-player
-          for i in $(seq 60); do
-            [ "$(docker service ls --filter name=music-player_backend --format '{{.Replicas}}')" = 2/2 ] && exit 0
-            sleep 5
-          done
-          echo 'music-player_backend did not reach 2/2 replicas' >&2
-          docker service ps --no-trunc music-player_backend | head -5 >&2
-          exit 1
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
+          docker info --format '{{.Swarm.LocalNodeState}}' | grep -qx active \
+            || docker swarm init --advertise-addr "$(ip -4 -o addr show wg0 | awk '{print $4}' | cut -d/ -f1)"
+          docker pull -q ghcr.io/sdarius22/music-player-project/music-player-backend:latest
+          # Waits until the rolling update converged (server 1 must not start before server 2 migrated).
+          timeout 900 docker stack deploy --detach=false -c docker-compose.yml --with-registry-auth music-player
+          test "$(docker service ls --filter name=music-player_backend --format '{{.Replicas}}')" = 2/2
           EOF
+            } | ssh "$host" bash -s
             echo "::endgroup::"
           done
